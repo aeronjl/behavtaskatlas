@@ -24,6 +24,7 @@ def build_static_index_payload(*, derived_dir: Path, index_path: Path) -> dict[s
                 index_path=index_path,
                 default_eid=DEFAULT_IBL_EID,
             ),
+            _random_dot_motion_slice_payload(derived_dir=derived_dir, index_path=index_path),
         ],
     }
 
@@ -186,6 +187,55 @@ def _ibl_visual_slice_payload(
                 ("Canonical trials CSV", session_dir / "trials.csv"),
                 ("Slice notes", Path("vertical_slices/ibl_visual_decision/README.md")),
                 ("Analysis record", Path("analyses/ibl_visual_decision.yaml")),
+            ],
+            index_path=index_path,
+        ),
+    }
+
+
+def _random_dot_motion_slice_payload(*, derived_dir: Path, index_path: Path) -> dict[str, Any]:
+    from behavtaskatlas.rdm import DEFAULT_RDM_SESSION_ID
+
+    session_dir = derived_dir / "random_dot_motion" / DEFAULT_RDM_SESSION_ID
+    analysis_path = session_dir / "analysis_result.json"
+    report_path = session_dir / "report.html"
+    analysis = _read_json_object(analysis_path)
+    metrics = []
+    if analysis:
+        metrics = [
+            ("Trials", analysis.get("n_trials")),
+            ("Response trials", analysis.get("n_response_trials")),
+            ("Coherence levels", len(analysis.get("chronometric_rows", []))),
+            ("Summary rows", len(analysis.get("summary_rows", []))),
+        ]
+    return {
+        "id": "slice.random-dot-motion",
+        "title": "Random-Dot Motion",
+        "status_label": _report_status_label(
+            report_path=report_path,
+            artifact_path=analysis_path,
+        ),
+        "report_status": "available" if report_path.exists() else "missing",
+        "artifact_status": "available" if analysis_path.exists() else "missing",
+        "description": (
+            "Roitman-Shadlen macaque random-dot motion slice with target-coded "
+            "psychometric and chronometric summaries from a processed PyDDM CSV."
+        ),
+        "primary_link": _link_if_exists(report_path, index_path)
+        or _link_if_exists(session_dir / "psychometric.svg", index_path),
+        "primary_link_label": "Open report"
+        if report_path.exists()
+        else "Open psychometric SVG",
+        "metrics": metrics,
+        "links": _existing_links(
+            [
+                ("Report HTML", report_path),
+                ("Analysis result JSON", analysis_path),
+                ("Psychometric SVG", session_dir / "psychometric.svg"),
+                ("Chronometric SVG", session_dir / "chronometric.svg"),
+                ("Canonical trials CSV", session_dir / "trials.csv"),
+                ("Slice notes", Path("vertical_slices/random_dot_motion/README.md")),
+                ("Analysis record", Path("analyses/random_dot_motion.yaml")),
             ],
             index_path=index_path,
         ),

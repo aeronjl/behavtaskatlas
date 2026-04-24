@@ -1,0 +1,43 @@
+slice_id: slice.random-dot-motion
+protocol_id: protocol.random-dot-motion-classic-macaque
+dataset_id: dataset.roitman-shadlen-rdm-pyddm
+source_object: PyDDM processed Roitman-Shadlen CSV
+source_url: https://github.com/mwshinn/PyDDM/blob/master/doc/downloads/roitman_rts.csv
+source_commit: cf161c11e8f99f18cf805a7ae1da8623faddad86
+required_fields:
+  - monkey
+  - rt
+  - coh
+  - correct
+  - trgchoice
+canonical_mapping:
+  subject_id: monkey formatted as `monkey-{id}`
+  session_id: fixed processed dataset id `roitman-shadlen-pyddm`
+  trial_index: row index after optional filtering
+  stimulus_value: signed coherence percentage, target 1 positive and target 2 negative
+  stimulus_side: target 1 mapped to right, target 2 mapped to left
+  evidence_strength: absolute coherence percentage
+  choice: trgchoice 1 mapped to right, trgchoice 2 mapped to left
+  correct: correct 1 true, 0 false
+  response_time: rt in seconds
+  response_time_origin: processed PyDDM saccade time minus stimulus onset
+  feedback: correct mapped to reward/error
+  task_variables.monkey: monkey
+  task_variables.coherence_fraction: coh
+  task_variables.signed_coherence_fraction_target1_positive: reconstructed signed coherence fraction
+  task_variables.target_choice: trgchoice
+  task_variables.correct_code: correct
+sign_reconstruction:
+  description: >
+    The processed CSV stores unsigned coherence, target choice, and correctness.
+    Signed coherence is reconstructed using the PyDDM target-coding transform:
+    target 1 choices are positive when correct and negative when incorrect;
+    target 2 choices are negative when correct and positive when incorrect.
+caveats:
+  - The processed CSV does not preserve original session labels.
+  - Target 1/target 2 are mapped onto canonical right/left labels for comparability, not because stable screen side is known.
+  - The adapter keeps all downloaded rows; downstream DDM-compatible filtering can exclude very short or long reaction times later.
+source_references:
+  - https://pyddm.readthedocs.io/en/stable/cookbook/howto.html
+  - https://github.com/mwshinn/PyDDM/blob/master/doc/downloads/extract_roitman.py
+  - https://shadlenlab.columbia.edu/resources/RoitmanDataCode.html

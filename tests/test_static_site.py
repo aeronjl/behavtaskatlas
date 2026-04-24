@@ -73,3 +73,33 @@ def test_static_index_promotes_ibl_report_when_available(tmp_path) -> None:
         f"ibl_visual_decision/{DEFAULT_IBL_EID}/report.html"
     )
     assert ibl_slice["primary_link_label"] == "Open report"
+
+
+def test_static_index_links_random_dot_motion_report(tmp_path) -> None:
+    derived_dir = tmp_path / "derived"
+    rdm_dir = derived_dir / "random_dot_motion" / "roitman-shadlen-pyddm"
+    rdm_dir.mkdir(parents=True)
+    (rdm_dir / "analysis_result.json").write_text(
+        json.dumps(
+            {
+                "n_trials": 6149,
+                "n_response_trials": 6149,
+                "chronometric_rows": [{}, {}, {}, {}, {}, {}],
+                "summary_rows": [{}, {}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (rdm_dir / "report.html").write_text("<html>rdm report</html>", encoding="utf-8")
+
+    payload = build_static_index_payload(
+        derived_dir=derived_dir,
+        index_path=derived_dir / "index.html",
+    )
+    html = static_index_html(payload)
+
+    rdm_slice = payload["slices"][2]
+    assert rdm_slice["report_status"] == "available"
+    assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
+    assert "Random-Dot Motion" in html
+    assert "6,149" in html

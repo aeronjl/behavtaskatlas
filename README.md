@@ -90,6 +90,23 @@ read those existing batch outputs and write a per-rat/gamma psychometric bias ta
 a cross-rat evidence-kernel summary, a JSON result, and an SVG plot. Report runs
 render those aggregate artifacts as a dependency-free static HTML page.
 
+Download and run the Roitman-Shadlen random-dot motion slice from the pinned
+processed PyDDM CSV:
+
+```bash
+uv run behavtaskatlas rdm-download
+uv run behavtaskatlas rdm-harmonize
+uv run behavtaskatlas rdm-analyze
+uv run behavtaskatlas rdm-report
+uv run behavtaskatlas site-index
+```
+
+The RDM slice writes ignored local artifacts under
+`derived/random_dot_motion/roitman-shadlen-pyddm/`. It emits canonical trials,
+psychometric and chronometric summaries, descriptive fit results, dependency-free
+SVG plots, and a static report. The raw processed CSV stays under ignored
+`data/raw/random_dot_motion/`.
+
 Build the local static report index:
 
 ```bash

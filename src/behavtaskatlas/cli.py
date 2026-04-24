@@ -41,6 +41,19 @@ from behavtaskatlas.ibl import (
     write_summary_csv,
 )
 from behavtaskatlas.models import SCHEMA_MODELS, CanonicalTrial
+from behavtaskatlas.rdm import (
+    DEFAULT_RDM_DERIVED_DIR,
+    DEFAULT_RDM_RAW_CSV,
+    DEFAULT_RDM_SESSION_ID,
+    RDM_PSYCHOMETRIC_X_AXIS_LABEL,
+    analyze_roitman_rdm,
+    download_roitman_rdm_csv,
+    load_roitman_rdm_csv,
+    rdm_provenance_payload,
+    write_rdm_chronometric_csv,
+    write_rdm_chronometric_svg,
+    write_rdm_report_html,
+)
 from behavtaskatlas.static_site import build_static_index_payload, write_static_index_html
 from behavtaskatlas.validation import validate_repository
 
@@ -251,6 +264,98 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    rdm_download_parser = subparsers.add_parser(
+        "rdm-download",
+        help="Download the processed Roitman-Shadlen random-dot motion CSV",
+    )
+    rdm_download_parser.add_argument(
+        "--out-file",
+        default=str(DEFAULT_RDM_RAW_CSV),
+        help="Local output path under ignored raw-data storage",
+    )
+
+    rdm_parser = subparsers.add_parser(
+        "rdm-harmonize",
+        help="Harmonize the processed Roitman-Shadlen random-dot motion CSV",
+    )
+    rdm_parser.add_argument(
+        "--csv-file",
+        default=str(DEFAULT_RDM_RAW_CSV),
+        help="Path to the processed Roitman-Shadlen CSV",
+    )
+    rdm_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_RDM_DERIVED_DIR),
+        help="Directory for generated random-dot motion artifacts",
+    )
+    rdm_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RDM_SESSION_ID,
+        help="Session directory name for the processed dataset",
+    )
+    rdm_parser.add_argument("--monkey", type=int, default=None, help="Optional monkey id")
+    rdm_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    rdm_analyze_parser = subparsers.add_parser(
+        "rdm-analyze",
+        help="Analyze a harmonized Roitman-Shadlen random-dot motion dataset",
+    )
+    rdm_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RDM_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    rdm_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_RDM_DERIVED_DIR),
+        help="Directory containing generated random-dot motion artifacts",
+    )
+    rdm_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    rdm_report_parser = subparsers.add_parser(
+        "rdm-report",
+        help="Render a static HTML report from analyzed random-dot motion artifacts",
+    )
+    rdm_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RDM_SESSION_ID,
+        help="Analyzed session directory name",
+    )
+    rdm_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_RDM_DERIVED_DIR),
+        help="Directory containing generated random-dot motion artifacts",
+    )
+    rdm_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    rdm_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    rdm_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    rdm_report_parser.add_argument(
+        "--chronometric-svg",
+        default=None,
+        help="Optional explicit path to chronometric.svg",
+    )
+    rdm_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     site_index_parser = subparsers.add_parser(
         "site-index",
         help="Render a static index linking generated vertical-slice reports",
@@ -332,6 +437,32 @@ def main(argv: list[str] | None = None) -> int:
             aggregate_kernel_svg=Path(args.aggregate_kernel_svg)
             if args.aggregate_kernel_svg
             else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "rdm-download":
+        return _rdm_download(out_file=Path(args.out_file))
+    if args.command == "rdm-harmonize":
+        return _rdm_harmonize(
+            csv_file=Path(args.csv_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            monkey=args.monkey,
+            limit=args.limit,
+        )
+    if args.command == "rdm-analyze":
+        return _rdm_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "rdm-report":
+        return _rdm_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            chronometric_svg=Path(args.chronometric_svg) if args.chronometric_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
     if args.command == "site-index":
@@ -783,6 +914,180 @@ def _clicks_report(
             "Aggregate kernel SVG not found, wrote report without inline plot: "
             f"{kernel_svg_path}"
         )
+    return 0
+
+
+def _rdm_download(*, out_file: Path) -> int:
+    try:
+        details = download_roitman_rdm_csv(out_file)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded {details['n_bytes']} bytes to {out_file}")
+    print(f"SHA256 {details['sha256']}")
+    return 0
+
+
+def _rdm_harmonize(
+    *,
+    csv_file: Path,
+    out_dir: Path,
+    session_id: str,
+    monkey: int | None,
+    limit: int | None,
+) -> int:
+    if not csv_file.exists():
+        print(
+            f"RDM CSV not found: {csv_file}. Run `uv run behavtaskatlas rdm-download` first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_roitman_rdm_csv(
+            csv_file,
+            session_id=session_id,
+            monkey=monkey,
+            limit=limit,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        rdm_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _rdm_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas rdm-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_roitman_rdm(trials)
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+    chronometric_path = session_dir / "chronometric_summary.csv"
+    chronometric_plot_path = session_dir / "chronometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        plot_path,
+        result["summary_rows"],
+        x_axis_label=RDM_PSYCHOMETRIC_X_AXIS_LABEL,
+    )
+    write_rdm_chronometric_csv(chronometric_path, result["chronometric_rows"])
+    write_rdm_chronometric_svg(chronometric_plot_path, result["chronometric_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    print(f"Wrote chronometric summary to {chronometric_path}")
+    print(f"Wrote chronometric plot to {chronometric_plot_path}")
+    return 0
+
+
+def _rdm_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    chronometric_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or session_dir / "psychometric.svg"
+    chronometric_svg_path = chronometric_svg or session_dir / "chronometric.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"RDM analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas rdm-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = (
+        psychometric_svg_path.read_text(encoding="utf-8")
+        if psychometric_svg_path.exists()
+        else None
+    )
+    chronometric_svg_text = (
+        chronometric_svg_path.read_text(encoding="utf-8")
+        if chronometric_svg_path.exists()
+        else None
+    )
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", session_dir / "psychometric_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("chronometric summary CSV", session_dir / "chronometric_summary.csv"),
+            ("chronometric SVG", chronometric_svg_path),
+            ("canonical trials CSV", session_dir / "trials.csv"),
+        ]
+        if path.exists()
+    }
+    write_rdm_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        chronometric_svg_text=chronometric_svg_text,
+        artifact_links=artifact_links,
+    )
+    print(f"Wrote random-dot motion report to {report_path}")
     return 0
 
 

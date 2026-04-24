@@ -1,0 +1,67 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.roitman-shadlen-rdm-pyddm
+name: Processed Roitman-Shadlen random-dot motion reaction-time data from PyDDM
+description: >
+  Processed CSV copy of the Roitman and Shadlen random-dot motion reaction-time
+  task data distributed with the PyDDM documentation. The table contains monkey
+  identifier, reaction time, unsigned coherence, correctness, and target choice
+  for two macaques.
+protocol_ids:
+  - protocol.random-dot-motion-classic-macaque
+species:
+  - non-human-primate
+curation_status: data-linked
+source_url: https://github.com/mwshinn/PyDDM/blob/master/doc/downloads/roitman_rts.csv
+access_notes: >
+  The MVP downloads the processed CSV from a pinned PyDDM repository commit into
+  ignored local raw-data storage. The original dataset is linked by PyDDM and
+  eLife to the Shadlen Lab RoitmanDataCode resource.
+license: >
+  PyDDM is MIT licensed; original Roitman-Shadlen data license should be
+  confirmed before redistribution.
+data_formats:
+  - CSV
+  - derived canonical trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: Monkey identifier formatted from the `monkey` column.
+  session_id: Processed dataset identifier because session labels are not retained in the convenience CSV.
+  trial_index: Row index within the processed CSV after optional filtering.
+  stimulus_value: Signed motion coherence, target 1 positive and target 2 negative.
+  stimulus_side: Target 1 mapped to right and target 2 mapped to left as a canonical convention.
+  evidence_strength: Absolute percent motion coherence.
+  choice: "`trgchoice` mapped as target 1/right and target 2/left."
+  correct: "`correct` mapped to boolean correctness."
+  response_time: "`rt` in seconds."
+  task_variables: Raw monkey id, unsigned coherence, signed coherence fraction, target choice, and correctness code.
+references:
+  - id: ref.roitman-shadlen-2002
+    citation: >
+      Roitman JD, Shadlen MN. Response of neurons in the lateral intraparietal
+      area during a combined visual discrimination reaction time task. Journal
+      of Neuroscience, 2002.
+    url: https://www.jneurosci.org/content/22/21/9475
+    doi: 10.1523/JNEUROSCI.22-21-09475.2002
+  - id: ref.pyddm-roitman-csv
+    citation: >
+      Shinn M, Lam NH, Murray JD. PyDDM documentation processed
+      Roitman-Shadlen CSV.
+    url: https://github.com/mwshinn/PyDDM/blob/master/doc/downloads/roitman_rts.csv
+  - id: ref.shinn-2020-pyddm
+    citation: >
+      Shinn M, Lam NH, Murray JD. A flexible framework for simulating and
+      fitting generalized drift-diffusion models. eLife, 2020.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC7462609/
+    doi: 10.7554/eLife.56938
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: >
+    Dataset metadata drafted for the third vertical slice using PyDDM commit
+    cf161c11e8f99f18cf805a7ae1da8623faddad86.
+caveats:
+  - The convenience CSV does not preserve original session labels.
+  - The convenience CSV does not preserve stable screen-side mapping for target 1 and target 2.
+  - Original dataset redistribution terms should be confirmed before committing derived tables.
