@@ -178,6 +178,10 @@
       "title": "Counts",
       "type": "object"
     },
+    "curation_queue_link": {
+      "title": "Curation Queue Link",
+      "type": "string"
+    },
     "edges": {
       "items": {
         "$ref": "#/$defs/RelationshipGraphEdge"
@@ -229,6 +233,7 @@
     "generated_at",
     "catalog_link",
     "graph_json_link",
+    "curation_queue_link",
     "counts",
     "qa_summary",
     "nodes",

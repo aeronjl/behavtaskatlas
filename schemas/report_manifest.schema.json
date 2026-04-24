@@ -339,6 +339,18 @@
       "title": "Comparison Rows",
       "type": "array"
     },
+    "curation_queue_link": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Curation Queue Link"
+    },
     "derived_dir": {
       "title": "Derived Dir",
       "type": "string"

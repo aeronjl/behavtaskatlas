@@ -116,7 +116,8 @@ uv run behavtaskatlas site-index
 ```
 
 This writes `derived/index.html`, `derived/manifest.json`, `derived/catalog.html`,
-`derived/catalog.json`, `derived/graph.html`, `derived/graph.json`, one
+`derived/catalog.json`, `derived/graph.html`, `derived/graph.json`,
+`derived/curation_queue.html`, `derived/curation_queue.json`, one
 `derived/protocol-*.html` detail page per protocol, and one
 `derived/dataset-*.html` detail page per dataset from the committed YAML records.
 The report index links available vertical-slice reports, shows a cross-slice
@@ -130,7 +131,9 @@ their generated detail pages. The relationship graph exposes task-family,
 protocol, dataset, and vertical-slice nodes plus typed edges as both HTML and
 machine-readable JSON. The graph export also carries lightweight QA issues for
 orphan records, missing reciprocal links, protocols without datasets, protocols
-without slices, and datasets without slices.
+without slices, and datasets without slices. The curation queue turns those graph
+QA issues into contributor-facing action items grouped by action type and
+priority.
 
 ## Repository Layout
 

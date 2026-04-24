@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 23:06:32 BST - Graph QA should become a curation queue
+
+The relationship graph now has enough structure to generate a contributor-facing worklist. Turning QA issues into `curation_queue.html` and `curation_queue.json` makes incompleteness operational: protocol records without datasets and protocols without vertical slices become grouped action items rather than passive warnings.
+
+This is the next step in making the atlas useful for open science. It gives future contributors a stable surface for choosing what to curate next while preserving the file-first architecture: committed records generate graph QA, graph QA generates the queue, and no backend workflow system is required for the MVP.
+
 ## 2026-04-24 22:49:33 BST - Reciprocal links turn QA into a cleaner curation signal
 
 The classic macaque random-dot motion protocol now explicitly declares the Roitman-Shadlen PyDDM dataset that already listed it. That removes the graph QA warning for a missing reciprocal protocol-dataset link while preserving the informational gaps for catalog-only protocols that do not yet have linked datasets or report-backed slices.

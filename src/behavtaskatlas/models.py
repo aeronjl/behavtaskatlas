@@ -268,6 +268,7 @@ class ReportManifest(StrictModel):
     manifest_link: str
     catalog_link: str | None = None
     graph_link: str | None = None
+    curation_queue_link: str | None = None
     comparison_rows: list[ManifestComparisonRow]
     slices: list[ManifestSlice]
 
@@ -414,6 +415,7 @@ class CatalogPayload(StrictModel):
     report_index_link: str
     graph_link: str
     graph_json_link: str
+    curation_queue_link: str
     counts: dict[str, int]
     task_families: list[CatalogFamilyRow]
     protocols: list[CatalogProtocolRow]
@@ -456,11 +458,43 @@ class RelationshipGraphPayload(StrictModel):
     behavtaskatlas_git_dirty: bool | None = None
     catalog_link: str
     graph_json_link: str
+    curation_queue_link: str
     counts: dict[str, int]
     qa_summary: dict[str, int]
     qa_issues: list[RelationshipGraphIssue] = Field(default_factory=list)
     nodes: list[RelationshipGraphNode]
     edges: list[RelationshipGraphEdge]
+
+
+class CurationQueueItem(StrictModel):
+    item_id: str
+    action_type: str
+    priority: Literal["low", "normal", "high"]
+    status: Literal["open", "blocked", "done"] = "open"
+    source_issue_id: str
+    source_issue_type: str
+    source_severity: Literal["info", "warning", "error"]
+    node_id: str | None = None
+    node_label: str | None = None
+    node_type: str | None = None
+    related_node_id: str | None = None
+    message: str
+    suggested_next_step: str
+    href: str | None = None
+
+
+class CurationQueuePayload(StrictModel):
+    queue_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    graph_link: str
+    queue_json_link: str
+    counts: dict[str, int]
+    action_counts: dict[str, int]
+    priority_counts: dict[str, int]
+    items: list[CurationQueueItem]
 
 
 Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
@@ -481,6 +515,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "report_manifest": ReportManifest,
     "catalog": CatalogPayload,
     "relationship_graph": RelationshipGraphPayload,
+    "curation_queue": CurationQueuePayload,
 }
 
 

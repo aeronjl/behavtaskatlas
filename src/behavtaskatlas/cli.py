@@ -56,10 +56,13 @@ from behavtaskatlas.rdm import (
 )
 from behavtaskatlas.static_site import (
     build_catalog_payload,
+    build_curation_queue_payload,
     build_relationship_graph_payload,
     build_static_index_payload,
     write_static_catalog_html,
     write_static_catalog_json,
+    write_static_curation_queue_html,
+    write_static_curation_queue_json,
     write_static_dataset_pages,
     write_static_graph_html,
     write_static_graph_json,
@@ -407,6 +410,16 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional machine-readable relationship graph JSON output path",
     )
+    site_index_parser.add_argument(
+        "--curation-queue-file",
+        default=None,
+        help="Optional curation queue HTML output path",
+    )
+    site_index_parser.add_argument(
+        "--curation-queue-json-file",
+        default=None,
+        help="Optional machine-readable curation queue JSON output path",
+    )
 
     args = parser.parse_args(argv)
 
@@ -513,6 +526,12 @@ def main(argv: list[str] | None = None) -> int:
             else None,
             graph_file=Path(args.graph_file) if args.graph_file else None,
             graph_json_file=Path(args.graph_json_file) if args.graph_json_file else None,
+            curation_queue_file=Path(args.curation_queue_file)
+            if args.curation_queue_file
+            else None,
+            curation_queue_json_file=Path(args.curation_queue_json_file)
+            if args.curation_queue_json_file
+            else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -1144,6 +1163,8 @@ def _site_index(
     catalog_json_file: Path | None,
     graph_file: Path | None,
     graph_json_file: Path | None,
+    curation_queue_file: Path | None,
+    curation_queue_json_file: Path | None,
 ) -> int:
     index_path = out_file or derived_dir / "index.html"
     manifest_path = manifest_file or index_path.with_name("manifest.json")
@@ -1151,12 +1172,17 @@ def _site_index(
     catalog_json_path = catalog_json_file or index_path.with_name("catalog.json")
     graph_path = graph_file or index_path.with_name("graph.html")
     graph_json_path = graph_json_file or index_path.with_name("graph.json")
+    curation_queue_path = curation_queue_file or index_path.with_name("curation_queue.html")
+    curation_queue_json_path = (
+        curation_queue_json_file or index_path.with_name("curation_queue.json")
+    )
     payload = build_static_index_payload(
         derived_dir=derived_dir,
         index_path=index_path,
         manifest_path=manifest_path,
         catalog_path=catalog_path,
         graph_path=graph_path,
+        curation_queue_path=curation_queue_path,
     )
     write_static_index_html(index_path, payload)
     write_static_manifest_json(manifest_path, payload)
@@ -1168,6 +1194,7 @@ def _site_index(
         report_index_path=index_path,
         graph_path=graph_path,
         graph_json_path=graph_json_path,
+        curation_queue_path=curation_queue_path,
     )
     write_static_catalog_html(catalog_path, catalog_payload)
     write_static_catalog_json(catalog_json_path, catalog_payload)
@@ -1176,9 +1203,18 @@ def _site_index(
         graph_path=graph_path,
         graph_json_path=graph_json_path,
         catalog_path=catalog_path,
+        curation_queue_path=curation_queue_path,
     )
     write_static_graph_html(graph_path, graph_payload)
     write_static_graph_json(graph_json_path, graph_payload)
+    curation_queue_payload = build_curation_queue_payload(
+        graph_payload,
+        queue_path=curation_queue_path,
+        queue_json_path=curation_queue_json_path,
+        graph_path=graph_path,
+    )
+    write_static_curation_queue_html(curation_queue_path, curation_queue_payload)
+    write_static_curation_queue_json(curation_queue_json_path, curation_queue_payload)
     protocol_pages = write_static_protocol_pages(catalog_path, catalog_payload)
     dataset_pages = write_static_dataset_pages(catalog_path, catalog_payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
@@ -1188,6 +1224,8 @@ def _site_index(
     print(f"Wrote catalog JSON to {catalog_json_path}")
     print(f"Wrote relationship graph to {graph_path}")
     print(f"Wrote relationship graph JSON to {graph_json_path}")
+    print(f"Wrote curation queue to {curation_queue_path}")
+    print(f"Wrote curation queue JSON to {curation_queue_json_path}")
     print(f"Wrote {len(protocol_pages)} protocol detail pages")
     print(f"Wrote {len(dataset_pages)} dataset detail pages")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")

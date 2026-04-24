@@ -1,0 +1,221 @@
+{
+  "$defs": {
+    "CurationQueueItem": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Id"
+        },
+        "node_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Label"
+        },
+        "node_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Type"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "related_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Related Node Id"
+        },
+        "source_issue_id": {
+          "title": "Source Issue Id",
+          "type": "string"
+        },
+        "source_issue_type": {
+          "title": "Source Issue Type",
+          "type": "string"
+        },
+        "source_severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Source Severity",
+          "type": "string"
+        },
+        "status": {
+          "default": "open",
+          "enum": [
+            "open",
+            "blocked",
+            "done"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_next_step": {
+          "title": "Suggested Next Step",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "action_type",
+        "priority",
+        "source_issue_id",
+        "source_issue_type",
+        "source_severity",
+        "message",
+        "suggested_next_step"
+      ],
+      "title": "CurationQueueItem",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Action Counts",
+      "type": "object"
+    },
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "graph_link": {
+      "title": "Graph Link",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/CurationQueueItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "priority_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Priority Counts",
+      "type": "object"
+    },
+    "queue_json_link": {
+      "title": "Queue Json Link",
+      "type": "string"
+    },
+    "queue_schema_version": {
+      "title": "Queue Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "queue_schema_version",
+    "title",
+    "generated_at",
+    "graph_link",
+    "queue_json_link",
+    "counts",
+    "action_counts",
+    "priority_counts",
+    "items"
+  ],
+  "title": "CurationQueuePayload",
+  "type": "object"
+}

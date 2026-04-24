@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from behavtaskatlas.models import (
     CatalogPayload,
+    CurationQueuePayload,
     Dataset,
     Protocol,
     RelationshipGraphPayload,
@@ -29,6 +30,7 @@ def build_static_index_payload(
     manifest_path: Path | None = None,
     catalog_path: Path | None = None,
     graph_path: Path | None = None,
+    curation_queue_path: Path | None = None,
     root: Path = Path("."),
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
@@ -36,6 +38,7 @@ def build_static_index_payload(
     manifest_path = manifest_path or index_path.with_name("manifest.json")
     catalog_path = catalog_path or index_path.with_name("catalog.html")
     graph_path = graph_path or index_path.with_name("graph.html")
+    curation_queue_path = curation_queue_path or index_path.with_name("curation_queue.html")
     records = load_vertical_slice_records(root)
     slices = [
         _vertical_slice_payload(
@@ -56,6 +59,7 @@ def build_static_index_payload(
         "manifest_link": _relative_link(manifest_path, index_path),
         "catalog_link": _relative_link(catalog_path, index_path),
         "graph_link": _relative_link(graph_path, index_path),
+        "curation_queue_link": _relative_link(curation_queue_path, index_path),
         "comparison_rows": build_slice_comparison_rows(slices),
         "slices": slices,
     }
@@ -81,6 +85,7 @@ def build_catalog_payload(
     report_index_path: Path | None = None,
     graph_path: Path | None = None,
     graph_json_path: Path | None = None,
+    curation_queue_path: Path | None = None,
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
@@ -88,6 +93,7 @@ def build_catalog_payload(
     report_index_path = report_index_path or catalog_path.with_name("index.html")
     graph_path = graph_path or catalog_path.with_name("graph.html")
     graph_json_path = graph_json_path or graph_path.with_suffix(".json")
+    curation_queue_path = curation_queue_path or catalog_path.with_name("curation_queue.html")
     records = load_repository_records(root)
     task_families = sorted(
         [record for record in records if isinstance(record, TaskFamily)],
@@ -135,6 +141,7 @@ def build_catalog_payload(
         "report_index_link": _relative_link(report_index_path, catalog_path),
         "graph_link": _relative_link(graph_path, catalog_path),
         "graph_json_link": _relative_link(graph_json_path, catalog_path),
+        "curation_queue_link": _relative_link(curation_queue_path, catalog_path),
         "counts": {
             "task_families": len(task_families),
             "protocols": len(protocols),
@@ -222,9 +229,11 @@ def build_relationship_graph_payload(
     graph_path: Path,
     graph_json_path: Path | None = None,
     catalog_path: Path | None = None,
+    curation_queue_path: Path | None = None,
 ) -> dict[str, Any]:
     graph_json_path = graph_json_path or graph_path.with_suffix(".json")
     catalog_path = catalog_path or graph_path.with_name("catalog.html")
+    curation_queue_path = curation_queue_path or graph_path.with_name("curation_queue.html")
     nodes = _relationship_graph_nodes(
         catalog_payload,
         graph_path=graph_path,
@@ -240,6 +249,7 @@ def build_relationship_graph_payload(
         "behavtaskatlas_git_dirty": catalog_payload.get("behavtaskatlas_git_dirty"),
         "catalog_link": _relative_link(catalog_path, graph_path),
         "graph_json_link": _relative_link(graph_json_path, graph_path),
+        "curation_queue_link": _relative_link(curation_queue_path, graph_path),
         "counts": {
             "nodes": len(nodes),
             "edges": len(edges),
@@ -256,6 +266,38 @@ def build_relationship_graph_payload(
     }
 
 
+def build_curation_queue_payload(
+    graph_payload: dict[str, Any],
+    *,
+    queue_path: Path,
+    queue_json_path: Path | None = None,
+    graph_path: Path | None = None,
+) -> dict[str, Any]:
+    queue_json_path = queue_json_path or queue_path.with_suffix(".json")
+    graph_path = graph_path or queue_path.with_name("graph.html")
+    items = _curation_queue_items(
+        graph_payload,
+        queue_path=queue_path,
+        graph_path=graph_path,
+    )
+    return {
+        "queue_schema_version": "0.1.0",
+        "title": "behavtaskatlas Curation Queue",
+        "generated_at": graph_payload.get("generated_at"),
+        "behavtaskatlas_commit": graph_payload.get("behavtaskatlas_commit"),
+        "behavtaskatlas_git_dirty": graph_payload.get("behavtaskatlas_git_dirty"),
+        "graph_link": _relative_link(graph_path, queue_path),
+        "queue_json_link": _relative_link(queue_json_path, queue_path),
+        "counts": {
+            "items": len(items),
+            "open": sum(1 for item in items if item["status"] == "open"),
+        },
+        "action_counts": _count_by(items, "action_type"),
+        "priority_counts": _count_by(items, "priority"),
+        "items": items,
+    }
+
+
 def write_static_graph_html(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(static_relationship_graph_html(payload), encoding="utf-8")
@@ -264,6 +306,17 @@ def write_static_graph_html(path: Path, payload: dict[str, Any]) -> None:
 def write_static_graph_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     RelationshipGraphPayload.model_validate(payload)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_static_curation_queue_html(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(static_curation_queue_html(payload), encoding="utf-8")
+
+
+def write_static_curation_queue_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    CurationQueuePayload.model_validate(payload)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -912,6 +965,111 @@ def _qa_summary(issues: list[dict[str, Any]]) -> dict[str, int]:
     return summary
 
 
+def _curation_queue_items(
+    graph_payload: dict[str, Any],
+    *,
+    queue_path: Path,
+    graph_path: Path,
+) -> list[dict[str, Any]]:
+    node_by_id = {node["node_id"]: node for node in graph_payload.get("nodes", [])}
+    items = []
+    for issue in graph_payload.get("qa_issues", []):
+        node = node_by_id.get(str(issue.get("node_id")))
+        action_type = _curation_action_type(str(issue.get("issue_type", "")))
+        priority = _curation_priority(str(issue.get("severity", "info")))
+        href = _queue_item_href(node.get("href") if node else None, queue_path, graph_path)
+        items.append(
+            {
+                "item_id": f"queue::{issue['issue_id']}",
+                "action_type": action_type,
+                "priority": priority,
+                "status": "open",
+                "source_issue_id": issue["issue_id"],
+                "source_issue_type": issue["issue_type"],
+                "source_severity": issue["severity"],
+                "node_id": issue.get("node_id"),
+                "node_label": node.get("label") if node else issue.get("node_id"),
+                "node_type": node.get("node_type") if node else None,
+                "related_node_id": issue.get("related_node_id"),
+                "message": issue["message"],
+                "suggested_next_step": _curation_next_step(str(issue.get("issue_type", ""))),
+                "href": href,
+            }
+        )
+    return sorted(
+        items,
+        key=lambda item: (
+            {"high": 0, "normal": 1, "low": 2}[item["priority"]],
+            item["action_type"],
+            item.get("node_label") or "",
+        ),
+    )
+
+
+def _curation_action_type(issue_type: str) -> str:
+    return {
+        "protocol_without_dataset": "needs dataset",
+        "protocol_without_slice": "needs vertical slice",
+        "dataset_without_slice": "needs vertical slice",
+        "missing_protocol_reciprocal": "fix reciprocal metadata",
+        "missing_dataset_reciprocal": "fix reciprocal metadata",
+        "orphan_record": "connect orphan record",
+        "family_without_members": "add family members",
+        "dataset_without_protocol": "needs protocol link",
+    }.get(issue_type, "review graph issue")
+
+
+def _curation_priority(severity: str) -> str:
+    if severity == "error":
+        return "high"
+    if severity == "warning":
+        return "high"
+    if severity == "info":
+        return "normal"
+    return "low"
+
+
+def _curation_next_step(issue_type: str) -> str:
+    return {
+        "protocol_without_dataset": (
+            "Find or curate an open dataset for this protocol, then add reciprocal "
+            "protocol/dataset metadata."
+        ),
+        "protocol_without_slice": (
+            "Choose a dataset-backed instance and add a vertical slice with analysis artifacts."
+        ),
+        "dataset_without_slice": (
+            "Add a vertical slice that turns this dataset into an analysis-backed atlas page."
+        ),
+        "missing_protocol_reciprocal": (
+            "Add the dataset id to the protocol record so both sides declare the link."
+        ),
+        "missing_dataset_reciprocal": (
+            "Add the protocol id to the dataset record so both sides declare the link."
+        ),
+        "orphan_record": "Connect this record to at least one family, protocol, dataset, or slice.",
+        "family_without_members": "Add at least one protocol or slice for this task family.",
+        "dataset_without_protocol": "Link this dataset to at least one protocol record.",
+    }.get(issue_type, "Review the record and decide the next curation action.")
+
+
+def _queue_item_href(href: Any, queue_path: Path, graph_path: Path) -> str | None:
+    if not href:
+        return None
+    href_text = str(href)
+    if "://" in href_text or href_text.startswith("#"):
+        return href_text
+    return _relative_link(graph_path.parent / href_text, queue_path)
+
+
+def _count_by(items: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        value = str(item.get(key, ""))
+        counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items(), key=lambda pair: pair[0]))
+
+
 def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for item in slices:
@@ -986,6 +1144,12 @@ def static_index_html(payload: dict[str, Any]) -> str:
         html.append(
             f'<p class="manifest-link"><a href="{escape(str(graph_link), quote=True)}">'
             "Relationship graph</a></p>"
+        )
+    curation_queue_link = payload.get("curation_queue_link")
+    if curation_queue_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(curation_queue_link), quote=True)}">'
+            "Curation queue</a></p>"
         )
     html.extend(
         [
@@ -1075,6 +1239,12 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
         html.append(
             f'<p class="manifest-link"><a href="{escape(str(graph_link), quote=True)}">'
             "Relationship graph</a></p>"
+        )
+    curation_queue_link = payload.get("curation_queue_link")
+    if curation_queue_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(curation_queue_link), quote=True)}">'
+            "Curation queue</a></p>"
         )
     html.extend(
         [
@@ -1187,6 +1357,12 @@ def static_relationship_graph_html(payload: dict[str, Any]) -> str:
             f'<p class="manifest-link"><a href="{escape(str(graph_json_link), quote=True)}">'
             "Machine-readable graph JSON</a></p>"
         )
+    curation_queue_link = payload.get("curation_queue_link")
+    if curation_queue_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(curation_queue_link), quote=True)}">'
+            "Curation queue</a></p>"
+        )
     html.extend(
         [
             "</header>",
@@ -1213,6 +1389,77 @@ def static_relationship_graph_html(payload: dict[str, Any]) -> str:
             "<section>",
             "<h2>Edges</h2>",
             _graph_edge_table(payload.get("edges", []), payload.get("nodes", [])),
+            "</section>",
+            "<section>",
+            "<h2>Build Provenance</h2>",
+            _definition_list(
+                [
+                    ("Generated", payload.get("generated_at")),
+                    ("Commit", payload.get("behavtaskatlas_commit")),
+                    ("Git dirty", payload.get("behavtaskatlas_git_dirty")),
+                ]
+            ),
+            "</section>",
+            "</main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+    return "\n".join(html) + "\n"
+
+
+def static_curation_queue_html(payload: dict[str, Any]) -> str:
+    counts = payload.get("counts", {})
+    priority_counts = payload.get("priority_counts", {})
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(str(payload.get('title', 'Curation Queue')))}</title>",
+        "<style>",
+        _index_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        '<p class="eyebrow">behavtaskatlas curation</p>',
+        f"<h1>{escape(str(payload.get('title', 'Curation Queue')))}</h1>",
+        "<p class=\"lede\">Generated work queue derived from relationship-graph QA. "
+        "Each item maps a graph issue to a concrete curation action so breadth gaps "
+        "and metadata inconsistencies can be reviewed without reading raw YAML first.</p>",
+    ]
+    graph_link = payload.get("graph_link")
+    if graph_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(graph_link), quote=True)}">'
+            "Relationship graph</a></p>"
+        )
+    queue_json_link = payload.get("queue_json_link")
+    if queue_json_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(queue_json_link), quote=True)}">'
+            "Machine-readable queue JSON</a></p>"
+        )
+    html.extend(
+        [
+            "</header>",
+            '<section class="summary" aria-label="Curation queue summary">',
+            _metric("Items", counts.get("items")),
+            _metric("Open", counts.get("open")),
+            _metric("High priority", priority_counts.get("high", 0)),
+            _metric("Normal priority", priority_counts.get("normal", 0)),
+            _metric("Low priority", priority_counts.get("low", 0)),
+            "</section>",
+            "<section>",
+            "<h2>Action Types</h2>",
+            _curation_action_table(payload.get("action_counts", {})),
+            "</section>",
+            "<section>",
+            "<h2>Queue Items</h2>",
+            _curation_queue_table(payload.get("items", [])),
             "</section>",
             "<section>",
             "<h2>Build Provenance</h2>",
@@ -1644,6 +1891,43 @@ def _graph_node_link(node_id: Any, node_by_id: dict[str, dict[str, Any]]) -> str
     if href:
         return f'<a href="{escape(str(href), quote=True)}">{escape(label)}</a>'
     return escape(label)
+
+
+def _curation_action_table(action_counts: dict[str, int]) -> str:
+    if not action_counts:
+        return '<p class="empty">No curation actions available.</p>'
+    rows = [
+        {"action_type": action_type, "count": count}
+        for action_type, count in sorted(action_counts.items(), key=lambda item: item[0])
+    ]
+    return _html_table(rows, [("action_type", "Action"), ("count", "Items")])
+
+
+def _curation_queue_table(items: list[dict[str, Any]]) -> str:
+    if not items:
+        return '<p class="empty">No curation queue items available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for label in ["Action", "Priority", "Node", "Type", "Message", "Next step"]:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for item in items:
+        label = str(item.get("node_label") or item.get("node_id") or item.get("source_issue_id"))
+        href = item.get("href")
+        parts.append("<tr>")
+        parts.append(f"<td>{escape(_format_cell(item.get('action_type')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(item.get('priority')))}</td>")
+        if href:
+            parts.append(
+                f'<td><a href="{escape(str(href), quote=True)}">{escape(label)}</a></td>'
+            )
+        else:
+            parts.append(f"<td>{escape(label)}</td>")
+        parts.append(f"<td>{escape(_format_cell(item.get('node_type')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(item.get('message')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(item.get('suggested_next_step')))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
 
 
 def _dataset_structure(detail: dict[str, Any]) -> str:
