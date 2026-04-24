@@ -40,6 +40,7 @@ from behavtaskatlas.ibl import (
     write_summary_csv,
 )
 from behavtaskatlas.models import SCHEMA_MODELS, CanonicalTrial
+from behavtaskatlas.static_site import build_static_index_payload, write_static_index_html
 from behavtaskatlas.validation import validate_repository
 
 
@@ -218,6 +219,21 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    site_index_parser = subparsers.add_parser(
+        "site-index",
+        help="Render a static index linking generated vertical-slice reports",
+    )
+    site_index_parser.add_argument(
+        "--derived-dir",
+        default="derived",
+        help="Derived artifact root containing generated slice reports",
+    )
+    site_index_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional index HTML output path",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -275,6 +291,11 @@ def main(argv: list[str] | None = None) -> int:
             aggregate_kernel_svg=Path(args.aggregate_kernel_svg)
             if args.aggregate_kernel_svg
             else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "site-index":
+        return _site_index(
+            derived_dir=Path(args.derived_dir),
             out_file=Path(args.out_file) if args.out_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
@@ -656,6 +677,16 @@ def _clicks_report(
             "Aggregate kernel SVG not found, wrote report without inline plot: "
             f"{kernel_svg_path}"
         )
+    return 0
+
+
+def _site_index(*, derived_dir: Path, out_file: Path | None) -> int:
+    index_path = out_file or derived_dir / "index.html"
+    payload = build_static_index_payload(derived_dir=derived_dir, index_path=index_path)
+    write_static_index_html(index_path, payload)
+    available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
+    print(f"Wrote static index to {index_path}")
+    print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
 
 

@@ -78,6 +78,7 @@ uv run behavtaskatlas clicks-analyze --session-id B075-parsed
 uv run behavtaskatlas clicks-batch --mat-dir data/raw/brody_clicks/extracted --max-files 5
 uv run behavtaskatlas clicks-aggregate
 uv run behavtaskatlas clicks-report
+uv run behavtaskatlas site-index
 ```
 
 The clicks archive is large and remains ignored under `data/raw/`; derived artifacts
@@ -87,6 +88,15 @@ Batch runs also write `derived/auditory_clicks/batch_summary.csv`. Aggregate run
 read those existing batch outputs and write a per-rat/gamma psychometric bias table,
 a cross-rat evidence-kernel summary, a JSON result, and an SVG plot. Report runs
 render those aggregate artifacts as a dependency-free static HTML page.
+
+Build the local static report index:
+
+```bash
+uv run behavtaskatlas site-index
+```
+
+This writes `derived/index.html`, linking available vertical-slice reports and
+generated analysis artifacts without committing raw or derived data.
 
 ## Repository Layout
 

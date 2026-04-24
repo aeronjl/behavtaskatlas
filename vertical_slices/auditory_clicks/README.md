@@ -141,4 +141,4 @@ The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP devel
 
 1. Upgrade the descriptive evidence kernel to a multivariate click-time weighting model.
 2. Decide whether to support MATLAB v7.3/HDF5 files if future archive releases require it.
-3. Add a first public static index that can link this slice report to other task slices.
+3. Add a matching static report for the IBL visual-decision slice so the site index has two complete report pages.
