@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 21:49:40 BST - The atlas graph is now an exported artifact
+
+The static build now writes `derived/graph.html` and `derived/graph.json` from the same catalog payload as the table and detail pages. The graph has typed nodes for task families, protocols, datasets, and vertical slices, plus typed edges for family-protocol, family-slice, protocol-dataset, protocol-slice, and dataset-slice relationships.
+
+This makes the atlas network first-class without adding infrastructure. HTML supports inspection, while JSON gives future tooling a stable graph-shaped contract for search, visualization, QA checks, and eventual API or database loading.
+
 ## 2026-04-24 21:22:47 BST - Dataset pages complete the first task-data loop
 
 The static catalog now writes one detail page per dataset and links dataset rows plus protocol-page dataset references into those pages. Dataset pages expose source access, license, data formats, expected trial-table mapping, linked protocols, linked report-backed slices, references, provenance, and caveats.

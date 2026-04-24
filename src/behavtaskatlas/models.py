@@ -267,6 +267,7 @@ class ReportManifest(StrictModel):
     derived_dir: str
     manifest_link: str
     catalog_link: str | None = None
+    graph_link: str | None = None
     comparison_rows: list[ManifestComparisonRow]
     slices: list[ManifestSlice]
 
@@ -410,6 +411,8 @@ class CatalogPayload(StrictModel):
     derived_dir: str
     catalog_json_link: str
     report_index_link: str
+    graph_link: str
+    graph_json_link: str
     counts: dict[str, int]
     task_families: list[CatalogFamilyRow]
     protocols: list[CatalogProtocolRow]
@@ -417,6 +420,35 @@ class CatalogPayload(StrictModel):
     datasets: list[CatalogDatasetRow]
     dataset_details: list[CatalogDatasetDetail]
     vertical_slices: list[CatalogSliceRow]
+
+
+class RelationshipGraphNode(StrictModel):
+    node_id: str
+    node_type: str
+    label: str
+    href: str | None = None
+    status: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class RelationshipGraphEdge(StrictModel):
+    source: str
+    target: str
+    edge_type: str
+    label: str
+
+
+class RelationshipGraphPayload(StrictModel):
+    graph_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    catalog_link: str
+    graph_json_link: str
+    counts: dict[str, int]
+    nodes: list[RelationshipGraphNode]
+    edges: list[RelationshipGraphEdge]
 
 
 Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
@@ -436,6 +468,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "canonical_trial": CanonicalTrial,
     "report_manifest": ReportManifest,
     "catalog": CatalogPayload,
+    "relationship_graph": RelationshipGraphPayload,
 }
 
 

@@ -13,6 +13,7 @@ from behavtaskatlas.models import (
     CatalogPayload,
     Dataset,
     Protocol,
+    RelationshipGraphPayload,
     ReportManifest,
     TaskFamily,
     VerticalSlice,
@@ -27,12 +28,14 @@ def build_static_index_payload(
     index_path: Path,
     manifest_path: Path | None = None,
     catalog_path: Path | None = None,
+    graph_path: Path | None = None,
     root: Path = Path("."),
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
     manifest_path = manifest_path or index_path.with_name("manifest.json")
     catalog_path = catalog_path or index_path.with_name("catalog.html")
+    graph_path = graph_path or index_path.with_name("graph.html")
     records = load_vertical_slice_records(root)
     slices = [
         _vertical_slice_payload(
@@ -52,6 +55,7 @@ def build_static_index_payload(
         "derived_dir": str(derived_dir),
         "manifest_link": _relative_link(manifest_path, index_path),
         "catalog_link": _relative_link(catalog_path, index_path),
+        "graph_link": _relative_link(graph_path, index_path),
         "comparison_rows": build_slice_comparison_rows(slices),
         "slices": slices,
     }
@@ -75,11 +79,15 @@ def build_catalog_payload(
     catalog_path: Path,
     catalog_json_path: Path | None = None,
     report_index_path: Path | None = None,
+    graph_path: Path | None = None,
+    graph_json_path: Path | None = None,
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
     catalog_json_path = catalog_json_path or catalog_path.with_suffix(".json")
     report_index_path = report_index_path or catalog_path.with_name("index.html")
+    graph_path = graph_path or catalog_path.with_name("graph.html")
+    graph_json_path = graph_json_path or graph_path.with_suffix(".json")
     records = load_repository_records(root)
     task_families = sorted(
         [record for record in records if isinstance(record, TaskFamily)],
@@ -125,6 +133,8 @@ def build_catalog_payload(
         "derived_dir": str(derived_dir),
         "catalog_json_link": _relative_link(catalog_json_path, catalog_path),
         "report_index_link": _relative_link(report_index_path, catalog_path),
+        "graph_link": _relative_link(graph_path, catalog_path),
+        "graph_json_link": _relative_link(graph_json_path, catalog_path),
         "counts": {
             "task_families": len(task_families),
             "protocols": len(protocols),
@@ -203,6 +213,53 @@ def write_static_catalog_html(path: Path, payload: dict[str, Any]) -> None:
 def write_static_catalog_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     CatalogPayload.model_validate(payload)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def build_relationship_graph_payload(
+    catalog_payload: dict[str, Any],
+    *,
+    graph_path: Path,
+    graph_json_path: Path | None = None,
+    catalog_path: Path | None = None,
+) -> dict[str, Any]:
+    graph_json_path = graph_json_path or graph_path.with_suffix(".json")
+    catalog_path = catalog_path or graph_path.with_name("catalog.html")
+    nodes = _relationship_graph_nodes(
+        catalog_payload,
+        graph_path=graph_path,
+        catalog_path=catalog_path,
+    )
+    edges = _relationship_graph_edges(catalog_payload)
+    return {
+        "graph_schema_version": "0.1.0",
+        "title": "behavtaskatlas Relationship Graph",
+        "generated_at": catalog_payload.get("generated_at"),
+        "behavtaskatlas_commit": catalog_payload.get("behavtaskatlas_commit"),
+        "behavtaskatlas_git_dirty": catalog_payload.get("behavtaskatlas_git_dirty"),
+        "catalog_link": _relative_link(catalog_path, graph_path),
+        "graph_json_link": _relative_link(graph_json_path, graph_path),
+        "counts": {
+            "nodes": len(nodes),
+            "edges": len(edges),
+            "task_families": len(catalog_payload.get("task_families", [])),
+            "protocols": len(catalog_payload.get("protocols", [])),
+            "datasets": len(catalog_payload.get("datasets", [])),
+            "vertical_slices": len(catalog_payload.get("vertical_slices", [])),
+        },
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
+def write_static_graph_html(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(static_relationship_graph_html(payload), encoding="utf-8")
+
+
+def write_static_graph_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    RelationshipGraphPayload.model_validate(payload)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -533,6 +590,162 @@ def _combined_report_status(slice_payloads: list[dict[str, Any]]) -> str:
     return "analysis pending"
 
 
+def _relationship_graph_nodes(
+    catalog_payload: dict[str, Any],
+    *,
+    graph_path: Path,
+    catalog_path: Path,
+) -> list[dict[str, Any]]:
+    nodes = []
+    for family in catalog_payload.get("task_families", []):
+        nodes.append(
+            {
+                "node_id": family["family_id"],
+                "node_type": "task_family",
+                "label": family["name"],
+                "href": None,
+                "status": family.get("curation_status"),
+                "metadata": {
+                    "protocol_count": family.get("protocol_count"),
+                    "dataset_count": family.get("dataset_count"),
+                    "slice_count": family.get("slice_count"),
+                    "modalities": family.get("modalities", []),
+                    "choice_types": family.get("choice_types", []),
+                },
+            }
+        )
+    for protocol in catalog_payload.get("protocols", []):
+        nodes.append(
+            {
+                "node_id": protocol["protocol_id"],
+                "node_type": "protocol",
+                "label": protocol["name"],
+                "href": _catalog_relative_href(
+                    protocol.get("detail_link"),
+                    catalog_path=catalog_path,
+                    target_path=graph_path,
+                ),
+                "status": protocol.get("report_status"),
+                "metadata": {
+                    "family_id": protocol.get("family_id"),
+                    "family_name": protocol.get("family_name"),
+                    "species": protocol.get("species", []),
+                    "modalities": protocol.get("modalities", []),
+                    "evidence_type": protocol.get("evidence_type"),
+                    "choice_type": protocol.get("choice_type"),
+                    "curation_status": protocol.get("curation_status"),
+                },
+            }
+        )
+    for dataset in catalog_payload.get("datasets", []):
+        nodes.append(
+            {
+                "node_id": dataset["dataset_id"],
+                "node_type": "dataset",
+                "label": dataset["name"],
+                "href": _catalog_relative_href(
+                    dataset.get("detail_link"),
+                    catalog_path=catalog_path,
+                    target_path=graph_path,
+                ),
+                "status": dataset.get("curation_status"),
+                "metadata": {
+                    "species": dataset.get("species", []),
+                    "license": dataset.get("license"),
+                    "protocol_ids": dataset.get("protocol_ids", []),
+                    "slice_ids": dataset.get("slice_ids", []),
+                },
+            }
+        )
+    for slice_row in catalog_payload.get("vertical_slices", []):
+        nodes.append(
+            {
+                "node_id": slice_row["slice_id"],
+                "node_type": "vertical_slice",
+                "label": slice_row["title"],
+                "href": _catalog_relative_href(
+                    slice_row.get("primary_link"),
+                    catalog_path=catalog_path,
+                    target_path=graph_path,
+                ),
+                "status": slice_row.get("report_status"),
+                "metadata": {
+                    "family_id": slice_row.get("family_id"),
+                    "protocol_id": slice_row.get("protocol_id"),
+                    "dataset_id": slice_row.get("dataset_id"),
+                    "species": slice_row.get("species"),
+                    "modality": slice_row.get("modality"),
+                    "stimulus_metric": slice_row.get("stimulus_metric"),
+                    "evidence_type": slice_row.get("evidence_type"),
+                    "artifact_status": slice_row.get("artifact_status"),
+                },
+            }
+        )
+    return sorted(nodes, key=lambda node: (node["node_type"], node["label"]))
+
+
+def _relationship_graph_edges(catalog_payload: dict[str, Any]) -> list[dict[str, str]]:
+    known_ids = {
+        *[row["family_id"] for row in catalog_payload.get("task_families", [])],
+        *[row["protocol_id"] for row in catalog_payload.get("protocols", [])],
+        *[row["dataset_id"] for row in catalog_payload.get("datasets", [])],
+        *[row["slice_id"] for row in catalog_payload.get("vertical_slices", [])],
+    }
+    edges: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def add(source: str | None, target: str | None, edge_type: str, label: str) -> None:
+        if not source or not target or source not in known_ids or target not in known_ids:
+            return
+        key = (source, target, edge_type)
+        if key in seen:
+            return
+        seen.add(key)
+        edges.append({"source": source, "target": target, "edge_type": edge_type, "label": label})
+
+    for protocol in catalog_payload.get("protocols", []):
+        add(
+            protocol.get("family_id"),
+            protocol.get("protocol_id"),
+            "family_protocol",
+            "family has protocol",
+        )
+        for dataset_id in protocol.get("dataset_ids", []):
+            add(
+                protocol.get("protocol_id"),
+                dataset_id,
+                "protocol_dataset",
+                "protocol uses dataset",
+            )
+        for slice_id in protocol.get("slice_ids", []):
+            add(
+                protocol.get("protocol_id"),
+                slice_id,
+                "protocol_slice",
+                "protocol has slice",
+            )
+    for slice_row in catalog_payload.get("vertical_slices", []):
+        add(
+            slice_row.get("family_id"),
+            slice_row.get("slice_id"),
+            "family_slice",
+            "family has slice",
+        )
+        add(
+            slice_row.get("protocol_id"),
+            slice_row.get("slice_id"),
+            "protocol_slice",
+            "protocol has slice",
+        )
+        add(
+            slice_row.get("dataset_id"),
+            slice_row.get("slice_id"),
+            "dataset_slice",
+            "dataset backs slice",
+        )
+    return sorted(edges, key=lambda edge: (edge["edge_type"], edge["source"], edge["target"]))
+
+
 def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for item in slices:
@@ -601,6 +814,12 @@ def static_index_html(payload: dict[str, Any]) -> str:
         html.append(
             f'<p class="manifest-link"><a href="{escape(str(catalog_link), quote=True)}">'
             "Task catalog</a></p>"
+        )
+    graph_link = payload.get("graph_link")
+    if graph_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(graph_link), quote=True)}">'
+            "Relationship graph</a></p>"
         )
     html.extend(
         [
@@ -685,6 +904,12 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
             f'<p class="manifest-link"><a href="{escape(str(catalog_json_link), quote=True)}">'
             "Machine-readable catalog JSON</a></p>"
         )
+    graph_link = payload.get("graph_link")
+    if graph_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(graph_link), quote=True)}">'
+            "Relationship graph</a></p>"
+        )
     html.extend(
         [
             "</header>",
@@ -754,6 +979,80 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
             ),
             "</section>",
             _catalog_filter_script(),
+            "</main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+    return "\n".join(html) + "\n"
+
+
+def static_relationship_graph_html(payload: dict[str, Any]) -> str:
+    counts = payload.get("counts", {})
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(str(payload.get('title', 'Relationship Graph')))}</title>",
+        "<style>",
+        _index_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        '<p class="eyebrow">behavtaskatlas graph</p>',
+        f"<h1>{escape(str(payload.get('title', 'Relationship Graph')))}</h1>",
+        "<p class=\"lede\">Generated protocol-dataset-slice network from the committed "
+        "catalog records. This page and JSON export make atlas relationships explicit "
+        "without requiring a backend graph database.</p>",
+    ]
+    catalog_link = payload.get("catalog_link")
+    if catalog_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(catalog_link), quote=True)}">'
+            "Back to catalog</a></p>"
+        )
+    graph_json_link = payload.get("graph_json_link")
+    if graph_json_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(graph_json_link), quote=True)}">'
+            "Machine-readable graph JSON</a></p>"
+        )
+    html.extend(
+        [
+            "</header>",
+            '<section class="summary" aria-label="Graph summary">',
+            _metric("Nodes", counts.get("nodes")),
+            _metric("Edges", counts.get("edges")),
+            _metric("Protocols", counts.get("protocols")),
+            _metric("Datasets", counts.get("datasets")),
+            _metric("Slices", counts.get("vertical_slices")),
+            "</section>",
+            "<section>",
+            "<h2>Node Types</h2>",
+            _graph_type_table(payload.get("nodes", [])),
+            "</section>",
+            "<section>",
+            "<h2>Nodes</h2>",
+            _graph_node_table(payload.get("nodes", [])),
+            "</section>",
+            "<section>",
+            "<h2>Edges</h2>",
+            _graph_edge_table(payload.get("edges", []), payload.get("nodes", [])),
+            "</section>",
+            "<section>",
+            "<h2>Build Provenance</h2>",
+            _definition_list(
+                [
+                    ("Generated", payload.get("generated_at")),
+                    ("Commit", payload.get("behavtaskatlas_commit")),
+                    ("Git dirty", payload.get("behavtaskatlas_git_dirty")),
+                ]
+            ),
+            "</section>",
             "</main>",
             "</body>",
             "</html>",
@@ -1092,6 +1391,73 @@ def _protocol_connections(detail: dict[str, Any]) -> str:
     else:
         parts.append('<p class="empty">No report-backed vertical slice yet.</p>')
     return "\n".join(parts)
+
+
+def _graph_type_table(nodes: list[dict[str, Any]]) -> str:
+    counts: dict[str, int] = {}
+    for node in nodes:
+        node_type = str(node.get("node_type", "unknown"))
+        counts[node_type] = counts.get(node_type, 0) + 1
+    rows = [
+        {"node_type": node_type, "count": count}
+        for node_type, count in sorted(counts.items(), key=lambda item: item[0])
+    ]
+    return _html_table(rows, [("node_type", "Node type"), ("count", "Count")])
+
+
+def _graph_node_table(nodes: list[dict[str, Any]]) -> str:
+    if not nodes:
+        return '<p class="empty">No graph nodes available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for label in ["Node", "Type", "Status", "ID"]:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for node in nodes:
+        label = str(node.get("label") or node.get("node_id") or "")
+        href = node.get("href")
+        parts.append("<tr>")
+        if href:
+            parts.append(
+                f'<td><a href="{escape(str(href), quote=True)}">{escape(label)}</a></td>'
+            )
+        else:
+            parts.append(f"<td>{escape(label)}</td>")
+        parts.append(f"<td>{escape(_format_cell(node.get('node_type')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(node.get('status')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(node.get('node_id')))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _graph_edge_table(edges: list[dict[str, Any]], nodes: list[dict[str, Any]]) -> str:
+    if not edges:
+        return '<p class="empty">No graph edges available.</p>'
+    node_by_id = {node["node_id"]: node for node in nodes}
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for label in ["Source", "Relationship", "Target", "Type"]:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for edge in edges:
+        parts.append("<tr>")
+        parts.append(f"<td>{_graph_node_link(edge.get('source'), node_by_id)}</td>")
+        parts.append(f"<td>{escape(_format_cell(edge.get('label')))}</td>")
+        parts.append(f"<td>{_graph_node_link(edge.get('target'), node_by_id)}</td>")
+        parts.append(f"<td>{escape(_format_cell(edge.get('edge_type')))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _graph_node_link(node_id: Any, node_by_id: dict[str, dict[str, Any]]) -> str:
+    node = node_by_id.get(str(node_id))
+    if node is None:
+        return escape(_format_cell(node_id))
+    label = str(node.get("label") or node.get("node_id") or "")
+    href = node.get("href")
+    if href:
+        return f'<a href="{escape(str(href), quote=True)}">{escape(label)}</a>'
+    return escape(label)
 
 
 def _dataset_structure(detail: dict[str, Any]) -> str:
@@ -1872,6 +2238,20 @@ def _link_if_exists(path: Path, index_path: Path) -> str | None:
 
 def _relative_link(path: Path, index_path: Path) -> str:
     return os.path.relpath(path, index_path.parent).replace(os.sep, "/")
+
+
+def _catalog_relative_href(
+    href: Any,
+    *,
+    catalog_path: Path,
+    target_path: Path,
+) -> str | None:
+    if not href:
+        return None
+    href_text = str(href)
+    if "://" in href_text or href_text.startswith("#"):
+        return href_text
+    return _relative_link(catalog_path.parent / href_text, target_path)
 
 
 def _protocol_detail_link(protocol_id: str) -> str:

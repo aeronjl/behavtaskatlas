@@ -347,6 +347,18 @@
       "title": "Generated At",
       "type": "string"
     },
+    "graph_link": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Graph Link"
+    },
     "manifest_link": {
       "title": "Manifest Link",
       "type": "string"

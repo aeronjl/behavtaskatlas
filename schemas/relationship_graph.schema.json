@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "RelationshipGraphEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "edge_type": {
+          "title": "Edge Type",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "edge_type",
+        "label"
+      ],
+      "title": "RelationshipGraphEdge",
+      "type": "object"
+    },
+    "RelationshipGraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "node_id": {
+          "title": "Node Id",
+          "type": "string"
+        },
+        "node_type": {
+          "title": "Node Type",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        }
+      },
+      "required": [
+        "node_id",
+        "node_type",
+        "label"
+      ],
+      "title": "RelationshipGraphNode",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "catalog_link": {
+      "title": "Catalog Link",
+      "type": "string"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/RelationshipGraphEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "graph_json_link": {
+      "title": "Graph Json Link",
+      "type": "string"
+    },
+    "graph_schema_version": {
+      "title": "Graph Schema Version",
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/RelationshipGraphNode"
+      },
+      "title": "Nodes",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "graph_schema_version",
+    "title",
+    "generated_at",
+    "catalog_link",
+    "graph_json_link",
+    "counts",
+    "nodes",
+    "edges"
+  ],
+  "title": "RelationshipGraphPayload",
+  "type": "object"
+}

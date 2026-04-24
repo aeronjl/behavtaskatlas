@@ -786,6 +786,14 @@
       "title": "Generated At",
       "type": "string"
     },
+    "graph_json_link": {
+      "title": "Graph Json Link",
+      "type": "string"
+    },
+    "graph_link": {
+      "title": "Graph Link",
+      "type": "string"
+    },
     "protocol_details": {
       "items": {
         "$ref": "#/$defs/CatalogProtocolDetail"
@@ -830,6 +838,8 @@
     "derived_dir",
     "catalog_json_link",
     "report_index_link",
+    "graph_link",
+    "graph_json_link",
     "counts",
     "task_families",
     "protocols",

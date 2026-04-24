@@ -56,10 +56,13 @@ from behavtaskatlas.rdm import (
 )
 from behavtaskatlas.static_site import (
     build_catalog_payload,
+    build_relationship_graph_payload,
     build_static_index_payload,
     write_static_catalog_html,
     write_static_catalog_json,
     write_static_dataset_pages,
+    write_static_graph_html,
+    write_static_graph_json,
     write_static_index_html,
     write_static_manifest_json,
     write_static_protocol_pages,
@@ -394,6 +397,16 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional machine-readable catalog JSON output path",
     )
+    site_index_parser.add_argument(
+        "--graph-file",
+        default=None,
+        help="Optional relationship graph HTML output path",
+    )
+    site_index_parser.add_argument(
+        "--graph-json-file",
+        default=None,
+        help="Optional machine-readable relationship graph JSON output path",
+    )
 
     args = parser.parse_args(argv)
 
@@ -498,6 +511,8 @@ def main(argv: list[str] | None = None) -> int:
             catalog_json_file=Path(args.catalog_json_file)
             if args.catalog_json_file
             else None,
+            graph_file=Path(args.graph_file) if args.graph_file else None,
+            graph_json_file=Path(args.graph_json_file) if args.graph_json_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -1127,16 +1142,21 @@ def _site_index(
     manifest_file: Path | None,
     catalog_file: Path | None,
     catalog_json_file: Path | None,
+    graph_file: Path | None,
+    graph_json_file: Path | None,
 ) -> int:
     index_path = out_file or derived_dir / "index.html"
     manifest_path = manifest_file or index_path.with_name("manifest.json")
     catalog_path = catalog_file or index_path.with_name("catalog.html")
     catalog_json_path = catalog_json_file or index_path.with_name("catalog.json")
+    graph_path = graph_file or index_path.with_name("graph.html")
+    graph_json_path = graph_json_file or index_path.with_name("graph.json")
     payload = build_static_index_payload(
         derived_dir=derived_dir,
         index_path=index_path,
         manifest_path=manifest_path,
         catalog_path=catalog_path,
+        graph_path=graph_path,
     )
     write_static_index_html(index_path, payload)
     write_static_manifest_json(manifest_path, payload)
@@ -1146,9 +1166,19 @@ def _site_index(
         catalog_path=catalog_path,
         catalog_json_path=catalog_json_path,
         report_index_path=index_path,
+        graph_path=graph_path,
+        graph_json_path=graph_json_path,
     )
     write_static_catalog_html(catalog_path, catalog_payload)
     write_static_catalog_json(catalog_json_path, catalog_payload)
+    graph_payload = build_relationship_graph_payload(
+        catalog_payload,
+        graph_path=graph_path,
+        graph_json_path=graph_json_path,
+        catalog_path=catalog_path,
+    )
+    write_static_graph_html(graph_path, graph_payload)
+    write_static_graph_json(graph_json_path, graph_payload)
     protocol_pages = write_static_protocol_pages(catalog_path, catalog_payload)
     dataset_pages = write_static_dataset_pages(catalog_path, catalog_payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
@@ -1156,6 +1186,8 @@ def _site_index(
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog to {catalog_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
+    print(f"Wrote relationship graph to {graph_path}")
+    print(f"Wrote relationship graph JSON to {graph_json_path}")
     print(f"Wrote {len(protocol_pages)} protocol detail pages")
     print(f"Wrote {len(dataset_pages)} dataset detail pages")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")

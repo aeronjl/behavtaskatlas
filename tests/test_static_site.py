@@ -4,11 +4,14 @@ from pathlib import Path
 from behavtaskatlas.ibl import DEFAULT_IBL_EID
 from behavtaskatlas.static_site import (
     build_catalog_payload,
+    build_relationship_graph_payload,
     build_static_index_payload,
     static_catalog_html,
     static_index_html,
+    static_relationship_graph_html,
     write_static_catalog_json,
     write_static_dataset_pages,
+    write_static_graph_json,
     write_static_manifest_json,
     write_static_protocol_pages,
 )
@@ -60,6 +63,7 @@ def test_static_index_links_available_slice_reports(tmp_path) -> None:
     assert "Atlas Comparison" in html
     assert "Machine-readable manifest JSON" in html
     assert "Task catalog" in html
+    assert "Relationship graph" in html
     assert "signed click-count difference" in html
     assert "auditory_clicks/report.html" in html
     assert "Open psychometric SVG" in html
@@ -153,6 +157,7 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["manifest_schema_version"] == "0.1.0"
     assert loaded["manifest_link"] == "manifest.json"
     assert loaded["catalog_link"] == "catalog.html"
+    assert loaded["graph_link"] == "graph.html"
     assert len(loaded["comparison_rows"]) == 3
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
@@ -178,19 +183,32 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
 
     catalog_path = derived_dir / "catalog.html"
     catalog_json_path = derived_dir / "catalog.json"
+    graph_path = derived_dir / "graph.html"
+    graph_json_path = derived_dir / "graph.json"
     payload = build_catalog_payload(
         root=root,
         derived_dir=derived_dir,
         catalog_path=catalog_path,
         catalog_json_path=catalog_json_path,
         report_index_path=derived_dir / "index.html",
+        graph_path=graph_path,
+        graph_json_path=graph_json_path,
     )
     html = static_catalog_html(payload)
+    graph_payload = build_relationship_graph_payload(
+        payload,
+        graph_path=graph_path,
+        graph_json_path=graph_json_path,
+        catalog_path=catalog_path,
+    )
+    graph_html = static_relationship_graph_html(graph_payload)
     write_static_catalog_json(catalog_json_path, payload)
+    write_static_graph_json(graph_json_path, graph_payload)
     protocol_pages = write_static_protocol_pages(catalog_path, payload)
     dataset_pages = write_static_dataset_pages(catalog_path, payload)
 
     loaded = json.loads(catalog_json_path.read_text(encoding="utf-8"))
+    loaded_graph = json.loads(graph_json_path.read_text(encoding="utf-8"))
     rdm_protocol = next(
         row
         for row in payload["protocols"]
@@ -231,6 +249,35 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert len(payload["dataset_details"]) == 3
     assert len(protocol_pages) == 9
     assert len(dataset_pages) == 3
+    assert payload["graph_link"] == "graph.html"
+    assert payload["graph_json_link"] == "graph.json"
+    assert graph_payload["counts"]["nodes"] == 18
+    assert graph_payload["counts"]["edges"] == 21
+    assert graph_payload["catalog_link"] == "catalog.html"
+    assert graph_payload["graph_json_link"] == "graph.json"
+    assert loaded_graph["graph_schema_version"] == "0.1.0"
+    assert any(
+        node["node_id"] == "protocol.random-dot-motion-classic-macaque"
+        and node["href"] == "protocol-random-dot-motion-classic-macaque.html"
+        for node in graph_payload["nodes"]
+    )
+    assert any(
+        node["node_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+        and node["href"] == "dataset-roitman-shadlen-rdm-pyddm.html"
+        for node in graph_payload["nodes"]
+    )
+    assert {
+        "source": "protocol.random-dot-motion-classic-macaque",
+        "target": "dataset.roitman-shadlen-rdm-pyddm",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.roitman-shadlen-rdm-pyddm",
+        "target": "slice.random-dot-motion",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
     assert rdm_protocol["detail_link"] == "protocol-random-dot-motion-classic-macaque.html"
@@ -269,6 +316,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "Protocol Catalog" in html
     assert 'href="protocol-random-dot-motion-classic-macaque.html"' in html
     assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in html
+    assert 'href="graph.html"' in html
+    assert "Relationship Graph" in graph_html
+    assert "protocol uses dataset" in graph_html
+    assert 'href="protocol-random-dot-motion-classic-macaque.html"' in graph_html
+    assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in graph_html
     assert 'id="catalog-search"' in html
     assert 'id="species-filter"' in html
     assert 'id="modality-filter"' in html
