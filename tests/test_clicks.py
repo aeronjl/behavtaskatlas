@@ -2,6 +2,8 @@ import pytest
 
 from behavtaskatlas.clicks import (
     analyze_brody_clicks,
+    analyze_brody_clicks_evidence_kernel,
+    evidence_kernel_svg,
     harmonize_brody_clicks_trial,
     harmonize_brody_clicks_trials,
 )
@@ -109,6 +111,71 @@ def test_analyze_brody_clicks_returns_click_difference_metrics() -> None:
     assert result["prior_results"][0]["n_click_difference_levels"] == 4
     assert result["prior_results"][0]["empirical_bias_click_difference"] == 0.0
     assert result["prior_results"][0]["fit"]["method"] == "four_parameter_logistic_binomial_mle"
+
+
+def test_analyze_brody_clicks_evidence_kernel_uses_click_timing() -> None:
+    trials = [
+        harmonize_brody_clicks_trial(
+            {
+                "nL": 1,
+                "nR": 1,
+                "sd": 1.0,
+                "gr": 1,
+                "hh": 1,
+                "left_click_times": [0.75],
+                "right_click_times": [0.25],
+            },
+            session_id="rat-a-parsed",
+            trial_index=0,
+        ),
+        harmonize_brody_clicks_trial(
+            {
+                "nL": 1,
+                "nR": 1,
+                "sd": 1.0,
+                "gr": 0,
+                "hh": 1,
+                "left_click_times": [0.25],
+                "right_click_times": [0.75],
+            },
+            session_id="rat-a-parsed",
+            trial_index=1,
+        ),
+    ]
+
+    result = analyze_brody_clicks_evidence_kernel(trials, n_bins=2)
+
+    assert result["analysis_type"] == "choice_triggered_evidence_kernel"
+    assert result["n_analyzed_trials"] == 2
+    assert result["summary_rows"][0]["choice_difference"] == 2.0
+    assert result["summary_rows"][1]["choice_difference"] == -2.0
+    assert result["summary_rows"][0]["point_biserial_r"] == pytest.approx(1.0)
+    assert result["summary_rows"][1]["point_biserial_r"] == pytest.approx(-1.0)
+    assert result["summary_rows"][0]["normalized_weight"] == pytest.approx(0.5)
+
+
+def test_evidence_kernel_svg_contains_axis_label() -> None:
+    svg = evidence_kernel_svg(
+        [
+            {
+                "bin_index": 0,
+                "bin_start": 0.0,
+                "bin_end": 0.5,
+                "n_trials": 2,
+                "n_right_choice": 1,
+                "n_left_choice": 1,
+                "mean_signed_evidence": 0.0,
+                "mean_signed_evidence_right_choice": 1.0,
+                "mean_signed_evidence_left_choice": -1.0,
+                "choice_difference": 2.0,
+                "point_biserial_r": 1.0,
+                "normalized_weight": 1.0,
+            }
+        ]
+    )
+
+    assert "<svg" in svg
+    assert "Normalized stimulus time" in svg
 
 
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:

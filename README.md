@@ -78,7 +78,8 @@ uv run behavtaskatlas clicks-analyze --session-id B075-parsed
 ```
 
 The clicks archive is large and remains ignored under `data/raw/`; derived artifacts
-are written under ignored `derived/auditory_clicks/`.
+are written under ignored `derived/auditory_clicks/`. The clicks analysis emits
+both a baseline psychometric summary and a descriptive click-time evidence kernel.
 
 ## Repository Layout
 

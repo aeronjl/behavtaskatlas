@@ -88,8 +88,10 @@ Verified local smoke run:
 - Source file: `B075.mat`
 - Parsed trials: 11,285
 - Summary rows: 181 grouped by gamma context and signed click-count difference
-- Analysis artifacts: `psychometric_summary.csv`, `analysis_result.json`, `psychometric.svg`
+- Psychometric artifacts: `psychometric_summary.csv`, `analysis_result.json`, `psychometric.svg`
+- Evidence-kernel artifacts: `evidence_kernel_summary.csv`, `evidence_kernel_result.json`, `evidence_kernel.svg`
 - Prior contexts: `gamma=-1`, `gamma=-2`, `gamma=-4`, `gamma=1`, `gamma=2`, `gamma=4`
+- Kernel bins: 10 normalized stimulus-time bins; all 11,285 B075 parsed trials included
 - Output directory: `derived/auditory_clicks/B075-parsed/`
 
 ## Data Policy
@@ -98,6 +100,6 @@ The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP devel
 
 ## Next Steps
 
-1. Add an evidence-kernel or click-time weighting analysis after the baseline psychometric table.
-2. Batch the same harmonize/analyze flow over several rats to test per-rat variability.
+1. Batch the same harmonize/analyze flow over several rats to test per-rat variability.
+2. Upgrade the descriptive evidence kernel to a multivariate click-time weighting model.
 3. Decide whether to support MATLAB v7.3/HDF5 files if future archive releases require it.

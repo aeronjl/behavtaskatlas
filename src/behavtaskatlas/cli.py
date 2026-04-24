@@ -10,8 +10,11 @@ from behavtaskatlas.clicks import (
     DEFAULT_CLICKS_DERIVED_DIR,
     DEFAULT_CLICKS_SESSION_ID,
     analyze_brody_clicks,
+    analyze_brody_clicks_evidence_kernel,
     brody_clicks_provenance_payload,
     load_brody_clicks_mat,
+    write_evidence_kernel_summary_csv,
+    write_evidence_kernel_svg,
 )
 from behavtaskatlas.ibl import (
     DEFAULT_DERIVED_DIR,
@@ -113,6 +116,12 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional explicit canonical trial CSV path",
     )
+    clicks_analyze_parser.add_argument(
+        "--kernel-bins",
+        type=int,
+        default=10,
+        help="Number of normalized time bins for the evidence-kernel analysis",
+    )
 
     args = parser.parse_args(argv)
 
@@ -146,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
             session_id=args.session_id,
             derived_dir=Path(args.derived_dir),
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+            kernel_bins=args.kernel_bins,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -313,6 +323,7 @@ def _clicks_analyze(
     session_id: str,
     derived_dir: Path,
     trials_csv: Path | None,
+    kernel_bins: int,
 ) -> int:
     session_dir = derived_dir / session_id
     trials_path = trials_csv or session_dir / "trials.csv"
@@ -326,10 +337,18 @@ def _clicks_analyze(
 
     trials = load_canonical_trials_csv(trials_path)
     result = analyze_brody_clicks(trials)
+    try:
+        kernel_result = analyze_brody_clicks_evidence_kernel(trials, n_bins=kernel_bins)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
     summary_path = session_dir / "psychometric_summary.csv"
     result_path = session_dir / "analysis_result.json"
     plot_path = session_dir / "psychometric.svg"
+    kernel_summary_path = session_dir / "evidence_kernel_summary.csv"
+    kernel_result_path = session_dir / "evidence_kernel_result.json"
+    kernel_plot_path = session_dir / "evidence_kernel.svg"
 
     write_summary_csv(summary_path, result["summary_rows"])
     write_analysis_json(result_path, result)
@@ -338,11 +357,17 @@ def _clicks_analyze(
         result["summary_rows"],
         x_axis_label=CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     )
+    write_evidence_kernel_summary_csv(kernel_summary_path, kernel_result["summary_rows"])
+    write_analysis_json(kernel_result_path, kernel_result)
+    write_evidence_kernel_svg(kernel_plot_path, kernel_result["summary_rows"])
 
     print(f"Analyzed {len(trials)} trials from {trials_path}")
     print(f"Wrote psychometric summary to {summary_path}")
     print(f"Wrote analysis result to {result_path}")
     print(f"Wrote psychometric plot to {plot_path}")
+    print(f"Wrote evidence-kernel summary to {kernel_summary_path}")
+    print(f"Wrote evidence-kernel result to {kernel_result_path}")
+    print(f"Wrote evidence-kernel plot to {kernel_plot_path}")
     return 0
 
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import math
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,20 @@ BRODY_CLICKS_DATASET_ID = "dataset.brody-lab-poisson-clicks-2009-2024"
 DEFAULT_CLICKS_DERIVED_DIR = Path("derived/auditory_clicks")
 DEFAULT_CLICKS_SESSION_ID = "B075-parsed"
 CLICKS_PSYCHOMETRIC_X_AXIS_LABEL = "Signed click-count difference (right minus left clicks)"
+EVIDENCE_KERNEL_SUMMARY_FIELDS = [
+    "bin_index",
+    "bin_start",
+    "bin_end",
+    "n_trials",
+    "n_right_choice",
+    "n_left_choice",
+    "mean_signed_evidence",
+    "mean_signed_evidence_right_choice",
+    "mean_signed_evidence_left_choice",
+    "choice_difference",
+    "point_biserial_r",
+    "normalized_weight",
+]
 
 
 def harmonize_brody_clicks_trial(
@@ -167,6 +183,147 @@ def analyze_brody_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
     )
 
 
+def analyze_brody_clicks_evidence_kernel(
+    trials: list[CanonicalTrial],
+    *,
+    n_bins: int = 10,
+) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    if n_bins <= 0:
+        raise ValueError("n_bins must be positive")
+
+    examples = [_trial_bin_evidence(trial, n_bins=n_bins) for trial in trials]
+    included = [example for example in examples if example is not None]
+    rows = _evidence_kernel_rows(included, n_bins=n_bins)
+    return {
+        "analysis_id": "analysis.auditory-clicks.evidence-kernel",
+        "analysis_type": "choice_triggered_evidence_kernel",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "protocol_id": BRODY_CLICKS_PROTOCOL_ID,
+        "dataset_id": BRODY_CLICKS_DATASET_ID,
+        "n_trials": len(trials),
+        "n_analyzed_trials": len(included),
+        "n_excluded_trials": len(trials) - len(included),
+        "n_bins": n_bins,
+        "time_axis": "normalized_stimulus_time",
+        "feature": "right minus left click count per normalized time bin",
+        "summary_rows": rows,
+        "caveats": [
+            (
+                "This is a descriptive choice-triggered evidence kernel, not a full "
+                "accumulation-model fit."
+            ),
+            (
+                "Click times are normalized by each trial's stimulus duration, so bins "
+                "compare relative rather than absolute stimulus time."
+            ),
+            "Only left and right response trials with click times and stimulus duration are used.",
+        ],
+    }
+
+
+def write_evidence_kernel_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=EVIDENCE_KERNEL_SUMMARY_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_evidence_kernel_svg(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(evidence_kernel_svg(rows), encoding="utf-8")
+
+
+def evidence_kernel_svg(rows: list[dict[str, Any]]) -> str:
+    width = 720
+    height = 420
+    left = 72
+    right = 28
+    top = 34
+    bottom = 68
+    plot_width = width - left - right
+    plot_height = height - top - bottom
+    if not rows:
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
+            '<text x="20" y="60">No evidence-kernel data available</text></svg>\n'
+        )
+
+    values = [
+        float(row["choice_difference"])
+        for row in rows
+        if row["choice_difference"] is not None
+    ]
+    if not values:
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
+            '<text x="20" y="60">No evidence-kernel data available</text></svg>\n'
+        )
+    y_limit = max(max(abs(value) for value in values), 1.0)
+
+    def x_scale(index: int) -> float:
+        return left + (index + 0.5) * plot_width / len(rows)
+
+    def y_scale(value: float) -> float:
+        return top + (0.5 - value / (2.0 * y_limit)) * plot_height
+
+    zero_y = y_scale(0.0)
+    bar_width = max(4.0, plot_width / len(rows) * 0.68)
+    elements = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+        f'<line x1="{left}" y1="{zero_y:.1f}" x2="{left + plot_width}" '
+        f'y2="{zero_y:.1f}" stroke="#222"/>',
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" '
+        'stroke="#222"/>',
+        f'<text x="{left + plot_width / 2}" y="{height - 20}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14">Normalized stimulus time</text>',
+        f'<text x="18" y="{top + plot_height / 2}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14" transform="rotate(-90 18 '
+        f'{top + plot_height / 2})">Right-choice minus left-choice evidence</text>',
+    ]
+
+    for y_value in [-y_limit, -y_limit / 2.0, 0.0, y_limit / 2.0, y_limit]:
+        y = y_scale(y_value)
+        elements.append(
+            f'<line x1="{left - 4}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}" '
+            'stroke="#ddd"/>'
+        )
+        elements.append(
+            f'<text x="{left - 10}" y="{y + 4:.1f}" text-anchor="end" '
+            f'font-family="sans-serif" font-size="11">{y_value:.2g}</text>'
+        )
+
+    for row in rows:
+        index = int(row["bin_index"])
+        value = float(row["choice_difference"] or 0.0)
+        x = x_scale(index)
+        y = y_scale(value)
+        top_y = min(y, zero_y)
+        height_px = abs(zero_y - y)
+        color = "#1f77b4" if value >= 0 else "#d62728"
+        elements.append(
+            f'<rect x="{x - bar_width / 2:.1f}" y="{top_y:.1f}" width="{bar_width:.1f}" '
+            f'height="{height_px:.1f}" fill="{color}" fill-opacity="0.78"/>'
+        )
+        elements.append(
+            f'<text x="{x:.1f}" y="{height - 46}" text-anchor="middle" '
+            f'font-family="sans-serif" font-size="11">{float(row["bin_start"]):.1f}</text>'
+        )
+
+    elements.append(
+        f'<text x="{left + plot_width}" y="{height - 46}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="11">1.0</text>'
+    )
+    elements.append("</svg>")
+    return "\n".join(elements) + "\n"
+
+
 def brody_clicks_provenance_payload(
     *,
     details: dict[str, Any],
@@ -206,6 +363,101 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _trial_bin_evidence(
+    trial: CanonicalTrial,
+    *,
+    n_bins: int,
+) -> tuple[list[int], int] | None:
+    if trial.choice not in {"left", "right"}:
+        return None
+    task_variables = trial.task_variables
+    stimulus_duration = _optional_float(task_variables.get("stimulus_duration"))
+    if stimulus_duration is None or stimulus_duration <= 0:
+        return None
+
+    bins = [0 for _ in range(n_bins)]
+    for time_value in _float_list(task_variables.get("right_click_times", [])):
+        bin_index = _time_bin_index(time_value, stimulus_duration, n_bins)
+        if bin_index is not None:
+            bins[bin_index] += 1
+    for time_value in _float_list(task_variables.get("left_click_times", [])):
+        bin_index = _time_bin_index(time_value, stimulus_duration, n_bins)
+        if bin_index is not None:
+            bins[bin_index] -= 1
+
+    choice_code = 1 if trial.choice == "right" else 0
+    return bins, choice_code
+
+
+def _evidence_kernel_rows(
+    examples: list[tuple[list[int], int]],
+    *,
+    n_bins: int,
+) -> list[dict[str, Any]]:
+    rows = []
+    raw_weights = []
+    for bin_index in range(n_bins):
+        values = [bins[bin_index] for bins, _ in examples]
+        right_values = [bins[bin_index] for bins, choice in examples if choice == 1]
+        left_values = [bins[bin_index] for bins, choice in examples if choice == 0]
+        right_mean = _mean(right_values)
+        left_mean = _mean(left_values)
+        choice_difference = (
+            right_mean - left_mean if right_mean is not None and left_mean is not None else None
+        )
+        raw_weights.append(choice_difference or 0.0)
+        rows.append(
+            {
+                "bin_index": bin_index,
+                "bin_start": bin_index / n_bins,
+                "bin_end": (bin_index + 1) / n_bins,
+                "n_trials": len(values),
+                "n_right_choice": len(right_values),
+                "n_left_choice": len(left_values),
+                "mean_signed_evidence": _mean(values),
+                "mean_signed_evidence_right_choice": right_mean,
+                "mean_signed_evidence_left_choice": left_mean,
+                "choice_difference": choice_difference,
+                "point_biserial_r": _point_biserial_r(values, [choice for _, choice in examples]),
+                "normalized_weight": None,
+            }
+        )
+
+    denominator = sum(abs(value) for value in raw_weights)
+    for row, raw_weight in zip(rows, raw_weights, strict=True):
+        row["normalized_weight"] = raw_weight / denominator if denominator else None
+    return rows
+
+
+def _time_bin_index(time_value: float, stimulus_duration: float, n_bins: int) -> int | None:
+    if not math.isfinite(time_value) or time_value < 0.0 or time_value > stimulus_duration:
+        return None
+    normalized = time_value / stimulus_duration
+    return min(int(normalized * n_bins), n_bins - 1)
+
+
+def _mean(values: list[int]) -> float | None:
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _point_biserial_r(values: list[int], choices: list[int]) -> float | None:
+    if len(values) != len(choices) or len(values) < 2:
+        return None
+    mean_x = sum(values) / len(values)
+    mean_y = sum(choices) / len(choices)
+    variance_x = sum((value - mean_x) ** 2 for value in values)
+    variance_y = sum((choice - mean_y) ** 2 for choice in choices)
+    if variance_x == 0.0 or variance_y == 0.0:
+        return None
+    covariance = sum(
+        (value - mean_x) * (choice - mean_y)
+        for value, choice in zip(values, choices, strict=True)
+    )
+    return covariance / math.sqrt(variance_x * variance_y)
 
 
 def _parsed_trial_source(

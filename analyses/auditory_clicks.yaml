@@ -10,6 +10,9 @@ verified_outputs:
   - psychometric summary CSV
   - analysis result JSON with per-gamma empirical and fitted psychometric metrics
   - dependency-free SVG psychometric plot
+  - evidence-kernel summary CSV
+  - evidence-kernel result JSON over 10 normalized stimulus-time bins
+  - dependency-free SVG evidence-kernel plot
 grouping_variables:
   - click count difference
   - gamma context
@@ -19,8 +22,9 @@ implemented_outputs:
   - proportion rightward choice by click-count difference
   - accuracy by absolute click-count difference
   - summary of stimulus duration and click-count distributions
+  - choice-triggered evidence kernel by normalized click time
 deferred_outputs:
-  - click-time weighting kernel
+  - multivariate click-time weighting model
   - pulse accumulation model fit
   - per-rat and pooled hierarchical summaries
 provenance_requirements:
