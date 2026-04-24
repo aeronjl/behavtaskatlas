@@ -1,0 +1,40 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.random-dot-motion
+name: Random-dot motion discrimination
+aliases:
+  - random dot kinematogram
+  - RDM
+  - motion coherence discrimination
+description: >
+  Tasks in which subjects judge the direction or category of motion in a
+  stochastic dot display, often with motion coherence controlling sensory
+  evidence strength.
+modalities:
+  - visual
+canonical_variables:
+  - motion coherence
+  - motion direction
+  - stimulus duration
+common_choice_types:
+  - 2afc
+  - discrimination
+common_response_modalities:
+  - saccade
+  - button-press
+  - lever
+curation_status: literature-curated
+references:
+  - id: ref.britten-1992-motion
+    citation: >
+      Britten KH, Shadlen MN, Newsome WT, Movshon JA. The analysis of visual
+      motion: a comparison of neuronal and psychophysical performance. Journal
+      of Neuroscience, 1992.
+    url: https://www.jneurosci.org/content/12/12/4745
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Initial seed family for the MVP.
+

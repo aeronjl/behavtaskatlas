@@ -1,0 +1,88 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.random-dot-motion-classic-macaque
+family_id: family.random-dot-motion
+name: Classic macaque random-dot motion discrimination
+aliases:
+  - macaque RDM coherence task
+description: >
+  Non-human primates discriminate the net direction of motion in a stochastic
+  random-dot display. Motion coherence controls sensory evidence strength and
+  choices are commonly reported with eye movements or other trained responses.
+species:
+  - non-human-primate
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - motion coherence
+    - motion direction
+    - stimulus duration
+  evidence_type: stochastic-motion
+  evidence_schedule: >
+    A fraction of dots move coherently in one direction while the remainder move
+    stochastically; coherence varies across trials.
+  units:
+    - percent coherence
+    - degrees
+choice:
+  choice_type: 2afc
+  alternatives:
+    - direction A
+    - direction B
+  response_modalities:
+    - saccade
+  action_mapping: >
+    Choice is mapped to one of two motion-direction alternatives, often using
+    target-directed saccades after stimulus presentation.
+feedback:
+  feedback_type: reward
+  reward: Juice or fluid reward for correct decisions in trained animals.
+timing:
+  - name: fixation
+    duration: protocol-specific
+    description: Subject maintains fixation before stimulus onset.
+  - name: motion_stimulus
+    duration: fixed or response-dependent, protocol-specific
+    description: Random-dot motion evidence is shown.
+  - name: choice
+    duration: protocol-specific
+    description: Subject reports the judged motion direction.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - fixation training
+    - motion discrimination training
+  notes: Training details vary substantially across laboratories.
+apparatus:
+  - visual display
+  - eye tracking
+  - fluid reward
+expected_analyses:
+  - psychometric curve by motion coherence
+  - chronometric curve where reaction times are available
+  - neurometric-psychometric comparison where neural recordings are available
+interpretive_claims:
+  - label: perceptual decision-making
+    source: ref.britten-1992-motion
+    confidence: high
+references:
+  - id: ref.britten-1992-motion
+    citation: >
+      Britten KH, Shadlen MN, Newsome WT, Movshon JA. The analysis of visual
+      motion: a comparison of neuronal and psychophysical performance. Journal
+      of Neuroscience, 1992.
+    url: https://www.jneurosci.org/content/12/12/4745
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Seed protocol representing the canonical RDM task family.
+open_questions:
+  - Decide whether human keyboard/button RDM tasks should be separate protocol records.
+  - Add canonical parameter ranges only after source-specific curation.
+

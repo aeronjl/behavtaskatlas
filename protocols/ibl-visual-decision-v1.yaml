@@ -1,0 +1,102 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.ibl-visual-decision-v1
+family_id: family.visual-2afc-contrast
+name: IBL visual decision task
+aliases:
+  - IBL biased choice world
+description: >
+  Head-fixed mice report the side of a visual grating stimulus by turning a
+  wheel to bring the stimulus to the center. Contrast and blockwise prior
+  probability manipulate sensory and value-related evidence.
+species:
+  - mouse
+curation_status: data-linked
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - stimulus side
+    - block prior probability
+  evidence_type: mixed
+  evidence_schedule: >
+    Grating appears on the left or right at variable contrast; sessions can
+    include blockwise changes in prior probability.
+  units:
+    - percent contrast
+  notes: >
+    This record deliberately separates stimulus contrast from prior probability
+    because both can influence choice.
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel turns move the visual stimulus toward the center; the rewarded turn
+    direction depends on stimulus side.
+feedback:
+  feedback_type: mixed
+  reward: Sweetened water for correct decisions.
+  penalty: Noise burst and longer inter-trial interval for incorrect decisions.
+timing:
+  - name: quiescence
+    duration: variable, approximately 0.4-0.7 s in the standardized task
+    description: Mouse holds the wheel still before trial start.
+  - name: go_cue
+    duration: brief auditory event
+    description: Auditory cue announces the response period.
+  - name: stimulus_and_response
+    duration: response-limited
+    description: Visual grating is displayed and coupled to wheel movement.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - shaping
+    - visual discrimination
+    - biased blocks
+  notes: Standardized IBL training stages should be captured in a deeper version.
+apparatus:
+  - head fixation
+  - response wheel
+  - visual display
+  - water delivery
+  - auditory cue and feedback
+software:
+  - IBL task control software
+dataset_ids:
+  - dataset.ibl-public-behavior
+expected_analyses:
+  - psychometric curve by contrast and prior block
+  - chronometric curve by contrast
+  - lapse, bias, and threshold estimates
+  - history-dependent choice model
+interpretive_claims:
+  - label: perceptual decision-making
+    source: ref.ibl-2021-standardized
+    confidence: high
+    caveat: >
+      The protocol also intentionally manipulates prior probability and learned
+      value, so records should not reduce it to sensory evidence alone.
+references:
+  - id: ref.ibl-2021-standardized
+    citation: >
+      The International Brain Laboratory et al. Standardized and reproducible
+      measurement of decision-making in mice. eLife, 2021.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
+    doi: 10.7554/eLife.63711
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Seed protocol record drafted from the open eLife/PMC article.
+open_questions:
+  - Add exact field mappings from the IBL ONE data model.
+  - Split biased and unbiased variants if the schema needs finer protocol granularity.
+

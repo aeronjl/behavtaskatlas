@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "format": "date",
+          "title": "Created",
+          "type": "string"
+        },
+        "curators": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Curators",
+          "type": "array"
+        },
+        "source_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Notes"
+        },
+        "updated": {
+          "format": "date",
+          "title": "Updated",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created",
+        "updated"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "doi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Doi"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "citation"
+      ],
+      "title": "Reference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "access_notes": {
+      "title": "Access Notes",
+      "type": "string"
+    },
+    "caveats": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Caveats",
+      "type": "array"
+    },
+    "curation_status": {
+      "title": "Curation Status",
+      "type": "string"
+    },
+    "data_formats": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Data Formats",
+      "type": "array"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "expected_trial_table_mapping": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Expected Trial Table Mapping",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "license": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "License"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "dataset",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "protocol_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Protocol Ids",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "references": {
+      "items": {
+        "$ref": "#/$defs/Reference"
+      },
+      "title": "References",
+      "type": "array"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_url": {
+      "title": "Source Url",
+      "type": "string"
+    },
+    "species": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Species",
+      "type": "array"
+    }
+  },
+  "required": [
+    "object_type",
+    "schema_version",
+    "id",
+    "name",
+    "description",
+    "protocol_ids",
+    "species",
+    "curation_status",
+    "source_url",
+    "access_notes",
+    "provenance"
+  ],
+  "title": "Dataset",
+  "type": "object"
+}

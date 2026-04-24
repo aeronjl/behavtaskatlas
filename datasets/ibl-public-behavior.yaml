@@ -1,0 +1,45 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.ibl-public-behavior
+name: IBL public behavioral data
+description: >
+  Public behavioral data associated with the International Brain Laboratory's
+  standardized visual decision-making task in mice.
+protocol_ids:
+  - protocol.ibl-visual-decision-v1
+species:
+  - mouse
+curation_status: data-linked
+source_url: https://data.internationalbrainlab.org/
+access_notes: >
+  The MVP should access detailed session and trial data through the IBL data
+  access tooling and document exact extraction steps before harmonization.
+license: To be confirmed from the source archive.
+data_formats:
+  - repository-specific files
+  - derived trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: IBL subject identifier.
+  session_id: IBL session identifier.
+  trial_index: Trial number within session.
+  stimulus_value: Signed or side-specific visual contrast.
+  choice: Wheel-choice side.
+  correct: Trial outcome.
+  response_time: Time from stimulus or go cue; exact origin to be specified.
+  feedback: Reward or error outcome.
+references:
+  - id: ref.ibl-2021-standardized
+    citation: >
+      The International Brain Laboratory et al. Standardized and reproducible
+      measurement of decision-making in mice. eLife, 2021.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
+    doi: 10.7554/eLife.63711
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Initial dataset metadata for the first planned vertical slice.
+caveats:
+  - Exact licensing and field-level mappings must be verified before harmonization.
+

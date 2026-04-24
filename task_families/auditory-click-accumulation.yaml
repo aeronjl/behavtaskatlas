@@ -1,0 +1,38 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.auditory-click-accumulation
+name: Auditory click evidence accumulation
+aliases:
+  - Poisson clicks
+  - auditory clicks task
+description: >
+  Dynamic auditory evidence-accumulation tasks in which subjects compare
+  temporally distributed click trains or pulse counts across alternatives.
+modalities:
+  - auditory
+canonical_variables:
+  - click count difference
+  - click rate
+  - evidence duration
+common_choice_types:
+  - 2afc
+  - discrimination
+common_response_modalities:
+  - nose-poke
+  - lever
+  - button-press
+curation_status: literature-curated
+references:
+  - id: ref.brunton-2013-clicks
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013.
+    url: https://www.science.org/doi/10.1126/science.1233912
+    doi: 10.1126/science.1233912
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Initial seed family for the MVP.
+

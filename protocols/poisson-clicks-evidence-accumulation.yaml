@@ -1,0 +1,93 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.poisson-clicks-evidence-accumulation
+family_id: family.auditory-click-accumulation
+name: Poisson clicks evidence accumulation task
+aliases:
+  - auditory clicks accumulation task
+description: >
+  Subjects accumulate temporally distributed auditory click evidence and choose
+  the side associated with the greater click count or rate over the stimulus
+  period.
+species:
+  - rat
+  - human
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - auditory
+  variables:
+    - left click count
+    - right click count
+    - click count difference
+    - click rate
+    - stimulus duration
+  evidence_type: pulse-train
+  evidence_schedule: >
+    Left and right click trains are generated over time, commonly with stochastic
+    timing; accumulated evidence is the relative count or rate across sides.
+  units:
+    - clicks
+    - clicks per second
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - nose-poke
+    - button-press
+  action_mapping: >
+    Subjects choose the side with more clicks, using species- and apparatus-
+    specific response actions.
+feedback:
+  feedback_type: mixed
+  reward: Reward for correct side choices in animal implementations.
+  penalty: Error feedback or timeout depending on implementation.
+timing:
+  - name: trial_initiation
+    duration: protocol-specific
+    description: Subject initiates the trial.
+  - name: click_train
+    duration: protocol-specific
+    description: Auditory evidence unfolds over time.
+  - name: response
+    duration: protocol-specific
+    description: Subject reports the side with greater accumulated evidence.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - task shaping
+    - accumulation training
+  notes: Human and rat implementations require separate implementation records.
+apparatus:
+  - auditory speakers
+  - response ports or buttons
+expected_analyses:
+  - psychometric curve by click count difference
+  - chronometric curve by evidence strength
+  - evidence-kernel or reverse-correlation analysis
+  - accumulation model fit
+interpretive_claims:
+  - label: evidence accumulation
+    source: ref.brunton-2013-clicks
+    confidence: high
+references:
+  - id: ref.brunton-2013-clicks
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013.
+    url: https://www.science.org/doi/10.1126/science.1233912
+    doi: 10.1126/science.1233912
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Seed protocol record for dynamic auditory evidence accumulation.
+open_questions:
+  - Separate rat and human implementations after deeper source curation.
+  - Add exact click-generation parameters from the original study.
+

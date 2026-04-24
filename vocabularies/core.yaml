@@ -1,0 +1,64 @@
+modalities:
+  - visual
+  - auditory
+  - somatosensory
+  - vestibular
+  - olfactory
+  - multisensory
+
+species:
+  - mouse
+  - rat
+  - non-human-primate
+  - human
+
+choice_types:
+  - 2afc
+  - go-no-go
+  - detection
+  - discrimination
+  - confidence-report
+  - wagering
+  - rating
+  - free-response
+
+response_modalities:
+  - wheel
+  - lever
+  - lick
+  - saccade
+  - button-press
+  - touch
+  - nose-poke
+  - verbal
+  - joystick
+  - keyboard
+
+evidence_types:
+  - static
+  - dynamic
+  - pulse-train
+  - stochastic-motion
+  - staircase
+  - adaptive
+  - block-prior
+  - mixed
+
+feedback_types:
+  - reward
+  - punishment
+  - timeout
+  - auditory-feedback
+  - visual-feedback
+  - none
+  - mixed
+
+curation_statuses:
+  - stub
+  - literature-curated
+  - schema-complete
+  - data-linked
+  - harmonized
+  - analysis-verified
+  - expert-reviewed
+

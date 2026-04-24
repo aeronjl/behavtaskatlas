@@ -1,0 +1,37 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.visual-2afc-contrast
+name: Visual 2AFC contrast discrimination
+aliases:
+  - visual contrast discrimination
+description: >
+  Sensory-guided two-alternative forced-choice tasks in which subjects use visual
+  contrast or contrast lateralization to choose between alternatives.
+modalities:
+  - visual
+canonical_variables:
+  - contrast
+  - stimulus side
+  - prior probability
+common_choice_types:
+  - 2afc
+  - discrimination
+common_response_modalities:
+  - wheel
+  - saccade
+  - button-press
+curation_status: literature-curated
+references:
+  - id: ref.ibl-2021-standardized
+    citation: >
+      The International Brain Laboratory et al. Standardized and reproducible
+      measurement of decision-making in mice. eLife, 2021.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
+    doi: 10.7554/eLife.63711
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Initial seed family for the MVP.
+
