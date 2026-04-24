@@ -266,8 +266,78 @@ class ReportManifest(StrictModel):
     behavtaskatlas_git_dirty: bool | None = None
     derived_dir: str
     manifest_link: str
+    catalog_link: str | None = None
     comparison_rows: list[ManifestComparisonRow]
     slices: list[ManifestSlice]
+
+
+class CatalogFamilyRow(StrictModel):
+    family_id: str
+    name: str
+    modalities: list[str] = Field(default_factory=list)
+    choice_types: list[str] = Field(default_factory=list)
+    curation_status: str
+    protocol_count: int
+    dataset_count: int
+    slice_count: int
+
+
+class CatalogProtocolRow(StrictModel):
+    protocol_id: str
+    name: str
+    family_id: str
+    family_name: str | None = None
+    species: list[str] = Field(default_factory=list)
+    modalities: list[str] = Field(default_factory=list)
+    evidence_type: str
+    choice_type: str
+    response_modalities: list[str] = Field(default_factory=list)
+    dataset_ids: list[str] = Field(default_factory=list)
+    slice_ids: list[str] = Field(default_factory=list)
+    curation_status: str
+    report_status: str
+
+
+class CatalogDatasetRow(StrictModel):
+    dataset_id: str
+    name: str
+    protocol_ids: list[str] = Field(default_factory=list)
+    species: list[str] = Field(default_factory=list)
+    source_url: str
+    license: str | None = None
+    curation_status: str
+    slice_ids: list[str] = Field(default_factory=list)
+
+
+class CatalogSliceRow(StrictModel):
+    slice_id: str
+    title: str
+    family_id: str
+    protocol_id: str
+    dataset_id: str
+    species: str
+    modality: str
+    stimulus_metric: str
+    evidence_type: str
+    report_status: str
+    artifact_status: str
+    primary_link: str | None = None
+
+
+class CatalogPayload(StrictModel):
+    catalog_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    derived_dir: str
+    catalog_json_link: str
+    report_index_link: str
+    counts: dict[str, int]
+    task_families: list[CatalogFamilyRow]
+    protocols: list[CatalogProtocolRow]
+    datasets: list[CatalogDatasetRow]
+    vertical_slices: list[CatalogSliceRow]
 
 
 Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
@@ -286,6 +356,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     **MODEL_BY_OBJECT_TYPE,
     "canonical_trial": CanonicalTrial,
     "report_manifest": ReportManifest,
+    "catalog": CatalogPayload,
 }
 
 

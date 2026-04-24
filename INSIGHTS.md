@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 20:29:17 BST - Catalog generation connects breadth to depth
+
+The static build now writes `derived/catalog.html` and `derived/catalog.json` alongside the report index and manifest. The catalog is generated from committed task-family, protocol, dataset, and vertical-slice records, then overlays local report availability from ignored `derived/` artifacts. This gives the MVP a breadth surface: lightweight records can appear in the atlas before they have a full vertical slice, while completed slices still link through to their deeper reports.
+
+The design implication is that future growth should separate two contribution paths. A contributor can add a curated task/protocol/dataset record to improve catalog coverage, or add a vertical slice to make that catalog entry analysis-backed. The catalog is the bridge between those levels.
+
 ## 2026-04-24 20:13:53 BST - Slice comparison metadata becomes curated data
 
 Vertical-slice comparison metadata now lives in `vertical_slices/*/slice.yaml` rather than inside the static-index renderer. Each slice record declares its family, protocol, dataset, artifact paths, display order, and comparable fields such as species, modality, evidence type, response modality, analysis outputs, data scope, and canonical axis. Repository validation now treats these as first-class records and checks their cross-references plus controlled vocabulary values.

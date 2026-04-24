@@ -1,0 +1,387 @@
+{
+  "$defs": {
+    "CatalogDatasetRow": {
+      "additionalProperties": false,
+      "properties": {
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Protocol Ids",
+          "type": "array"
+        },
+        "slice_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Slice Ids",
+          "type": "array"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "species": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Species",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "name",
+        "source_url",
+        "curation_status"
+      ],
+      "title": "CatalogDatasetRow",
+      "type": "object"
+    },
+    "CatalogFamilyRow": {
+      "additionalProperties": false,
+      "properties": {
+        "choice_types": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Choice Types",
+          "type": "array"
+        },
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "dataset_count": {
+          "title": "Dataset Count",
+          "type": "integer"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "modalities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modalities",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol_count": {
+          "title": "Protocol Count",
+          "type": "integer"
+        },
+        "slice_count": {
+          "title": "Slice Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "family_id",
+        "name",
+        "curation_status",
+        "protocol_count",
+        "dataset_count",
+        "slice_count"
+      ],
+      "title": "CatalogFamilyRow",
+      "type": "object"
+    },
+    "CatalogProtocolRow": {
+      "additionalProperties": false,
+      "properties": {
+        "choice_type": {
+          "title": "Choice Type",
+          "type": "string"
+        },
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "dataset_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dataset Ids",
+          "type": "array"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "family_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Name"
+        },
+        "modalities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modalities",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "response_modalities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Response Modalities",
+          "type": "array"
+        },
+        "slice_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Slice Ids",
+          "type": "array"
+        },
+        "species": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Species",
+          "type": "array"
+        }
+      },
+      "required": [
+        "protocol_id",
+        "name",
+        "family_id",
+        "evidence_type",
+        "choice_type",
+        "curation_status",
+        "report_status"
+      ],
+      "title": "CatalogProtocolRow",
+      "type": "object"
+    },
+    "CatalogSliceRow": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_status": {
+          "title": "Artifact Status",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "primary_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Link"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "slice_id": {
+          "title": "Slice Id",
+          "type": "string"
+        },
+        "species": {
+          "title": "Species",
+          "type": "string"
+        },
+        "stimulus_metric": {
+          "title": "Stimulus Metric",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slice_id",
+        "title",
+        "family_id",
+        "protocol_id",
+        "dataset_id",
+        "species",
+        "modality",
+        "stimulus_metric",
+        "evidence_type",
+        "report_status",
+        "artifact_status"
+      ],
+      "title": "CatalogSliceRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "catalog_json_link": {
+      "title": "Catalog Json Link",
+      "type": "string"
+    },
+    "catalog_schema_version": {
+      "title": "Catalog Schema Version",
+      "type": "string"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "datasets": {
+      "items": {
+        "$ref": "#/$defs/CatalogDatasetRow"
+      },
+      "title": "Datasets",
+      "type": "array"
+    },
+    "derived_dir": {
+      "title": "Derived Dir",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "protocols": {
+      "items": {
+        "$ref": "#/$defs/CatalogProtocolRow"
+      },
+      "title": "Protocols",
+      "type": "array"
+    },
+    "report_index_link": {
+      "title": "Report Index Link",
+      "type": "string"
+    },
+    "task_families": {
+      "items": {
+        "$ref": "#/$defs/CatalogFamilyRow"
+      },
+      "title": "Task Families",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "vertical_slices": {
+      "items": {
+        "$ref": "#/$defs/CatalogSliceRow"
+      },
+      "title": "Vertical Slices",
+      "type": "array"
+    }
+  },
+  "required": [
+    "catalog_schema_version",
+    "title",
+    "generated_at",
+    "derived_dir",
+    "catalog_json_link",
+    "report_index_link",
+    "counts",
+    "task_families",
+    "protocols",
+    "datasets",
+    "vertical_slices"
+  ],
+  "title": "CatalogPayload",
+  "type": "object"
+}

@@ -320,6 +320,18 @@
       "default": null,
       "title": "Behavtaskatlas Git Dirty"
     },
+    "catalog_link": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Catalog Link"
+    },
     "comparison_rows": {
       "items": {
         "$ref": "#/$defs/ManifestComparisonRow"

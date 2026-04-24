@@ -55,7 +55,10 @@ from behavtaskatlas.rdm import (
     write_rdm_report_html,
 )
 from behavtaskatlas.static_site import (
+    build_catalog_payload,
     build_static_index_payload,
+    write_static_catalog_html,
+    write_static_catalog_json,
     write_static_index_html,
     write_static_manifest_json,
 )
@@ -379,6 +382,16 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional machine-readable manifest JSON output path",
     )
+    site_index_parser.add_argument(
+        "--catalog-file",
+        default=None,
+        help="Optional catalog HTML output path",
+    )
+    site_index_parser.add_argument(
+        "--catalog-json-file",
+        default=None,
+        help="Optional machine-readable catalog JSON output path",
+    )
 
     args = parser.parse_args(argv)
 
@@ -479,6 +492,10 @@ def main(argv: list[str] | None = None) -> int:
             derived_dir=Path(args.derived_dir),
             out_file=Path(args.out_file) if args.out_file else None,
             manifest_file=Path(args.manifest_file) if args.manifest_file else None,
+            catalog_file=Path(args.catalog_file) if args.catalog_file else None,
+            catalog_json_file=Path(args.catalog_json_file)
+            if args.catalog_json_file
+            else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -1106,19 +1123,35 @@ def _site_index(
     derived_dir: Path,
     out_file: Path | None,
     manifest_file: Path | None,
+    catalog_file: Path | None,
+    catalog_json_file: Path | None,
 ) -> int:
     index_path = out_file or derived_dir / "index.html"
     manifest_path = manifest_file or index_path.with_name("manifest.json")
+    catalog_path = catalog_file or index_path.with_name("catalog.html")
+    catalog_json_path = catalog_json_file or index_path.with_name("catalog.json")
     payload = build_static_index_payload(
         derived_dir=derived_dir,
         index_path=index_path,
         manifest_path=manifest_path,
+        catalog_path=catalog_path,
     )
     write_static_index_html(index_path, payload)
     write_static_manifest_json(manifest_path, payload)
+    catalog_payload = build_catalog_payload(
+        root=Path("."),
+        derived_dir=derived_dir,
+        catalog_path=catalog_path,
+        catalog_json_path=catalog_json_path,
+        report_index_path=index_path,
+    )
+    write_static_catalog_html(catalog_path, catalog_payload)
+    write_static_catalog_json(catalog_json_path, catalog_payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote static index to {index_path}")
     print(f"Wrote report manifest to {manifest_path}")
+    print(f"Wrote catalog to {catalog_path}")
+    print(f"Wrote catalog JSON to {catalog_json_path}")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
 

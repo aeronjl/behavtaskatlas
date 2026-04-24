@@ -9,8 +9,16 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from behavtaskatlas.models import ReportManifest, VerticalSlice
-from behavtaskatlas.validation import load_yaml
+from behavtaskatlas.models import (
+    CatalogPayload,
+    Dataset,
+    Protocol,
+    ReportManifest,
+    TaskFamily,
+    VerticalSlice,
+    model_from_record,
+)
+from behavtaskatlas.validation import iter_record_paths, load_yaml
 
 
 def build_static_index_payload(
@@ -18,11 +26,13 @@ def build_static_index_payload(
     derived_dir: Path,
     index_path: Path,
     manifest_path: Path | None = None,
+    catalog_path: Path | None = None,
     root: Path = Path("."),
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
     manifest_path = manifest_path or index_path.with_name("manifest.json")
+    catalog_path = catalog_path or index_path.with_name("catalog.html")
     records = load_vertical_slice_records(root)
     slices = [
         _vertical_slice_payload(
@@ -41,6 +51,7 @@ def build_static_index_payload(
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "derived_dir": str(derived_dir),
         "manifest_link": _relative_link(manifest_path, index_path),
+        "catalog_link": _relative_link(catalog_path, index_path),
         "comparison_rows": build_slice_comparison_rows(slices),
         "slices": slices,
     }
@@ -57,6 +68,123 @@ def write_static_manifest_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def build_catalog_payload(
+    *,
+    root: Path,
+    derived_dir: Path,
+    catalog_path: Path,
+    catalog_json_path: Path | None = None,
+    report_index_path: Path | None = None,
+) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    catalog_json_path = catalog_json_path or catalog_path.with_suffix(".json")
+    report_index_path = report_index_path or catalog_path.with_name("index.html")
+    records = load_repository_records(root)
+    task_families = sorted(
+        [record for record in records if isinstance(record, TaskFamily)],
+        key=lambda record: record.name,
+    )
+    protocols = sorted(
+        [record for record in records if isinstance(record, Protocol)],
+        key=lambda record: record.name,
+    )
+    datasets = sorted(
+        [record for record in records if isinstance(record, Dataset)],
+        key=lambda record: record.name,
+    )
+    vertical_slices = sorted(
+        [record for record in records if isinstance(record, VerticalSlice)],
+        key=lambda record: (record.display_order, record.title),
+    )
+    slice_payloads = {
+        record.id: _vertical_slice_payload(
+            record,
+            derived_dir=derived_dir,
+            index_path=catalog_path,
+            root=root,
+        )
+        for record in vertical_slices
+    }
+    family_by_id = {record.id: record for record in task_families}
+    datasets_by_protocol = _datasets_by_protocol(datasets)
+    slices_by_family = _slices_by_field(vertical_slices, "family_id")
+    slices_by_protocol = _slices_by_field(vertical_slices, "protocol_id")
+    slices_by_dataset = _slices_by_field(vertical_slices, "dataset_id")
+
+    return {
+        "catalog_schema_version": "0.1.0",
+        "title": "behavtaskatlas Catalog",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "derived_dir": str(derived_dir),
+        "catalog_json_link": _relative_link(catalog_json_path, catalog_path),
+        "report_index_link": _relative_link(report_index_path, catalog_path),
+        "counts": {
+            "task_families": len(task_families),
+            "protocols": len(protocols),
+            "datasets": len(datasets),
+            "vertical_slices": len(vertical_slices),
+            "report_available": sum(
+                1
+                for payload in slice_payloads.values()
+                if payload.get("report_status") == "available"
+            ),
+        },
+        "task_families": [
+            _catalog_family_row(
+                family,
+                protocols=protocols,
+                datasets_by_protocol=datasets_by_protocol,
+                slices=slices_by_family.get(family.id, []),
+            )
+            for family in task_families
+        ],
+        "protocols": [
+            _catalog_protocol_row(
+                protocol,
+                family=family_by_id.get(protocol.family_id),
+                datasets=datasets_by_protocol.get(protocol.id, []),
+                slices=slices_by_protocol.get(protocol.id, []),
+                slice_payloads=slice_payloads,
+            )
+            for protocol in protocols
+        ],
+        "datasets": [
+            _catalog_dataset_row(
+                dataset,
+                slices=slices_by_dataset.get(dataset.id, []),
+            )
+            for dataset in datasets
+        ],
+        "vertical_slices": [
+            _catalog_slice_row(record, slice_payloads[record.id]) for record in vertical_slices
+        ],
+    }
+
+
+def write_static_catalog_html(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(static_catalog_html(payload), encoding="utf-8")
+
+
+def write_static_catalog_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    CatalogPayload.model_validate(payload)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def load_repository_records(root: Path = Path(".")) -> list[Any]:
+    records = []
+    for path in iter_record_paths(root):
+        try:
+            records.append(model_from_record(load_yaml(path)))
+        except (OSError, ValueError, ValidationError) as exc:
+            raise ValueError(f"Invalid repository record {path}: {exc}") from exc
+    return records
+
+
 def load_vertical_slice_records(root: Path = Path(".")) -> list[VerticalSlice]:
     records = []
     for path in sorted((root / "vertical_slices").glob("*/slice.yaml")):
@@ -65,6 +193,130 @@ def load_vertical_slice_records(root: Path = Path(".")) -> list[VerticalSlice]:
         except (OSError, ValueError, ValidationError) as exc:
             raise ValueError(f"Invalid vertical slice record {path}: {exc}") from exc
     return sorted(records, key=lambda record: (record.display_order, record.id))
+
+
+def _datasets_by_protocol(datasets: list[Dataset]) -> dict[str, list[Dataset]]:
+    grouped: dict[str, list[Dataset]] = {}
+    for dataset in datasets:
+        for protocol_id in dataset.protocol_ids:
+            grouped.setdefault(protocol_id, []).append(dataset)
+    return {
+        protocol_id: sorted(group, key=lambda dataset: dataset.name)
+        for protocol_id, group in grouped.items()
+    }
+
+
+def _slices_by_field(
+    slices: list[VerticalSlice],
+    field_name: str,
+) -> dict[str, list[VerticalSlice]]:
+    grouped: dict[str, list[VerticalSlice]] = {}
+    for slice_record in slices:
+        grouped.setdefault(str(getattr(slice_record, field_name)), []).append(slice_record)
+    return {
+        key: sorted(group, key=lambda record: (record.display_order, record.title))
+        for key, group in grouped.items()
+    }
+
+
+def _catalog_family_row(
+    family: TaskFamily,
+    *,
+    protocols: list[Protocol],
+    datasets_by_protocol: dict[str, list[Dataset]],
+    slices: list[VerticalSlice],
+) -> dict[str, Any]:
+    family_protocols = [protocol for protocol in protocols if protocol.family_id == family.id]
+    dataset_ids = {
+        dataset.id
+        for protocol in family_protocols
+        for dataset in datasets_by_protocol.get(protocol.id, [])
+    }
+    return {
+        "family_id": family.id,
+        "name": family.name,
+        "modalities": family.modalities,
+        "choice_types": family.common_choice_types,
+        "curation_status": family.curation_status,
+        "protocol_count": len(family_protocols),
+        "dataset_count": len(dataset_ids),
+        "slice_count": len(slices),
+    }
+
+
+def _catalog_protocol_row(
+    protocol: Protocol,
+    *,
+    family: TaskFamily | None,
+    datasets: list[Dataset],
+    slices: list[VerticalSlice],
+    slice_payloads: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    dataset_ids = sorted(
+        {
+            *protocol.dataset_ids,
+            *(dataset.id for dataset in datasets),
+        }
+    )
+    slice_ids = [record.id for record in slices]
+    return {
+        "protocol_id": protocol.id,
+        "name": protocol.name,
+        "family_id": protocol.family_id,
+        "family_name": family.name if family else None,
+        "species": protocol.species,
+        "modalities": protocol.stimulus.modalities,
+        "evidence_type": protocol.stimulus.evidence_type,
+        "choice_type": protocol.choice.choice_type,
+        "response_modalities": protocol.choice.response_modalities,
+        "dataset_ids": dataset_ids,
+        "slice_ids": slice_ids,
+        "curation_status": protocol.curation_status,
+        "report_status": _combined_report_status(
+            [slice_payloads[record.id] for record in slices if record.id in slice_payloads]
+        ),
+    }
+
+
+def _catalog_dataset_row(dataset: Dataset, *, slices: list[VerticalSlice]) -> dict[str, Any]:
+    return {
+        "dataset_id": dataset.id,
+        "name": dataset.name,
+        "protocol_ids": dataset.protocol_ids,
+        "species": dataset.species,
+        "source_url": dataset.source_url,
+        "license": dataset.license,
+        "curation_status": dataset.curation_status,
+        "slice_ids": [record.id for record in slices],
+    }
+
+
+def _catalog_slice_row(record: VerticalSlice, payload: dict[str, Any]) -> dict[str, Any]:
+    comparison = record.comparison
+    return {
+        "slice_id": record.id,
+        "title": record.title,
+        "family_id": record.family_id,
+        "protocol_id": record.protocol_id,
+        "dataset_id": record.dataset_id,
+        "species": comparison.species,
+        "modality": comparison.modality,
+        "stimulus_metric": comparison.stimulus_metric,
+        "evidence_type": comparison.evidence_type,
+        "report_status": payload.get("report_status", "missing"),
+        "artifact_status": payload.get("artifact_status", "missing"),
+        "primary_link": payload.get("primary_link"),
+    }
+
+
+def _combined_report_status(slice_payloads: list[dict[str, Any]]) -> str:
+    if not slice_payloads:
+        return "no slice"
+    if any(payload.get("report_status") == "available" for payload in slice_payloads):
+        return "available"
+    if any(payload.get("artifact_status") == "available" for payload in slice_payloads):
+        return "report pending"
+    return "analysis pending"
 
 
 def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -130,6 +382,12 @@ def static_index_html(payload: dict[str, Any]) -> str:
             f'<p class="manifest-link"><a href="{escape(str(manifest_link), quote=True)}">'
             "Machine-readable manifest JSON</a></p>"
         )
+    catalog_link = payload.get("catalog_link")
+    if catalog_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(catalog_link), quote=True)}">'
+            "Task catalog</a></p>"
+        )
     html.extend(
         [
             "</header>",
@@ -159,6 +417,132 @@ def static_index_html(payload: dict[str, Any]) -> str:
     html.extend(
         [
             "</div>",
+            "</section>",
+            "<section>",
+            "<h2>Build Provenance</h2>",
+            _definition_list(
+                [
+                    ("Generated", payload.get("generated_at")),
+                    ("Commit", payload.get("behavtaskatlas_commit")),
+                    ("Git dirty", payload.get("behavtaskatlas_git_dirty")),
+                    ("Derived root", payload.get("derived_dir")),
+                ]
+            ),
+            "</section>",
+            "</main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+    return "\n".join(html) + "\n"
+
+
+def static_catalog_html(payload: dict[str, Any]) -> str:
+    counts = payload.get("counts", {})
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(str(payload.get('title', 'behavtaskatlas Catalog')))}</title>",
+        "<style>",
+        _index_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        '<p class="eyebrow">behavtaskatlas</p>',
+        f"<h1>{escape(str(payload.get('title', 'Catalog')))}</h1>",
+        "<p class=\"lede\">Generated catalog of committed task-family, protocol, "
+        "dataset, and vertical-slice records. Report availability is read from local "
+        "ignored artifacts under the derived directory.</p>",
+    ]
+    report_index_link = payload.get("report_index_link")
+    if report_index_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(report_index_link), quote=True)}">'
+            "Report index</a></p>"
+        )
+    catalog_json_link = payload.get("catalog_json_link")
+    if catalog_json_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(catalog_json_link), quote=True)}">'
+            "Machine-readable catalog JSON</a></p>"
+        )
+    html.extend(
+        [
+            "</header>",
+            '<section class="summary" aria-label="Catalog summary">',
+            _metric("Task families", counts.get("task_families")),
+            _metric("Protocols", counts.get("protocols")),
+            _metric("Datasets", counts.get("datasets")),
+            _metric("Vertical slices", counts.get("vertical_slices")),
+            _metric("Reports available", counts.get("report_available")),
+            "</section>",
+            "<section>",
+            "<h2>Protocol Catalog</h2>",
+            _html_table(
+                payload.get("protocols", []),
+                [
+                    ("name", "Protocol"),
+                    ("family_name", "Family"),
+                    ("species", "Species"),
+                    ("modalities", "Modality"),
+                    ("evidence_type", "Evidence"),
+                    ("choice_type", "Choice"),
+                    ("response_modalities", "Response"),
+                    ("dataset_ids", "Datasets"),
+                    ("slice_ids", "Slices"),
+                    ("report_status", "Report"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Task Families</h2>",
+            _html_table(
+                payload.get("task_families", []),
+                [
+                    ("name", "Family"),
+                    ("modalities", "Modalities"),
+                    ("choice_types", "Choice types"),
+                    ("protocol_count", "Protocols"),
+                    ("dataset_count", "Datasets"),
+                    ("slice_count", "Slices"),
+                    ("curation_status", "Status"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Datasets</h2>",
+            _html_table(
+                payload.get("datasets", []),
+                [
+                    ("name", "Dataset"),
+                    ("protocol_ids", "Protocols"),
+                    ("species", "Species"),
+                    ("license", "License"),
+                    ("slice_ids", "Slices"),
+                    ("curation_status", "Status"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Report-Backed Slices</h2>",
+            _html_table(
+                payload.get("vertical_slices", []),
+                [
+                    ("title", "Slice"),
+                    ("species", "Species"),
+                    ("modality", "Modality"),
+                    ("stimulus_metric", "Stimulus metric"),
+                    ("evidence_type", "Evidence"),
+                    ("report_status", "Report"),
+                    ("artifact_status", "Artifacts"),
+                    ("primary_link", "Primary link"),
+                ],
+            ),
             "</section>",
             "<section>",
             "<h2>Build Provenance</h2>",
@@ -637,4 +1021,6 @@ def _format_cell(value: Any) -> str:
         if value.is_integer():
             return f"{int(value):,}"
         return f"{value:.4g}"
+    if isinstance(value, list | tuple):
+        return ", ".join(_format_cell(item) for item in value)
     return str(value)

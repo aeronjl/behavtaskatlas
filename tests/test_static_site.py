@@ -1,9 +1,13 @@
 import json
+from pathlib import Path
 
 from behavtaskatlas.ibl import DEFAULT_IBL_EID
 from behavtaskatlas.static_site import (
+    build_catalog_payload,
     build_static_index_payload,
+    static_catalog_html,
     static_index_html,
+    write_static_catalog_json,
     write_static_manifest_json,
 )
 
@@ -53,6 +57,7 @@ def test_static_index_links_available_slice_reports(tmp_path) -> None:
     assert "IBL Visual Decision" in html
     assert "Atlas Comparison" in html
     assert "Machine-readable manifest JSON" in html
+    assert "Task catalog" in html
     assert "signed click-count difference" in html
     assert "auditory_clicks/report.html" in html
     assert "Open psychometric SVG" in html
@@ -145,6 +150,62 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     rdm_row = loaded["comparison_rows"][2]
     assert loaded["manifest_schema_version"] == "0.1.0"
     assert loaded["manifest_link"] == "manifest.json"
+    assert loaded["catalog_link"] == "catalog.html"
     assert len(loaded["comparison_rows"]) == 3
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
+
+
+def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    derived_dir = tmp_path / "derived"
+    rdm_dir = derived_dir / "random_dot_motion" / "roitman-shadlen-pyddm"
+    rdm_dir.mkdir(parents=True)
+    (rdm_dir / "analysis_result.json").write_text(
+        json.dumps(
+            {
+                "n_trials": 6149,
+                "n_response_trials": 6149,
+                "chronometric_rows": [{}],
+                "summary_rows": [{}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (rdm_dir / "report.html").write_text("<html>rdm report</html>", encoding="utf-8")
+
+    catalog_path = derived_dir / "catalog.html"
+    catalog_json_path = derived_dir / "catalog.json"
+    payload = build_catalog_payload(
+        root=root,
+        derived_dir=derived_dir,
+        catalog_path=catalog_path,
+        catalog_json_path=catalog_json_path,
+        report_index_path=derived_dir / "index.html",
+    )
+    html = static_catalog_html(payload)
+    write_static_catalog_json(catalog_json_path, payload)
+
+    loaded = json.loads(catalog_json_path.read_text(encoding="utf-8"))
+    rdm_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.random-dot-motion-classic-macaque"
+    )
+    rdm_slice = next(
+        row for row in payload["vertical_slices"] if row["slice_id"] == "slice.random-dot-motion"
+    )
+
+    assert payload["counts"]["task_families"] == 3
+    assert payload["counts"]["protocols"] == 3
+    assert payload["counts"]["datasets"] == 3
+    assert payload["counts"]["vertical_slices"] == 3
+    assert payload["counts"]["report_available"] == 1
+    assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
+    assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
+    assert rdm_protocol["report_status"] == "available"
+    assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
+    assert loaded["catalog_schema_version"] == "0.1.0"
+    assert "Protocol Catalog" in html
+    assert "Random-Dot Motion" in html
+    assert "signed motion coherence" in html
