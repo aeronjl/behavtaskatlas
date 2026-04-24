@@ -114,6 +114,7 @@ def build_catalog_payload(
     detail_links_by_protocol = {
         protocol.id: _protocol_detail_link(protocol.id) for protocol in protocols
     }
+    detail_links_by_dataset = {dataset.id: _dataset_detail_link(dataset.id) for dataset in datasets}
 
     return {
         "catalog_schema_version": "0.1.0",
@@ -163,6 +164,7 @@ def build_catalog_payload(
                 slices=slices_by_protocol.get(protocol.id, []),
                 slice_payloads=slice_payloads,
                 detail_link=detail_links_by_protocol[protocol.id],
+                dataset_detail_links=detail_links_by_dataset,
             )
             for protocol in protocols
         ],
@@ -170,6 +172,20 @@ def build_catalog_payload(
             _catalog_dataset_row(
                 dataset,
                 slices=slices_by_dataset.get(dataset.id, []),
+                detail_link=detail_links_by_dataset[dataset.id],
+            )
+            for dataset in datasets
+        ],
+        "dataset_details": [
+            _catalog_dataset_detail(
+                dataset,
+                protocols=protocols,
+                family_by_id=family_by_id,
+                slices=slices_by_dataset.get(dataset.id, []),
+                slices_by_protocol=slices_by_protocol,
+                slice_payloads=slice_payloads,
+                protocol_detail_links=detail_links_by_protocol,
+                detail_link=detail_links_by_dataset[dataset.id],
             )
             for dataset in datasets
         ],
@@ -200,6 +216,26 @@ def write_static_protocol_pages(catalog_path: Path, payload: dict[str, Any]) -> 
         page_path.parent.mkdir(parents=True, exist_ok=True)
         page_path.write_text(
             static_protocol_detail_html(
+                detail,
+                payload,
+                catalog_link=_relative_link(catalog_path, page_path),
+            ),
+            encoding="utf-8",
+        )
+        written.append(page_path)
+    return written
+
+
+def write_static_dataset_pages(catalog_path: Path, payload: dict[str, Any]) -> list[Path]:
+    written = []
+    for detail in payload.get("dataset_details", []):
+        detail_link = detail.get("detail_link")
+        if not detail_link:
+            continue
+        page_path = catalog_path.parent / str(detail_link)
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(
+            static_dataset_detail_html(
                 detail,
                 payload,
                 catalog_link=_relative_link(catalog_path, page_path),
@@ -323,6 +359,7 @@ def _catalog_protocol_detail(
     slices: list[VerticalSlice],
     slice_payloads: dict[str, dict[str, Any]],
     detail_link: str,
+    dataset_detail_links: dict[str, str],
 ) -> dict[str, Any]:
     linked_slices = []
     for slice_record in slices:
@@ -360,6 +397,7 @@ def _catalog_protocol_detail(
         "datasets": [
             {
                 "dataset_id": dataset.id,
+                "detail_link": dataset_detail_links[dataset.id],
                 "name": dataset.name,
                 "source_url": dataset.source_url,
                 "license": dataset.license,
@@ -375,9 +413,15 @@ def _catalog_protocol_detail(
     }
 
 
-def _catalog_dataset_row(dataset: Dataset, *, slices: list[VerticalSlice]) -> dict[str, Any]:
+def _catalog_dataset_row(
+    dataset: Dataset,
+    *,
+    slices: list[VerticalSlice],
+    detail_link: str,
+) -> dict[str, Any]:
     return {
         "dataset_id": dataset.id,
+        "detail_link": detail_link,
         "name": dataset.name,
         "protocol_ids": dataset.protocol_ids,
         "species": dataset.species,
@@ -385,6 +429,79 @@ def _catalog_dataset_row(dataset: Dataset, *, slices: list[VerticalSlice]) -> di
         "license": dataset.license,
         "curation_status": dataset.curation_status,
         "slice_ids": [record.id for record in slices],
+    }
+
+
+def _catalog_dataset_detail(
+    dataset: Dataset,
+    *,
+    protocols: list[Protocol],
+    family_by_id: dict[str, TaskFamily],
+    slices: list[VerticalSlice],
+    slices_by_protocol: dict[str, list[VerticalSlice]],
+    slice_payloads: dict[str, dict[str, Any]],
+    protocol_detail_links: dict[str, str],
+    detail_link: str,
+) -> dict[str, Any]:
+    linked_protocols = sorted(
+        [
+            protocol
+            for protocol in protocols
+            if protocol.id in dataset.protocol_ids or dataset.id in protocol.dataset_ids
+        ],
+        key=lambda protocol: protocol.name,
+    )
+    return {
+        "dataset_id": dataset.id,
+        "detail_link": detail_link,
+        "name": dataset.name,
+        "description": dataset.description.strip(),
+        "protocol_ids": dataset.protocol_ids,
+        "protocols": [
+            {
+                "protocol_id": protocol.id,
+                "detail_link": protocol_detail_links[protocol.id],
+                "name": protocol.name,
+                "family_name": family_by_id[protocol.family_id].name
+                if protocol.family_id in family_by_id
+                else None,
+                "species": protocol.species,
+                "evidence_type": protocol.stimulus.evidence_type,
+                "choice_type": protocol.choice.choice_type,
+                "report_status": _combined_report_status(
+                    [
+                        slice_payloads[record.id]
+                        for record in slices_by_protocol.get(protocol.id, [])
+                        if record.id in slice_payloads
+                    ]
+                ),
+            }
+            for protocol in linked_protocols
+        ],
+        "species": dataset.species,
+        "curation_status": dataset.curation_status,
+        "source_url": dataset.source_url,
+        "access_notes": dataset.access_notes,
+        "license": dataset.license,
+        "data_formats": dataset.data_formats,
+        "expected_trial_table_mapping": dataset.expected_trial_table_mapping,
+        "vertical_slices": [
+            {
+                "slice_id": slice_record.id,
+                "title": slice_record.title,
+                "report_status": slice_payloads.get(slice_record.id, {}).get(
+                    "report_status", "missing"
+                ),
+                "artifact_status": slice_payloads.get(slice_record.id, {}).get(
+                    "artifact_status", "missing"
+                ),
+                "primary_link": slice_payloads.get(slice_record.id, {}).get("primary_link"),
+            }
+            for slice_record in slices
+        ],
+        "references": [reference.model_dump(mode="json") for reference in dataset.references],
+        "provenance": dataset.provenance.model_dump(mode="json"),
+        "caveats": dataset.caveats,
     }
 
 
@@ -605,16 +722,8 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
             "</section>",
             "<section>",
             "<h2>Datasets</h2>",
-            _html_table(
+            _catalog_dataset_table(
                 payload.get("datasets", []),
-                [
-                    ("name", "Dataset"),
-                    ("protocol_ids", "Protocols"),
-                    ("species", "Species"),
-                    ("license", "License"),
-                    ("slice_ids", "Slices"),
-                    ("curation_status", "Status"),
-                ],
             ),
             "</section>",
             "<section>",
@@ -711,6 +820,83 @@ def static_protocol_detail_html(
             "<section>",
             "<h2>Curation Notes</h2>",
             _protocol_curation_notes(detail),
+            "</section>",
+            "</main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+    return "\n".join(html) + "\n"
+
+
+def static_dataset_detail_html(
+    detail: dict[str, Any],
+    payload: dict[str, Any],
+    *,
+    catalog_link: str = "catalog.html",
+) -> str:
+    title = str(detail.get("name", "Dataset"))
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(title)} | behavtaskatlas</title>",
+        "<style>",
+        _index_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        '<p class="eyebrow">behavtaskatlas dataset</p>',
+        f"<h1>{escape(title)}</h1>",
+        f"<p class=\"lede\">{escape(str(detail.get('description', '')))}</p>",
+        f'<p class="manifest-link"><a href="{escape(catalog_link, quote=True)}">'
+        "Back to catalog</a></p>",
+    ]
+    catalog_json_link = payload.get("catalog_json_link")
+    if catalog_json_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(catalog_json_link), quote=True)}">'
+            "Machine-readable catalog JSON</a></p>"
+        )
+    source_url = detail.get("source_url")
+    if source_url:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(source_url), quote=True)}">'
+            "Open source dataset</a></p>"
+        )
+    html.extend(
+        [
+            "</header>",
+            '<section class="summary" aria-label="Dataset summary">',
+            _metric("Species", detail.get("species")),
+            _metric("Protocols", len(detail.get("protocols", []))),
+            _metric("Slices", len(detail.get("vertical_slices", []))),
+            _metric("Formats", detail.get("data_formats")),
+            _metric("Status", detail.get("curation_status")),
+            "</section>",
+            "<section>",
+            "<h2>Dataset Record</h2>",
+            _dataset_structure(detail),
+            "</section>",
+            "<section>",
+            "<h2>Linked Protocols</h2>",
+            _dataset_protocol_table(detail.get("protocols", [])),
+            "</section>",
+            "<section>",
+            "<h2>Report-Backed Slices</h2>",
+            _protocol_slice_table(detail.get("vertical_slices", [])),
+            "</section>",
+            "<section>",
+            "<h2>Trial Table Mapping</h2>",
+            _mapping_table(detail.get("expected_trial_table_mapping", {})),
+            "</section>",
+            "<section>",
+            "<h2>Curation Notes</h2>",
+            _dataset_curation_notes(detail),
             "</section>",
             "</main>",
             "</body>",
@@ -908,6 +1094,88 @@ def _protocol_connections(detail: dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+def _dataset_structure(detail: dict[str, Any]) -> str:
+    return _definition_list(
+        _present_rows(
+            [
+                ("Dataset ID", detail.get("dataset_id")),
+                ("Protocol IDs", detail.get("protocol_ids")),
+                ("Curation status", detail.get("curation_status")),
+                ("Species", detail.get("species")),
+                ("Source URL", detail.get("source_url")),
+                ("Access notes", detail.get("access_notes")),
+                ("License", detail.get("license")),
+                ("Data formats", detail.get("data_formats")),
+            ]
+        )
+    )
+
+
+def _dataset_protocol_table(rows: list[dict[str, Any]]) -> str:
+    if not rows:
+        return '<p class="empty">No linked protocol records yet.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for label in ["Protocol", "Family", "Species", "Evidence", "Choice", "Report"]:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        name = str(row.get("name") or row.get("protocol_id") or "")
+        detail_link = row.get("detail_link")
+        parts.append("<tr>")
+        if detail_link:
+            parts.append(
+                f'<td><a href="{escape(str(detail_link), quote=True)}">'
+                f"{escape(name)}</a></td>"
+            )
+        else:
+            parts.append(f"<td>{escape(name)}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('family_name')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('species')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('evidence_type')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('choice_type')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('report_status')))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _mapping_table(mapping: dict[str, Any]) -> str:
+    if not mapping:
+        return '<p class="empty">No trial-table mapping recorded.</p>'
+    rows = [
+        {"canonical_field": key, "source_field": value}
+        for key, value in sorted(mapping.items(), key=lambda item: item[0])
+    ]
+    return _html_table(
+        rows,
+        [
+            ("canonical_field", "Canonical field"),
+            ("source_field", "Source field"),
+        ],
+    )
+
+
+def _dataset_curation_notes(detail: dict[str, Any]) -> str:
+    sections = [
+        "<h3>Caveats</h3>",
+        _html_list(detail.get("caveats", []), "No caveats recorded."),
+        "<h3>References</h3>",
+        _reference_list(detail.get("references", [])),
+        "<h3>Provenance</h3>",
+        _definition_list(
+            _present_rows(
+                [
+                    ("Curators", detail.get("provenance", {}).get("curators")),
+                    ("Created", detail.get("provenance", {}).get("created")),
+                    ("Updated", detail.get("provenance", {}).get("updated")),
+                    ("Source notes", detail.get("provenance", {}).get("source_notes")),
+                ]
+            )
+        ),
+    ]
+    return "\n".join(sections)
+
+
 def _protocol_dataset_table(rows: list[dict[str, Any]]) -> str:
     parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
     for label in ["Dataset", "Dataset ID", "License", "Status"]:
@@ -915,9 +1183,15 @@ def _protocol_dataset_table(rows: list[dict[str, Any]]) -> str:
     parts.extend(["</tr>", "</thead>", "<tbody>"])
     for row in rows:
         name = str(row.get("name") or row.get("dataset_id") or "")
+        detail_link = row.get("detail_link")
         source_url = row.get("source_url")
         parts.append("<tr>")
-        if source_url:
+        if detail_link:
+            parts.append(
+                f'<td><a href="{escape(str(detail_link), quote=True)}">'
+                f"{escape(name)}</a></td>"
+            )
+        elif source_url:
             parts.append(
                 f'<td><a href="{escape(str(source_url), quote=True)}">'
                 f"{escape(name)}</a></td>"
@@ -933,6 +1207,8 @@ def _protocol_dataset_table(rows: list[dict[str, Any]]) -> str:
 
 
 def _protocol_slice_table(rows: list[dict[str, Any]]) -> str:
+    if not rows:
+        return '<p class="empty">No report-backed vertical slice yet.</p>'
     parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
     for label in ["Slice", "Slice ID", "Report", "Artifacts"]:
         parts.append(f"<th>{escape(label)}</th>")
@@ -1466,6 +1742,37 @@ def _catalog_protocol_html_row(
     return "\n".join(parts)
 
 
+def _catalog_dataset_table(rows: list[dict[str, Any]]) -> str:
+    columns = [
+        ("name", "Dataset"),
+        ("protocol_ids", "Protocols"),
+        ("species", "Species"),
+        ("license", "License"),
+        ("slice_ids", "Slices"),
+        ("curation_status", "Status"),
+    ]
+    if not rows:
+        return '<p class="empty">No dataset rows available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for _, label in columns:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        parts.append("<tr>")
+        for key, _ in columns:
+            value = _format_cell(row.get(key))
+            if key == "name" and row.get("detail_link"):
+                parts.append(
+                    f'<td><a href="{escape(str(row["detail_link"]), quote=True)}">'
+                    f"{escape(value)}</a></td>"
+                )
+            else:
+                parts.append(f"<td>{escape(value)}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
 def _catalog_filter_script() -> str:
     return """
 <script>
@@ -1572,6 +1879,13 @@ def _protocol_detail_link(protocol_id: str) -> str:
     slug_chars = [char.lower() if char.isalnum() else "-" for char in slug_source]
     slug = "-".join(part for part in "".join(slug_chars).split("-") if part)
     return f"protocol-{slug or 'detail'}.html"
+
+
+def _dataset_detail_link(dataset_id: str) -> str:
+    slug_source = dataset_id.removeprefix("dataset.")
+    slug_chars = [char.lower() if char.isalnum() else "-" for char in slug_source]
+    slug = "-".join(part for part in "".join(slug_chars).split("-") if part)
+    return f"dataset-{slug or 'detail'}.html"
 
 
 def _read_json_object(path: Path) -> dict[str, Any] | None:

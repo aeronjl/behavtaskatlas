@@ -116,15 +116,16 @@ uv run behavtaskatlas site-index
 ```
 
 This writes `derived/index.html`, `derived/manifest.json`, `derived/catalog.html`,
-`derived/catalog.json`, and one `derived/protocol-*.html` detail page per protocol
-from the committed YAML records. The report index links available vertical-slice
-reports, shows a cross-slice comparison table, and links generated analysis
-artifacts without committing raw or derived data. The catalog lists task families,
-protocols, datasets, and linked slices, including records whose reports have not
-yet been generated locally. The JSON files carry the same data for downstream
-tooling. The catalog HTML also includes dependency-free protocol search and
-filters for species, modality, evidence type, and report status, with each
-protocol row linking to its generated detail page.
+`derived/catalog.json`, one `derived/protocol-*.html` detail page per protocol,
+and one `derived/dataset-*.html` detail page per dataset from the committed YAML
+records. The report index links available vertical-slice reports, shows a
+cross-slice comparison table, and links generated analysis artifacts without
+committing raw or derived data. The catalog lists task families, protocols,
+datasets, and linked slices, including records whose reports have not yet been
+generated locally. The JSON files carry the same data for downstream tooling.
+The catalog HTML also includes dependency-free protocol search and filters for
+species, modality, evidence type, and report status, with protocol and dataset
+rows linking to their generated detail pages.
 
 ## Repository Layout
 

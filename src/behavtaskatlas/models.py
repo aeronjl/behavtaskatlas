@@ -301,10 +301,22 @@ class CatalogProtocolRow(StrictModel):
 
 class CatalogLinkedDataset(StrictModel):
     dataset_id: str
+    detail_link: str
     name: str
     source_url: str
     license: str | None = None
     curation_status: str
+
+
+class CatalogLinkedProtocol(StrictModel):
+    protocol_id: str
+    detail_link: str
+    name: str
+    family_name: str | None = None
+    species: list[str] = Field(default_factory=list)
+    evidence_type: str
+    choice_type: str
+    report_status: str
 
 
 class CatalogLinkedSlice(StrictModel):
@@ -344,6 +356,7 @@ class CatalogProtocolDetail(StrictModel):
 
 class CatalogDatasetRow(StrictModel):
     dataset_id: str
+    detail_link: str
     name: str
     protocol_ids: list[str] = Field(default_factory=list)
     species: list[str] = Field(default_factory=list)
@@ -351,6 +364,26 @@ class CatalogDatasetRow(StrictModel):
     license: str | None = None
     curation_status: str
     slice_ids: list[str] = Field(default_factory=list)
+
+
+class CatalogDatasetDetail(StrictModel):
+    dataset_id: str
+    detail_link: str
+    name: str
+    description: str
+    protocol_ids: list[str] = Field(default_factory=list)
+    protocols: list[CatalogLinkedProtocol] = Field(default_factory=list)
+    species: list[str] = Field(default_factory=list)
+    curation_status: str
+    source_url: str
+    access_notes: str
+    license: str | None = None
+    data_formats: list[str] = Field(default_factory=list)
+    expected_trial_table_mapping: dict[str, str] = Field(default_factory=dict)
+    vertical_slices: list[CatalogLinkedSlice] = Field(default_factory=list)
+    references: list[dict[str, Any]] = Field(default_factory=list)
+    provenance: dict[str, Any]
+    caveats: list[str] = Field(default_factory=list)
 
 
 class CatalogSliceRow(StrictModel):
@@ -382,6 +415,7 @@ class CatalogPayload(StrictModel):
     protocols: list[CatalogProtocolRow]
     protocol_details: list[CatalogProtocolDetail]
     datasets: list[CatalogDatasetRow]
+    dataset_details: list[CatalogDatasetDetail]
     vertical_slices: list[CatalogSliceRow]
 
 

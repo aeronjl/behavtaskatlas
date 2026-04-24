@@ -8,6 +8,7 @@ from behavtaskatlas.static_site import (
     static_catalog_html,
     static_index_html,
     write_static_catalog_json,
+    write_static_dataset_pages,
     write_static_manifest_json,
     write_static_protocol_pages,
 )
@@ -187,6 +188,7 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     html = static_catalog_html(payload)
     write_static_catalog_json(catalog_json_path, payload)
     protocol_pages = write_static_protocol_pages(catalog_path, payload)
+    dataset_pages = write_static_dataset_pages(catalog_path, payload)
 
     loaded = json.loads(catalog_json_path.read_text(encoding="utf-8"))
     rdm_protocol = next(
@@ -202,12 +204,23 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     rdm_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.random-dot-motion"
     )
+    rdm_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+    )
     rdm_detail = next(
         row
         for row in payload["protocol_details"]
         if row["protocol_id"] == "protocol.random-dot-motion-classic-macaque"
     )
+    rdm_dataset_detail = next(
+        row
+        for row in payload["dataset_details"]
+        if row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+    )
     rdm_detail_path = derived_dir / rdm_protocol["detail_link"]
+    rdm_dataset_path = derived_dir / rdm_dataset["detail_link"]
 
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
@@ -215,7 +228,9 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["counts"]["vertical_slices"] == 3
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
+    assert len(payload["dataset_details"]) == 3
     assert len(protocol_pages) == 9
+    assert len(dataset_pages) == 3
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
     assert rdm_protocol["detail_link"] == "protocol-random-dot-motion-classic-macaque.html"
@@ -223,13 +238,28 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert rdm_detail["stimulus"]["evidence_type"] == "stochastic-motion"
     assert rdm_detail["choice"]["response_modalities"] == ["saccade"]
     assert rdm_detail["datasets"][0]["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+    assert rdm_detail["datasets"][0]["detail_link"] == "dataset-roitman-shadlen-rdm-pyddm.html"
     assert rdm_detail["vertical_slices"][0]["primary_link"] == (
+        "random_dot_motion/roitman-shadlen-pyddm/report.html"
+    )
+    assert rdm_dataset["detail_link"] == "dataset-roitman-shadlen-rdm-pyddm.html"
+    assert rdm_dataset_detail["protocols"][0]["detail_link"] == (
+        "protocol-random-dot-motion-classic-macaque.html"
+    )
+    assert rdm_dataset_detail["vertical_slices"][0]["primary_link"] == (
         "random_dot_motion/roitman-shadlen-pyddm/report.html"
     )
     assert rdm_detail_path.exists()
     rdm_detail_html = rdm_detail_path.read_text(encoding="utf-8")
     assert "Classic macaque random-dot motion discrimination" in rdm_detail_html
     assert "Back to catalog" in rdm_detail_html
+    assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in rdm_detail_html
+    assert rdm_dataset_path.exists()
+    rdm_dataset_html = rdm_dataset_path.read_text(encoding="utf-8")
+    assert "Processed Roitman-Shadlen random-dot motion" in rdm_dataset_html
+    assert "Linked Protocols" in rdm_dataset_html
+    assert "Trial Table Mapping" in rdm_dataset_html
+    assert 'href="protocol-random-dot-motion-classic-macaque.html"' in rdm_dataset_html
     assert human_rdm_protocol["dataset_ids"] == []
     assert human_rdm_protocol["slice_ids"] == []
     assert human_rdm_protocol["report_status"] == "no slice"
@@ -238,6 +268,7 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "Browse Protocols" in html
     assert "Protocol Catalog" in html
     assert 'href="protocol-random-dot-motion-classic-macaque.html"' in html
+    assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in html
     assert 'id="catalog-search"' in html
     assert 'id="species-filter"' in html
     assert 'id="modality-filter"' in html

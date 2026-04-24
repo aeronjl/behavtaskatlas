@@ -1,5 +1,124 @@
 {
   "$defs": {
+    "CatalogDatasetDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "access_notes": {
+          "title": "Access Notes",
+          "type": "string"
+        },
+        "caveats": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Caveats",
+          "type": "array"
+        },
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "data_formats": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Formats",
+          "type": "array"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "detail_link": {
+          "title": "Detail Link",
+          "type": "string"
+        },
+        "expected_trial_table_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Expected Trial Table Mapping",
+          "type": "object"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Protocol Ids",
+          "type": "array"
+        },
+        "protocols": {
+          "items": {
+            "$ref": "#/$defs/CatalogLinkedProtocol"
+          },
+          "title": "Protocols",
+          "type": "array"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "references": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "species": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Species",
+          "type": "array"
+        },
+        "vertical_slices": {
+          "items": {
+            "$ref": "#/$defs/CatalogLinkedSlice"
+          },
+          "title": "Vertical Slices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "detail_link",
+        "name",
+        "description",
+        "curation_status",
+        "source_url",
+        "access_notes",
+        "provenance"
+      ],
+      "title": "CatalogDatasetDetail",
+      "type": "object"
+    },
     "CatalogDatasetRow": {
       "additionalProperties": false,
       "properties": {
@@ -9,6 +128,10 @@
         },
         "dataset_id": {
           "title": "Dataset Id",
+          "type": "string"
+        },
+        "detail_link": {
+          "title": "Detail Link",
           "type": "string"
         },
         "license": {
@@ -55,6 +178,7 @@
       },
       "required": [
         "dataset_id",
+        "detail_link",
         "name",
         "source_url",
         "curation_status"
@@ -126,6 +250,10 @@
           "title": "Dataset Id",
           "type": "string"
         },
+        "detail_link": {
+          "title": "Detail Link",
+          "type": "string"
+        },
         "license": {
           "anyOf": [
             {
@@ -149,11 +277,70 @@
       },
       "required": [
         "dataset_id",
+        "detail_link",
         "name",
         "source_url",
         "curation_status"
       ],
       "title": "CatalogLinkedDataset",
+      "type": "object"
+    },
+    "CatalogLinkedProtocol": {
+      "additionalProperties": false,
+      "properties": {
+        "choice_type": {
+          "title": "Choice Type",
+          "type": "string"
+        },
+        "detail_link": {
+          "title": "Detail Link",
+          "type": "string"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "family_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Name"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "species": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Species",
+          "type": "array"
+        }
+      },
+      "required": [
+        "protocol_id",
+        "detail_link",
+        "name",
+        "evidence_type",
+        "choice_type",
+        "report_status"
+      ],
+      "title": "CatalogLinkedProtocol",
       "type": "object"
     },
     "CatalogLinkedSlice": {
@@ -577,6 +764,13 @@
       "title": "Counts",
       "type": "object"
     },
+    "dataset_details": {
+      "items": {
+        "$ref": "#/$defs/CatalogDatasetDetail"
+      },
+      "title": "Dataset Details",
+      "type": "array"
+    },
     "datasets": {
       "items": {
         "$ref": "#/$defs/CatalogDatasetRow"
@@ -641,6 +835,7 @@
     "protocols",
     "protocol_details",
     "datasets",
+    "dataset_details",
     "vertical_slices"
   ],
   "title": "CatalogPayload",

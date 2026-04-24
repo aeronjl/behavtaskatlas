@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 21:22:47 BST - Dataset pages complete the first task-data loop
+
+The static catalog now writes one detail page per dataset and links dataset rows plus protocol-page dataset references into those pages. Dataset pages expose source access, license, data formats, expected trial-table mapping, linked protocols, linked report-backed slices, references, provenance, and caveats.
+
+This closes the first browse loop in the MVP: a user can move from catalog search to protocol structure, from protocol to dataset, and from dataset back to linked protocols and reports. That is the minimum useful graph for an atlas rather than a flat list of records.
+
 ## 2026-04-24 21:08:31 BST - Protocol records need inspectable pages
 
 The generated catalog now writes one static detail page per protocol and links each protocol table row to that page. The detail pages expose the richer protocol metadata that was already present in YAML: description, stimulus and choice structure, timing phases, linked datasets, report-backed slices, expected analyses, interpretive claims, references, provenance, and open questions.
