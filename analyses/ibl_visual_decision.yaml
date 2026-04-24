@@ -2,6 +2,17 @@ analysis_id: analysis.ibl-visual-decision.baseline-plan
 protocol_id: protocol.ibl-visual-decision-v1
 dataset_id: dataset.ibl-public-behavior
 status: planned
+first_verified_session:
+  eid: ebce500b-c530-47de-8cb1-963c552703ea
+  subject: MFD_09
+  lab: churchlandlab_ucla
+  start_time: "2023-10-19T12:54:25.961859"
+  task_protocol: _iblrig_tasks_ephysChoiceWorld
+  n_canonical_trials: 569
+  n_summary_rows: 27
+  no_response_trials: 32
+  missing_stimulus_trials: 0
+  missing_response_time_trials: 0
 inputs:
   - canonical trial table generated from IBL ALF trials table/object
 grouping_variables:
@@ -21,4 +32,3 @@ provenance_requirements:
   - adapter version or commit hash
   - date generated
   - exact response-time origin
-

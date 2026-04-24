@@ -9,6 +9,11 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.optional-dependencies]
+ibl = [
+    "ONE-api>=3.5.0",
+]
+
 [project.scripts]
 behavtaskatlas = "behavtaskatlas.cli:main"
 
@@ -28,4 +33,3 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-

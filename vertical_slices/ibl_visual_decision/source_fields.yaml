@@ -3,6 +3,13 @@ protocol_id: protocol.ibl-visual-decision-v1
 dataset_id: dataset.ibl-public-behavior
 source_object: IBL ALF trials object/table
 access_pattern: one.load_object(eid, 'trials', collection='alf')
+selected_session:
+  eid: ebce500b-c530-47de-8cb1-963c552703ea
+  subject: MFD_09
+  lab: churchlandlab_ucla
+  start_time: "2023-10-19T12:54:25.961859"
+  task_protocol: _iblrig_tasks_ephysChoiceWorld
+  url: https://openalyx.internationalbrainlab.org/sessions/ebce500b-c530-47de-8cb1-963c552703ea
 required_fields:
   - contrastLeft
   - contrastRight
@@ -33,4 +40,3 @@ source_references:
   - https://docs.internationalbrainlab.org/_autosummary/brainbox.behavior.training.html
   - https://docs.internationalbrainlab.org/notebooks_external/data_download.html
   - https://docs.internationalbrainlab.org/_modules/ibllib/io/extractors/biased_trials.html
-

@@ -5,6 +5,16 @@ import json
 import sys
 from pathlib import Path
 
+from behavtaskatlas.ibl import (
+    DEFAULT_IBL_EID,
+    harmonize_ibl_visual_trials,
+    load_ibl_trials_from_openalyx,
+    provenance_payload,
+    summarize_canonical_trials,
+    write_canonical_trials_csv,
+    write_provenance_json,
+    write_summary_csv,
+)
 from behavtaskatlas.models import SCHEMA_MODELS
 from behavtaskatlas.validation import validate_repository
 
@@ -21,12 +31,31 @@ def main(argv: list[str] | None = None) -> int:
     )
     schema_parser.add_argument("output_dir", nargs="?", default="schemas")
 
+    ibl_parser = subparsers.add_parser(
+        "ibl-harmonize", help="Harmonize one IBL visual decision session"
+    )
+    ibl_parser.add_argument("--eid", default=DEFAULT_IBL_EID, help="IBL session UUID/eid")
+    ibl_parser.add_argument(
+        "--out-dir",
+        default="derived/ibl_visual_decision",
+        help="Directory for generated artifacts",
+    )
+    ibl_parser.add_argument("--cache-dir", default=None, help="Optional ONE cache directory")
+    ibl_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
         return _validate(Path(args.root))
     if args.command == "export-schemas":
         return _export_schemas(Path(args.output_dir))
+    if args.command == "ibl-harmonize":
+        return _ibl_harmonize(
+            eid=args.eid,
+            out_dir=Path(args.out_dir),
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
+            limit=args.limit,
+        )
     parser.error(f"Unknown command {args.command!r}")
     return 2
 
@@ -51,6 +80,53 @@ def _export_schemas(output_dir: Path) -> int:
             encoding="utf-8",
         )
         print(path)
+    return 0
+
+
+def _ibl_harmonize(
+    *,
+    eid: str,
+    out_dir: Path,
+    cache_dir: Path | None,
+    limit: int | None,
+) -> int:
+    try:
+        source_trials, details = load_ibl_trials_from_openalyx(eid, cache_dir=cache_dir)
+        trials = harmonize_ibl_visual_trials(
+            source_trials,
+            session_id=eid,
+            subject_id=details.get("subject"),
+            limit=limit,
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / eid
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        provenance_payload(
+            eid=eid,
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
     return 0
 
 
