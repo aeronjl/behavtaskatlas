@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 20:52:48 BST - Static catalog browsing is enough for the MVP
+
+The catalog HTML now has dependency-free protocol browsing: text search plus filters for species, modality, evidence type, and report status. This keeps the MVP deployable as static files while making the breadth catalog usable as it grows beyond the three report-backed slices.
+
+The product implication is that the atlas does not need a backend search service yet. The committed YAML records can generate both a machine-readable JSON catalog and a self-contained HTML catalog, while heavier infrastructure can wait until there are enough records, users, and curation workflows to justify it.
+
 ## 2026-04-24 20:37:42 BST - Catalog-only protocols test breadth without reports
 
 The catalog now includes six lightweight protocol records without vertical slices: human visual contrast 2AFC, mouse unbiased visual contrast wheel, human RDM button reaction-time, macaque RDM confidence wagering, human auditory clicks button, and rat auditory clicks nose-poke. Repository validation now sees 18 records total, while the generated catalog separates 9 protocol records from 3 report-backed vertical slices.

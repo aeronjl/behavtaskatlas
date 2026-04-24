@@ -121,7 +121,8 @@ links available vertical-slice reports, shows a cross-slice comparison table, an
 links generated analysis artifacts without committing raw or derived data. The
 catalog lists task families, protocols, datasets, and linked slices, including
 records whose reports have not yet been generated locally. The JSON files carry
-the same data for downstream tooling.
+the same data for downstream tooling. The catalog HTML also includes dependency-free
+protocol search and filters for species, modality, evidence type, and report status.
 
 ## Repository Layout
 

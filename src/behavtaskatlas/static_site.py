@@ -482,21 +482,13 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
             _metric("Reports available", counts.get("report_available")),
             "</section>",
             "<section>",
+            "<h2>Browse Protocols</h2>",
+            _catalog_filter_controls(payload.get("protocols", [])),
+            "</section>",
+            "<section>",
             "<h2>Protocol Catalog</h2>",
-            _html_table(
+            _catalog_protocol_table(
                 payload.get("protocols", []),
-                [
-                    ("name", "Protocol"),
-                    ("family_name", "Family"),
-                    ("species", "Species"),
-                    ("modalities", "Modality"),
-                    ("evidence_type", "Evidence"),
-                    ("choice_type", "Choice"),
-                    ("response_modalities", "Response"),
-                    ("dataset_ids", "Datasets"),
-                    ("slice_ids", "Slices"),
-                    ("report_status", "Report"),
-                ],
             ),
             "</section>",
             "<section>",
@@ -555,6 +547,7 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
                 ]
             ),
             "</section>",
+            _catalog_filter_script(),
             "</main>",
             "</body>",
             "</html>",
@@ -824,6 +817,40 @@ section {
 .manifest-link a {
   font-weight: 800;
 }
+.catalog-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+.catalog-control label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.catalog-control input,
+.catalog-control select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  padding: 7px 9px;
+}
+.result-count {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);
@@ -901,6 +928,9 @@ dd {
   .cards {
     grid-template-columns: 1fr;
   }
+  .catalog-controls {
+    grid-template-columns: 1fr;
+  }
   .card-header {
     display: block;
   }
@@ -950,6 +980,181 @@ def _comparison_table(rows: list[dict[str, Any]]) -> str:
             ("report_status", "Report"),
         ],
     )
+
+
+def _catalog_filter_controls(protocols: list[dict[str, Any]]) -> str:
+    return "\n".join(
+        [
+            '<div class="catalog-controls" data-catalog-controls>',
+            _catalog_search_control(),
+            _catalog_select_control(
+                "species-filter",
+                "Species",
+                "All species",
+                _unique_protocol_values(protocols, "species"),
+            ),
+            _catalog_select_control(
+                "modality-filter",
+                "Modality",
+                "All modalities",
+                _unique_protocol_values(protocols, "modalities"),
+            ),
+            _catalog_select_control(
+                "evidence-filter",
+                "Evidence",
+                "All evidence",
+                _unique_protocol_values(protocols, "evidence_type"),
+            ),
+            _catalog_select_control(
+                "report-filter",
+                "Report",
+                "All reports",
+                _unique_protocol_values(protocols, "report_status"),
+            ),
+            "</div>",
+            '<p class="result-count" id="catalog-result-count">'
+            f"{len(protocols)} protocols</p>",
+        ]
+    )
+
+
+def _catalog_search_control() -> str:
+    return (
+        '<div class="catalog-control">'
+        '<label for="catalog-search">Search</label>'
+        '<input id="catalog-search" type="search" autocomplete="off" '
+        'placeholder="Protocol, family, species, evidence">'
+        "</div>"
+    )
+
+
+def _catalog_select_control(
+    element_id: str,
+    label: str,
+    empty_label: str,
+    values: list[str],
+) -> str:
+    parts = [
+        '<div class="catalog-control">',
+        f'<label for="{escape(element_id, quote=True)}">{escape(label)}</label>',
+        f'<select id="{escape(element_id, quote=True)}">',
+        f'<option value="">{escape(empty_label)}</option>',
+    ]
+    for value in values:
+        parts.append(
+            f'<option value="{escape(_filter_token(value), quote=True)}">'
+            f"{escape(value)}</option>"
+        )
+    parts.extend(["</select>", "</div>"])
+    return "\n".join(parts)
+
+
+def _catalog_protocol_table(rows: list[dict[str, Any]]) -> str:
+    columns = [
+        ("name", "Protocol"),
+        ("family_name", "Family"),
+        ("species", "Species"),
+        ("modalities", "Modality"),
+        ("evidence_type", "Evidence"),
+        ("choice_type", "Choice"),
+        ("response_modalities", "Response"),
+        ("dataset_ids", "Datasets"),
+        ("slice_ids", "Slices"),
+        ("report_status", "Report"),
+    ]
+    if not rows:
+        return '<p class="empty">No protocol rows available.</p>'
+    parts = [
+        '<div class="table-wrap">',
+        '<table data-catalog-table="protocols">',
+        "<thead>",
+        "<tr>",
+    ]
+    for _, label in columns:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        parts.append(_catalog_protocol_html_row(row, columns))
+    parts.append(
+        '<tr id="catalog-no-results" hidden>'
+        '<td colspan="10">No protocols match the current filters.</td>'
+        "</tr>"
+    )
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _catalog_protocol_html_row(
+    row: dict[str, Any],
+    columns: list[tuple[str, str]],
+) -> str:
+    attrs = {
+        "search": _catalog_search_text(row),
+        "species": _filter_tokens(row.get("species")),
+        "modality": _filter_tokens(row.get("modalities")),
+        "evidence": _filter_tokens(row.get("evidence_type")),
+        "report": _filter_tokens(row.get("report_status")),
+    }
+    attr_text = " ".join(
+        f'data-{name}="{escape(value, quote=True)}"' for name, value in attrs.items()
+    )
+    parts = [f"<tr {attr_text}>"]
+    for key, _ in columns:
+        parts.append(f"<td>{escape(_format_cell(row.get(key)))}</td>")
+    parts.append("</tr>")
+    return "\n".join(parts)
+
+
+def _catalog_filter_script() -> str:
+    return """
+<script>
+(() => {
+  const table = document.querySelector('[data-catalog-table="protocols"]');
+  if (!table) return;
+  const rows = Array.from(table.querySelectorAll('tbody tr[data-search]'));
+  const controls = {
+    search: document.getElementById('catalog-search'),
+    species: document.getElementById('species-filter'),
+    modality: document.getElementById('modality-filter'),
+    evidence: document.getElementById('evidence-filter'),
+    report: document.getElementById('report-filter'),
+  };
+  const counter = document.getElementById('catalog-result-count');
+  const noResults = document.getElementById('catalog-no-results');
+  const tokens = (value) => (value || '').split('|').filter(Boolean);
+  const text = (value) => (value || '').trim().toLowerCase();
+  function matches(row, key, value) {
+    return !value || tokens(row.dataset[key]).includes(value);
+  }
+  function applyFilters() {
+    const query = text(controls.search?.value);
+    const values = {
+      species: controls.species?.value || '',
+      modality: controls.modality?.value || '',
+      evidence: controls.evidence?.value || '',
+      report: controls.report?.value || '',
+    };
+    let visible = 0;
+    for (const row of rows) {
+      const ok = (!query || (row.dataset.search || '').includes(query))
+        && matches(row, 'species', values.species)
+        && matches(row, 'modality', values.modality)
+        && matches(row, 'evidence', values.evidence)
+        && matches(row, 'report', values.report);
+      row.hidden = !ok;
+      if (ok) visible += 1;
+    }
+    if (counter) counter.textContent = `${visible} protocol${visible === 1 ? '' : 's'}`;
+    if (noResults) noResults.hidden = visible !== 0;
+  }
+  Object.values(controls).forEach((control) => {
+    if (!control) return;
+    control.addEventListener(control.tagName === 'INPUT' ? 'input' : 'change', applyFilters);
+  });
+  applyFilters();
+})();
+</script>
+""".strip()
 
 
 def _html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
@@ -1008,6 +1213,55 @@ def _first_present_metric(
         if value is not None:
             return value
     return fallback
+
+
+def _unique_protocol_values(protocols: list[dict[str, Any]], key: str) -> list[str]:
+    values: set[str] = set()
+    for row in protocols:
+        value = row.get(key)
+        if isinstance(value, list):
+            values.update(str(item) for item in value if item is not None)
+        elif value is not None and value != "":
+            values.add(str(value))
+    return sorted(values, key=str.lower)
+
+
+def _catalog_search_text(row: dict[str, Any]) -> str:
+    values = [
+        row.get("protocol_id"),
+        row.get("name"),
+        row.get("family_name"),
+        row.get("species"),
+        row.get("modalities"),
+        row.get("evidence_type"),
+        row.get("choice_type"),
+        row.get("response_modalities"),
+        row.get("dataset_ids"),
+        row.get("slice_ids"),
+        row.get("curation_status"),
+        row.get("report_status"),
+    ]
+    return " ".join(_flatten_for_search(value) for value in values).lower()
+
+
+def _flatten_for_search(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list | tuple):
+        return " ".join(_flatten_for_search(item) for item in value)
+    return str(value)
+
+
+def _filter_tokens(value: Any) -> str:
+    if isinstance(value, list | tuple):
+        return "|".join(_filter_token(str(item)) for item in value if item is not None)
+    if value is None:
+        return ""
+    return _filter_token(str(value))
+
+
+def _filter_token(value: str) -> str:
+    return value.strip().lower()
 
 
 def _format_cell(value: Any) -> str:

@@ -214,7 +214,17 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert human_rdm_protocol["report_status"] == "no slice"
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
     assert loaded["catalog_schema_version"] == "0.1.0"
+    assert "Browse Protocols" in html
     assert "Protocol Catalog" in html
+    assert 'id="catalog-search"' in html
+    assert 'id="species-filter"' in html
+    assert 'id="modality-filter"' in html
+    assert 'id="evidence-filter"' in html
+    assert 'id="report-filter"' in html
+    assert 'data-catalog-table="protocols"' in html
+    assert 'data-report="no slice"' in html
+    assert "catalog-no-results" in html
+    assert "applyFilters" in html
     assert "Random-Dot Motion" in html
     assert "Human random-dot motion button reaction-time task" in html
     assert "signed motion coherence" in html
