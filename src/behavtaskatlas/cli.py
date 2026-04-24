@@ -10,10 +10,14 @@ from behavtaskatlas.clicks import (
     CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     DEFAULT_CLICKS_DERIVED_DIR,
     DEFAULT_CLICKS_SESSION_ID,
+    aggregate_brody_clicks_batch,
     analyze_brody_clicks,
     analyze_brody_clicks_evidence_kernel,
     brody_clicks_provenance_payload,
     load_brody_clicks_mat,
+    write_aggregate_kernel_summary_csv,
+    write_aggregate_kernel_svg,
+    write_aggregate_psychometric_bias_csv,
     write_clicks_batch_summary_csv,
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
@@ -172,6 +176,21 @@ def main(argv: list[str] | None = None) -> int:
         help="Stop after the first file that fails",
     )
 
+    clicks_aggregate_parser = subparsers.add_parser(
+        "clicks-aggregate",
+        help="Aggregate existing Brody Lab clicks batch outputs",
+    )
+    clicks_aggregate_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_CLICKS_DERIVED_DIR),
+        help="Directory containing generated auditory-clicks batch artifacts",
+    )
+    clicks_aggregate_parser.add_argument(
+        "--batch-summary",
+        default=None,
+        help="Optional explicit path to a clicks batch_summary.csv",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -216,6 +235,11 @@ def main(argv: list[str] | None = None) -> int:
             kernel_bins=args.kernel_bins,
             max_files=args.max_files,
             fail_fast=args.fail_fast,
+        )
+    if args.command == "clicks-aggregate":
+        return _clicks_aggregate(
+            derived_dir=Path(args.derived_dir),
+            batch_summary=Path(args.batch_summary) if args.batch_summary else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -492,6 +516,47 @@ def _clicks_batch(
     print(f"Wrote batch summary to {summary_path}")
     print(f"Processed {len(rows)} files: {len(rows) - n_failed} ok, {n_failed} failed")
     return 1 if n_failed else 0
+
+
+def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
+    batch_summary_path = batch_summary or derived_dir / "batch_summary.csv"
+    if not batch_summary_path.exists():
+        print(
+            f"Clicks batch summary not found: {batch_summary_path}. "
+            "Run `uv run behavtaskatlas clicks-batch` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        result = aggregate_brody_clicks_batch(batch_summary_path)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    output_dir = derived_dir
+    psychometric_path = output_dir / "aggregate_psychometric_bias.csv"
+    kernel_summary_path = output_dir / "aggregate_kernel_summary.csv"
+    result_path = output_dir / "aggregate_result.json"
+    kernel_plot_path = output_dir / "aggregate_kernel.svg"
+
+    write_aggregate_psychometric_bias_csv(
+        psychometric_path,
+        result["psychometric_bias_rows"],
+    )
+    write_aggregate_kernel_summary_csv(kernel_summary_path, result["kernel_summary_rows"])
+    write_analysis_json(result_path, result)
+    write_aggregate_kernel_svg(kernel_plot_path, result["kernel_summary_rows"])
+
+    print(f"Aggregated {result['n_ok']} ok batch rows from {batch_summary_path}")
+    print(f"Wrote aggregate psychometric bias table to {psychometric_path}")
+    print(f"Wrote aggregate kernel summary to {kernel_summary_path}")
+    print(f"Wrote aggregate result to {result_path}")
+    print(f"Wrote aggregate kernel plot to {kernel_plot_path}")
+    if result["n_artifact_errors"]:
+        print(f"Encountered {result['n_artifact_errors']} aggregate artifact errors")
+        return 1
+    return 0
 
 
 def _write_clicks_harmonization_outputs(

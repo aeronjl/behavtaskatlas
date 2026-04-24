@@ -1,6 +1,10 @@
+import json
+
 import pytest
 
 from behavtaskatlas.clicks import (
+    aggregate_brody_clicks_batch,
+    aggregate_kernel_svg,
     analyze_brody_clicks,
     analyze_brody_clicks_evidence_kernel,
     evidence_kernel_svg,
@@ -210,6 +214,161 @@ def test_write_clicks_batch_summary_csv(tmp_path) -> None:
     assert "B075-parsed" in text
 
 
+def test_aggregate_brody_clicks_batch_reads_batch_artifacts(tmp_path) -> None:
+    derived_dir = tmp_path / "auditory_clicks"
+    rat_a_dir = derived_dir / "A080-parsed"
+    rat_b_dir = derived_dir / "B075-parsed"
+    rat_a_dir.mkdir(parents=True)
+    rat_b_dir.mkdir(parents=True)
+
+    batch_summary_path = derived_dir / "batch_summary.csv"
+    write_clicks_batch_summary_csv(
+        batch_summary_path,
+        [
+            {
+                "mat_file": "A080.mat",
+                "session_id": "A080-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "A080",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 100,
+                "harmonization_summary_rows": 10,
+                "psychometric_summary_rows": 10,
+                "psychometric_prior_contexts": "gamma=-1",
+                "evidence_kernel_rows": 2,
+                "evidence_kernel_analyzed_trials": 100,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash-a",
+                "output_dir": str(rat_a_dir),
+            },
+            {
+                "mat_file": "B075.mat",
+                "session_id": "B075-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "B075",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 80,
+                "harmonization_summary_rows": 8,
+                "psychometric_summary_rows": 8,
+                "psychometric_prior_contexts": "gamma=-1",
+                "evidence_kernel_rows": 2,
+                "evidence_kernel_analyzed_trials": 80,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash-b",
+                "output_dir": str(rat_b_dir),
+            },
+        ],
+    )
+    _write_minimal_clicks_results(
+        rat_a_dir,
+        session_id="A080-parsed",
+        n_trials=100,
+        choice_differences=[2.0, -1.0],
+        bias=-0.5,
+    )
+    _write_minimal_clicks_results(
+        rat_b_dir,
+        session_id="B075-parsed",
+        n_trials=80,
+        choice_differences=[4.0, -3.0],
+        bias=0.5,
+    )
+
+    result = aggregate_brody_clicks_batch(batch_summary_path)
+
+    assert result["analysis_type"] == "batch_aggregate"
+    assert result["n_ok"] == 2
+    assert result["n_trials_total"] == 180
+    assert result["n_artifact_errors"] == 0
+    assert len(result["psychometric_bias_rows"]) == 2
+    assert result["psychometric_bias_rows"][0]["fit_status"] == "ok"
+    first_kernel_row = result["kernel_summary_rows"][0]
+    assert first_kernel_row["n_rats"] == 2
+    assert first_kernel_row["total_trials"] == 180
+    assert first_kernel_row["mean_choice_difference"] == pytest.approx(3.0)
+    assert first_kernel_row["median_choice_difference"] == pytest.approx(3.0)
+    assert first_kernel_row["min_choice_difference"] == pytest.approx(2.0)
+    assert first_kernel_row["max_choice_difference"] == pytest.approx(4.0)
+
+
+def test_aggregate_kernel_svg_contains_title() -> None:
+    svg = aggregate_kernel_svg(
+        [
+            {
+                "bin_index": 0,
+                "bin_start": 0.0,
+                "bin_end": 0.5,
+                "n_rats": 2,
+                "total_trials": 180,
+                "mean_choice_difference": 3.0,
+                "median_choice_difference": 3.0,
+                "min_choice_difference": 2.0,
+                "max_choice_difference": 4.0,
+                "mean_point_biserial_r": 0.3,
+                "mean_normalized_weight": 0.5,
+            }
+        ]
+    )
+
+    assert "<svg" in svg
+    assert "Mean choice-triggered evidence" in svg
+
+
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:
     with pytest.raises(ValueError, match="Missing required Brody clicks trial fields"):
         harmonize_brody_clicks_trial({}, session_id="s", trial_index=0)
+
+
+def _write_minimal_clicks_results(
+    output_dir,
+    *,
+    session_id: str,
+    n_trials: int,
+    choice_differences: list[float],
+    bias: float,
+) -> None:
+    analysis_result = {
+        "session_id": session_id,
+        "prior_results": [
+            {
+                "prior_context": "gamma=-1",
+                "n_trials": n_trials,
+                "n_response_trials": n_trials,
+                "n_click_difference_levels": 4,
+                "empirical_bias_click_difference": bias,
+                "empirical_threshold_click_difference": 2.0,
+                "left_lapse_empirical": 0.1,
+                "right_lapse_empirical": 0.2,
+                "fit": {
+                    "status": "ok",
+                    "bias_click_difference": bias + 0.1,
+                    "scale_click_difference": 4.0,
+                    "threshold_click_difference": 4.4,
+                    "left_lapse": 0.05,
+                    "right_lapse": 0.06,
+                },
+            }
+        ]
+    }
+    kernel_result = {
+        "n_analyzed_trials": n_trials,
+        "n_excluded_trials": 0,
+        "summary_rows": [
+            {
+                "bin_index": index,
+                "bin_start": index / len(choice_differences),
+                "bin_end": (index + 1) / len(choice_differences),
+                "n_trials": n_trials,
+                "choice_difference": choice_difference,
+                "point_biserial_r": choice_difference / 10.0,
+                "normalized_weight": choice_difference / 10.0,
+            }
+            for index, choice_difference in enumerate(choice_differences)
+        ],
+    }
+    (output_dir / "analysis_result.json").write_text(json.dumps(analysis_result))
+    (output_dir / "evidence_kernel_result.json").write_text(json.dumps(kernel_result))

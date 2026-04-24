@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import json
 import math
+import statistics
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -45,6 +47,38 @@ CLICKS_BATCH_SUMMARY_FIELDS = [
     "evidence_kernel_excluded_trials",
     "source_file_sha256",
     "output_dir",
+]
+AGGREGATE_PSYCHOMETRIC_BIAS_FIELDS = [
+    "session_id",
+    "subject_id",
+    "task_type",
+    "prior_context",
+    "n_trials",
+    "n_response_trials",
+    "n_click_difference_levels",
+    "empirical_bias_click_difference",
+    "empirical_threshold_click_difference",
+    "left_lapse_empirical",
+    "right_lapse_empirical",
+    "fit_status",
+    "fit_bias_click_difference",
+    "fit_scale_click_difference",
+    "fit_threshold_click_difference",
+    "fit_left_lapse",
+    "fit_right_lapse",
+]
+AGGREGATE_KERNEL_SUMMARY_FIELDS = [
+    "bin_index",
+    "bin_start",
+    "bin_end",
+    "n_rats",
+    "total_trials",
+    "mean_choice_difference",
+    "median_choice_difference",
+    "min_choice_difference",
+    "max_choice_difference",
+    "mean_point_biserial_r",
+    "mean_normalized_weight",
 ]
 
 
@@ -259,9 +293,264 @@ def write_clicks_batch_summary_csv(path: Path, rows: list[dict[str, Any]]) -> No
         writer.writerows(rows)
 
 
+def aggregate_brody_clicks_batch(batch_summary_path: Path) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    batch_rows = _read_csv_dicts(batch_summary_path)
+    psychometric_rows: list[dict[str, Any]] = []
+    kernel_rows_by_bin: dict[int, list[dict[str, Any]]] = {}
+    rat_results: list[dict[str, Any]] = []
+    task_types = set()
+    gamma_contexts = set()
+
+    for batch_row in batch_rows:
+        if batch_row.get("task_type"):
+            task_types.add(batch_row["task_type"])
+        if batch_row.get("psychometric_prior_contexts"):
+            gamma_contexts.update(
+                context
+                for context in batch_row["psychometric_prior_contexts"].split(";")
+                if context
+            )
+
+        rat_result = _batch_rat_result_template(batch_row, batch_summary_path=batch_summary_path)
+        if batch_row.get("status") != "ok":
+            rat_result["status"] = "batch_error"
+            rat_result["error"] = batch_row.get("error")
+            rat_results.append(rat_result)
+            continue
+
+        output_dir = Path(rat_result["output_dir"])
+        analysis_path = output_dir / "analysis_result.json"
+        kernel_path = output_dir / "evidence_kernel_result.json"
+        rat_result["analysis_result_path"] = str(analysis_path)
+        rat_result["evidence_kernel_result_path"] = str(kernel_path)
+
+        try:
+            analysis_result = _read_json_dict(analysis_path)
+            kernel_result = _read_json_dict(kernel_path)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            rat_result["status"] = "artifact_error"
+            rat_result["error"] = str(exc)
+            rat_results.append(rat_result)
+            continue
+
+        prior_results = analysis_result.get("prior_results", [])
+        kernel_summary_rows = kernel_result.get("summary_rows", [])
+        rat_result.update(
+            {
+                "status": "ok",
+                "error": None,
+                "n_psychometric_prior_contexts": len(prior_results),
+                "n_kernel_rows": len(kernel_summary_rows),
+                "n_kernel_analyzed_trials": kernel_result.get("n_analyzed_trials"),
+                "n_kernel_excluded_trials": kernel_result.get("n_excluded_trials"),
+            }
+        )
+        rat_results.append(rat_result)
+
+        for prior_result in prior_results:
+            context = prior_result.get("prior_context")
+            if context:
+                gamma_contexts.add(context)
+            psychometric_rows.append(
+                _aggregate_psychometric_row(
+                    batch_row=batch_row,
+                    prior_result=prior_result,
+                )
+            )
+
+        for kernel_row in kernel_summary_rows:
+            bin_index = _optional_int(kernel_row.get("bin_index"))
+            if bin_index is None:
+                continue
+            kernel_rows_by_bin.setdefault(bin_index, []).append(kernel_row)
+
+    kernel_summary = _aggregate_kernel_rows(kernel_rows_by_bin)
+    n_batch_ok = sum(1 for row in batch_rows if row.get("status") == "ok")
+    n_batch_failed = len(batch_rows) - n_batch_ok
+    n_artifact_errors = sum(1 for row in rat_results if row.get("status") == "artifact_error")
+
+    return {
+        "analysis_id": "analysis.auditory-clicks.batch-aggregate",
+        "analysis_type": "batch_aggregate",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "protocol_id": BRODY_CLICKS_PROTOCOL_ID,
+        "dataset_id": BRODY_CLICKS_DATASET_ID,
+        "batch_summary_path": str(batch_summary_path),
+        "n_batch_rows": len(batch_rows),
+        "n_ok": n_batch_ok,
+        "n_failed": n_batch_failed,
+        "n_artifact_errors": n_artifact_errors,
+        "n_trials_total": sum(
+            _optional_int(row.get("n_trials")) or 0
+            for row in batch_rows
+            if row.get("status") == "ok"
+        ),
+        "task_types": sorted(task_types),
+        "gamma_contexts": sorted(gamma_contexts),
+        "rat_results": rat_results,
+        "psychometric_bias_rows": psychometric_rows,
+        "kernel_summary_rows": kernel_summary,
+        "caveats": [
+            (
+                "This aggregate reads previously generated local batch artifacts; it does "
+                "not reprocess raw `.mat` files."
+            ),
+            (
+                "Per-rat psychometric rows preserve each rat's gamma schedule rather than "
+                "forcing a shared set of prior contexts."
+            ),
+            (
+                "Kernel rows average descriptive choice-triggered evidence summaries across rats; "
+                "they are not a hierarchical or multivariate click-weighting model."
+            ),
+        ],
+    }
+
+
+def write_aggregate_psychometric_bias_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=AGGREGATE_PSYCHOMETRIC_BIAS_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_aggregate_kernel_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=AGGREGATE_KERNEL_SUMMARY_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_aggregate_kernel_svg(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(aggregate_kernel_svg(rows), encoding="utf-8")
+
+
 def write_evidence_kernel_svg(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(evidence_kernel_svg(rows), encoding="utf-8")
+
+
+def aggregate_kernel_svg(rows: list[dict[str, Any]]) -> str:
+    width = 760
+    height = 430
+    left = 78
+    right = 34
+    top = 44
+    bottom = 72
+    plot_width = width - left - right
+    plot_height = height - top - bottom
+    if not rows:
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="120">'
+            '<text x="20" y="60">No aggregate evidence-kernel data available</text></svg>\n'
+        )
+
+    y_values = []
+    for row in rows:
+        for key in [
+            "mean_choice_difference",
+            "min_choice_difference",
+            "max_choice_difference",
+        ]:
+            value = _optional_float(row.get(key))
+            if value is not None:
+                y_values.append(value)
+    if not y_values:
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="120">'
+            '<text x="20" y="60">No aggregate evidence-kernel data available</text></svg>\n'
+        )
+    y_limit = max(max(abs(value) for value in y_values), 1.0)
+
+    def x_scale(index: int) -> float:
+        return left + (index + 0.5) * plot_width / len(rows)
+
+    def y_scale(value: float) -> float:
+        return top + (0.5 - value / (2.0 * y_limit)) * plot_height
+
+    zero_y = y_scale(0.0)
+    points = []
+    elements = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+        f'<text x="{left}" y="24" font-family="sans-serif" font-size="16" '
+        'font-weight="700">Mean choice-triggered evidence across rats</text>',
+        f'<line x1="{left}" y1="{zero_y:.1f}" x2="{left + plot_width}" '
+        f'y2="{zero_y:.1f}" stroke="#222"/>',
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" '
+        'stroke="#222"/>',
+        f'<text x="{left + plot_width / 2}" y="{height - 22}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14">Normalized stimulus time</text>',
+        f'<text x="18" y="{top + plot_height / 2}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14" transform="rotate(-90 18 '
+        f'{top + plot_height / 2})">Right-choice minus left-choice evidence</text>',
+    ]
+
+    for y_value in [-y_limit, -y_limit / 2.0, 0.0, y_limit / 2.0, y_limit]:
+        y = y_scale(y_value)
+        elements.append(
+            f'<line x1="{left - 4}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}" '
+            'stroke="#ddd"/>'
+        )
+        elements.append(
+            f'<text x="{left - 10}" y="{y + 4:.1f}" text-anchor="end" '
+            f'font-family="sans-serif" font-size="11">{y_value:.2g}</text>'
+        )
+
+    for row in rows:
+        index = int(row["bin_index"])
+        mean_value = _optional_float(row.get("mean_choice_difference"))
+        if mean_value is None:
+            continue
+        x = x_scale(index)
+        y = y_scale(mean_value)
+        points.append((x, y))
+        min_value = _optional_float(row.get("min_choice_difference"))
+        max_value = _optional_float(row.get("max_choice_difference"))
+        if min_value is not None and max_value is not None:
+            y_min = y_scale(min_value)
+            y_max = y_scale(max_value)
+            elements.append(
+                f'<line x1="{x:.1f}" y1="{y_max:.1f}" x2="{x:.1f}" y2="{y_min:.1f}" '
+                'stroke="#7a7a7a" stroke-width="1.3"/>'
+            )
+            elements.append(
+                f'<line x1="{x - 5:.1f}" y1="{y_max:.1f}" x2="{x + 5:.1f}" '
+                f'y2="{y_max:.1f}" stroke="#7a7a7a" stroke-width="1.3"/>'
+            )
+            elements.append(
+                f'<line x1="{x - 5:.1f}" y1="{y_min:.1f}" x2="{x + 5:.1f}" '
+                f'y2="{y_min:.1f}" stroke="#7a7a7a" stroke-width="1.3"/>'
+            )
+        elements.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="#1f77b4"/>'
+        )
+        elements.append(
+            f'<text x="{x:.1f}" y="{height - 48}" text-anchor="middle" '
+            f'font-family="sans-serif" font-size="11">{float(row["bin_start"]):.1f}</text>'
+        )
+
+    if len(points) > 1:
+        path = " ".join(
+            f"{'M' if index == 0 else 'L'} {x:.1f} {y:.1f}"
+            for index, (x, y) in enumerate(points)
+        )
+        elements.append(f'<path d="{path}" fill="none" stroke="#1f77b4" stroke-width="2"/>')
+
+    elements.append(
+        f'<text x="{left + plot_width}" y="{height - 48}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="11">1.0</text>'
+    )
+    elements.append("</svg>")
+    return "\n".join(elements) + "\n"
 
 
 def evidence_kernel_svg(rows: list[dict[str, Any]]) -> str:
@@ -383,6 +672,137 @@ def brody_clicks_provenance_payload(
     }
 
 
+def _read_csv_dicts(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _read_json_dict(path: Path) -> dict[str, Any]:
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return loaded
+
+
+def _batch_rat_result_template(
+    batch_row: dict[str, Any],
+    *,
+    batch_summary_path: Path,
+) -> dict[str, Any]:
+    output_dir = _batch_output_dir(batch_row, batch_summary_path=batch_summary_path)
+    return {
+        "mat_file": batch_row.get("mat_file"),
+        "session_id": batch_row.get("session_id"),
+        "subject_id": batch_row.get("subject_id"),
+        "task_type": batch_row.get("task_type"),
+        "batch_status": batch_row.get("status"),
+        "n_trials": _optional_int(batch_row.get("n_trials")),
+        "output_dir": str(output_dir),
+        "status": None,
+        "error": None,
+    }
+
+
+def _batch_output_dir(batch_row: dict[str, Any], *, batch_summary_path: Path) -> Path:
+    candidates = []
+    if batch_row.get("output_dir"):
+        output_dir = Path(batch_row["output_dir"])
+        candidates.append(output_dir)
+        if not output_dir.is_absolute():
+            candidates.append(batch_summary_path.parent / output_dir)
+    if batch_row.get("session_id"):
+        candidates.append(batch_summary_path.parent / batch_row["session_id"])
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0] if candidates else batch_summary_path.parent
+
+
+def _aggregate_psychometric_row(
+    *,
+    batch_row: dict[str, Any],
+    prior_result: dict[str, Any],
+) -> dict[str, Any]:
+    fit = prior_result.get("fit")
+    if not isinstance(fit, dict):
+        fit = {}
+    return {
+        "session_id": batch_row.get("session_id"),
+        "subject_id": batch_row.get("subject_id"),
+        "task_type": batch_row.get("task_type"),
+        "prior_context": prior_result.get("prior_context"),
+        "n_trials": prior_result.get("n_trials"),
+        "n_response_trials": prior_result.get("n_response_trials"),
+        "n_click_difference_levels": prior_result.get("n_click_difference_levels"),
+        "empirical_bias_click_difference": prior_result.get(
+            "empirical_bias_click_difference"
+        ),
+        "empirical_threshold_click_difference": prior_result.get(
+            "empirical_threshold_click_difference"
+        ),
+        "left_lapse_empirical": prior_result.get("left_lapse_empirical"),
+        "right_lapse_empirical": prior_result.get("right_lapse_empirical"),
+        "fit_status": fit.get("status"),
+        "fit_bias_click_difference": fit.get("bias_click_difference"),
+        "fit_scale_click_difference": fit.get("scale_click_difference"),
+        "fit_threshold_click_difference": fit.get("threshold_click_difference"),
+        "fit_left_lapse": fit.get("left_lapse"),
+        "fit_right_lapse": fit.get("right_lapse"),
+    }
+
+
+def _aggregate_kernel_rows(
+    kernel_rows_by_bin: dict[int, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    rows = []
+    for bin_index, bin_rows in sorted(kernel_rows_by_bin.items()):
+        choice_differences = _finite_float_values(bin_rows, "choice_difference")
+        point_biserial_values = _finite_float_values(bin_rows, "point_biserial_r")
+        normalized_weights = _finite_float_values(bin_rows, "normalized_weight")
+        rows.append(
+            {
+                "bin_index": bin_index,
+                "bin_start": _mean_float(_finite_float_values(bin_rows, "bin_start")),
+                "bin_end": _mean_float(_finite_float_values(bin_rows, "bin_end")),
+                "n_rats": len(bin_rows),
+                "total_trials": sum(_optional_int(row.get("n_trials")) or 0 for row in bin_rows),
+                "mean_choice_difference": _mean_float(choice_differences),
+                "median_choice_difference": _median_float(choice_differences),
+                "min_choice_difference": min(choice_differences)
+                if choice_differences
+                else None,
+                "max_choice_difference": max(choice_differences)
+                if choice_differences
+                else None,
+                "mean_point_biserial_r": _mean_float(point_biserial_values),
+                "mean_normalized_weight": _mean_float(normalized_weights),
+            }
+        )
+    return rows
+
+
+def _finite_float_values(rows: list[dict[str, Any]], key: str) -> list[float]:
+    values = []
+    for row in rows:
+        value = _optional_float(row.get(key))
+        if value is not None:
+            values.append(value)
+    return values
+
+
+def _mean_float(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _median_float(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return statistics.median(values)
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -464,7 +884,7 @@ def _time_bin_index(time_value: float, stimulus_duration: float, n_bins: int) ->
     return min(int(normalized * n_bins), n_bins - 1)
 
 
-def _mean(values: list[int]) -> float | None:
+def _mean(values: list[float]) -> float | None:
     if not values:
         return None
     return sum(values) / len(values)
@@ -594,6 +1014,13 @@ def _optional_float(value: Any) -> float | None:
     if numeric is None or math.isnan(numeric):
         return None
     return numeric
+
+
+def _optional_int(value: Any) -> int | None:
+    numeric = _optional_float(value)
+    if numeric is None:
+        return None
+    return int(numeric)
 
 
 def _as_float(value: Any) -> float | None:

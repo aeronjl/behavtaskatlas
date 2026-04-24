@@ -1,7 +1,7 @@
 analysis_id: analysis.auditory-clicks.baseline-plan
 protocol_id: protocol.poisson-clicks-evidence-accumulation
 dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
-status: real-file-batch-analysis-run
+status: real-file-batch-aggregate-run
 inputs:
   - canonical trial table generated from local Brody Lab parsed `B075.mat`
   - batch of five locally extracted Brody Lab parsed `.mat` files
@@ -10,6 +10,10 @@ verified_outputs:
   - 181 summary rows grouped by gamma context and click-count difference
   - 61222 canonical trial rows across five rats in the first batch run
   - batch summary CSV with per-rat success/error and output counts
+  - aggregate psychometric bias CSV with 44 per-rat/gamma rows
+  - aggregate evidence-kernel CSV with 10 normalized stimulus-time rows
+  - aggregate result JSON with batch, artifact, task-type, and gamma-context counts
+  - dependency-free SVG aggregate evidence-kernel plot
   - psychometric summary CSV
   - analysis result JSON with per-gamma empirical and fitted psychometric metrics
   - dependency-free SVG psychometric plot
@@ -27,10 +31,11 @@ implemented_outputs:
   - summary of stimulus duration and click-count distributions
   - choice-triggered evidence kernel by normalized click time
   - batch harmonization and analysis summary across local rat files
+  - batch aggregate of per-rat/gamma psychometric bias and click-time kernel summaries
 deferred_outputs:
   - multivariate click-time weighting model
   - pulse accumulation model fit
-  - per-rat and pooled hierarchical summaries
+  - pooled hierarchical summaries
 provenance_requirements:
   - source Zenodo DOI
   - source `.mat` filename and hash
