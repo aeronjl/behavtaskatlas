@@ -27,7 +27,11 @@ from behavtaskatlas.clicks import (
 from behavtaskatlas.ibl import (
     DEFAULT_DERIVED_DIR,
     DEFAULT_IBL_EID,
-    analyze_ibl_visual_decision,
+    DEFAULT_MOUSE_UNBIASED_DERIVED_DIR,
+    DEFAULT_MOUSE_UNBIASED_EID,
+    IBL_VISUAL_PROTOCOL_ID,
+    MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+    analyze_ibl_visual_protocol,
     harmonize_ibl_visual_trials,
     load_canonical_trials_csv,
     load_ibl_trials_from_openalyx,
@@ -90,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     ibl_parser.add_argument("--eid", default=DEFAULT_IBL_EID, help="IBL session UUID/eid")
     ibl_parser.add_argument(
+        "--protocol-id",
+        default=IBL_VISUAL_PROTOCOL_ID,
+        help="Protocol id to stamp into canonical trials",
+    )
+    ibl_parser.add_argument(
         "--out-dir",
         default="derived/ibl_visual_decision",
         help="Directory for generated artifacts",
@@ -106,6 +115,11 @@ def main(argv: list[str] | None = None) -> int:
         "ibl-analyze", help="Analyze a harmonized IBL visual decision session"
     )
     analyze_parser.add_argument("--eid", default=DEFAULT_IBL_EID, help="IBL session UUID/eid")
+    analyze_parser.add_argument(
+        "--protocol-id",
+        default=None,
+        help="Optional protocol id override for the analysis payload",
+    )
     analyze_parser.add_argument(
         "--derived-dir",
         default=str(DEFAULT_DERIVED_DIR),
@@ -143,6 +157,92 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional explicit path to psychometric.svg",
     )
     ibl_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    mouse_unbiased_parser = subparsers.add_parser(
+        "mouse-unbiased-harmonize",
+        help="Harmonize one IBL trainingChoiceWorld visual contrast session",
+    )
+    mouse_unbiased_parser.add_argument(
+        "--eid",
+        default=DEFAULT_MOUSE_UNBIASED_EID,
+        help="IBL trainingChoiceWorld session UUID/eid",
+    )
+    mouse_unbiased_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_MOUSE_UNBIASED_DERIVED_DIR),
+        help="Directory for generated artifacts",
+    )
+    mouse_unbiased_parser.add_argument(
+        "--cache-dir",
+        default=None,
+        help="Optional ONE cache directory",
+    )
+    mouse_unbiased_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional trial limit",
+    )
+    mouse_unbiased_parser.add_argument(
+        "--revision",
+        default=None,
+        help="Optional IBL dataset revision to load",
+    )
+
+    mouse_unbiased_analyze_parser = subparsers.add_parser(
+        "mouse-unbiased-analyze",
+        help="Analyze a harmonized IBL trainingChoiceWorld visual contrast session",
+    )
+    mouse_unbiased_analyze_parser.add_argument(
+        "--eid",
+        default=DEFAULT_MOUSE_UNBIASED_EID,
+        help="IBL trainingChoiceWorld session UUID/eid",
+    )
+    mouse_unbiased_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_MOUSE_UNBIASED_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    mouse_unbiased_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    mouse_unbiased_report_parser = subparsers.add_parser(
+        "mouse-unbiased-report",
+        help="Render a static HTML report from an IBL trainingChoiceWorld analysis",
+    )
+    mouse_unbiased_report_parser.add_argument(
+        "--eid",
+        default=DEFAULT_MOUSE_UNBIASED_EID,
+        help="IBL trainingChoiceWorld session UUID/eid",
+    )
+    mouse_unbiased_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_MOUSE_UNBIASED_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    mouse_unbiased_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    mouse_unbiased_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    mouse_unbiased_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    mouse_unbiased_report_parser.add_argument(
         "--out-file",
         default=None,
         help="Optional report HTML output path",
@@ -434,14 +534,41 @@ def main(argv: list[str] | None = None) -> int:
             cache_dir=Path(args.cache_dir) if args.cache_dir else None,
             limit=args.limit,
             revision=args.revision,
+            protocol_id=args.protocol_id,
         )
     if args.command == "ibl-analyze":
         return _ibl_analyze(
             eid=args.eid,
             derived_dir=Path(args.derived_dir),
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+            protocol_id=args.protocol_id,
         )
     if args.command == "ibl-report":
+        return _ibl_report(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "mouse-unbiased-harmonize":
+        return _ibl_harmonize(
+            eid=args.eid,
+            out_dir=Path(args.out_dir),
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
+            limit=args.limit,
+            revision=args.revision,
+            protocol_id=MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+        )
+    if args.command == "mouse-unbiased-analyze":
+        return _ibl_analyze(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+            protocol_id=MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+        )
+    if args.command == "mouse-unbiased-report":
         return _ibl_report(
             eid=args.eid,
             derived_dir=Path(args.derived_dir),
@@ -567,6 +694,7 @@ def _ibl_harmonize(
     cache_dir: Path | None,
     limit: int | None,
     revision: str | None,
+    protocol_id: str,
 ) -> int:
     try:
         source_trials, details = load_ibl_trials_from_openalyx(
@@ -578,6 +706,7 @@ def _ibl_harmonize(
             source_trials,
             session_id=eid,
             subject_id=details.get("subject"),
+            protocol_id=protocol_id,
             limit=limit,
         )
     except (RuntimeError, ValueError) as exc:
@@ -598,6 +727,7 @@ def _ibl_harmonize(
             eid=eid,
             details=details,
             trials=trials,
+            protocol_id=protocol_id,
             output_files={
                 "trials": str(trials_path),
                 "summary": str(summary_path),
@@ -617,6 +747,7 @@ def _ibl_analyze(
     eid: str,
     derived_dir: Path,
     trials_csv: Path | None,
+    protocol_id: str | None,
 ) -> int:
     session_dir = derived_dir / eid
     trials_path = trials_csv or session_dir / "trials.csv"
@@ -629,7 +760,7 @@ def _ibl_analyze(
         return 2
 
     trials = load_canonical_trials_csv(trials_path)
-    result = analyze_ibl_visual_decision(trials)
+    result = analyze_ibl_visual_protocol(trials, protocol_id=protocol_id)
 
     summary_path = session_dir / "psychometric_summary.csv"
     result_path = session_dir / "analysis_result.json"
@@ -662,8 +793,8 @@ def _ibl_report(
     report_path = out_file or session_dir / "report.html"
     if not analysis_path.exists():
         print(
-            f"IBL analysis result not found: {analysis_path}. "
-            "Run `uv run behavtaskatlas ibl-analyze` first.",
+            f"IBL-style visual analysis result not found: {analysis_path}. "
+            "Run the matching analyze command first.",
             file=sys.stderr,
         )
         return 2
@@ -702,7 +833,7 @@ def _ibl_report(
         artifact_links=artifact_links,
     )
 
-    print(f"Wrote IBL visual decision report to {report_path}")
+    print(f"Wrote IBL-style visual report to {report_path}")
     if psychometric_svg_text is None:
         print(
             "Psychometric SVG not found, wrote report without inline plot: "

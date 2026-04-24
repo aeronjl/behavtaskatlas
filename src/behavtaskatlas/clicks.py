@@ -215,6 +215,7 @@ def analyze_brody_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
         analysis_id="analysis.auditory-clicks.descriptive-psychometric",
         protocol_id=BRODY_CLICKS_PROTOCOL_ID,
         dataset_id=BRODY_CLICKS_DATASET_ID,
+        report_title="Auditory Clicks Aggregate Report",
         stimulus_label="Signed click-count difference",
         stimulus_units="right minus left clicks",
         stimulus_metric_name="click_difference",

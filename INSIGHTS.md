@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 00:44:45 BST - TrainingChoiceWorld adds a fourth report-backed slice
+
+The mouse unbiased visual contrast wheel protocol now has a concrete OpenAlyx `trainingChoiceWorld` session selected, harmonized, analyzed, and reported. This turns the broad IBL public behavior dataset link into an analysis-ready slice for one pinned session while preserving the distinction between archive coverage and the exact subset used for a report.
+
+The curation impact is measurable: the atlas now has four report-backed concrete protocols, and the queue drops to eight open items. The deeper technical lesson is that protocol variants need lightweight adapters around shared canonical trial semantics, because this training session uses the same contrast-choice structure as the IBL visual decision slice but different behavioral context through `probabilityLeft` and task protocol metadata.
+
 ## 2026-04-25 00:29:52 BST - Broad datasets can back catalog variants before slice subsets are pinned
 
 The mouse unbiased visual contrast wheel protocol is now linked to the broad IBL public behavioral dataset. This is justified as metadata because IBL public behavior includes training-phase choice-world data, and IBL tooling distinguishes `trainingChoiceWorld` from biased and ephys choice-world sessions.

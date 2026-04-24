@@ -13,9 +13,9 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template, three report-backed
-  concrete protocols, one data-linked catalog variant, and four remaining
-  dataset-seeking variants for breadth testing.
+- Nine current protocol records: one abstract template, four report-backed
+  concrete protocols, and four remaining dataset-seeking variants for breadth
+  testing.
 
 ## Local Workflow
 
@@ -109,6 +109,22 @@ The RDM slice writes ignored local artifacts under
 psychometric and chronometric summaries, descriptive fit results, dependency-free
 SVG plots, and a static report. The raw processed CSV stays under ignored
 `data/raw/random_dot_motion/`.
+
+Generate the mouse unbiased visual contrast training slice from the pinned
+OpenAlyx trainingChoiceWorld session:
+
+```bash
+uv run --extra ibl behavtaskatlas mouse-unbiased-harmonize \
+  --cache-dir data/raw/openalyx-cache
+uv run behavtaskatlas mouse-unbiased-analyze
+uv run behavtaskatlas mouse-unbiased-report
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/`.
+It reuses the IBL canonical trial adapter while stamping trials with the
+mouse-unbiased protocol id.
 
 Build the local static report index:
 

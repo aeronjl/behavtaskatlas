@@ -1,0 +1,50 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.mouse-visual-contrast-unbiased
+title: Mouse Visual Contrast Training
+description: >
+  IBL trainingChoiceWorld visual contrast slice with OpenAlyx provenance,
+  canonical trials, and descriptive psychometric summaries for one public
+  training-session table.
+curation_status: analysis-verified
+display_order: 25
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.mouse-visual-contrast-wheel-unbiased
+dataset_id: dataset.ibl-public-behavior
+report_path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/report.html
+analysis_result_path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/analysis_result.json
+primary_artifact_path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/report.html
+  - label: Analysis result JSON
+    path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/analysis_result.json
+  - label: Psychometric SVG
+    path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/psychometric.svg
+  - label: Canonical trials CSV
+    path: mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/trials.csv
+  - label: Slice notes
+    path: vertical_slices/mouse_visual_contrast_unbiased/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/mouse_visual_contrast_unbiased.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: signed contrast
+  evidence_type: static
+  choice_type: 2afc
+  response_modality: wheel
+  analysis_outputs: training-session psychometric fits
+  data_scope: one OpenAlyx trainingChoiceWorld public session
+  canonical_axis: right contrast positive, left contrast negative
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Vertical-slice report metadata for a public IBL trainingChoiceWorld session
+    selected to make the mouse visual contrast wheel protocol analysis-backed.

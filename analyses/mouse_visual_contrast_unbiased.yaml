@@ -1,0 +1,31 @@
+analysis_id: analysis.mouse-visual-contrast-unbiased.descriptive-psychometric
+protocol_id: protocol.mouse-visual-contrast-wheel-unbiased
+dataset_id: dataset.ibl-public-behavior
+status: openalyx-static-report-run
+inputs:
+  - canonical trial table generated from OpenAlyx session 6a6442d1-dd7d-4717-b7b1-5874aefbd6fc
+verified_outputs:
+  - 646 canonical trial rows from alf/_ibl_trials.table.pqt
+  - psychometric summary rows grouped by probabilityLeft context and signed contrast
+  - analysis result JSON with empirical and fitted psychometric metrics
+  - dependency-free SVG psychometric plot
+  - static HTML report generated from ignored local artifacts
+grouping_variables:
+  - signed contrast
+  - probabilityLeft context
+implemented_outputs:
+  - trial count by signed contrast and probabilityLeft context
+  - proportion rightward choice by signed contrast
+  - accuracy by signed contrast
+  - descriptive psychometric fit per probabilityLeft context when enough points exist
+deferred_outputs:
+  - full training trajectory over multiple sessions
+  - explicit separation of adaptive side-bias correction from block-prior manipulation
+  - comparison against the existing IBL biased/ephys visual decision slice
+provenance_requirements:
+  - OpenAlyx session id
+  - source task protocol
+  - trials table revision metadata
+  - ONE-api version
+  - date generated
+  - adapter version or commit hash

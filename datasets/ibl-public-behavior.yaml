@@ -48,7 +48,7 @@ provenance:
     Initial dataset metadata for the first planned vertical slice. The broad
     public behavior dataset also covers IBL training-phase choice-world data,
     so it can back the catalog-only unbiased visual contrast wheel protocol
-    while the exact session subset remains to be curated.
+    while the report-backed slice pins one concrete trainingChoiceWorld session.
 caveats:
   - Exact licensing and field-level mappings must be verified before harmonization.
-  - The unbiased protocol link is broad; a vertical slice should pin a concrete trainingChoiceWorld session subset.
+  - The unbiased protocol link is broad; the current vertical slice covers one concrete trainingChoiceWorld session rather than the full training archive.

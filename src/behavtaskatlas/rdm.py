@@ -158,6 +158,7 @@ def analyze_roitman_rdm(trials: list[CanonicalTrial]) -> dict[str, Any]:
         analysis_id="analysis.random-dot-motion.descriptive-psychometric",
         protocol_id=ROITMAN_RDM_PROTOCOL_ID,
         dataset_id=ROITMAN_RDM_DATASET_ID,
+        report_title="Random-Dot Motion Report",
         stimulus_label="Signed motion coherence",
         stimulus_units="percent coherence, signed target 1 positive",
         stimulus_metric_name="coherence",

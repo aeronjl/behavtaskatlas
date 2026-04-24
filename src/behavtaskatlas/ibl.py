@@ -16,9 +16,12 @@ from typing import Any
 from behavtaskatlas.models import CanonicalTrial
 
 IBL_VISUAL_PROTOCOL_ID = "protocol.ibl-visual-decision-v1"
+MOUSE_UNBIASED_VISUAL_PROTOCOL_ID = "protocol.mouse-visual-contrast-wheel-unbiased"
 IBL_PUBLIC_BEHAVIOR_DATASET_ID = "dataset.ibl-public-behavior"
 DEFAULT_IBL_EID = "ebce500b-c530-47de-8cb1-963c552703ea"
+DEFAULT_MOUSE_UNBIASED_EID = "6a6442d1-dd7d-4717-b7b1-5874aefbd6fc"
 DEFAULT_DERIVED_DIR = Path("derived/ibl_visual_decision")
+DEFAULT_MOUSE_UNBIASED_DERIVED_DIR = Path("derived/mouse_visual_contrast_unbiased")
 
 IBL_REQUIRED_TRIAL_FIELDS = {
     "contrastLeft",
@@ -283,6 +286,7 @@ def analyze_canonical_psychometric(
     analysis_id: str,
     protocol_id: str,
     dataset_id: str,
+    report_title: str,
     stimulus_label: str,
     stimulus_units: str | None,
     stimulus_metric_name: str,
@@ -331,6 +335,7 @@ def analyze_canonical_psychometric(
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "protocol_id": protocol_id,
         "dataset_id": dataset_id,
+        "report_title": report_title,
         "n_trials": len(trials),
         "n_response_trials": sum(1 for trial in trials if trial.choice != "no-response"),
         "n_no_response_trials": sum(1 for trial in trials if trial.choice == "no-response"),
@@ -352,6 +357,7 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
         analysis_id="analysis.ibl-visual-decision.descriptive-psychometric",
         protocol_id=IBL_VISUAL_PROTOCOL_ID,
         dataset_id=IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        report_title="IBL Visual Decision Report",
         stimulus_label="Signed contrast",
         stimulus_units="percent contrast, signed right positive",
         stimulus_metric_name="contrast",
@@ -367,6 +373,52 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
             ),
         ],
     )
+
+
+def analyze_mouse_unbiased_visual_contrast(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    return analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.mouse-visual-contrast-unbiased.descriptive-psychometric",
+        protocol_id=MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+        dataset_id=IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        report_title="Mouse Visual Contrast Training Report",
+        stimulus_label="Signed contrast",
+        stimulus_units="percent contrast, signed right positive",
+        stimulus_metric_name="contrast",
+        caveats=[
+            (
+                "This slice uses one OpenAlyx trainingChoiceWorld session from the broad "
+                "IBL public behavior archive; it does not summarize the full archive."
+            ),
+            (
+                "The source probabilityLeft field varies across the selected training "
+                "session and is reported as prior_context for transparency, but this "
+                "training slice should not be interpreted as a block-prior experiment."
+            ),
+            (
+                "Empirical bias and threshold use linear interpolation over empirical "
+                "p(right). Fitted values use a four-parameter logistic model, not the "
+                "full IBL psychofit implementation."
+            ),
+            (
+                "No-response trials are included in total trial counts but excluded from "
+                "the p(right) denominator."
+            ),
+        ],
+    )
+
+
+def analyze_ibl_visual_protocol(
+    trials: list[CanonicalTrial],
+    *,
+    protocol_id: str | None = None,
+) -> dict[str, Any]:
+    selected_protocol_id = protocol_id or _common_value(
+        [trial.protocol_id for trial in trials if trial.protocol_id]
+    )
+    if selected_protocol_id == MOUSE_UNBIASED_VISUAL_PROTOCOL_ID:
+        return analyze_mouse_unbiased_visual_contrast(trials)
+    return analyze_ibl_visual_decision(trials)
 
 
 def fit_psychometric_rows(
@@ -600,7 +652,7 @@ def ibl_visual_report_html(
     prior_results = analysis_result.get("prior_results", [])
     summary_rows = analysis_result.get("summary_rows", [])
     source = provenance.get("source", {}) if isinstance(provenance.get("source"), dict) else {}
-    title = "IBL Visual Decision Report"
+    title = str(analysis_result.get("report_title") or "IBL Visual Decision Report")
     svg = psychometric_svg_text or (
         '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
         '<text x="20" y="60">Psychometric plot not available</text></svg>'
@@ -979,6 +1031,7 @@ def provenance_payload(
     details: dict[str, Any],
     output_files: dict[str, str],
     trials: list[CanonicalTrial],
+    protocol_id: str = IBL_VISUAL_PROTOCOL_ID,
     source_revision_note: str | None = None,
 ) -> dict[str, Any]:
     revision_info = details.get("_behavtaskatlas_trials_revision")
@@ -988,7 +1041,7 @@ def provenance_payload(
         "behavtaskatlas_commit": current_git_commit(),
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "one_api_version": installed_package_version("ONE-api"),
-        "protocol_id": IBL_VISUAL_PROTOCOL_ID,
+        "protocol_id": protocol_id,
         "dataset_id": IBL_PUBLIC_BEHAVIOR_DATASET_ID,
         "source": {
             "base_url": "https://openalyx.internationalbrainlab.org",

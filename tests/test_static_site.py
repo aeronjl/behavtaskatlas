@@ -120,8 +120,10 @@ def test_static_index_links_random_dot_motion_report(tmp_path) -> None:
     )
     html = static_index_html(payload)
 
-    rdm_slice = payload["slices"][2]
-    rdm_row = payload["comparison_rows"][2]
+    rdm_slice = next(item for item in payload["slices"] if item["id"] == "slice.random-dot-motion")
+    rdm_row = next(
+        item for item in payload["comparison_rows"] if item["slice_id"] == "slice.random-dot-motion"
+    )
     assert rdm_slice["report_status"] == "available"
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
     assert rdm_row["protocol_id"] == "protocol.random-dot-motion-classic-macaque"
@@ -157,13 +159,15 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     write_static_manifest_json(manifest_path, payload)
 
     loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
-    rdm_row = loaded["comparison_rows"][2]
+    rdm_row = next(
+        item for item in loaded["comparison_rows"] if item["slice_id"] == "slice.random-dot-motion"
+    )
     assert loaded["manifest_schema_version"] == "0.1.0"
     assert loaded["manifest_link"] == "manifest.json"
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 3
+    assert len(loaded["comparison_rows"]) == 4
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
 
@@ -258,6 +262,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     auditory_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.auditory-clicks"
     )
+    mouse_unbiased_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.mouse-visual-contrast-unbiased"
+    )
     rdm_dataset = next(
         row
         for row in payload["datasets"]
@@ -279,7 +288,7 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
     assert payload["counts"]["datasets"] == 3
-    assert payload["counts"]["vertical_slices"] == 3
+    assert payload["counts"]["vertical_slices"] == 4
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
     assert len(payload["dataset_details"]) == 3
@@ -288,18 +297,18 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 18
-    assert graph_payload["counts"]["edges"] == 24
-    assert graph_payload["counts"]["qa_issues"] == 9
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 9, "total": 9}
+    assert graph_payload["counts"]["nodes"] == 19
+    assert graph_payload["counts"]["edges"] == 27
+    assert graph_payload["counts"]["qa_issues"] == 8
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 8, "total": 8}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 9, "open": 9}
-    assert queue_payload["priority_counts"] == {"normal": 9}
+    assert queue_payload["counts"] == {"items": 8, "open": 8}
+    assert queue_payload["priority_counts"] == {"normal": 8}
     assert queue_payload["action_counts"]["needs dataset"] == 4
-    assert queue_payload["action_counts"]["needs vertical slice"] == 5
+    assert queue_payload["action_counts"]["needs vertical slice"] == 4
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -317,6 +326,18 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         and node["href"] == "dataset-roitman-shadlen-rdm-pyddm.html"
         for node in graph_payload["nodes"]
     )
+    assert {
+        "source": "protocol.mouse-visual-contrast-wheel-unbiased",
+        "target": "slice.mouse-visual-contrast-unbiased",
+        "edge_type": "protocol_slice",
+        "label": "protocol has slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.ibl-public-behavior",
+        "target": "slice.mouse-visual-contrast-unbiased",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
     assert {
         "source": "protocol.mouse-visual-contrast-wheel-unbiased",
         "target": "dataset.ibl-public-behavior",
@@ -391,13 +412,16 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     )
     assert mouse_unbiased_protocol["dataset_ids"] == ["dataset.ibl-public-behavior"]
     assert mouse_unbiased_protocol["declared_dataset_ids"] == ["dataset.ibl-public-behavior"]
-    assert mouse_unbiased_protocol["report_status"] == "no slice"
+    assert mouse_unbiased_protocol["slice_ids"] == ["slice.mouse-visual-contrast-unbiased"]
+    assert mouse_unbiased_protocol["report_status"] == "analysis pending"
+    assert mouse_unbiased_slice["protocol_id"] == "protocol.mouse-visual-contrast-wheel-unbiased"
+    assert mouse_unbiased_slice["report_status"] == "missing"
     assert not any(
         item["source_issue_id"]
         == "protocol_without_dataset::protocol.mouse-visual-contrast-wheel-unbiased"
         for item in queue_payload["items"]
     )
-    assert any(
+    assert not any(
         item["source_issue_id"]
         == "protocol_without_slice::protocol.mouse-visual-contrast-wheel-unbiased"
         for item in queue_payload["items"]

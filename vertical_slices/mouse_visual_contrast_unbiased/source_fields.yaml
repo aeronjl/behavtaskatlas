@@ -1,0 +1,52 @@
+slice_id: slice.mouse-visual-contrast-unbiased
+protocol_id: protocol.mouse-visual-contrast-wheel-unbiased
+dataset_id: dataset.ibl-public-behavior
+source_session_id: 6a6442d1-dd7d-4717-b7b1-5874aefbd6fc
+source_url: https://openalyx.internationalbrainlab.org/sessions/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc
+source_object: OpenAlyx alf/_ibl_trials.table.pqt
+source_subject: KS014
+source_lab: cortexlab
+source_start_time: 2019-08-23T11:00:31.905000
+source_task_protocol: _iblrig_tasks_trainingChoiceWorld5.2.9
+source_trial_count: 646
+source_contrast_levels_percent:
+  - 0
+  - 6.25
+  - 12.5
+  - 25
+  - 100
+source_probability_left_values:
+  - 0
+  - 0.1
+  - 0.2
+  - 0.3
+  - 0.4
+  - 0.5
+  - 0.6
+  - 0.7
+  - 0.8
+  - 0.9
+  - 1
+required_fields:
+  - contrastLeft
+  - contrastRight
+  - choice
+  - feedbackType
+  - response_times
+  - stimOn_times
+  - probabilityLeft
+optional_fields:
+  - rewardVolume
+canonical_mapping:
+  stimulus_value: signed contrast, contrastRight positive and contrastLeft negative
+  stimulus_side: finite source side among contrastLeft and contrastRight
+  evidence_strength: absolute value of signed contrast
+  choice: IBL choice code, 1 left, -1 right, 0 no-response
+  correct: feedbackType mapped to boolean correctness
+  response_time: response_times minus stimOn_times
+  feedback: feedbackType mapped to reward, error, or none
+  prior_context: probabilityLeft formatted as p_left for transparency
+source_notes:
+  - This is a trainingChoiceWorld session rather than the biased/ephys visual decision slice.
+  - The probabilityLeft field varies during training and is preserved as context, not interpreted as a controlled block-prior manipulation.
+  - The slice pins one public training session from the broader IBL public behavioral archive.

@@ -84,8 +84,8 @@ provenance:
     Linked to the broad IBL public behavioral dataset because IBL public data
     include behavior acquired during the standardized training pipeline, and IBL
     tooling distinguishes `trainingChoiceWorld` from biased and ephys
-    choice-world sessions. The exact unbiased-session subset still needs a
-    report-backed vertical slice.
+    choice-world sessions. A first report-backed vertical slice now pins one
+    public trainingChoiceWorld session from that archive.
 open_questions:
   - Decide whether this should be modeled as a variant of the IBL protocol or a separate record.
-  - Identify a concrete unbiased training session subset before adding a vertical slice.
+  - Decide how to represent the broader multi-session training trajectory beyond the current single-session slice.

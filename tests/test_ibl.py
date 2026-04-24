@@ -3,7 +3,9 @@ import math
 import pytest
 
 from behavtaskatlas.ibl import (
+    MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
     analyze_ibl_visual_decision,
+    analyze_ibl_visual_protocol,
     choice_label,
     feedback_label,
     harmonize_ibl_visual_trial,
@@ -219,6 +221,32 @@ def test_analyze_ibl_visual_decision_returns_empirical_metrics() -> None:
     assert result["prior_results"][0]["left_lapse_empirical"] == 0.0
     assert result["prior_results"][0]["right_lapse_empirical"] == 0.0
     assert result["prior_results"][0]["fit"]["method"] == "four_parameter_logistic_binomial_mle"
+
+
+def test_analyze_ibl_visual_protocol_supports_mouse_unbiased_slice() -> None:
+    trials = harmonize_ibl_visual_trials(
+        {
+            "contrastLeft": [1.0, 0.25, math.nan, math.nan],
+            "contrastRight": [math.nan, math.nan, 0.25, 1.0],
+            "choice": [1, 1, -1, -1],
+            "feedbackType": [1, 1, 1, 1],
+            "response_times": [1.2, 2.3, 3.4, 4.5],
+            "stimOn_times": [1.0, 2.0, 3.0, 4.0],
+            "probabilityLeft": [0.5, 0.5, 0.6, 0.6],
+        },
+        session_id="session",
+        protocol_id=MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+    )
+
+    result = analyze_ibl_visual_protocol(trials)
+
+    assert result["analysis_id"] == (
+        "analysis.mouse-visual-contrast-unbiased.descriptive-psychometric"
+    )
+    assert result["protocol_id"] == MOUSE_UNBIASED_VISUAL_PROTOCOL_ID
+    assert result["report_title"] == "Mouse Visual Contrast Training Report"
+    assert len(result["prior_results"]) == 2
+    assert any("trainingChoiceWorld" in caveat for caveat in result["caveats"])
 
 
 def test_psychometric_svg_contains_prior_label() -> None:
