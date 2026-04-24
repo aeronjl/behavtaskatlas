@@ -277,7 +277,17 @@ def summarize_canonical_trials(trials: list[CanonicalTrial]) -> list[dict[str, A
     return rows
 
 
-def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
+def analyze_canonical_psychometric(
+    trials: list[CanonicalTrial],
+    *,
+    analysis_id: str,
+    protocol_id: str,
+    dataset_id: str,
+    stimulus_label: str,
+    stimulus_units: str | None,
+    stimulus_metric_name: str,
+    caveats: list[str],
+) -> dict[str, Any]:
     summary_rows = summarize_canonical_trials(trials)
     by_prior: dict[str | None, list[dict[str, Any]]] = defaultdict(list)
     for row in summary_rows:
@@ -291,15 +301,20 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
         p75 = _interpolate_crossing(sorted_rows, 0.75)
         min_row = sorted_rows[0] if sorted_rows else None
         max_row = sorted_rows[-1] if sorted_rows else None
-        fit = fit_psychometric_rows(sorted_rows)
+        fit = fit_psychometric_rows(sorted_rows, stimulus_metric_name=stimulus_metric_name)
         prior_results.append(
             {
                 "prior_context": prior_context,
                 "n_trials": sum(int(row["n_trials"]) for row in sorted_rows),
                 "n_response_trials": sum(int(row["n_response"]) for row in sorted_rows),
-                "n_contrast_levels": len(sorted_rows),
-                "empirical_bias_contrast": p50,
-                "empirical_threshold_contrast": ((p75 - p25) / 2.0)
+                "n_stimulus_levels": len(sorted_rows),
+                f"n_{stimulus_metric_name}_levels": len(sorted_rows),
+                "empirical_bias": p50,
+                f"empirical_bias_{stimulus_metric_name}": p50,
+                "empirical_threshold": ((p75 - p25) / 2.0)
+                if p25 is not None and p75 is not None
+                else None,
+                f"empirical_threshold_{stimulus_metric_name}": ((p75 - p25) / 2.0)
                 if p25 is not None and p75 is not None
                 else None,
                 "left_lapse_empirical": min_row["p_right"] if min_row else None,
@@ -309,22 +324,38 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
         )
 
     return {
-        "analysis_id": "analysis.ibl-visual-decision.descriptive-psychometric",
+        "analysis_id": analysis_id,
         "analysis_type": "descriptive_psychometric",
         "generated_at": datetime.now(UTC).isoformat(),
         "behavtaskatlas_commit": current_git_commit(),
         "behavtaskatlas_git_dirty": current_git_dirty(),
-        "protocol_id": IBL_VISUAL_PROTOCOL_ID,
-        "dataset_id": IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        "protocol_id": protocol_id,
+        "dataset_id": dataset_id,
         "n_trials": len(trials),
         "n_response_trials": sum(1 for trial in trials if trial.choice != "no-response"),
         "n_no_response_trials": sum(1 for trial in trials if trial.choice == "no-response"),
         "response_time_origin": _common_value(
             [trial.response_time_origin for trial in trials if trial.response_time_origin]
         ),
+        "stimulus_label": stimulus_label,
+        "stimulus_units": stimulus_units,
+        "stimulus_metric_name": stimulus_metric_name,
         "summary_rows": summary_rows,
         "prior_results": prior_results,
-        "caveats": [
+        "caveats": caveats,
+    }
+
+
+def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    return analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.ibl-visual-decision.descriptive-psychometric",
+        protocol_id=IBL_VISUAL_PROTOCOL_ID,
+        dataset_id=IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        stimulus_label="Signed contrast",
+        stimulus_units="percent contrast, signed right positive",
+        stimulus_metric_name="contrast",
+        caveats=[
             (
                 "Empirical bias and threshold use linear interpolation over empirical "
                 "p(right). Fitted values use a four-parameter logistic model, not the "
@@ -335,10 +366,14 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
                 "the p(right) denominator."
             ),
         ],
-    }
+    )
 
 
-def fit_psychometric_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def fit_psychometric_rows(
+    rows: list[dict[str, Any]],
+    *,
+    stimulus_metric_name: str = "contrast",
+) -> dict[str, Any]:
     points = [
         (
             float(row["stimulus_value"]),
@@ -384,9 +419,9 @@ def fit_psychometric_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "n_points": len(points),
         "n_response_trials": sum(n_response for _, _, n_response in points),
         "negative_log_likelihood": nll,
-        "bias_contrast": bias,
-        "scale_contrast": scale,
-        "threshold_contrast": scale * math.log(3.0),
+        f"bias_{stimulus_metric_name}": bias,
+        f"scale_{stimulus_metric_name}": scale,
+        f"threshold_{stimulus_metric_name}": scale * math.log(3.0),
         "left_lapse": left_lapse,
         "right_lapse": right_lapse,
     }
@@ -409,12 +444,21 @@ def write_analysis_json(path: Path, result: dict[str, Any]) -> None:
     path.write_text(json.dumps(result, indent=2, sort_keys=True, default=str) + "\n")
 
 
-def write_psychometric_svg(path: Path, summary_rows: list[dict[str, Any]]) -> None:
+def write_psychometric_svg(
+    path: Path,
+    summary_rows: list[dict[str, Any]],
+    *,
+    x_axis_label: str = "Signed contrast (%; right positive)",
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(psychometric_svg(summary_rows), encoding="utf-8")
+    path.write_text(psychometric_svg(summary_rows, x_axis_label=x_axis_label), encoding="utf-8")
 
 
-def psychometric_svg(summary_rows: list[dict[str, Any]]) -> str:
+def psychometric_svg(
+    summary_rows: list[dict[str, Any]],
+    *,
+    x_axis_label: str = "Signed contrast (%; right positive)",
+) -> str:
     width = 720
     height = 420
     left = 72
@@ -460,7 +504,7 @@ def psychometric_svg(summary_rows: list[dict[str, Any]]) -> str:
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" '
         f'stroke="#222"/>',
         f'<text x="{left + plot_width / 2}" y="{height - 18}" text-anchor="middle" '
-        'font-family="sans-serif" font-size="14">Signed contrast (%; right positive)</text>',
+        f'font-family="sans-serif" font-size="14">{escape(x_axis_label)}</text>',
         f'<text x="18" y="{top + plot_height / 2}" text-anchor="middle" '
         'font-family="sans-serif" font-size="14" transform="rotate(-90 18 '
         f'{top + plot_height / 2})">P(right)</text>',
@@ -477,7 +521,7 @@ def psychometric_svg(summary_rows: list[dict[str, Any]]) -> str:
             f'font-family="sans-serif" font-size="11">{y_value:.2g}</text>'
         )
 
-    for x_value in sorted(set(values)):
+    for x_value in _axis_tick_values(x_min, x_max):
         x = x_scale(x_value)
         elements.append(
             f'<line x1="{x:.1f}" y1="{top + plot_height}" x2="{x:.1f}" '
@@ -522,6 +566,28 @@ def psychometric_svg(summary_rows: list[dict[str, Any]]) -> str:
 
     elements.append("</svg>")
     return "\n".join(elements) + "\n"
+
+
+def _axis_tick_values(x_min: float, x_max: float, max_ticks: int = 9) -> list[float]:
+    if x_min == x_max:
+        return [x_min]
+    span = x_max - x_min
+    raw_step = span / max(max_ticks - 1, 1)
+    magnitude = 10.0 ** math.floor(math.log10(raw_step))
+    step = next(
+        candidate * magnitude
+        for candidate in [1.0, 2.0, 5.0, 10.0]
+        if candidate * magnitude >= raw_step
+    )
+    start = math.ceil(x_min / step) * step
+    ticks = []
+    value = start
+    while value <= x_max + step * 1e-9:
+        ticks.append(0.0 if abs(value) < step * 1e-9 else value)
+        value += step
+    if x_min < 0.0 < x_max and all(abs(tick) > step * 1e-9 for tick in ticks):
+        ticks.append(0.0)
+    return sorted(ticks)
 
 
 def provenance_payload(

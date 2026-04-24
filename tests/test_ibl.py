@@ -247,8 +247,10 @@ def test_psychometric_svg_contains_prior_label() -> None:
                 "p_correct": 1.0,
                 "median_response_time": 0.3,
             },
-        ]
+        ],
+        x_axis_label="Custom signed evidence",
     )
 
     assert "<svg" in svg
     assert "p_left=0.5" in svg
+    assert "Custom signed evidence" in svg

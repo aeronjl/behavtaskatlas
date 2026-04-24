@@ -74,6 +74,7 @@ brew install p7zip
 ```bash
 uv sync --extra clicks
 uv run behavtaskatlas clicks-harmonize --mat-file data/raw/brody_clicks/extracted/B075.mat
+uv run behavtaskatlas clicks-analyze --session-id B075-parsed
 ```
 
 The clicks archive is large and remains ignored under `data/raw/`; derived artifacts

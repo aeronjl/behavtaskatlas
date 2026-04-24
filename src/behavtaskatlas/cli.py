@@ -6,7 +6,10 @@ import sys
 from pathlib import Path
 
 from behavtaskatlas.clicks import (
+    CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     DEFAULT_CLICKS_DERIVED_DIR,
+    DEFAULT_CLICKS_SESSION_ID,
+    analyze_brody_clicks,
     brody_clicks_provenance_payload,
     load_brody_clicks_mat,
 )
@@ -91,6 +94,26 @@ def main(argv: list[str] | None = None) -> int:
     )
     clicks_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
 
+    clicks_analyze_parser = subparsers.add_parser(
+        "clicks-analyze",
+        help="Analyze a harmonized Brody Lab Poisson Clicks session",
+    )
+    clicks_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_CLICKS_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    clicks_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_CLICKS_DERIVED_DIR),
+        help="Directory containing generated auditory-clicks artifacts",
+    )
+    clicks_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -117,6 +140,12 @@ def main(argv: list[str] | None = None) -> int:
             out_dir=Path(args.out_dir),
             parsed_field=args.parsed_field,
             limit=args.limit,
+        )
+    if args.command == "clicks-analyze":
+        return _clicks_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -276,6 +305,44 @@ def _clicks_harmonize(
     print(f"Wrote {len(trials)} trials to {trials_path}")
     print(f"Wrote {len(summary)} summary rows to {summary_path}")
     print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _clicks_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra clicks behavtaskatlas clicks-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_brody_clicks(trials)
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        plot_path,
+        result["summary_rows"],
+        x_axis_label=CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
+    )
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
     return 0
 
 

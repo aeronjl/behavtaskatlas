@@ -74,6 +74,7 @@ Then run:
 ```bash
 uv sync --extra clicks
 uv run behavtaskatlas clicks-harmonize --mat-file data/raw/brody_clicks/extracted/B075.mat
+uv run behavtaskatlas clicks-analyze --session-id B075-parsed
 ```
 
 By default this writes ignored local artifacts under:
@@ -86,7 +87,9 @@ Verified local smoke run:
 
 - Source file: `B075.mat`
 - Parsed trials: 11,285
-- Summary rows: 181
+- Summary rows: 181 grouped by gamma context and signed click-count difference
+- Analysis artifacts: `psychometric_summary.csv`, `analysis_result.json`, `psychometric.svg`
+- Prior contexts: `gamma=-1`, `gamma=-2`, `gamma=-4`, `gamma=1`, `gamma=2`, `gamma=4`
 - Output directory: `derived/auditory_clicks/B075-parsed/`
 
 ## Data Policy
@@ -95,6 +98,6 @@ The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP devel
 
 ## Next Steps
 
-1. Decide whether to support MATLAB v7.3/HDF5 files if scipy cannot read the archive files.
-2. Generate the first real click-count psychometric summary for one rat.
-3. Add an evidence-kernel or click-time weighting analysis after the trial table is verified.
+1. Add an evidence-kernel or click-time weighting analysis after the baseline psychometric table.
+2. Batch the same harmonize/analyze flow over several rats to test per-rat variability.
+3. Decide whether to support MATLAB v7.3/HDF5 files if future archive releases require it.

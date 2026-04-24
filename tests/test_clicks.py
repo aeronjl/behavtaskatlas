@@ -1,6 +1,10 @@
 import pytest
 
-from behavtaskatlas.clicks import harmonize_brody_clicks_trial, harmonize_brody_clicks_trials
+from behavtaskatlas.clicks import (
+    analyze_brody_clicks,
+    harmonize_brody_clicks_trial,
+    harmonize_brody_clicks_trials,
+)
 
 
 def test_harmonize_brody_clicks_trial() -> None:
@@ -79,6 +83,32 @@ def test_harmonize_brody_clicks_trials_accepts_scalar_click_time() -> None:
     )
 
     assert trials[0].task_variables["left_click_times"] == [0.1]
+
+
+def test_analyze_brody_clicks_returns_click_difference_metrics() -> None:
+    trials = harmonize_brody_clicks_trials(
+        {
+            "nL": [8, 6, 2, 0],
+            "nR": [0, 2, 6, 8],
+            "sd": [1.0, 1.0, 1.0, 1.0],
+            "gr": [0, 0, 1, 1],
+            "hh": [1, 1, 1, 1],
+            "ga": [0.0, 0.0, 0.0, 0.0],
+            "rg": [0, 0, 0, 0],
+        },
+        session_id="rat-a-parsed",
+        subject_id="rat-a",
+        task_type="location",
+    )
+
+    result = analyze_brody_clicks(trials)
+
+    assert result["analysis_type"] == "descriptive_psychometric"
+    assert result["stimulus_metric_name"] == "click_difference"
+    assert result["n_trials"] == 4
+    assert result["prior_results"][0]["n_click_difference_levels"] == 4
+    assert result["prior_results"][0]["empirical_bias_click_difference"] == 0.0
+    assert result["prior_results"][0]["fit"]["method"] == "four_parameter_logistic_binomial_mle"
 
 
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:

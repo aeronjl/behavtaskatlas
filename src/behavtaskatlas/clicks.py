@@ -10,6 +10,8 @@ from behavtaskatlas.models import CanonicalTrial
 BRODY_CLICKS_PROTOCOL_ID = "protocol.poisson-clicks-evidence-accumulation"
 BRODY_CLICKS_DATASET_ID = "dataset.brody-lab-poisson-clicks-2009-2024"
 DEFAULT_CLICKS_DERIVED_DIR = Path("derived/auditory_clicks")
+DEFAULT_CLICKS_SESSION_ID = "B075-parsed"
+CLICKS_PSYCHOMETRIC_X_AXIS_LABEL = "Signed click-count difference (right minus left clicks)"
 
 
 def harmonize_brody_clicks_trial(
@@ -134,6 +136,35 @@ def load_brody_clicks_mat(
         "n_trials": len(trials),
     }
     return trials, details
+
+
+def analyze_brody_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    from behavtaskatlas.ibl import analyze_canonical_psychometric
+
+    return analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.auditory-clicks.descriptive-psychometric",
+        protocol_id=BRODY_CLICKS_PROTOCOL_ID,
+        dataset_id=BRODY_CLICKS_DATASET_ID,
+        stimulus_label="Signed click-count difference",
+        stimulus_units="right minus left clicks",
+        stimulus_metric_name="click_difference",
+        caveats=[
+            (
+                "Empirical bias and threshold use linear interpolation over empirical "
+                "p(right). Fitted values use a four-parameter logistic model over signed "
+                "click-count difference."
+            ),
+            (
+                "No-response trials are included in total trial counts but excluded from "
+                "the p(right) denominator."
+            ),
+            (
+                "This baseline analysis ignores within-trial click timing; click-time "
+                "weighting should be a later slice-specific analysis."
+            ),
+        ],
+    )
 
 
 def brody_clicks_provenance_payload(
