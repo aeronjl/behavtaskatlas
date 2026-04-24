@@ -103,6 +103,29 @@ def validate_repository(root: Path) -> ValidationReport:
                 issues.append(
                     ValidationIssue(path, f"Unknown family_id {record.family_id!r}")
                 )
+            if record.template_protocol_id:
+                if record.template_protocol_id == record.id:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            "template_protocol_id must not reference the same protocol",
+                        )
+                    )
+                elif record.template_protocol_id not in protocol_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"Unknown template_protocol_id {record.template_protocol_id!r}",
+                        )
+                    )
+            elif record.protocol_scope == "concrete" and len(record.species) > 1:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "Concrete protocols with multiple species should declare "
+                        "template_protocol_id or use protocol_scope='template'",
+                    )
+                )
             for dataset_id in record.dataset_ids:
                 if dataset_id not in dataset_ids:
                     issues.append(

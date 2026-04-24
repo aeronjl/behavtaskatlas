@@ -439,6 +439,15 @@
       "title": "Open Questions",
       "type": "array"
     },
+    "protocol_scope": {
+      "default": "concrete",
+      "enum": [
+        "template",
+        "concrete"
+      ],
+      "title": "Protocol Scope",
+      "type": "string"
+    },
     "provenance": {
       "$ref": "#/$defs/Provenance"
     },
@@ -469,6 +478,18 @@
     },
     "stimulus": {
       "$ref": "#/$defs/StimulusSpec"
+    },
+    "template_protocol_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Template Protocol Id"
     },
     "timing": {
       "items": {

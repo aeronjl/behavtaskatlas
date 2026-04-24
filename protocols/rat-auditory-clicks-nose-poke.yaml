@@ -2,6 +2,8 @@ object_type: protocol
 schema_version: 0.1.0
 id: protocol.rat-auditory-clicks-nose-poke
 family_id: family.auditory-click-accumulation
+protocol_scope: concrete
+template_protocol_id: protocol.poisson-clicks-evidence-accumulation
 name: Rat auditory clicks nose-poke task
 aliases:
   - rat Poisson clicks task
@@ -91,8 +93,7 @@ provenance:
   source_notes: >
     Rat protocol variant linked to the Brody Lab parsed Poisson Clicks archive,
     which covers rats trained on this task family between 2009 and 2024. It
-    remains without a separate vertical slice until the generic clicks slice is
-    split or this protocol gets its own report.
+    is modeled as a concrete variant of the generic Poisson clicks template
+    protocol.
 open_questions:
-  - Reconcile this source-specific protocol with the generic Poisson clicks seed record.
   - Add exact port/timing conventions from source implementations.

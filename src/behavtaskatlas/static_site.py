@@ -121,6 +121,7 @@ def build_catalog_payload(
         for record in vertical_slices
     }
     family_by_id = {record.id: record for record in task_families}
+    protocol_by_id = {record.id: record for record in protocols}
     datasets_by_protocol = _datasets_by_protocol(datasets)
     slices_by_family = _slices_by_field(vertical_slices, "family_id")
     slices_by_protocol = _slices_by_field(vertical_slices, "protocol_id")
@@ -182,6 +183,9 @@ def build_catalog_payload(
                 slice_payloads=slice_payloads,
                 detail_link=detail_links_by_protocol[protocol.id],
                 dataset_detail_links=detail_links_by_dataset,
+                template_protocol=protocol_by_id.get(protocol.template_protocol_id)
+                if protocol.template_protocol_id
+                else None,
             )
             for protocol in protocols
         ],
@@ -451,6 +455,8 @@ def _catalog_protocol_row(
         "name": protocol.name,
         "family_id": protocol.family_id,
         "family_name": family.name if family else None,
+        "protocol_scope": protocol.protocol_scope,
+        "template_protocol_id": protocol.template_protocol_id,
         "species": protocol.species,
         "modalities": protocol.stimulus.modalities,
         "evidence_type": protocol.stimulus.evidence_type,
@@ -475,6 +481,7 @@ def _catalog_protocol_detail(
     slice_payloads: dict[str, dict[str, Any]],
     detail_link: str,
     dataset_detail_links: dict[str, str],
+    template_protocol: Protocol | None = None,
 ) -> dict[str, Any]:
     linked_slices = []
     for slice_record in slices:
@@ -496,6 +503,9 @@ def _catalog_protocol_detail(
         "description": protocol.description.strip(),
         "family_id": protocol.family_id,
         "family_name": family.name if family else None,
+        "protocol_scope": protocol.protocol_scope,
+        "template_protocol_id": protocol.template_protocol_id,
+        "template_protocol_name": template_protocol.name if template_protocol else None,
         "species": protocol.species,
         "curation_status": protocol.curation_status,
         "stimulus": protocol.stimulus.model_dump(mode="json"),
@@ -577,6 +587,7 @@ def _catalog_dataset_detail(
                 "protocol_id": protocol.id,
                 "detail_link": protocol_detail_links[protocol.id],
                 "name": protocol.name,
+                "protocol_scope": protocol.protocol_scope,
                 "family_name": family_by_id[protocol.family_id].name
                 if protocol.family_id in family_by_id
                 else None,
@@ -687,6 +698,8 @@ def _relationship_graph_nodes(
                 "metadata": {
                     "family_id": protocol.get("family_id"),
                     "family_name": protocol.get("family_name"),
+                    "protocol_scope": protocol.get("protocol_scope"),
+                    "template_protocol_id": protocol.get("template_protocol_id"),
                     "species": protocol.get("species", []),
                     "modalities": protocol.get("modalities", []),
                     "evidence_type": protocol.get("evidence_type"),
@@ -775,6 +788,12 @@ def _relationship_graph_edges(catalog_payload: dict[str, Any]) -> list[dict[str,
                 "protocol_dataset",
                 "protocol uses dataset",
             )
+        add(
+            protocol.get("template_protocol_id"),
+            protocol.get("protocol_id"),
+            "protocol_variant",
+            "template has variant",
+        )
         for slice_id in protocol.get("slice_ids", []):
             add(
                 protocol.get("protocol_id"),
@@ -852,10 +871,11 @@ def _relationship_graph_qa_issues(
 
     for protocol in protocols.values():
         protocol_id = protocol["protocol_id"]
+        is_template = protocol.get("protocol_scope") == "template"
         declared_dataset_ids = set(protocol.get("declared_dataset_ids", []))
         displayed_dataset_ids = set(protocol.get("dataset_ids", []))
         slice_ids = set(protocol.get("slice_ids", []))
-        if not displayed_dataset_ids:
+        if not displayed_dataset_ids and not is_template:
             issues.append(
                 _graph_issue(
                     "protocol_without_dataset",
@@ -865,7 +885,7 @@ def _relationship_graph_qa_issues(
                     "Protocol has no linked dataset record yet.",
                 )
             )
-        if not slice_ids:
+        if not slice_ids and not is_template:
             issues.append(
                 _graph_issue(
                     "protocol_without_slice",
@@ -1758,6 +1778,11 @@ def _protocol_structure(detail: dict[str, Any]) -> str:
                 ("Protocol ID", detail.get("protocol_id")),
                 ("Aliases", detail.get("aliases")),
                 ("Family ID", detail.get("family_id")),
+                ("Protocol scope", detail.get("protocol_scope")),
+                (
+                    "Template protocol",
+                    detail.get("template_protocol_name") or detail.get("template_protocol_id"),
+                ),
                 ("Curation status", detail.get("curation_status")),
                 ("Stimulus modalities", stimulus.get("modalities")),
                 ("Stimulus variables", stimulus.get("variables")),
@@ -1951,7 +1976,7 @@ def _dataset_protocol_table(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return '<p class="empty">No linked protocol records yet.</p>'
     parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
-    for label in ["Protocol", "Family", "Species", "Evidence", "Choice", "Report"]:
+    for label in ["Protocol", "Scope", "Family", "Species", "Evidence", "Choice", "Report"]:
         parts.append(f"<th>{escape(label)}</th>")
     parts.extend(["</tr>", "</thead>", "<tbody>"])
     for row in rows:
@@ -1965,6 +1990,7 @@ def _dataset_protocol_table(rows: list[dict[str, Any]]) -> str:
             )
         else:
             parts.append(f"<td>{escape(name)}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('protocol_scope')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('family_name')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('species')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('evidence_type')))}</td>")
@@ -2518,6 +2544,7 @@ def _catalog_select_control(
 def _catalog_protocol_table(rows: list[dict[str, Any]]) -> str:
     columns = [
         ("name", "Protocol"),
+        ("protocol_scope", "Scope"),
         ("family_name", "Family"),
         ("species", "Species"),
         ("modalities", "Modality"),
@@ -2543,7 +2570,7 @@ def _catalog_protocol_table(rows: list[dict[str, Any]]) -> str:
         parts.append(_catalog_protocol_html_row(row, columns))
     parts.append(
         '<tr id="catalog-no-results" hidden>'
-        '<td colspan="10">No protocols match the current filters.</td>'
+        '<td colspan="11">No protocols match the current filters.</td>'
         "</tr>"
     )
     parts.extend(["</tbody>", "</table>", "</div>"])
@@ -2776,6 +2803,8 @@ def _catalog_search_text(row: dict[str, Any]) -> str:
     values = [
         row.get("protocol_id"),
         row.get("name"),
+        row.get("protocol_scope"),
+        row.get("template_protocol_id"),
         row.get("family_name"),
         row.get("species"),
         row.get("modalities"),

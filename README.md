@@ -13,8 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: three report-backed seed protocols plus six
-  catalog-only variants for breadth testing.
+- Nine current protocol records: one abstract template, three report-backed
+  concrete protocols, and five catalog-only variants for breadth testing.
 
 ## Local Workflow
 
@@ -129,11 +129,12 @@ includes dependency-free protocol search and filters for species, modality,
 evidence type, and report status, with protocol and dataset rows linking to
 their generated detail pages. The relationship graph exposes task-family,
 protocol, dataset, and vertical-slice nodes plus typed edges as both HTML and
-machine-readable JSON. The graph export also carries lightweight QA issues for
-orphan records, missing reciprocal links, protocols without datasets, protocols
-without slices, and datasets without slices. The curation queue turns those graph
-QA issues into contributor-facing action items grouped by action type and
-priority.
+machine-readable JSON. Protocol graph edges also distinguish template protocols
+from concrete protocol variants. The graph export carries lightweight QA issues
+for orphan records, missing reciprocal links, concrete protocols without
+datasets, concrete protocols without slices, and datasets without slices. The
+curation queue turns those graph QA issues into contributor-facing action items
+grouped by action type and priority.
 
 ## Repository Layout
 

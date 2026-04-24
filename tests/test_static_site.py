@@ -242,6 +242,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.rat-auditory-clicks-nose-poke"
     )
+    poisson_clicks_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.poisson-clicks-evidence-accumulation"
+    )
     rdm_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.random-dot-motion"
     )
@@ -279,17 +284,17 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
     assert graph_payload["counts"]["nodes"] == 18
-    assert graph_payload["counts"]["edges"] == 22
-    assert graph_payload["counts"]["qa_issues"] == 11
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 11, "total": 11}
+    assert graph_payload["counts"]["edges"] == 23
+    assert graph_payload["counts"]["qa_issues"] == 10
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 10, "total": 10}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 11, "open": 11}
-    assert queue_payload["priority_counts"] == {"normal": 11}
+    assert queue_payload["counts"] == {"items": 10, "open": 10}
+    assert queue_payload["priority_counts"] == {"normal": 10}
     assert queue_payload["action_counts"]["needs dataset"] == 5
-    assert queue_payload["action_counts"]["needs vertical slice"] == 6
+    assert queue_payload["action_counts"]["needs vertical slice"] == 5
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -307,6 +312,12 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         and node["href"] == "dataset-roitman-shadlen-rdm-pyddm.html"
         for node in graph_payload["nodes"]
     )
+    assert {
+        "source": "protocol.poisson-clicks-evidence-accumulation",
+        "target": "protocol.rat-auditory-clicks-nose-poke",
+        "edge_type": "protocol_variant",
+        "label": "template has variant",
+    } in graph_payload["edges"]
     assert {
         "source": "protocol.rat-auditory-clicks-nose-poke",
         "target": "dataset.brody-lab-poisson-clicks-2009-2024",
@@ -339,7 +350,18 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
     assert rdm_protocol["detail_link"] == "protocol-random-dot-motion-classic-macaque.html"
     assert rdm_protocol["report_status"] == "available"
+    assert poisson_clicks_protocol["protocol_scope"] == "template"
+    assert poisson_clicks_protocol["report_status"] == "no slice"
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.poisson-clicks-evidence-accumulation"
+        for item in queue_payload["items"]
+    )
     assert rat_clicks_protocol["dataset_ids"] == ["dataset.brody-lab-poisson-clicks-2009-2024"]
+    assert rat_clicks_protocol["protocol_scope"] == "concrete"
+    assert rat_clicks_protocol["template_protocol_id"] == (
+        "protocol.poisson-clicks-evidence-accumulation"
+    )
     assert rat_clicks_protocol["declared_dataset_ids"] == [
         "dataset.brody-lab-poisson-clicks-2009-2024"
     ]
@@ -354,11 +376,6 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert not any(
         item["source_issue_id"]
         == "protocol_without_slice::protocol.rat-auditory-clicks-nose-poke"
-        for item in queue_payload["items"]
-    )
-    assert any(
-        item["source_issue_id"]
-        == "protocol_without_slice::protocol.poisson-clicks-evidence-accumulation"
         for item in queue_payload["items"]
     )
     assert rdm_detail["stimulus"]["evidence_type"] == "stochastic-motion"

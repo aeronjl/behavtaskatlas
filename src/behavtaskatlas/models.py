@@ -90,6 +90,8 @@ class Protocol(StrictModel):
     schema_version: str
     id: str
     family_id: str
+    protocol_scope: Literal["template", "concrete"] = "concrete"
+    template_protocol_id: str | None = None
     name: str
     aliases: list[str] = Field(default_factory=list)
     description: str
@@ -290,6 +292,8 @@ class CatalogProtocolRow(StrictModel):
     name: str
     family_id: str
     family_name: str | None = None
+    protocol_scope: Literal["template", "concrete"] = "concrete"
+    template_protocol_id: str | None = None
     species: list[str] = Field(default_factory=list)
     modalities: list[str] = Field(default_factory=list)
     evidence_type: str
@@ -316,6 +320,7 @@ class CatalogLinkedProtocol(StrictModel):
     detail_link: str
     name: str
     family_name: str | None = None
+    protocol_scope: Literal["template", "concrete"] = "concrete"
     species: list[str] = Field(default_factory=list)
     evidence_type: str
     choice_type: str
@@ -338,6 +343,9 @@ class CatalogProtocolDetail(StrictModel):
     description: str
     family_id: str
     family_name: str | None = None
+    protocol_scope: Literal["template", "concrete"] = "concrete"
+    template_protocol_id: str | None = None
+    template_protocol_name: str | None = None
     species: list[str] = Field(default_factory=list)
     curation_status: str
     stimulus: dict[str, Any]

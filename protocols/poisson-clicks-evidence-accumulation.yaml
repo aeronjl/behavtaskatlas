@@ -2,6 +2,7 @@ object_type: protocol
 schema_version: 0.1.0
 id: protocol.poisson-clicks-evidence-accumulation
 family_id: family.auditory-click-accumulation
+protocol_scope: template
 name: Poisson clicks evidence accumulation task
 aliases:
   - auditory clicks accumulation task
@@ -88,7 +89,10 @@ provenance:
     - behavtaskatlas
   created: 2026-04-24
   updated: 2026-04-24
-  source_notes: Seed protocol record for dynamic auditory evidence accumulation.
+  source_notes: >
+    Seed template protocol record for dynamic auditory evidence accumulation.
+    Concrete species/apparatus-specific variants should point back to this
+    record with `template_protocol_id`.
 open_questions:
   - Separate rat and human implementations after deeper source curation.
   - Add exact click-generation parameters from the original study.

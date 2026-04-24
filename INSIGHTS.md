@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 00:25:32 BST - Protocol templates need different QA pressure from concrete variants
+
+Protocols now declare whether they are abstract `template` records or concrete executable records. The rat auditory-clicks protocol points back to the generic Poisson clicks template with `template_protocol_id`, and the relationship graph exports a protocol-variant edge between them.
+
+This changes the curation semantics: concrete protocols should be pushed toward datasets and vertical slices, while templates should organize task families and variants without being treated as missing their own report-backed analysis. The queue can now shrink for the right reason instead of demanding a redundant slice for an intentionally abstract record.
+
 ## 2026-04-24 23:30:34 BST - Concrete slices should attach to concrete protocols
 
 The auditory-clicks report-backed slice now points to the concrete rat nose-poke protocol rather than the generic Poisson clicks protocol. The harmonizer stamps generated canonical trials with the same concrete protocol id, so the analysis artifact, slice metadata, and protocol catalog now agree about what task instance was actually analyzed.

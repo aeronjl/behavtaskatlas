@@ -320,6 +320,15 @@
           "title": "Protocol Id",
           "type": "string"
         },
+        "protocol_scope": {
+          "default": "concrete",
+          "enum": [
+            "template",
+            "concrete"
+          ],
+          "title": "Protocol Scope",
+          "type": "string"
+        },
         "report_status": {
           "title": "Report Status",
           "type": "string"
@@ -476,6 +485,15 @@
           "title": "Protocol Id",
           "type": "string"
         },
+        "protocol_scope": {
+          "default": "concrete",
+          "enum": [
+            "template",
+            "concrete"
+          ],
+          "title": "Protocol Scope",
+          "type": "string"
+        },
         "provenance": {
           "additionalProperties": true,
           "title": "Provenance",
@@ -511,6 +529,30 @@
           "additionalProperties": true,
           "title": "Stimulus",
           "type": "object"
+        },
+        "template_protocol_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Protocol Id"
+        },
+        "template_protocol_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Protocol Name"
         },
         "timing": {
           "items": {
@@ -614,6 +656,15 @@
           "title": "Protocol Id",
           "type": "string"
         },
+        "protocol_scope": {
+          "default": "concrete",
+          "enum": [
+            "template",
+            "concrete"
+          ],
+          "title": "Protocol Scope",
+          "type": "string"
+        },
         "report_status": {
           "title": "Report Status",
           "type": "string"
@@ -638,6 +689,18 @@
           },
           "title": "Species",
           "type": "array"
+        },
+        "template_protocol_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Protocol Id"
         }
       },
       "required": [
