@@ -6,6 +6,7 @@ from behavtaskatlas.clicks import (
     evidence_kernel_svg,
     harmonize_brody_clicks_trial,
     harmonize_brody_clicks_trials,
+    write_clicks_batch_summary_csv,
 )
 
 
@@ -176,6 +177,37 @@ def test_evidence_kernel_svg_contains_axis_label() -> None:
 
     assert "<svg" in svg
     assert "Normalized stimulus time" in svg
+
+
+def test_write_clicks_batch_summary_csv(tmp_path) -> None:
+    path = tmp_path / "batch_summary.csv"
+    write_clicks_batch_summary_csv(
+        path,
+        [
+            {
+                "mat_file": "B075.mat",
+                "session_id": "B075-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "B075",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 11285,
+                "harmonization_summary_rows": 181,
+                "psychometric_summary_rows": 181,
+                "psychometric_prior_contexts": "gamma=-1;gamma=1",
+                "evidence_kernel_rows": 10,
+                "evidence_kernel_analyzed_trials": 11285,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash",
+                "output_dir": "derived/auditory_clicks/B075-parsed",
+            }
+        ],
+    )
+
+    text = path.read_text()
+    assert "session_id" in text
+    assert "B075-parsed" in text
 
 
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:

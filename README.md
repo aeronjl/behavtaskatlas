@@ -75,11 +75,13 @@ brew install p7zip
 uv sync --extra clicks
 uv run behavtaskatlas clicks-harmonize --mat-file data/raw/brody_clicks/extracted/B075.mat
 uv run behavtaskatlas clicks-analyze --session-id B075-parsed
+uv run behavtaskatlas clicks-batch --mat-dir data/raw/brody_clicks/extracted --max-files 5
 ```
 
 The clicks archive is large and remains ignored under `data/raw/`; derived artifacts
 are written under ignored `derived/auditory_clicks/`. The clicks analysis emits
 both a baseline psychometric summary and a descriptive click-time evidence kernel.
+Batch runs also write `derived/auditory_clicks/batch_summary.csv`.
 
 ## Repository Layout
 

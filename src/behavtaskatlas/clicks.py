@@ -28,6 +28,24 @@ EVIDENCE_KERNEL_SUMMARY_FIELDS = [
     "point_biserial_r",
     "normalized_weight",
 ]
+CLICKS_BATCH_SUMMARY_FIELDS = [
+    "mat_file",
+    "session_id",
+    "parsed_field",
+    "subject_id",
+    "task_type",
+    "status",
+    "error",
+    "n_trials",
+    "harmonization_summary_rows",
+    "psychometric_summary_rows",
+    "psychometric_prior_contexts",
+    "evidence_kernel_rows",
+    "evidence_kernel_analyzed_trials",
+    "evidence_kernel_excluded_trials",
+    "source_file_sha256",
+    "output_dir",
+]
 
 
 def harmonize_brody_clicks_trial(
@@ -229,6 +247,14 @@ def write_evidence_kernel_summary_csv(path: Path, rows: list[dict[str, Any]]) ->
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=EVIDENCE_KERNEL_SUMMARY_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_clicks_batch_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CLICKS_BATCH_SUMMARY_FIELDS)
         writer.writeheader()
         writer.writerows(rows)
 

@@ -77,6 +77,12 @@ uv run behavtaskatlas clicks-harmonize --mat-file data/raw/brody_clicks/extracte
 uv run behavtaskatlas clicks-analyze --session-id B075-parsed
 ```
 
+Run a local batch over extracted rat files:
+
+```bash
+uv run behavtaskatlas clicks-batch --mat-dir data/raw/brody_clicks/extracted --max-files 5
+```
+
 By default this writes ignored local artifacts under:
 
 ```text
@@ -94,12 +100,21 @@ Verified local smoke run:
 - Kernel bins: 10 normalized stimulus-time bins; all 11,285 B075 parsed trials included
 - Output directory: `derived/auditory_clicks/B075-parsed/`
 
+Verified local batch run:
+
+- Source files: `A080.mat`, `B075.mat`, `B127.mat`, `T014.mat`, `T074.mat`
+- Status: 5 ok, 0 failed
+- Parsed trials: 61,222 total
+- Harmonization/psychometric summary rows: 1,551 total
+- Evidence-kernel rows: 10 per rat
+- Batch summary: `derived/auditory_clicks/batch_summary.csv`
+
 ## Data Policy
 
 The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP development, but raw archives and extracted `.mat` files stay under ignored `data/raw/`. Real ingestion should operate on local `.mat` files from the archive or on a small extracted fixture if release policy allows.
 
 ## Next Steps
 
-1. Batch the same harmonize/analyze flow over several rats to test per-rat variability.
+1. Add per-rat aggregate plots or tables across the batch.
 2. Upgrade the descriptive evidence kernel to a multivariate click-time weighting model.
 3. Decide whether to support MATLAB v7.3/HDF5 files if future archive releases require it.
