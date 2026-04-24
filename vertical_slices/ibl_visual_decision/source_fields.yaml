@@ -1,8 +1,8 @@
 slice_id: slice.ibl-visual-decision
 protocol_id: protocol.ibl-visual-decision-v1
 dataset_id: dataset.ibl-public-behavior
-source_object: IBL ALF trials object/table
-access_pattern: one.load_object(eid, 'trials', collection='alf')
+source_object: IBL ALF trials table
+access_pattern: one.load_dataset(eid, '_ibl_trials.table.pqt', collection='alf', revision='2025-03-03')
 selected_session:
   eid: ebce500b-c530-47de-8cb1-963c552703ea
   subject: MFD_09
@@ -10,6 +10,12 @@ selected_session:
   start_time: "2023-10-19T12:54:25.961859"
   task_protocol: _iblrig_tasks_ephysChoiceWorld
   url: https://openalyx.internationalbrainlab.org/sessions/ebce500b-c530-47de-8cb1-963c552703ea
+selected_table_revision:
+  revision: "2025-03-03"
+  dataset_id: 91928c8f-8278-47d9-bc69-a4805d3924ec
+  hash: 0c404a34978db3eaad31198f162ae693
+  file_size: 46527
+  qc: PASS
 required_fields:
   - contrastLeft
   - contrastRight

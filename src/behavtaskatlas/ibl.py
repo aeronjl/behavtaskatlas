@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import re
 import statistics
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -28,6 +29,7 @@ IBL_REQUIRED_TRIAL_FIELDS = {
     "stimOn_times",
     "probabilityLeft",
 }
+IBL_TRIALS_TABLE = "_ibl_trials.table.pqt"
 
 CANONICAL_TRIAL_CSV_FIELDS = [
     "protocol_id",
@@ -58,6 +60,8 @@ PSYCHOMETRIC_SUMMARY_FIELDS = [
     "prior_context",
     "stimulus_value",
     "n_trials",
+    "n_response",
+    "n_no_response",
     "n_right",
     "p_right",
     "n_correct",
@@ -136,6 +140,7 @@ def load_ibl_trials_from_openalyx(
     eid: str,
     *,
     cache_dir: Path | None = None,
+    revision: str | None = None,
     base_url: str = "https://openalyx.internationalbrainlab.org",
     password: str = "international",
 ) -> tuple[Any, dict[str, Any]]:
@@ -153,8 +158,62 @@ def load_ibl_trials_from_openalyx(
         kwargs["cache_dir"] = cache_dir
     one = ONE(**kwargs)
     details = dict(one.get_details(eid))
-    trials = one.load_object(eid, "trials", collection="alf")
+    revision_info = ibl_trials_revision_info(one, eid, requested_revision=revision)
+    selected_revision = revision_info.get("selected_revision")
+    trials = one.load_dataset(
+        eid,
+        IBL_TRIALS_TABLE,
+        collection="alf",
+        revision=selected_revision,
+    )
+    details["_behavtaskatlas_trials_revision"] = revision_info
     return trials, details
+
+
+def ibl_trials_revision_info(
+    one: Any,
+    eid: str,
+    *,
+    requested_revision: str | None = None,
+) -> dict[str, Any]:
+    datasets = one.list_datasets(
+        eid,
+        filename=IBL_TRIALS_TABLE,
+        collection="alf",
+        details=True,
+    )
+    available = []
+    if hasattr(datasets, "iterrows"):
+        for dataset_id, row in datasets.iterrows():
+            rel_path = str(row.get("rel_path", ""))
+            available.append(
+                {
+                    "dataset_id": str(dataset_id),
+                    "revision": _revision_from_rel_path(rel_path),
+                    "rel_path": rel_path,
+                    "file_size": _optional_int(row.get("file_size")),
+                    "hash": _optional_string(row.get("hash")),
+                    "default_revision": bool(row.get("default_revision", False)),
+                    "qc": str(row.get("qc")) if row.get("qc") is not None else None,
+                }
+            )
+
+    selected_revision = requested_revision
+    if requested_revision is None:
+        default_revisions = [item for item in available if item["default_revision"]]
+        if default_revisions:
+            selected_revision = default_revisions[0]["revision"]
+
+    selected = next(
+        (item for item in available if item["revision"] == selected_revision),
+        None,
+    )
+    return {
+        "requested_revision": requested_revision,
+        "selected_revision": selected_revision,
+        "selected": selected,
+        "available": available,
+    }
 
 
 def write_canonical_trials_csv(path: Path, trials: list[CanonicalTrial]) -> None:
@@ -191,6 +250,7 @@ def summarize_canonical_trials(trials: list[CanonicalTrial]) -> list[dict[str, A
     for (prior_context, stimulus_value), group in sorted(
         grouped.items(), key=lambda item: (item[0][0] or "", _none_safe_float(item[0][1]))
     ):
+        response_trials = [trial for trial in group if trial.choice != "no-response"]
         right = sum(1 for trial in group if trial.choice == "right")
         correct_trials = [trial for trial in group if trial.correct is not None]
         correct = sum(1 for trial in correct_trials if trial.correct)
@@ -200,8 +260,10 @@ def summarize_canonical_trials(trials: list[CanonicalTrial]) -> list[dict[str, A
                 "prior_context": prior_context,
                 "stimulus_value": stimulus_value,
                 "n_trials": len(group),
+                "n_response": len(response_trials),
+                "n_no_response": len(group) - len(response_trials),
                 "n_right": right,
-                "p_right": _safe_ratio(right, len(group)),
+                "p_right": _safe_ratio(right, len(response_trials)),
                 "n_correct": correct,
                 "p_correct": _safe_ratio(correct, len(correct_trials)),
                 "median_response_time": statistics.median(response_times)
@@ -226,10 +288,12 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
         p75 = _interpolate_crossing(sorted_rows, 0.75)
         min_row = sorted_rows[0] if sorted_rows else None
         max_row = sorted_rows[-1] if sorted_rows else None
+        fit = fit_psychometric_rows(sorted_rows)
         prior_results.append(
             {
                 "prior_context": prior_context,
                 "n_trials": sum(int(row["n_trials"]) for row in sorted_rows),
+                "n_response_trials": sum(int(row["n_response"]) for row in sorted_rows),
                 "n_contrast_levels": len(sorted_rows),
                 "empirical_bias_contrast": p50,
                 "empirical_threshold_contrast": ((p75 - p25) / 2.0)
@@ -237,6 +301,7 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
                 else None,
                 "left_lapse_empirical": min_row["p_right"] if min_row else None,
                 "right_lapse_empirical": (1.0 - max_row["p_right"]) if max_row else None,
+                "fit": fit,
             }
         )
 
@@ -258,15 +323,82 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
         "prior_results": prior_results,
         "caveats": [
             (
-                "This is a descriptive empirical analysis, not a fitted IBL psychofit model. "
-                "Bias and threshold use linear interpolation over empirical p(right)."
+                "Empirical bias and threshold use linear interpolation over empirical "
+                "p(right). Fitted values use a four-parameter logistic model, not the "
+                "full IBL psychofit implementation."
             ),
             (
-                "No-response trials are included in trial counts but not counted as rightward "
-                "choices."
+                "No-response trials are included in total trial counts but excluded from "
+                "the p(right) denominator."
             ),
         ],
     }
+
+
+def fit_psychometric_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    points = [
+        (
+            float(row["stimulus_value"]),
+            int(row["n_right"]),
+            int(row["n_response"]),
+        )
+        for row in rows
+        if row["stimulus_value"] is not None and int(row["n_response"]) > 0
+    ]
+    if len(points) < 4:
+        return {
+            "status": "insufficient_data",
+            "method": "four_parameter_logistic_binomial_mle",
+            "n_points": len(points),
+        }
+
+    initial = _initial_psychometric_params(rows)
+    bounds = [(-100.0, 100.0), (0.5, 200.0), (0.0, 0.4), (0.0, 0.4)]
+
+    try:
+        from scipy.optimize import minimize
+
+        result = minimize(
+            lambda params: _psychometric_negative_log_likelihood(points, params),
+            initial,
+            method="L-BFGS-B",
+            bounds=bounds,
+        )
+        params = result.x.tolist()
+        optimizer = "scipy.optimize.minimize"
+        success = bool(result.success)
+        nll = float(result.fun)
+    except ImportError:
+        params, nll = _grid_search_psychometric(points, initial)
+        optimizer = "grid_search_fallback"
+        success = True
+
+    bias, scale, left_lapse, right_lapse = [float(value) for value in params]
+    return {
+        "status": "ok" if success else "optimizer_failed",
+        "method": "four_parameter_logistic_binomial_mle",
+        "optimizer": optimizer,
+        "n_points": len(points),
+        "n_response_trials": sum(n_response for _, _, n_response in points),
+        "negative_log_likelihood": nll,
+        "bias_contrast": bias,
+        "scale_contrast": scale,
+        "threshold_contrast": scale * math.log(3.0),
+        "left_lapse": left_lapse,
+        "right_lapse": right_lapse,
+    }
+
+
+def psychometric_probability(
+    x_value: float,
+    bias: float,
+    scale: float,
+    left_lapse: float,
+    right_lapse: float,
+) -> float:
+    exponent = max(min(-(x_value - bias) / scale, 60.0), -60.0)
+    logistic = 1.0 / (1.0 + math.exp(exponent))
+    return left_lapse + (1.0 - left_lapse - right_lapse) * logistic
 
 
 def write_analysis_json(path: Path, result: dict[str, Any]) -> None:
@@ -397,6 +529,7 @@ def provenance_payload(
     trials: list[CanonicalTrial],
     source_revision_note: str | None = None,
 ) -> dict[str, Any]:
+    revision_info = details.get("_behavtaskatlas_trials_revision")
     return {
         "eid": eid,
         "generated_at": datetime.now(UTC).isoformat(),
@@ -413,6 +546,7 @@ def provenance_payload(
             "start_time": details.get("start_time"),
             "task_protocol": details.get("task_protocol"),
             "revision_note": source_revision_note,
+            "revision": revision_info,
         },
         "source_fields": sorted(IBL_REQUIRED_TRIAL_FIELDS | {"rewardVolume"}),
         "response_time_origin": "response_times - stimOn_times",
@@ -431,8 +565,8 @@ def provenance_payload(
                 "policy are confirmed."
             ),
             (
-                "IBL may expose multiple dataset revisions for a session; provenance should "
-                "be tightened before public release."
+                "The selected IBL trials table revision is recorded; related non-table trial "
+                "arrays are not used by this slice."
             ),
         ],
     }
@@ -570,6 +704,13 @@ def _index_value(values: Any, index: int) -> Any:
     return value
 
 
+def _revision_from_rel_path(rel_path: str) -> str | None:
+    match = re.search(r"#([^#]+)#", rel_path)
+    if match:
+        return match.group(1)
+    return None
+
+
 def _canonical_trial_from_csv_row(row: dict[str, str]) -> CanonicalTrial:
     source_json = row.pop("source_json", "{}") or "{}"
     return CanonicalTrial(
@@ -619,6 +760,58 @@ def _interpolate_crossing(rows: list[dict[str, Any]], target: float) -> float | 
     return None
 
 
+def _initial_psychometric_params(rows: list[dict[str, Any]]) -> list[float]:
+    p50 = _interpolate_crossing(rows, 0.5)
+    sorted_rows = sorted(rows, key=lambda row: _none_safe_float(row["stimulus_value"]))
+    min_row = sorted_rows[0]
+    max_row = sorted_rows[-1]
+    left_lapse = _clip(float(min_row["p_right"] or 0.0), 0.0, 0.2)
+    right_lapse = _clip(1.0 - float(max_row["p_right"] or 1.0), 0.0, 0.2)
+    return [p50 if p50 is not None else 0.0, 20.0, left_lapse, right_lapse]
+
+
+def _psychometric_negative_log_likelihood(
+    points: list[tuple[float, int, int]],
+    params: list[float] | tuple[float, float, float, float],
+) -> float:
+    bias, scale, left_lapse, right_lapse = [float(value) for value in params]
+    if scale <= 0 or left_lapse < 0 or right_lapse < 0 or left_lapse + right_lapse >= 1:
+        return float("inf")
+    nll = 0.0
+    for x_value, n_right, n_response in points:
+        p_right = _clip(
+            psychometric_probability(x_value, bias, scale, left_lapse, right_lapse),
+            1e-8,
+            1.0 - 1e-8,
+        )
+        nll -= n_right * math.log(p_right) + (n_response - n_right) * math.log(1.0 - p_right)
+    return nll
+
+
+def _grid_search_psychometric(
+    points: list[tuple[float, int, int]],
+    initial: list[float],
+) -> tuple[list[float], float]:
+    bias_candidates = sorted(
+        set([-100.0, -50.0, -25.0, -12.5, -6.25, 0.0, 6.25, 12.5, 25.0, 50.0, 100.0])
+        | {round(initial[0], 6)}
+    )
+    scale_candidates = [5.0, 10.0, 20.0, 40.0, 80.0]
+    lapse_candidates = [0.0, 0.025, 0.05, 0.1, 0.2]
+    best_params = initial
+    best_nll = float("inf")
+    for bias in bias_candidates:
+        for scale in scale_candidates:
+            for left_lapse in lapse_candidates:
+                for right_lapse in lapse_candidates:
+                    params = [bias, scale, left_lapse, right_lapse]
+                    nll = _psychometric_negative_log_likelihood(points, params)
+                    if nll < best_nll:
+                        best_params = params
+                        best_nll = nll
+    return best_params, best_nll
+
+
 def _common_value(values: list[str]) -> str | None:
     unique_values = sorted(set(values))
     if len(unique_values) == 1:
@@ -632,6 +825,17 @@ def _optional_string(value: str | None) -> str | None:
     if value is None or value == "":
         return None
     return value
+
+
+def _optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        if math.isnan(float(value)):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return int(value)
 
 
 def _optional_float(value: str | None) -> float | None:
@@ -660,3 +864,7 @@ def _none_safe_float(value: float | None) -> float:
     if value is None:
         return float("inf")
     return value
+
+
+def _clip(value: float, low: float, high: float) -> float:
+    return min(max(value, low), high)

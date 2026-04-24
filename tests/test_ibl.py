@@ -101,6 +101,8 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "prior_context": "p_left=0.2",
             "stimulus_value": 25.0,
             "n_trials": 1,
+            "n_response": 1,
+            "n_no_response": 0,
             "n_right": 1,
             "p_right": 1.0,
             "n_correct": 1,
@@ -111,6 +113,8 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "prior_context": "p_left=0.5",
             "stimulus_value": -25.0,
             "n_trials": 1,
+            "n_response": 1,
+            "n_no_response": 0,
             "n_right": 0,
             "p_right": 0.0,
             "n_correct": 0,
@@ -121,6 +125,8 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "prior_context": "p_left=0.5",
             "stimulus_value": 100.0,
             "n_trials": 1,
+            "n_response": 1,
+            "n_no_response": 0,
             "n_right": 1,
             "p_right": 1.0,
             "n_correct": 1,
@@ -149,7 +155,11 @@ def test_provenance_payload_counts_exclusions() -> None:
 
     payload = provenance_payload(
         eid="session",
-        details={"subject": "subject", "lab": "lab"},
+        details={
+            "subject": "subject",
+            "lab": "lab",
+            "_behavtaskatlas_trials_revision": {"selected_revision": "2025-03-03"},
+        },
         output_files={"trials": "trials.csv"},
         trials=trials,
     )
@@ -159,6 +169,7 @@ def test_provenance_payload_counts_exclusions() -> None:
     assert payload["exclusions"]["missing_stimulus"] == 1
     assert payload["exclusions"]["no_response"] == 1
     assert payload["exclusions"]["missing_response_time"] == 1
+    assert payload["source"]["revision"]["selected_revision"] == "2025-03-03"
 
 
 def test_canonical_trial_csv_round_trip(tmp_path) -> None:
@@ -206,6 +217,7 @@ def test_analyze_ibl_visual_decision_returns_empirical_metrics() -> None:
     assert result["prior_results"][0]["prior_context"] == "p_left=0.5"
     assert result["prior_results"][0]["left_lapse_empirical"] == 0.0
     assert result["prior_results"][0]["right_lapse_empirical"] == 0.0
+    assert result["prior_results"][0]["fit"]["method"] == "four_parameter_logistic_binomial_mle"
 
 
 def test_psychometric_svg_contains_prior_label() -> None:
@@ -215,6 +227,8 @@ def test_psychometric_svg_contains_prior_label() -> None:
                 "prior_context": "p_left=0.5",
                 "stimulus_value": -100.0,
                 "n_trials": 5,
+                "n_response": 5,
+                "n_no_response": 0,
                 "n_right": 0,
                 "p_right": 0.0,
                 "n_correct": 5,
@@ -225,6 +239,8 @@ def test_psychometric_svg_contains_prior_label() -> None:
                 "prior_context": "p_left=0.5",
                 "stimulus_value": 100.0,
                 "n_trials": 5,
+                "n_response": 5,
+                "n_no_response": 0,
                 "n_right": 5,
                 "p_right": 1.0,
                 "n_correct": 5,

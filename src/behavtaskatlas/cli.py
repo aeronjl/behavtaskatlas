@@ -47,6 +47,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     ibl_parser.add_argument("--cache-dir", default=None, help="Optional ONE cache directory")
     ibl_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+    ibl_parser.add_argument(
+        "--revision",
+        default=None,
+        help="Optional IBL dataset revision to load, e.g. 2025-03-03",
+    )
 
     analyze_parser = subparsers.add_parser(
         "ibl-analyze", help="Analyze a harmonized IBL visual decision session"
@@ -75,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             out_dir=Path(args.out_dir),
             cache_dir=Path(args.cache_dir) if args.cache_dir else None,
             limit=args.limit,
+            revision=args.revision,
         )
     if args.command == "ibl-analyze":
         return _ibl_analyze(
@@ -115,9 +121,14 @@ def _ibl_harmonize(
     out_dir: Path,
     cache_dir: Path | None,
     limit: int | None,
+    revision: str | None,
 ) -> int:
     try:
-        source_trials, details = load_ibl_trials_from_openalyx(eid, cache_dir=cache_dir)
+        source_trials, details = load_ibl_trials_from_openalyx(
+            eid,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
         trials = harmonize_ibl_visual_trials(
             source_trials,
             session_id=eid,

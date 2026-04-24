@@ -44,6 +44,12 @@ uv run behavtaskatlas ibl-analyze
 ```
 
 Generated trial tables, summaries, analysis results, plots, and provenance files are written under `derived/`, which is ignored until data release policy is settled.
+The default IBL session loader selects the OpenAlyx default `_ibl_trials.table.pqt` revision and records the selected revision, dataset id, hash, and QC state in provenance.
+To override the selected table revision:
+
+```bash
+uv run --extra ibl behavtaskatlas ibl-harmonize --revision 2025-03-03
+```
 
 ## Repository Layout
 

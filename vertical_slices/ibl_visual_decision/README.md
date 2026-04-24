@@ -10,11 +10,11 @@ Connect one schema-complete protocol record to public dataset metadata, source t
 
 - Protocol record: `protocol.ibl-visual-decision-v1`
 - Dataset record: `dataset.ibl-public-behavior`
-- Source data access: IBL ONE/OpenAlyx and ALF `trials` objects
+- Source data access: IBL ONE/OpenAlyx and ALF `_ibl_trials.table.pqt`
 
 ## Source Fields
 
-The first adapter targets the IBL ALF trials table/object. Current primary source documentation indicates these core fields are needed for behavioral summaries:
+The first adapter targets the IBL ALF trials table. Current primary source documentation indicates these core fields are needed for behavioral summaries:
 
 - `contrastLeft`
 - `contrastRight`
@@ -24,7 +24,7 @@ The first adapter targets the IBL ALF trials table/object. Current primary sourc
 - `stimOn_times`
 - `probabilityLeft`
 
-The biased/ephys trial extractors also include fields such as `intervals`, `goCue_times`, `feedback_times`, `rewardVolume`, and `firstMovement_times`; these should be added to the harmonized table when the first real session is downloaded.
+The selected table revision for the first verified session is `2025-03-03` (`_ibl_trials.table.pqt`, dataset id `91928c8f-8278-47d9-bc69-a4805d3924ec`, hash `0c404a34978db3eaad31198f162ae693`). The biased/ephys trial extractors also include fields such as `intervals`, `goCue_times`, `feedback_times`, `rewardVolume`, and `firstMovement_times`; these can be added to the harmonized table when needed.
 
 ## Canonical Mapping
 
@@ -68,6 +68,7 @@ The command has been verified against this session and generated:
 - 27 summary rows grouped by signed contrast and prior context.
 - Descriptive analysis JSON.
 - Dependency-free SVG psychometric plot.
+- Fitted four-parameter logistic psychometric estimates per prior block.
 - 32 no-response trials.
 - 0 missing-stimulus trials.
 - 0 missing-response-time trials.
@@ -91,4 +92,4 @@ The selected session metadata is:
 
 ## Source Notes
 
-The IBL documentation describes loading trials through ONE with `one.load_object(eid, 'trials', collection='alf')`, and documents psychometric utilities that expect `probabilityLeft`, `contrastLeft`, `contrastRight`, `feedbackType`, `choice`, `response_times`, and `stimOn_times`. The IBL biased/ephys trial extractor documentation describes `_ibl_trials.table.pqt` as containing trial fields including `intervals`, `goCue_times`, `response_times`, `choice`, `stimOn_times`, `contrastLeft`, `contrastRight`, `feedback_times`, `feedbackType`, `rewardVolume`, `probabilityLeft`, and `firstMovement_times`.
+The IBL documentation describes loading trials through ONE and documents psychometric utilities that expect `probabilityLeft`, `contrastLeft`, `contrastRight`, `feedbackType`, `choice`, `response_times`, and `stimOn_times`. The IBL biased/ephys trial extractor documentation describes `_ibl_trials.table.pqt` as containing trial fields including `intervals`, `goCue_times`, `response_times`, `choice`, `stimOn_times`, `contrastLeft`, `contrastRight`, `feedback_times`, `feedbackType`, `rewardVolume`, `probabilityLeft`, and `firstMovement_times`.
