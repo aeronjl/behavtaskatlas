@@ -192,20 +192,29 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.random-dot-motion-classic-macaque"
     )
+    human_rdm_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.human-rdm-button-reaction-time"
+    )
     rdm_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.random-dot-motion"
     )
 
     assert payload["counts"]["task_families"] == 3
-    assert payload["counts"]["protocols"] == 3
+    assert payload["counts"]["protocols"] == 9
     assert payload["counts"]["datasets"] == 3
     assert payload["counts"]["vertical_slices"] == 3
     assert payload["counts"]["report_available"] == 1
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
     assert rdm_protocol["report_status"] == "available"
+    assert human_rdm_protocol["dataset_ids"] == []
+    assert human_rdm_protocol["slice_ids"] == []
+    assert human_rdm_protocol["report_status"] == "no slice"
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
     assert loaded["catalog_schema_version"] == "0.1.0"
     assert "Protocol Catalog" in html
     assert "Random-Dot Motion" in html
+    assert "Human random-dot motion button reaction-time task" in html
     assert "signed motion coherence" in html

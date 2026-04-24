@@ -1,0 +1,84 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-contrast-wheel-unbiased
+family_id: family.visual-2afc-contrast
+name: Mouse unbiased visual contrast wheel task
+aliases:
+  - unbiased mouse choice world
+  - mouse visual contrast wheel 2AFC
+description: >
+  Head-fixed mice report the side of a visual contrast stimulus with a response
+  wheel in sessions without an explicit blockwise prior manipulation. The task
+  isolates contrast and stimulus side as the primary decision variables.
+species:
+  - mouse
+curation_status: stub
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - stimulus side
+  evidence_type: static
+  evidence_schedule: >
+    A grating or similar visual stimulus appears on one side with contrast
+    sampled across trials.
+  units:
+    - percent contrast
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel movement reports the side of the stimulus, usually by moving the
+    stimulus toward a response position.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct choices.
+  penalty: Auditory or timeout penalty for incorrect choices, source-dependent.
+timing:
+  - name: quiescence
+    duration: protocol-specific
+    description: Mouse holds the wheel still before stimulus onset.
+  - name: stimulus_and_response
+    duration: response-limited
+    description: Visual stimulus remains available during the response period.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - wheel shaping
+    - visual discrimination
+apparatus:
+  - head fixation
+  - response wheel
+  - visual display
+  - water delivery
+expected_analyses:
+  - psychometric curve by contrast
+  - chronometric curve by contrast
+  - lapse, bias, and threshold estimates
+interpretive_claims:
+  - label: perceptual decision-making
+    source: ref.ibl-2021-standardized
+    confidence: medium
+references:
+  - id: ref.ibl-2021-standardized
+    citation: >
+      The International Brain Laboratory et al. Standardized and reproducible
+      measurement of decision-making in mice. eLife, 2021.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
+    doi: 10.7554/eLife.63711
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only protocol variant added to test breadth without a vertical slice.
+open_questions:
+  - Decide whether this should be modeled as a variant of the IBL protocol or a separate record.
+  - Link a concrete unbiased session or dataset before promoting beyond stub status.

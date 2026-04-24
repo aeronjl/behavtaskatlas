@@ -1,0 +1,82 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.human-rdm-button-reaction-time
+family_id: family.random-dot-motion
+name: Human random-dot motion button reaction-time task
+aliases:
+  - human RDM reaction-time task
+  - human motion coherence button task
+description: >
+  Human observers judge the dominant direction of motion in a random-dot
+  kinematogram and report the decision with a button or keyboard response.
+  Motion coherence controls stimulus strength and reaction time is a primary
+  dependent measure.
+species:
+  - human
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - motion coherence
+    - motion direction
+    - stimulus duration
+  evidence_type: stochastic-motion
+  evidence_schedule: >
+    Dot motion coherence varies across trials; speed-accuracy instructions or
+    stimulus strength can be manipulated across blocks.
+  units:
+    - percent coherence
+choice:
+  choice_type: 2afc
+  alternatives:
+    - direction A
+    - direction B
+  response_modalities:
+    - button-press
+    - keyboard
+  action_mapping: Button or key identity maps to the judged motion direction.
+feedback:
+  feedback_type: none
+  notes: Feedback and speed-accuracy instruction are source-dependent.
+timing:
+  - name: fixation
+    duration: protocol-specific
+    description: Observer fixates before stimulus onset.
+  - name: motion_stimulus
+    duration: fixed or response-dependent, protocol-specific
+    description: Random-dot motion evidence is shown.
+  - name: response
+    duration: response-limited
+    description: Observer reports the judged motion direction.
+training:
+  stages:
+    - instructions
+    - practice trials
+apparatus:
+  - visual display
+  - keyboard or button box
+expected_analyses:
+  - psychometric curve by motion coherence
+  - chronometric curve by motion coherence
+  - drift-diffusion model fit
+interpretive_claims:
+  - label: perceptual decision-making
+    source: ref.palmer-huk-shadlen-2005
+    confidence: high
+references:
+  - id: ref.palmer-huk-shadlen-2005
+    citation: >
+      Palmer J, Huk AC, Shadlen MN. The effect of stimulus strength on the
+      speed and accuracy of a perceptual decision. Journal of Vision, 2005.
+    url: https://doi.org/10.1167/5.5.1
+    doi: 10.1167/5.5.1
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+open_questions:
+  - Add speed-accuracy instruction fields when a concrete dataset is linked.
+  - Decide whether fixed-duration and reaction-time RDM should be separate records.

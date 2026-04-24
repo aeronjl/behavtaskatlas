@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 20:37:42 BST - Catalog-only protocols test breadth without reports
+
+The catalog now includes six lightweight protocol records without vertical slices: human visual contrast 2AFC, mouse unbiased visual contrast wheel, human RDM button reaction-time, macaque RDM confidence wagering, human auditory clicks button, and rat auditory clicks nose-poke. Repository validation now sees 18 records total, while the generated catalog separates 9 protocol records from 3 report-backed vertical slices.
+
+This is the first realistic test of the breadth/depth split. The catalog can now show meaningful protocol coverage even when a record has no linked dataset or report, and it labels those entries as `no slice` rather than hiding them. That is the behavior needed for community curation: many task records can be useful before they become fully analysis-backed.
+
 ## 2026-04-24 20:29:17 BST - Catalog generation connects breadth to depth
 
 The static build now writes `derived/catalog.html` and `derived/catalog.json` alongside the report index and manifest. The catalog is generated from committed task-family, protocol, dataset, and vertical-slice records, then overlays local report availability from ignored `derived/` artifacts. This gives the MVP a breadth surface: lightweight records can appear in the atlas before they have a full vertical slice, while completed slices still link through to their deeper reports.

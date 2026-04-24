@@ -1,0 +1,92 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.rat-auditory-clicks-nose-poke
+family_id: family.auditory-click-accumulation
+name: Rat auditory clicks nose-poke task
+aliases:
+  - rat Poisson clicks task
+  - rat click accumulation task
+description: >
+  Rats initiate trials and accumulate left and right auditory click evidence
+  before reporting the side with more clicks using nose-poke response ports.
+  Correct choices are rewarded and errors can be followed by timeout or error
+  feedback.
+species:
+  - rat
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - auditory
+  variables:
+    - left click count
+    - right click count
+    - click count difference
+    - click timing
+    - stimulus duration
+  evidence_type: pulse-train
+  evidence_schedule: >
+    Left and right Poisson click trains unfold over the stimulus period; gamma
+    or related parameters can control evidence statistics.
+  units:
+    - clicks
+    - clicks per second
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - nose-poke
+  action_mapping: Nose-poke port identity maps to the chosen side.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct side choices.
+  penalty: Error feedback or timeout for incorrect side choices.
+timing:
+  - name: trial_initiation
+    duration: protocol-specific
+    description: Rat initiates the trial.
+  - name: click_train
+    duration: protocol-specific
+    description: Auditory evidence unfolds over time.
+  - name: response
+    duration: response-limited
+    description: Rat reports the side with more clicks.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - port shaping
+    - side discrimination
+    - accumulation training
+apparatus:
+  - behavioral chamber
+  - auditory speakers
+  - nose-poke ports
+  - water delivery
+expected_analyses:
+  - psychometric curve by click count difference
+  - chronometric curve by evidence strength
+  - temporal weighting or evidence-kernel analysis
+  - accumulation model fit
+interpretive_claims:
+  - label: evidence accumulation
+    source: ref.brunton-2013-clicks
+    confidence: high
+references:
+  - id: ref.brunton-2013-clicks
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013.
+    url: https://www.science.org/doi/10.1126/science.1233912
+    doi: 10.1126/science.1233912
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only rat variant added to test breadth without a vertical slice.
+open_questions:
+  - Reconcile this source-specific protocol with the generic Poisson clicks seed record.
+  - Add exact port/timing conventions from source implementations.

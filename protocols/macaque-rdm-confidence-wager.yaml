@@ -1,0 +1,88 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.macaque-rdm-confidence-wager
+family_id: family.random-dot-motion
+name: Macaque random-dot motion confidence wagering task
+aliases:
+  - RDM opt-out task
+  - post-decision wager random-dot motion task
+description: >
+  Trained non-human primates judge random-dot motion direction and can express
+  confidence through a wager or opt-out response. Motion coherence controls
+  sensory evidence, while the wager response probes decision confidence.
+species:
+  - non-human-primate
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - motion coherence
+    - motion direction
+    - wager option
+  evidence_type: stochastic-motion
+  evidence_schedule: >
+    Random-dot motion coherence varies across trials; confidence report
+    opportunities are interleaved with standard direction choices.
+  units:
+    - percent coherence
+choice:
+  choice_type: wagering
+  alternatives:
+    - direction A
+    - direction B
+    - sure or wager option
+  response_modalities:
+    - saccade
+  action_mapping: >
+    Saccades to choice targets report direction; a distinct target can report
+    a sure-bet or confidence-related option.
+feedback:
+  feedback_type: reward
+  reward: Fluid reward amount depends on correctness and wager condition.
+timing:
+  - name: fixation
+    duration: protocol-specific
+    description: Subject maintains fixation before stimulus onset.
+  - name: motion_stimulus
+    duration: protocol-specific
+    description: Random-dot motion evidence is shown.
+  - name: choice_or_wager
+    duration: response-limited
+    description: Subject reports direction or wager option with eye movement.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice and wager outcome
+training:
+  stages:
+    - fixation training
+    - motion discrimination training
+    - wager option training
+apparatus:
+  - visual display
+  - eye tracking
+  - fluid reward
+expected_analyses:
+  - psychometric curve by motion coherence
+  - confidence or wager probability by coherence and accuracy
+  - decision confidence model
+interpretive_claims:
+  - label: confidence report
+    source: ref.kiani-shadlen-2009
+    confidence: high
+references:
+  - id: ref.kiani-shadlen-2009
+    citation: >
+      Kiani R, Shadlen MN. Representation of confidence associated with a
+      decision by neurons in the parietal cortex. Science, 2009.
+    url: https://pubmed.ncbi.nlm.nih.gov/19423820/
+    doi: 10.1126/science.1169405
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+open_questions:
+  - Decide whether confidence and wagering should be modeled as task variants or analysis claims.
+  - Add target layout fields before linking trial-level data.

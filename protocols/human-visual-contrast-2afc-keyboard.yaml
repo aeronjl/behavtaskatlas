@@ -1,0 +1,85 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.human-visual-contrast-2afc-keyboard
+family_id: family.visual-2afc-contrast
+name: Human visual contrast 2AFC keyboard task
+aliases:
+  - human Gabor contrast discrimination
+  - human grating contrast psychophysics
+description: >
+  Human observers judge which of two visual alternatives contains the stronger
+  or target contrast signal, commonly using keyboard or button responses.
+  Contrast is varied to estimate psychometric threshold and lapse parameters.
+species:
+  - human
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - stimulus interval
+    - stimulus side
+  evidence_type: adaptive
+  evidence_schedule: >
+    Contrast levels are sampled across trials, often with fixed grids or
+    adaptive procedures designed to estimate a psychometric function.
+  units:
+    - percent contrast
+    - Michelson contrast
+choice:
+  choice_type: 2afc
+  alternatives:
+    - interval A or left
+    - interval B or right
+  response_modalities:
+    - keyboard
+    - button-press
+  action_mapping: >
+    Keyboard or button responses indicate which side or interval contained the
+    target visual contrast.
+feedback:
+  feedback_type: none
+  notes: Feedback is protocol-dependent and often omitted in adult psychophysics.
+timing:
+  - name: fixation
+    duration: protocol-specific
+    description: Observer fixates before stimulus presentation.
+  - name: stimulus
+    duration: protocol-specific
+    description: One or more contrast-defined visual stimuli are shown.
+  - name: response
+    duration: response-limited
+    description: Observer reports the chosen interval or side.
+training:
+  stages:
+    - instructions
+    - practice trials
+  notes: Training is usually minimal relative to animal implementations.
+apparatus:
+  - calibrated visual display
+  - keyboard or response box
+expected_analyses:
+  - psychometric curve by contrast
+  - threshold and lapse estimates
+  - bootstrap confidence intervals
+interpretive_claims:
+  - label: visual sensitivity
+    source: ref.wichmann-hill-2001
+    confidence: medium
+references:
+  - id: ref.wichmann-hill-2001
+    citation: >
+      Wichmann FA, Hill NJ. The psychometric function: I. Fitting, sampling,
+      and goodness of fit. Perception & Psychophysics, 2001.
+    url: https://doi.org/10.3758/BF03194544
+    doi: 10.3758/BF03194544
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+open_questions:
+  - Split side-based and interval-based variants if detailed datasets are linked.
+  - Add display calibration and staircase details for source-specific records.

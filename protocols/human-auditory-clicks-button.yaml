@@ -1,0 +1,85 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.human-auditory-clicks-button
+family_id: family.auditory-click-accumulation
+name: Human auditory clicks button task
+aliases:
+  - human Poisson clicks task
+  - human auditory evidence accumulation task
+description: >
+  Human participants listen to left and right click trains and report which side
+  generated more evidence using keyboard or button responses. Click timing and
+  count difference control the sensory evidence.
+species:
+  - human
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - auditory
+  variables:
+    - left click count
+    - right click count
+    - click count difference
+    - click timing
+    - stimulus duration
+  evidence_type: pulse-train
+  evidence_schedule: >
+    Left and right auditory clicks are generated over time; difficulty is
+    controlled by the difference in click counts or rates.
+  units:
+    - clicks
+    - clicks per second
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - button-press
+    - keyboard
+  action_mapping: Button or key identity maps to the side with more clicks.
+feedback:
+  feedback_type: none
+  notes: Feedback and reward are source-dependent in human implementations.
+timing:
+  - name: fixation_or_ready
+    duration: protocol-specific
+    description: Participant begins or readies the trial.
+  - name: click_train
+    duration: protocol-specific
+    description: Auditory evidence unfolds over time.
+  - name: response
+    duration: response-limited
+    description: Participant reports which side had more clicks.
+training:
+  stages:
+    - instructions
+    - practice trials
+apparatus:
+  - headphones or speakers
+  - keyboard or button box
+expected_analyses:
+  - psychometric curve by click count difference
+  - chronometric curve by evidence strength
+  - temporal weighting or evidence-kernel analysis
+  - drift-diffusion or accumulation model fit
+interpretive_claims:
+  - label: evidence accumulation
+    source: ref.brunton-2013-clicks
+    confidence: high
+references:
+  - id: ref.brunton-2013-clicks
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013.
+    url: https://www.science.org/doi/10.1126/science.1233912
+    doi: 10.1126/science.1233912
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: Catalog-only human variant added to test breadth without a vertical slice.
+open_questions:
+  - Separate auditory side, interval, and response-device variants when source records require it.
+  - Add exact click-generation parameters from a concrete implementation.

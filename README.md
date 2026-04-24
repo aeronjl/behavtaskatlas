@@ -13,6 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
+- Nine current protocol records: three report-backed seed protocols plus six
+  catalog-only variants for breadth testing.
 
 ## Local Workflow
 
