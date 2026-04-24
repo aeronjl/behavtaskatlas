@@ -25,7 +25,7 @@ expected_trial_table_mapping:
   stimulus_value: Signed contrast; contrastRight positive, contrastLeft negative.
   stimulus_side: Finite source side among contrastLeft and contrastRight.
   evidence_strength: Absolute value of signed contrast.
-  choice: IBL choice code mapped to left/right/no-response.
+  choice: IBL choice code mapped as 1 left, -1 right, 0 no-response.
   correct: IBL feedbackType mapped to boolean correctness.
   response_time: response_times minus stimOn_times.
   feedback: IBL feedbackType mapped to reward/error.

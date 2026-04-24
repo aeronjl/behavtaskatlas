@@ -1,7 +1,7 @@
 analysis_id: analysis.ibl-visual-decision.baseline-plan
 protocol_id: protocol.ibl-visual-decision-v1
 dataset_id: dataset.ibl-public-behavior
-status: planned
+status: implemented-descriptive
 first_verified_session:
   eid: ebce500b-c530-47de-8cb1-963c552703ea
   subject: MFD_09
@@ -13,6 +13,11 @@ first_verified_session:
   no_response_trials: 32
   missing_stimulus_trials: 0
   missing_response_time_trials: 0
+implemented_outputs:
+  - canonical trial table
+  - psychometric summary grouped by signed contrast and prior context
+  - descriptive analysis result JSON
+  - dependency-free SVG psychometric plot
 inputs:
   - canonical trial table generated from IBL ALF trials table/object
 grouping_variables:
@@ -23,9 +28,13 @@ grouping_variables:
 planned_outputs:
   - trial count by signed contrast and prior block
   - proportion rightward choice by signed contrast and prior block
-  - psychometric fit parameters: bias, threshold, left lapse, right lapse
+  - empirical descriptive estimates: bias, threshold, left lapse, right lapse
   - median response time by signed contrast and prior block
   - exclusion summary for missing stimulus, missing response, or invalid timing
+deferred_outputs:
+  - fitted psychometric parameters using IBL psychofit conventions
+  - confidence intervals
+  - model comparison across prior blocks
 provenance_requirements:
   - IBL session/eid
   - source dataset revision where available

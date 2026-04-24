@@ -40,9 +40,10 @@ Generate the first IBL visual decision slice artifacts:
 ```bash
 uv sync --extra ibl
 uv run behavtaskatlas ibl-harmonize
+uv run behavtaskatlas ibl-analyze
 ```
 
-Generated trial tables, summaries, and provenance files are written under `derived/`, which is ignored until data release policy is settled.
+Generated trial tables, summaries, analysis results, plots, and provenance files are written under `derived/`, which is ignored until data release policy is settled.
 
 ## Repository Layout
 

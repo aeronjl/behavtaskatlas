@@ -6,6 +6,7 @@ import math
 import statistics
 from collections import defaultdict
 from datetime import UTC, datetime
+from html import escape
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from subprocess import CalledProcessError, check_output
@@ -16,6 +17,7 @@ from behavtaskatlas.models import CanonicalTrial
 IBL_VISUAL_PROTOCOL_ID = "protocol.ibl-visual-decision-v1"
 IBL_PUBLIC_BEHAVIOR_DATASET_ID = "dataset.ibl-public-behavior"
 DEFAULT_IBL_EID = "ebce500b-c530-47de-8cb1-963c552703ea"
+DEFAULT_DERIVED_DIR = Path("derived/ibl_visual_decision")
 
 IBL_REQUIRED_TRIAL_FIELDS = {
     "contrastLeft",
@@ -26,6 +28,42 @@ IBL_REQUIRED_TRIAL_FIELDS = {
     "stimOn_times",
     "probabilityLeft",
 }
+
+CANONICAL_TRIAL_CSV_FIELDS = [
+    "protocol_id",
+    "dataset_id",
+    "subject_id",
+    "session_id",
+    "trial_index",
+    "stimulus_modality",
+    "stimulus_value",
+    "stimulus_units",
+    "stimulus_side",
+    "evidence_strength",
+    "evidence_units",
+    "choice",
+    "correct",
+    "response_time",
+    "response_time_origin",
+    "feedback",
+    "reward",
+    "reward_units",
+    "block_id",
+    "prior_context",
+    "training_stage",
+    "source_json",
+]
+
+PSYCHOMETRIC_SUMMARY_FIELDS = [
+    "prior_context",
+    "stimulus_value",
+    "n_trials",
+    "n_right",
+    "p_right",
+    "n_correct",
+    "p_correct",
+    "median_response_time",
+]
 
 
 def harmonize_ibl_visual_trial(
@@ -121,32 +159,8 @@ def load_ibl_trials_from_openalyx(
 
 def write_canonical_trials_csv(path: Path, trials: list[CanonicalTrial]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "protocol_id",
-        "dataset_id",
-        "subject_id",
-        "session_id",
-        "trial_index",
-        "stimulus_modality",
-        "stimulus_value",
-        "stimulus_units",
-        "stimulus_side",
-        "evidence_strength",
-        "evidence_units",
-        "choice",
-        "correct",
-        "response_time",
-        "response_time_origin",
-        "feedback",
-        "reward",
-        "reward_units",
-        "block_id",
-        "prior_context",
-        "training_stage",
-        "source_json",
-    ]
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=CANONICAL_TRIAL_CSV_FIELDS)
         writer.writeheader()
         for trial in trials:
             row = trial.model_dump(mode="json")
@@ -155,20 +169,15 @@ def write_canonical_trials_csv(path: Path, trials: list[CanonicalTrial]) -> None
             writer.writerow(row)
 
 
+def load_canonical_trials_csv(path: Path) -> list[CanonicalTrial]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return [_canonical_trial_from_csv_row(row) for row in csv.DictReader(handle)]
+
+
 def write_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "prior_context",
-        "stimulus_value",
-        "n_trials",
-        "n_right",
-        "p_right",
-        "n_correct",
-        "p_correct",
-        "median_response_time",
-    ]
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=PSYCHOMETRIC_SUMMARY_FIELDS)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -201,6 +210,183 @@ def summarize_canonical_trials(trials: list[CanonicalTrial]) -> list[dict[str, A
             }
         )
     return rows
+
+
+def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    summary_rows = summarize_canonical_trials(trials)
+    by_prior: dict[str | None, list[dict[str, Any]]] = defaultdict(list)
+    for row in summary_rows:
+        by_prior[row["prior_context"]].append(row)
+
+    prior_results = []
+    for prior_context, rows in sorted(by_prior.items(), key=lambda item: item[0] or ""):
+        sorted_rows = sorted(rows, key=lambda row: _none_safe_float(row["stimulus_value"]))
+        p25 = _interpolate_crossing(sorted_rows, 0.25)
+        p50 = _interpolate_crossing(sorted_rows, 0.5)
+        p75 = _interpolate_crossing(sorted_rows, 0.75)
+        min_row = sorted_rows[0] if sorted_rows else None
+        max_row = sorted_rows[-1] if sorted_rows else None
+        prior_results.append(
+            {
+                "prior_context": prior_context,
+                "n_trials": sum(int(row["n_trials"]) for row in sorted_rows),
+                "n_contrast_levels": len(sorted_rows),
+                "empirical_bias_contrast": p50,
+                "empirical_threshold_contrast": ((p75 - p25) / 2.0)
+                if p25 is not None and p75 is not None
+                else None,
+                "left_lapse_empirical": min_row["p_right"] if min_row else None,
+                "right_lapse_empirical": (1.0 - max_row["p_right"]) if max_row else None,
+            }
+        )
+
+    return {
+        "analysis_id": "analysis.ibl-visual-decision.descriptive-psychometric",
+        "analysis_type": "descriptive_psychometric",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "protocol_id": IBL_VISUAL_PROTOCOL_ID,
+        "dataset_id": IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        "n_trials": len(trials),
+        "n_response_trials": sum(1 for trial in trials if trial.choice != "no-response"),
+        "n_no_response_trials": sum(1 for trial in trials if trial.choice == "no-response"),
+        "response_time_origin": _common_value(
+            [trial.response_time_origin for trial in trials if trial.response_time_origin]
+        ),
+        "summary_rows": summary_rows,
+        "prior_results": prior_results,
+        "caveats": [
+            (
+                "This is a descriptive empirical analysis, not a fitted IBL psychofit model. "
+                "Bias and threshold use linear interpolation over empirical p(right)."
+            ),
+            (
+                "No-response trials are included in trial counts but not counted as rightward "
+                "choices."
+            ),
+        ],
+    }
+
+
+def write_analysis_json(path: Path, result: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, indent=2, sort_keys=True, default=str) + "\n")
+
+
+def write_psychometric_svg(path: Path, summary_rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(psychometric_svg(summary_rows), encoding="utf-8")
+
+
+def psychometric_svg(summary_rows: list[dict[str, Any]]) -> str:
+    width = 720
+    height = 420
+    left = 72
+    right = 28
+    top = 30
+    bottom = 62
+    plot_width = width - left - right
+    plot_height = height - top - bottom
+    values = [
+        float(row["stimulus_value"])
+        for row in summary_rows
+        if row["stimulus_value"] is not None
+    ]
+    if not values:
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
+            '<text x="20" y="60">No psychometric data available</text></svg>\n'
+        )
+
+    x_min = min(values)
+    x_max = max(values)
+    if x_min == x_max:
+        x_min -= 1.0
+        x_max += 1.0
+
+    def x_scale(value: float) -> float:
+        return left + ((value - x_min) / (x_max - x_min)) * plot_width
+
+    def y_scale(value: float) -> float:
+        return top + (1.0 - value) * plot_height
+
+    colors = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e"]
+    by_prior: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in summary_rows:
+        by_prior[str(row["prior_context"])].append(row)
+
+    elements = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+        f'<line x1="{left}" y1="{top + plot_height}" x2="{left + plot_width}" '
+        f'y2="{top + plot_height}" stroke="#222"/>',
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" '
+        f'stroke="#222"/>',
+        f'<text x="{left + plot_width / 2}" y="{height - 18}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14">Signed contrast (%; right positive)</text>',
+        f'<text x="18" y="{top + plot_height / 2}" text-anchor="middle" '
+        'font-family="sans-serif" font-size="14" transform="rotate(-90 18 '
+        f'{top + plot_height / 2})">P(right)</text>',
+    ]
+
+    for y_value in [0.0, 0.25, 0.5, 0.75, 1.0]:
+        y = y_scale(y_value)
+        elements.append(
+            f'<line x1="{left - 4}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}" '
+            'stroke="#ddd"/>'
+        )
+        elements.append(
+            f'<text x="{left - 10}" y="{y + 4:.1f}" text-anchor="end" '
+            f'font-family="sans-serif" font-size="11">{y_value:.2g}</text>'
+        )
+
+    for x_value in sorted(set(values)):
+        x = x_scale(x_value)
+        elements.append(
+            f'<line x1="{x:.1f}" y1="{top + plot_height}" x2="{x:.1f}" '
+            f'y2="{top + plot_height + 4}" stroke="#222"/>'
+        )
+        elements.append(
+            f'<text x="{x:.1f}" y="{top + plot_height + 20}" text-anchor="middle" '
+            f'font-family="sans-serif" font-size="10">{x_value:g}</text>'
+        )
+
+    for index, (prior_context, rows) in enumerate(sorted(by_prior.items())):
+        color = colors[index % len(colors)]
+        points = []
+        for row in sorted(rows, key=lambda item: _none_safe_float(item["stimulus_value"])):
+            if row["stimulus_value"] is None or row["p_right"] is None:
+                continue
+            x = x_scale(float(row["stimulus_value"]))
+            y = y_scale(float(row["p_right"]))
+            points.append((x, y, int(row["n_trials"])))
+        if not points:
+            continue
+        point_attr = " ".join(f"{x:.1f},{y:.1f}" for x, y, _ in points)
+        elements.append(
+            f'<polyline points="{point_attr}" fill="none" stroke="{color}" '
+            'stroke-width="2"/>'
+        )
+        for x, y, n_trials in points:
+            radius = 3.0 + min(n_trials, 50) / 25.0
+            elements.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{color}" '
+                'fill-opacity="0.75"/>'
+            )
+        legend_y = top + 18 + index * 20
+        elements.append(
+            f'<line x1="{left + 12}" y1="{legend_y}" x2="{left + 36}" y2="{legend_y}" '
+            f'stroke="{color}" stroke-width="2"/>'
+        )
+        elements.append(
+            f'<text x="{left + 44}" y="{legend_y + 4}" font-family="sans-serif" '
+            f'font-size="12">{escape(prior_context)}</text>'
+        )
+
+    elements.append("</svg>")
+    return "\n".join(elements) + "\n"
 
 
 def provenance_payload(
@@ -300,9 +486,9 @@ def stimulus_side(contrast_left: Any, contrast_right: Any) -> str:
 
 def choice_label(choice: Any) -> str:
     if choice == 1:
-        return "right"
-    if choice == -1:
         return "left"
+    if choice == -1:
+        return "right"
     if choice == 0:
         return "no-response"
     return "unknown"
@@ -382,6 +568,86 @@ def _index_value(values: Any, index: int) -> Any:
     if hasattr(value, "item"):
         return value.item()
     return value
+
+
+def _canonical_trial_from_csv_row(row: dict[str, str]) -> CanonicalTrial:
+    source_json = row.pop("source_json", "{}") or "{}"
+    return CanonicalTrial(
+        protocol_id=row["protocol_id"],
+        dataset_id=_optional_string(row.get("dataset_id")),
+        subject_id=_optional_string(row.get("subject_id")),
+        session_id=row["session_id"],
+        trial_index=int(row["trial_index"]),
+        stimulus_modality=row["stimulus_modality"],
+        stimulus_value=_optional_float(row.get("stimulus_value")),
+        stimulus_units=_optional_string(row.get("stimulus_units")),
+        stimulus_side=row.get("stimulus_side") or "unknown",
+        evidence_strength=_optional_float(row.get("evidence_strength")),
+        evidence_units=_optional_string(row.get("evidence_units")),
+        choice=row["choice"],
+        correct=_optional_bool(row.get("correct")),
+        response_time=_optional_float(row.get("response_time")),
+        response_time_origin=_optional_string(row.get("response_time_origin")),
+        feedback=row.get("feedback") or "unknown",
+        reward=_optional_float(row.get("reward")),
+        reward_units=_optional_string(row.get("reward_units")),
+        block_id=_optional_string(row.get("block_id")),
+        prior_context=_optional_string(row.get("prior_context")),
+        training_stage=_optional_string(row.get("training_stage")),
+        source=json.loads(source_json),
+    )
+
+
+def _interpolate_crossing(rows: list[dict[str, Any]], target: float) -> float | None:
+    points = [
+        (float(row["stimulus_value"]), float(row["p_right"]))
+        for row in rows
+        if row["stimulus_value"] is not None and row["p_right"] is not None
+    ]
+    points.sort()
+    for x_value, p_right in points:
+        if p_right == target:
+            return x_value
+    for (x0, y0), (x1, y1) in zip(points, points[1:], strict=False):
+        if y0 == y1:
+            continue
+        lower = min(y0, y1)
+        upper = max(y0, y1)
+        if lower <= target <= upper:
+            fraction = (target - y0) / (y1 - y0)
+            return x0 + fraction * (x1 - x0)
+    return None
+
+
+def _common_value(values: list[str]) -> str | None:
+    unique_values = sorted(set(values))
+    if len(unique_values) == 1:
+        return unique_values[0]
+    if unique_values:
+        return "mixed"
+    return None
+
+
+def _optional_string(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    return value
+
+
+def _optional_float(value: str | None) -> float | None:
+    if value is None or value == "":
+        return None
+    return float(value)
+
+
+def _optional_bool(value: str | None) -> bool | None:
+    if value is None or value == "":
+        return None
+    if value == "True":
+        return True
+    if value == "False":
+        return False
+    raise ValueError(f"Cannot parse boolean value {value!r}")
 
 
 def _safe_ratio(numerator: int, denominator: int) -> float | None:

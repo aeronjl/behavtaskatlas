@@ -6,13 +6,18 @@ import sys
 from pathlib import Path
 
 from behavtaskatlas.ibl import (
+    DEFAULT_DERIVED_DIR,
     DEFAULT_IBL_EID,
+    analyze_ibl_visual_decision,
     harmonize_ibl_visual_trials,
+    load_canonical_trials_csv,
     load_ibl_trials_from_openalyx,
     provenance_payload,
     summarize_canonical_trials,
+    write_analysis_json,
     write_canonical_trials_csv,
     write_provenance_json,
+    write_psychometric_svg,
     write_summary_csv,
 )
 from behavtaskatlas.models import SCHEMA_MODELS
@@ -43,6 +48,21 @@ def main(argv: list[str] | None = None) -> int:
     ibl_parser.add_argument("--cache-dir", default=None, help="Optional ONE cache directory")
     ibl_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
 
+    analyze_parser = subparsers.add_parser(
+        "ibl-analyze", help="Analyze a harmonized IBL visual decision session"
+    )
+    analyze_parser.add_argument("--eid", default=DEFAULT_IBL_EID, help="IBL session UUID/eid")
+    analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_DERIVED_DIR),
+        help="Directory containing generated IBL artifacts",
+    )
+    analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -55,6 +75,12 @@ def main(argv: list[str] | None = None) -> int:
             out_dir=Path(args.out_dir),
             cache_dir=Path(args.cache_dir) if args.cache_dir else None,
             limit=args.limit,
+        )
+    if args.command == "ibl-analyze":
+        return _ibl_analyze(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -127,6 +153,40 @@ def _ibl_harmonize(
     print(f"Wrote {len(trials)} trials to {trials_path}")
     print(f"Wrote {len(summary)} summary rows to {summary_path}")
     print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _ibl_analyze(
+    *,
+    eid: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / eid
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra ibl behavtaskatlas ibl-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_ibl_visual_decision(trials)
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(plot_path, result["summary_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
     return 0
 
 

@@ -3,15 +3,19 @@ import math
 import pytest
 
 from behavtaskatlas.ibl import (
+    analyze_ibl_visual_decision,
     choice_label,
     feedback_label,
     harmonize_ibl_visual_trial,
     harmonize_ibl_visual_trials,
+    load_canonical_trials_csv,
     provenance_payload,
+    psychometric_svg,
     response_time_seconds,
     signed_contrast_percent,
     stimulus_side,
     summarize_canonical_trials,
+    write_canonical_trials_csv,
 )
 
 
@@ -24,8 +28,8 @@ def test_signed_contrast_uses_right_positive_left_negative() -> None:
 def test_ibl_labels() -> None:
     assert stimulus_side(math.nan, 1.0) == "right"
     assert stimulus_side(0.5, math.nan) == "left"
-    assert choice_label(1) == "right"
-    assert choice_label(-1) == "left"
+    assert choice_label(1) == "left"
+    assert choice_label(-1) == "right"
     assert choice_label(0) == "no-response"
     assert feedback_label(1) == "reward"
     assert feedback_label(-1) == "error"
@@ -41,7 +45,7 @@ def test_harmonize_ibl_visual_trial() -> None:
         {
             "contrastLeft": math.nan,
             "contrastRight": 0.25,
-            "choice": 1,
+            "choice": -1,
             "feedbackType": 1,
             "response_times": 12.7,
             "stimOn_times": 12.1,
@@ -73,7 +77,7 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
     source = {
         "contrastLeft": [math.nan, 0.25, math.nan],
         "contrastRight": [1.0, math.nan, 0.25],
-        "choice": [-1, 1, 1],
+        "choice": [-1, 1, -1],
         "feedbackType": [1, -1, 1],
         "response_times": [10.5, 12.4, 14.2],
         "stimOn_times": [10.0, 12.0, 14.0],
@@ -91,6 +95,7 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
     assert len(trials) == 3
     assert trials[0].stimulus_value == 100.0
     assert trials[1].stimulus_value == -25.0
+    assert trials[1].choice == "left"
     assert summary == [
         {
             "prior_context": "p_left=0.2",
@@ -106,8 +111,8 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "prior_context": "p_left=0.5",
             "stimulus_value": -25.0,
             "n_trials": 1,
-            "n_right": 1,
-            "p_right": 1.0,
+            "n_right": 0,
+            "p_right": 0.0,
             "n_correct": 0,
             "p_correct": 0.0,
             "median_response_time": pytest.approx(0.4),
@@ -116,8 +121,8 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "prior_context": "p_left=0.5",
             "stimulus_value": 100.0,
             "n_trials": 1,
-            "n_right": 0,
-            "p_right": 0.0,
+            "n_right": 1,
+            "p_right": 1.0,
             "n_correct": 1,
             "p_correct": 1.0,
             "median_response_time": pytest.approx(0.5),
@@ -154,3 +159,80 @@ def test_provenance_payload_counts_exclusions() -> None:
     assert payload["exclusions"]["missing_stimulus"] == 1
     assert payload["exclusions"]["no_response"] == 1
     assert payload["exclusions"]["missing_response_time"] == 1
+
+
+def test_canonical_trial_csv_round_trip(tmp_path) -> None:
+    trials = harmonize_ibl_visual_trials(
+        {
+            "contrastLeft": [math.nan],
+            "contrastRight": [0.25],
+            "choice": [-1],
+            "feedbackType": [1],
+            "response_times": [12.7],
+            "stimOn_times": [12.1],
+            "probabilityLeft": [0.2],
+            "rewardVolume": [1.5],
+        },
+        session_id="session",
+        subject_id="subject",
+    )
+    path = tmp_path / "trials.csv"
+
+    write_canonical_trials_csv(path, trials)
+    loaded = load_canonical_trials_csv(path)
+
+    assert loaded == trials
+
+
+def test_analyze_ibl_visual_decision_returns_empirical_metrics() -> None:
+    trials = harmonize_ibl_visual_trials(
+        {
+            "contrastLeft": [1.0, 0.25, math.nan, math.nan],
+            "contrastRight": [math.nan, math.nan, 0.25, 1.0],
+            "choice": [1, 1, -1, -1],
+            "feedbackType": [1, 1, 1, 1],
+            "response_times": [1.2, 2.3, 3.4, 4.5],
+            "stimOn_times": [1.0, 2.0, 3.0, 4.0],
+            "probabilityLeft": [0.5, 0.5, 0.5, 0.5],
+        },
+        session_id="session",
+    )
+
+    result = analyze_ibl_visual_decision(trials)
+
+    assert result["analysis_type"] == "descriptive_psychometric"
+    assert result["n_trials"] == 4
+    assert result["n_response_trials"] == 4
+    assert result["prior_results"][0]["prior_context"] == "p_left=0.5"
+    assert result["prior_results"][0]["left_lapse_empirical"] == 0.0
+    assert result["prior_results"][0]["right_lapse_empirical"] == 0.0
+
+
+def test_psychometric_svg_contains_prior_label() -> None:
+    svg = psychometric_svg(
+        [
+            {
+                "prior_context": "p_left=0.5",
+                "stimulus_value": -100.0,
+                "n_trials": 5,
+                "n_right": 0,
+                "p_right": 0.0,
+                "n_correct": 5,
+                "p_correct": 1.0,
+                "median_response_time": 0.3,
+            },
+            {
+                "prior_context": "p_left=0.5",
+                "stimulus_value": 100.0,
+                "n_trials": 5,
+                "n_right": 5,
+                "p_right": 1.0,
+                "n_correct": 5,
+                "p_correct": 1.0,
+                "median_response_time": 0.3,
+            },
+        ]
+    )
+
+    assert "<svg" in svg
+    assert "p_left=0.5" in svg

@@ -33,7 +33,7 @@ The biased/ephys trial extractors also include fields such as `intervals`, `goCu
 | `stimulus_value` | signed contrast, right positive and left negative |
 | `stimulus_side` | finite side among `contrastLeft` and `contrastRight` |
 | `evidence_strength` | absolute signed contrast |
-| `choice` | `choice`: `1` right, `-1` left, `0` no response |
+| `choice` | `choice`: `1` left, `-1` right, `0` no response |
 | `correct` | `feedbackType`: `1` correct, `-1` incorrect |
 | `response_time` | `response_times - stimOn_times` |
 | `prior_context` | `probabilityLeft` |
@@ -53,6 +53,7 @@ The default command targets the first selected public session:
 ```bash
 uv sync --extra ibl
 uv run behavtaskatlas ibl-harmonize
+uv run behavtaskatlas ibl-analyze
 ```
 
 By default this writes ignored local artifacts under:
@@ -65,9 +66,12 @@ The command has been verified against this session and generated:
 
 - 569 canonical trial rows.
 - 27 summary rows grouped by signed contrast and prior context.
+- Descriptive analysis JSON.
+- Dependency-free SVG psychometric plot.
 - 32 no-response trials.
 - 0 missing-stimulus trials.
 - 0 missing-response-time trials.
+- IBL choice codes are mapped as `1` left and `-1` right.
 
 The selected session metadata is:
 
