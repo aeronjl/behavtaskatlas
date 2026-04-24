@@ -5,6 +5,11 @@ import json
 import sys
 from pathlib import Path
 
+from behavtaskatlas.clicks import (
+    DEFAULT_CLICKS_DERIVED_DIR,
+    brody_clicks_provenance_payload,
+    load_brody_clicks_mat,
+)
 from behavtaskatlas.ibl import (
     DEFAULT_DERIVED_DIR,
     DEFAULT_IBL_EID,
@@ -68,6 +73,24 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional explicit canonical trial CSV path",
     )
 
+    clicks_parser = subparsers.add_parser(
+        "clicks-harmonize",
+        help="Harmonize one local Brody Lab Poisson Clicks `.mat` file",
+    )
+    clicks_parser.add_argument("--mat-file", required=True, help="Path to a local `.mat` file")
+    clicks_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_CLICKS_DERIVED_DIR),
+        help="Directory for generated artifacts",
+    )
+    clicks_parser.add_argument(
+        "--parsed-field",
+        default="parsed",
+        choices=["parsed", "parsed_frozen"],
+        help="ratdata field to harmonize",
+    )
+    clicks_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -87,6 +110,13 @@ def main(argv: list[str] | None = None) -> int:
             eid=args.eid,
             derived_dir=Path(args.derived_dir),
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "clicks-harmonize":
+        return _clicks_harmonize(
+            mat_file=Path(args.mat_file),
+            out_dir=Path(args.out_dir),
+            parsed_field=args.parsed_field,
+            limit=args.limit,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -198,6 +228,54 @@ def _ibl_analyze(
     print(f"Wrote psychometric summary to {summary_path}")
     print(f"Wrote analysis result to {result_path}")
     print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _clicks_harmonize(
+    *,
+    mat_file: Path,
+    out_dir: Path,
+    parsed_field: str,
+    limit: int | None,
+) -> int:
+    if not mat_file.exists():
+        print(f"MATLAB file not found: {mat_file}", file=sys.stderr)
+        return 2
+    try:
+        trials, details = load_brody_clicks_mat(
+            mat_file,
+            parsed_field=parsed_field,
+            limit=limit,
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_id = f"{mat_file.stem}-{parsed_field}"
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        brody_clicks_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
     return 0
 
 

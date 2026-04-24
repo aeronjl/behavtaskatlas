@@ -206,6 +206,11 @@
       "default": null,
       "title": "Subject Id"
     },
+    "task_variables": {
+      "additionalProperties": true,
+      "title": "Task Variables",
+      "type": "object"
+    },
     "training_stage": {
       "anyOf": [
         {

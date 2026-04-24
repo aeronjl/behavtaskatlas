@@ -29,6 +29,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+clicks = [
+    { name = "scipy" },
+]
 ibl = [
     { name = "one-api" },
 ]
@@ -44,8 +47,9 @@ requires-dist = [
     { name = "one-api", marker = "extra == 'ibl'", specifier = ">=3.5.0" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "scipy", marker = "extra == 'clicks'", specifier = ">=1.13" },
 ]
-provides-extras = ["ibl"]
+provides-extras = ["clicks", "ibl"]
 
 [package.metadata.requires-dev]
 dev = [

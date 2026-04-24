@@ -65,6 +65,8 @@ training:
 apparatus:
   - auditory speakers
   - response ports or buttons
+dataset_ids:
+  - dataset.brody-lab-poisson-clicks-2009-2024
 expected_analyses:
   - psychometric curve by click count difference
   - chronometric curve by evidence strength
@@ -90,4 +92,3 @@ provenance:
 open_questions:
   - Separate rat and human implementations after deeper source curation.
   - Add exact click-generation parameters from the original study.
-

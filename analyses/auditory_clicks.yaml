@@ -1,0 +1,28 @@
+analysis_id: analysis.auditory-clicks.baseline-plan
+protocol_id: protocol.poisson-clicks-evidence-accumulation
+dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
+status: real-file-smoke-run
+inputs:
+  - canonical trial table generated from local Brody Lab parsed `B075.mat`
+verified_outputs:
+  - 11285 canonical trial rows from `ratdata.parsed`
+  - 181 summary rows grouped by gamma context and click-count difference
+grouping_variables:
+  - click count difference
+  - gamma context
+  - rat
+planned_outputs:
+  - trial count by click-count difference
+  - proportion rightward choice by click-count difference
+  - accuracy by absolute click-count difference
+  - summary of stimulus duration and click-count distributions
+deferred_outputs:
+  - click-time weighting kernel
+  - pulse accumulation model fit
+  - per-rat and pooled hierarchical summaries
+provenance_requirements:
+  - source Zenodo DOI
+  - source `.mat` filename and hash
+  - adapter version or commit hash
+  - date generated
+  - parsed-field caveats

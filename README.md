@@ -51,6 +51,34 @@ To override the selected table revision:
 uv run --extra ibl behavtaskatlas ibl-harmonize --revision 2025-03-03
 ```
 
+Download the Brody Lab clicks archive locally, then run the auditory-clicks slice from
+one extracted `.mat` file:
+
+```bash
+mkdir -p data/raw/brody_clicks
+curl -L -C - --fail --retry 5 --retry-delay 10 \
+  -o data/raw/brody_clicks/Brody_Lab_Poisson_Clicks_Task_Dataset_Rats_2009_to_2024_Parsed_.zip \
+  https://zenodo.org/api/records/13352119/files/Brody_Lab_Poisson_Clicks_Task_Dataset_Rats_2009_to_2024_Parsed_.zip/content
+```
+
+The archive uses ZIP64/Deflate64 compression. On macOS, install `p7zip` and
+extract a rat file with `7z`:
+
+```bash
+brew install p7zip
+7z x -y -odata/raw/brody_clicks/extracted \
+  data/raw/brody_clicks/Brody_Lab_Poisson_Clicks_Task_Dataset_Rats_2009_to_2024_Parsed_.zip \
+  B075.mat
+```
+
+```bash
+uv sync --extra clicks
+uv run behavtaskatlas clicks-harmonize --mat-file data/raw/brody_clicks/extracted/B075.mat
+```
+
+The clicks archive is large and remains ignored under `data/raw/`; derived artifacts
+are written under ignored `derived/auditory_clicks/`.
+
 ## Repository Layout
 
 ```text

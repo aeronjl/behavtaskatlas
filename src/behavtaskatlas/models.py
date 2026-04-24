@@ -167,6 +167,7 @@ class CanonicalTrial(StrictModel):
     block_id: str | None = None
     prior_context: str | None = None
     training_stage: str | None = None
+    task_variables: dict[str, Any] = Field(default_factory=dict)
     source: dict[str, Any] = Field(default_factory=dict)
 
 

@@ -1,0 +1,60 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.brody-lab-poisson-clicks-2009-2024
+name: Brody Lab Poisson Clicks Task Dataset Rats 2009 to 2024 Parsed
+description: >
+  Parsed behavioral data from 515 male Long-Evans rats trained in the Brody Lab
+  at Princeton University on the Poisson Clicks auditory evidence-accumulation
+  task. The archive contains one MATLAB file per rat with parsed non-violation,
+  non-frozen trials and associated stimulus metadata.
+protocol_ids:
+  - protocol.poisson-clicks-evidence-accumulation
+species:
+  - rat
+curation_status: data-linked
+source_url: https://zenodo.org/records/13352119
+access_notes: >
+  The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP
+  development under ignored `data/raw/`, while normal validation and tests should
+  still run without the archive. Real ingestion operates on a local `.mat` file
+  extracted from the archive.
+license: CC-BY-4.0
+data_formats:
+  - MATLAB .mat files
+  - derived canonical trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: Rat identifier inferred from the source `.mat` filename.
+  session_id: Parsed rat-level file identifier until day/session breaks are available.
+  trial_index: Trial index within the parsed rat-level vector.
+  stimulus_value: nR minus nL, the signed right-minus-left click count difference.
+  evidence_strength: Absolute value of nR minus nL.
+  choice: gr mapped as 0 left, 1 right.
+  correct: hh mapped as 0 incorrect, 1 correct.
+  response_time: Not available in the parsed schema described on Zenodo.
+  feedback: hh mapped to reward/error for the parsed behavioral outcome.
+  prior_context: ga represented as a gamma context where available.
+  task_variables: >
+    left/right click counts, click-count difference, stimulus duration, gamma,
+    reward gamma, task type, and left/right click-time vectors from bt.
+references:
+  - id: ref.zenodo-brody-clicks-2024
+    citation: >
+      Kopec CD, Luo Z, Bondy AG, Gupta D, Elliott VA, Charlton JA, Breda JR,
+      Stagnaro WM, Reyes EJ, Sirko AI, Bustos AF, Willock JM, Morrison JM,
+      Osorio KL, Brody CD. Brody Lab Poisson Clicks Task Dataset Rats 2009 to
+      2024 Parsed. Zenodo, 2024.
+    url: https://zenodo.org/records/13352119
+    doi: 10.5281/zenodo.13352119
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: >
+    Dataset metadata drafted from the Zenodo record and used to start the
+    second vertical slice with local raw-data storage kept out of git.
+caveats:
+  - The parsed archive does not include all trials, violation trials, or trials longer than 1 s.
+  - Day/session breaks are not identified in the parsed release.
+  - The full archive is large and should remain under ignored local raw-data storage or external storage.
+  - The archive uses ZIP64/Deflate64 compression; macOS `unzip` and Python `zipfile` may not extract it.

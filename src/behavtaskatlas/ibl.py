@@ -53,6 +53,7 @@ CANONICAL_TRIAL_CSV_FIELDS = [
     "block_id",
     "prior_context",
     "training_stage",
+    "task_variables_json",
     "source_json",
 ]
 
@@ -224,6 +225,8 @@ def write_canonical_trials_csv(path: Path, trials: list[CanonicalTrial]) -> None
         for trial in trials:
             row = trial.model_dump(mode="json")
             source = row.pop("source")
+            task_variables = row.pop("task_variables")
+            row["task_variables_json"] = json.dumps(task_variables, sort_keys=True)
             row["source_json"] = json.dumps(source, sort_keys=True)
             writer.writerow(row)
 
@@ -735,6 +738,7 @@ def _canonical_trial_from_csv_row(row: dict[str, str]) -> CanonicalTrial:
         block_id=_optional_string(row.get("block_id")),
         prior_context=_optional_string(row.get("prior_context")),
         training_stage=_optional_string(row.get("training_stage")),
+        task_variables=json.loads(row.pop("task_variables_json", "{}") or "{}"),
         source=json.loads(source_json),
     )
 

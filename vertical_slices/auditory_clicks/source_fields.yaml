@@ -1,0 +1,48 @@
+slice_id: slice.auditory-clicks
+protocol_id: protocol.poisson-clicks-evidence-accumulation
+dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
+source_archive: https://zenodo.org/records/13352119
+source_doi: 10.5281/zenodo.13352119
+source_object: Brody Lab parsed MATLAB ratdata.parsed struct
+archive_size: 8.1 GB
+license: CC-BY-4.0
+required_fields:
+  - nL
+  - nR
+  - sd
+  - gr
+  - hh
+optional_fields:
+  - ga
+  - rg
+  - bt.left
+  - bt.right
+  - bt.real_T
+  - bt.bup_width
+  - bt.base_freq
+  - bt.bup_ramp
+  - bt.first_bup_stereo
+  - bt.avoid_collisions
+  - bt.seed
+  - bt.is_probe_trial
+  - bt.is_frozen
+  - bt.tones
+canonical_mapping:
+  stimulus_value: nR minus nL, signed right positive
+  stimulus_side: sign of nR minus nL
+  evidence_strength: absolute nR minus nL
+  choice: gr code 0 left, 1 right
+  correct: hh code 0 incorrect, 1 correct
+  response_time: unavailable in the parsed schema
+  prior_context: ga formatted as gamma context
+  task_variables.left_click_count: nL
+  task_variables.right_click_count: nR
+  task_variables.click_count_difference: nR minus nL
+  task_variables.stimulus_duration: sd
+  task_variables.left_click_times: bt.left
+  task_variables.right_click_times: bt.right
+source_notes:
+  - The parsed release excludes violation trials, frozen trials, and trials longer than 1 s.
+  - Day/session breaks are not identified in the parsed release.
+  - The full archive is large and should remain under ignored local raw-data storage or external storage.
+  - The archive uses ZIP64/Deflate64 compression; macOS `unzip` and Python `zipfile` may not extract it.
