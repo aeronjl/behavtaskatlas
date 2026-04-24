@@ -8,7 +8,7 @@ Stress the atlas beyond scalar visual contrast by mapping a dynamic auditory evi
 
 ## Source Protocol
 
-- Protocol record: `protocol.poisson-clicks-evidence-accumulation`
+- Protocol record: `protocol.rat-auditory-clicks-nose-poke`
 - Dataset record: `dataset.brody-lab-poisson-clicks-2009-2024`
 - Source archive: Brody Lab Poisson Clicks Task Dataset Rats 2009 to 2024 Parsed
 - DOI: `10.5281/zenodo.13352119`

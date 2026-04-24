@@ -1,5 +1,5 @@
 slice_id: slice.auditory-clicks
-protocol_id: protocol.poisson-clicks-evidence-accumulation
+protocol_id: protocol.rat-auditory-clicks-nose-poke
 dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
 source_archive: https://zenodo.org/records/13352119
 source_doi: 10.5281/zenodo.13352119

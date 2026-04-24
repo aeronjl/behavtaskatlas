@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 23:30:34 BST - Concrete slices should attach to concrete protocols
+
+The auditory-clicks report-backed slice now points to the concrete rat nose-poke protocol rather than the generic Poisson clicks protocol. The harmonizer stamps generated canonical trials with the same concrete protocol id, so the analysis artifact, slice metadata, and protocol catalog now agree about what task instance was actually analyzed.
+
+This did not reduce the queue numerically, because the generic Poisson clicks protocol now honestly carries the remaining `needs vertical slice` item. That is useful signal: the atlas needs an explicit way to represent abstract protocol templates versus concrete executable protocol variants, rather than relying on the presence of one report-backed concrete slice to satisfy both records.
+
 ## 2026-04-24 23:11:40 BST - Queue items should shrink through reciprocal metadata
 
 The first curation-queue reduction linked the concrete rat auditory-clicks nose-poke protocol to the Brody Lab parsed Poisson Clicks dataset, and added the reciprocal protocol id back to the dataset record. This removes one `needs dataset` item while preserving the separate `needs vertical slice` item for that protocol.

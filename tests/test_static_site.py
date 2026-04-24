@@ -245,6 +245,9 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     rdm_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.random-dot-motion"
     )
+    auditory_slice = next(
+        row for row in payload["vertical_slices"] if row["slice_id"] == "slice.auditory-clicks"
+    )
     rdm_dataset = next(
         row
         for row in payload["datasets"]
@@ -340,10 +343,22 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert rat_clicks_protocol["declared_dataset_ids"] == [
         "dataset.brody-lab-poisson-clicks-2009-2024"
     ]
-    assert rat_clicks_protocol["report_status"] == "no slice"
+    assert rat_clicks_protocol["slice_ids"] == ["slice.auditory-clicks"]
+    assert rat_clicks_protocol["report_status"] == "analysis pending"
+    assert auditory_slice["protocol_id"] == "protocol.rat-auditory-clicks-nose-poke"
     assert not any(
         item["source_issue_id"]
         == "protocol_without_dataset::protocol.rat-auditory-clicks-nose-poke"
+        for item in queue_payload["items"]
+    )
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.rat-auditory-clicks-nose-poke"
+        for item in queue_payload["items"]
+    )
+    assert any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.poisson-clicks-evidence-accumulation"
         for item in queue_payload["items"]
     )
     assert rdm_detail["stimulus"]["evidence_type"] == "stochastic-motion"

@@ -12,7 +12,7 @@ from typing import Any
 
 from behavtaskatlas.models import CanonicalTrial
 
-BRODY_CLICKS_PROTOCOL_ID = "protocol.poisson-clicks-evidence-accumulation"
+BRODY_CLICKS_PROTOCOL_ID = "protocol.rat-auditory-clicks-nose-poke"
 BRODY_CLICKS_DATASET_ID = "dataset.brody-lab-poisson-clicks-2009-2024"
 DEFAULT_CLICKS_DERIVED_DIR = Path("derived/auditory_clicks")
 DEFAULT_CLICKS_SESSION_ID = "B075-parsed"

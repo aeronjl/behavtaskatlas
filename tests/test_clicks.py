@@ -34,7 +34,7 @@ def test_harmonize_brody_clicks_trial() -> None:
         trial_index=4,
     )
 
-    assert trial.protocol_id == "protocol.poisson-clicks-evidence-accumulation"
+    assert trial.protocol_id == "protocol.rat-auditory-clicks-nose-poke"
     assert trial.stimulus_modality == "auditory"
     assert trial.stimulus_value == 6.0
     assert trial.stimulus_side == "right"
@@ -323,7 +323,7 @@ def test_clicks_aggregate_report_html_contains_artifact_links_and_tables() -> No
     html = clicks_aggregate_report_html(
         {
             "analysis_id": "analysis.auditory-clicks.batch-aggregate",
-            "protocol_id": "protocol.poisson-clicks-evidence-accumulation",
+            "protocol_id": "protocol.rat-auditory-clicks-nose-poke",
             "dataset_id": "dataset.brody-lab-poisson-clicks-2009-2024",
             "generated_at": "2026-04-24T18:00:00+00:00",
             "behavtaskatlas_commit": "abc1234",

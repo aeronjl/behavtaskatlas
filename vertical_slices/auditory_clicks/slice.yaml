@@ -8,7 +8,7 @@ description: >
 curation_status: analysis-verified
 display_order: 10
 family_id: family.auditory-click-accumulation
-protocol_id: protocol.poisson-clicks-evidence-accumulation
+protocol_id: protocol.rat-auditory-clicks-nose-poke
 dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
 report_path: auditory_clicks/report.html
 analysis_result_path: auditory_clicks/aggregate_result.json

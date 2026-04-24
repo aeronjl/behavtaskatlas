@@ -1,5 +1,5 @@
 analysis_id: analysis.auditory-clicks.baseline-plan
-protocol_id: protocol.poisson-clicks-evidence-accumulation
+protocol_id: protocol.rat-auditory-clicks-nose-poke
 dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
 status: real-file-static-report-run
 inputs:
