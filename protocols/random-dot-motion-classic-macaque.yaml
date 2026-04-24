@@ -61,6 +61,8 @@ apparatus:
   - visual display
   - eye tracking
   - fluid reward
+dataset_ids:
+  - dataset.roitman-shadlen-rdm-pyddm
 expected_analyses:
   - psychometric curve by motion coherence
   - chronometric curve where reaction times are available
@@ -85,4 +87,3 @@ provenance:
 open_questions:
   - Decide whether human keyboard/button RDM tasks should be separate protocol records.
   - Add canonical parameter ranges only after source-specific curation.
-

@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 22:49:33 BST - Reciprocal links turn QA into a cleaner curation signal
+
+The classic macaque random-dot motion protocol now explicitly declares the Roitman-Shadlen PyDDM dataset that already listed it. That removes the graph QA warning for a missing reciprocal protocol-dataset link while preserving the informational gaps for catalog-only protocols that do not yet have linked datasets or report-backed slices.
+
+This is the intended QA behavior: structural inconsistencies should be fixable metadata work, while breadth records without deep slices remain visible as future curation opportunities rather than failures.
+
 ## 2026-04-24 21:58:49 BST - Graph QA should surface curation gaps, not block breadth
 
 The relationship graph now includes a QA section in both HTML and JSON. It flags orphan records, missing reciprocal protocol-dataset links, protocols without linked datasets, protocols without report-backed slices, and datasets without report-backed slices, with severity levels so expected breadth gaps can remain informational while structural asymmetries appear as warnings.
