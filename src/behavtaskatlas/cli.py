@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from behavtaskatlas.models import MODEL_BY_OBJECT_TYPE
+from behavtaskatlas.models import SCHEMA_MODELS
 from behavtaskatlas.validation import validate_repository
 
 
@@ -44,8 +44,8 @@ def _validate(root: Path) -> int:
 
 def _export_schemas(output_dir: Path) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
-    for object_type, model in MODEL_BY_OBJECT_TYPE.items():
-        path = output_dir / f"{object_type}.schema.json"
+    for schema_name, model in SCHEMA_MODELS.items():
+        path = output_dir / f"{schema_name}.schema.json"
         path.write_text(
             json.dumps(model.model_json_schema(), indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
@@ -56,4 +56,3 @@ def _export_schemas(output_dir: Path) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

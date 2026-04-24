@@ -1,0 +1,36 @@
+slice_id: slice.ibl-visual-decision
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-public-behavior
+source_object: IBL ALF trials object/table
+access_pattern: one.load_object(eid, 'trials', collection='alf')
+required_fields:
+  - contrastLeft
+  - contrastRight
+  - choice
+  - feedbackType
+  - response_times
+  - stimOn_times
+  - probabilityLeft
+optional_fields:
+  - intervals
+  - goCue_times
+  - feedback_times
+  - rewardVolume
+  - firstMovement_times
+  - stimOff_times
+  - goCueTrigger_times
+  - stimOnTrigger_times
+canonical_mapping:
+  stimulus_value: signed contrast; contrastRight positive, contrastLeft negative
+  stimulus_side: finite source side among contrastLeft and contrastRight
+  evidence_strength: absolute value of signed contrast
+  choice: choice code 1 right, -1 left, 0 no response
+  correct: feedbackType code 1 true, -1 false
+  response_time: response_times minus stimOn_times
+  prior_context: probabilityLeft formatted as p_left value
+  reward: rewardVolume where available
+source_references:
+  - https://docs.internationalbrainlab.org/_autosummary/brainbox.behavior.training.html
+  - https://docs.internationalbrainlab.org/notebooks_external/data_download.html
+  - https://docs.internationalbrainlab.org/_modules/ibllib/io/extractors/biased_trials.html
+

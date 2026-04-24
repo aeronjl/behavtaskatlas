@@ -22,11 +22,15 @@ expected_trial_table_mapping:
   subject_id: IBL subject identifier.
   session_id: IBL session identifier.
   trial_index: Trial number within session.
-  stimulus_value: Signed or side-specific visual contrast.
-  choice: Wheel-choice side.
-  correct: Trial outcome.
-  response_time: Time from stimulus or go cue; exact origin to be specified.
-  feedback: Reward or error outcome.
+  stimulus_value: Signed contrast; contrastRight positive, contrastLeft negative.
+  stimulus_side: Finite source side among contrastLeft and contrastRight.
+  evidence_strength: Absolute value of signed contrast.
+  choice: IBL choice code mapped to left/right/no-response.
+  correct: IBL feedbackType mapped to boolean correctness.
+  response_time: response_times minus stimOn_times.
+  feedback: IBL feedbackType mapped to reward/error.
+  prior_context: IBL probabilityLeft formatted as p_left value.
+  reward: IBL rewardVolume where available.
 references:
   - id: ref.ibl-2021-standardized
     citation: >
@@ -42,4 +46,3 @@ provenance:
   source_notes: Initial dataset metadata for the first planned vertical slice.
 caveats:
   - Exact licensing and field-level mappings must be verified before harmonization.
-

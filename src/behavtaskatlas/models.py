@@ -145,6 +145,31 @@ class Implementation(StrictModel):
     provenance: Provenance
 
 
+class CanonicalTrial(StrictModel):
+    protocol_id: str
+    dataset_id: str | None = None
+    subject_id: str | None = None
+    session_id: str
+    trial_index: int
+    stimulus_modality: str
+    stimulus_value: float | None = None
+    stimulus_units: str | None = None
+    stimulus_side: Literal["left", "right", "none", "unknown"] = "unknown"
+    evidence_strength: float | None = None
+    evidence_units: str | None = None
+    choice: Literal["left", "right", "no-response", "unknown"]
+    correct: bool | None = None
+    response_time: float | None = None
+    response_time_origin: str | None = None
+    feedback: Literal["reward", "error", "none", "unknown"] = "unknown"
+    reward: float | None = None
+    reward_units: str | None = None
+    block_id: str | None = None
+    prior_context: str | None = None
+    training_stage: str | None = None
+    source: dict[str, Any] = Field(default_factory=dict)
+
+
 Record = TaskFamily | Protocol | Dataset | Implementation
 
 
@@ -153,6 +178,12 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "protocol": Protocol,
     "dataset": Dataset,
     "implementation": Implementation,
+}
+
+
+SCHEMA_MODELS: dict[str, type[BaseModel]] = {
+    **MODEL_BY_OBJECT_TYPE,
+    "canonical_trial": CanonicalTrial,
 }
 
 

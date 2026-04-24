@@ -6,5 +6,4 @@ JSON schemas are generated from the Python models:
 uv run behavtaskatlas export-schemas
 ```
 
-Generated schema files are ignored by git until the schema stabilizes.
-
+Generated schema files are committed so schema changes are visible in code review.

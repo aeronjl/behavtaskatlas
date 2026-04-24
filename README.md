@@ -48,6 +48,6 @@ uv run behavtaskatlas export-schemas
 ├── src/               # Python validation package
 ├── task_families/     # Abstract task-family records
 ├── tests/             # Validation tests
+├── vertical_slices/   # Deep end-to-end MVP slices
 └── vocabularies/      # Controlled vocabulary source files
 ```
-

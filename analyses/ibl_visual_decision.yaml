@@ -1,0 +1,24 @@
+analysis_id: analysis.ibl-visual-decision.baseline-plan
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-public-behavior
+status: planned
+inputs:
+  - canonical trial table generated from IBL ALF trials table/object
+grouping_variables:
+  - signed contrast
+  - probabilityLeft / prior block
+  - subject
+  - session
+planned_outputs:
+  - trial count by signed contrast and prior block
+  - proportion rightward choice by signed contrast and prior block
+  - psychometric fit parameters: bias, threshold, left lapse, right lapse
+  - median response time by signed contrast and prior block
+  - exclusion summary for missing stimulus, missing response, or invalid timing
+provenance_requirements:
+  - IBL session/eid
+  - source dataset revision where available
+  - adapter version or commit hash
+  - date generated
+  - exact response-time origin
+
