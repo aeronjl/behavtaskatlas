@@ -113,8 +113,11 @@ Build the local static report index:
 uv run behavtaskatlas site-index
 ```
 
-This writes `derived/index.html`, linking available vertical-slice reports and
-generated analysis artifacts without committing raw or derived data.
+This writes `derived/index.html` and `derived/manifest.json`. The HTML index
+links available vertical-slice reports, shows a cross-slice comparison table, and
+links generated analysis artifacts without committing raw or derived data. The
+JSON manifest carries the same slice links and comparison rows for downstream
+tooling.
 
 ## Repository Layout
 

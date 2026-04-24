@@ -8,24 +8,34 @@ from pathlib import Path
 from typing import Any
 
 
-def build_static_index_payload(*, derived_dir: Path, index_path: Path) -> dict[str, Any]:
+def build_static_index_payload(
+    *,
+    derived_dir: Path,
+    index_path: Path,
+    manifest_path: Path | None = None,
+) -> dict[str, Any]:
     from behavtaskatlas.ibl import DEFAULT_IBL_EID, current_git_commit, current_git_dirty
 
+    manifest_path = manifest_path or index_path.with_name("manifest.json")
+    slices = [
+        _auditory_clicks_slice_payload(derived_dir=derived_dir, index_path=index_path),
+        _ibl_visual_slice_payload(
+            derived_dir=derived_dir,
+            index_path=index_path,
+            default_eid=DEFAULT_IBL_EID,
+        ),
+        _random_dot_motion_slice_payload(derived_dir=derived_dir, index_path=index_path),
+    ]
     return {
+        "manifest_schema_version": "0.1.0",
         "title": "behavtaskatlas MVP Reports",
         "generated_at": datetime.now(UTC).isoformat(),
         "behavtaskatlas_commit": current_git_commit(),
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "derived_dir": str(derived_dir),
-        "slices": [
-            _auditory_clicks_slice_payload(derived_dir=derived_dir, index_path=index_path),
-            _ibl_visual_slice_payload(
-                derived_dir=derived_dir,
-                index_path=index_path,
-                default_eid=DEFAULT_IBL_EID,
-            ),
-            _random_dot_motion_slice_payload(derived_dir=derived_dir, index_path=index_path),
-        ],
+        "manifest_link": _relative_link(manifest_path, index_path),
+        "comparison_rows": build_slice_comparison_rows(slices),
+        "slices": slices,
     }
 
 
@@ -34,8 +44,48 @@ def write_static_index_html(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(static_index_html(payload), encoding="utf-8")
 
 
+def write_static_manifest_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for item in slices:
+        comparison = item.get("comparison", {})
+        metrics = {label: value for label, value in item.get("metrics", [])}
+        rows.append(
+            {
+                "slice_id": item.get("id"),
+                "title": item.get("title"),
+                "family_id": comparison.get("family_id"),
+                "protocol_id": comparison.get("protocol_id"),
+                "dataset_id": comparison.get("dataset_id"),
+                "species": comparison.get("species"),
+                "modality": comparison.get("modality"),
+                "stimulus_metric": comparison.get("stimulus_metric"),
+                "evidence_type": comparison.get("evidence_type"),
+                "choice_type": comparison.get("choice_type"),
+                "response_modality": comparison.get("response_modality"),
+                "analysis_outputs": comparison.get("analysis_outputs"),
+                "data_scope": comparison.get("data_scope"),
+                "canonical_axis": comparison.get("canonical_axis"),
+                "report_status": item.get("report_status"),
+                "artifact_status": item.get("artifact_status"),
+                "primary_link": item.get("primary_link"),
+                "trial_count": _first_present_metric(
+                    metrics,
+                    ["Trials", "Parsed trials"],
+                    fallback=comparison.get("trial_count"),
+                ),
+            }
+        )
+    return rows
+
+
 def static_index_html(payload: dict[str, Any]) -> str:
     slices = payload.get("slices", [])
+    comparison_rows = payload.get("comparison_rows") or build_slice_comparison_rows(slices)
     html = [
         "<!doctype html>",
         '<html lang="en">',
@@ -55,23 +105,37 @@ def static_index_html(payload: dict[str, Any]) -> str:
         "<p class=\"lede\">Static entry point for locally generated vertical-slice "
         "reports and analysis artifacts. Raw data and derived outputs remain outside git; "
         "this page is regenerated from reproducible local artifacts.</p>",
-        "</header>",
-        '<section class="summary" aria-label="Index summary">',
-        _metric("Slices", len(slices)),
-        _metric(
-            "Reports available",
-            sum(1 for item in slices if item.get("report_status") == "available"),
-        ),
-        _metric(
-            "Analysis artifacts",
-            sum(1 for item in slices if item.get("artifact_status") == "available"),
-        ),
-        _metric("Commit", payload.get("behavtaskatlas_commit") or ""),
-        "</section>",
-        "<section>",
-        "<h2>Vertical Slices</h2>",
-        '<div class="cards">',
     ]
+    manifest_link = payload.get("manifest_link")
+    if manifest_link:
+        html.append(
+            f'<p class="manifest-link"><a href="{escape(str(manifest_link), quote=True)}">'
+            "Machine-readable manifest JSON</a></p>"
+        )
+    html.extend(
+        [
+            "</header>",
+            '<section class="summary" aria-label="Index summary">',
+            _metric("Slices", len(slices)),
+            _metric(
+                "Reports available",
+                sum(1 for item in slices if item.get("report_status") == "available"),
+            ),
+            _metric(
+                "Analysis artifacts",
+                sum(1 for item in slices if item.get("artifact_status") == "available"),
+            ),
+            _metric("Commit", payload.get("behavtaskatlas_commit") or ""),
+            "</section>",
+            "<section>",
+            "<h2>Atlas Comparison</h2>",
+            _comparison_table(comparison_rows),
+            "</section>",
+            "<section>",
+            "<h2>Vertical Slices</h2>",
+            '<div class="cards">',
+        ]
+    )
     for item in slices:
         html.append(_slice_card(item))
     html.extend(
@@ -134,6 +198,21 @@ def _auditory_clicks_slice_payload(*, derived_dir: Path, index_path: Path) -> di
             ],
             index_path=index_path,
         ),
+        "comparison": {
+            "family_id": "family.auditory-click-accumulation",
+            "protocol_id": "protocol.poisson-clicks-evidence-accumulation",
+            "dataset_id": "dataset.brody-lab-poisson-clicks-2009-2024",
+            "species": "rat",
+            "modality": "auditory",
+            "stimulus_metric": "signed click-count difference",
+            "evidence_type": "pulse-train",
+            "choice_type": "2afc",
+            "response_modality": "nose-poke",
+            "analysis_outputs": "psychometric bias, click-time evidence kernel",
+            "data_scope": "local batch of extracted rat `.mat` files",
+            "canonical_axis": "right-minus-left click count",
+            "trial_count": aggregate.get("n_trials_total") if aggregate else None,
+        },
     }
 
 
@@ -190,6 +269,21 @@ def _ibl_visual_slice_payload(
             ],
             index_path=index_path,
         ),
+        "comparison": {
+            "family_id": "family.visual-2afc-contrast",
+            "protocol_id": "protocol.ibl-visual-decision-v1",
+            "dataset_id": "dataset.ibl-public-behavior",
+            "species": "mouse",
+            "modality": "visual",
+            "stimulus_metric": "signed contrast",
+            "evidence_type": "static",
+            "choice_type": "2afc",
+            "response_modality": "wheel",
+            "analysis_outputs": "prior-block psychometric fits",
+            "data_scope": "one OpenAlyx public session",
+            "canonical_axis": "right contrast positive, left contrast negative",
+            "trial_count": analysis.get("n_trials") if analysis else None,
+        },
     }
 
 
@@ -239,6 +333,21 @@ def _random_dot_motion_slice_payload(*, derived_dir: Path, index_path: Path) -> 
             ],
             index_path=index_path,
         ),
+        "comparison": {
+            "family_id": "family.random-dot-motion",
+            "protocol_id": "protocol.random-dot-motion-classic-macaque",
+            "dataset_id": "dataset.roitman-shadlen-rdm-pyddm",
+            "species": "non-human-primate",
+            "modality": "visual",
+            "stimulus_metric": "signed motion coherence",
+            "evidence_type": "stochastic-motion",
+            "choice_type": "2afc",
+            "response_modality": "saccade",
+            "analysis_outputs": "psychometric and chronometric summaries",
+            "data_scope": "processed PyDDM CSV across two macaques",
+            "canonical_axis": "target 1 positive, target 2 negative",
+            "trial_count": analysis.get("n_trials") if analysis else None,
+        },
     }
 
 
@@ -408,6 +517,39 @@ section {
   margin: 12px 0;
   color: var(--muted);
 }
+.manifest-link {
+  margin: 14px 0 0;
+}
+.manifest-link a {
+  font-weight: 800;
+}
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th,
+td {
+  padding: 10px 11px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--panel);
+  color: #2f3b45;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -490,6 +632,41 @@ def _small_metric(label: str, value: Any) -> str:
     )
 
 
+def _comparison_table(rows: list[dict[str, Any]]) -> str:
+    return _html_table(
+        rows,
+        [
+            ("title", "Slice"),
+            ("species", "Species"),
+            ("modality", "Modality"),
+            ("stimulus_metric", "Stimulus metric"),
+            ("evidence_type", "Evidence"),
+            ("choice_type", "Choice"),
+            ("response_modality", "Response"),
+            ("trial_count", "Trials"),
+            ("analysis_outputs", "Outputs"),
+            ("canonical_axis", "Canonical axis"),
+            ("report_status", "Report"),
+        ],
+    )
+
+
+def _html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
+    if not rows:
+        return '<p class="empty">No comparison rows available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for _, label in columns:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        parts.append("<tr>")
+        for key, _ in columns:
+            parts.append(f"<td>{escape(_format_cell(row.get(key)))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
 def _definition_list(rows: list[tuple[str, Any]]) -> str:
     parts = ["<dl>"]
     for label, value in rows:
@@ -532,6 +709,19 @@ def _read_json_object(path: Path) -> dict[str, Any] | None:
     except (OSError, json.JSONDecodeError):
         return None
     return loaded if isinstance(loaded, dict) else None
+
+
+def _first_present_metric(
+    metrics: dict[str, Any],
+    labels: list[str],
+    *,
+    fallback: Any = None,
+) -> Any:
+    for label in labels:
+        value = metrics.get(label)
+        if value is not None:
+            return value
+    return fallback
 
 
 def _format_cell(value: Any) -> str:

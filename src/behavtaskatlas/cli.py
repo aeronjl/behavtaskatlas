@@ -54,7 +54,11 @@ from behavtaskatlas.rdm import (
     write_rdm_chronometric_svg,
     write_rdm_report_html,
 )
-from behavtaskatlas.static_site import build_static_index_payload, write_static_index_html
+from behavtaskatlas.static_site import (
+    build_static_index_payload,
+    write_static_index_html,
+    write_static_manifest_json,
+)
 from behavtaskatlas.validation import validate_repository
 
 
@@ -370,6 +374,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional index HTML output path",
     )
+    site_index_parser.add_argument(
+        "--manifest-file",
+        default=None,
+        help="Optional machine-readable manifest JSON output path",
+    )
 
     args = parser.parse_args(argv)
 
@@ -469,6 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         return _site_index(
             derived_dir=Path(args.derived_dir),
             out_file=Path(args.out_file) if args.out_file else None,
+            manifest_file=Path(args.manifest_file) if args.manifest_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -1091,12 +1101,24 @@ def _rdm_report(
     return 0
 
 
-def _site_index(*, derived_dir: Path, out_file: Path | None) -> int:
+def _site_index(
+    *,
+    derived_dir: Path,
+    out_file: Path | None,
+    manifest_file: Path | None,
+) -> int:
     index_path = out_file or derived_dir / "index.html"
-    payload = build_static_index_payload(derived_dir=derived_dir, index_path=index_path)
+    manifest_path = manifest_file or index_path.with_name("manifest.json")
+    payload = build_static_index_payload(
+        derived_dir=derived_dir,
+        index_path=index_path,
+        manifest_path=manifest_path,
+    )
     write_static_index_html(index_path, payload)
+    write_static_manifest_json(manifest_path, payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote static index to {index_path}")
+    print(f"Wrote report manifest to {manifest_path}")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
 

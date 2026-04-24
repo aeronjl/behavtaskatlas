@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 19:28:13 BST - The static index becomes an atlas surface
+
+The local `site-index` output now has two roles: `derived/index.html` is a human-readable comparison surface, and `derived/manifest.json` is the machine-readable manifest for the same generated reports and artifacts. Each vertical slice declares a normalized comparison row with family, protocol, dataset, species, modality, stimulus metric, evidence type, response modality, analysis outputs, data scope, canonical axis, report status, artifact status, and primary link.
+
+This is the first step from separate report demos toward an atlas. The important design choice is to keep the comparison fields close to the slice payloads rather than deriving them ad hoc from generated HTML. Future slices should add one explicit comparison block, then the index and manifest can update without hand-editing a separate page.
+
 ## 2026-04-24 19:15:36 BST - Random-dot motion completes the third report-backed slice
 
 The Roitman-Shadlen random-dot motion slice now runs end to end from a pinned PyDDM processed CSV. The local pipeline downloads a 132,610 byte CSV with SHA256 `7ac2daa16e9631aa189ae146a89f9f29cc6fccd6c0f31b4d5849990a6cebbd4b`, harmonizes 6,149 trials across `monkey-1` and `monkey-2`, writes 11 signed-coherence psychometric rows, writes 6 absolute-coherence chronometric rows, and renders `derived/random_dot_motion/roitman-shadlen-pyddm/report.html`.
