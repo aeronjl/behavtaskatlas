@@ -128,7 +128,9 @@ includes dependency-free protocol search and filters for species, modality,
 evidence type, and report status, with protocol and dataset rows linking to
 their generated detail pages. The relationship graph exposes task-family,
 protocol, dataset, and vertical-slice nodes plus typed edges as both HTML and
-machine-readable JSON.
+machine-readable JSON. The graph export also carries lightweight QA issues for
+orphan records, missing reciprocal links, protocols without datasets, protocols
+without slices, and datasets without slices.
 
 ## Repository Layout
 

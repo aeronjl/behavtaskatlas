@@ -29,6 +29,64 @@
       "title": "RelationshipGraphEdge",
       "type": "object"
     },
+    "RelationshipGraphIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "issue_id": {
+          "title": "Issue Id",
+          "type": "string"
+        },
+        "issue_type": {
+          "title": "Issue Type",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Id"
+        },
+        "related_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Related Node Id"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "issue_id",
+        "severity",
+        "issue_type",
+        "message"
+      ],
+      "title": "RelationshipGraphIssue",
+      "type": "object"
+    },
     "RelationshipGraphNode": {
       "additionalProperties": false,
       "properties": {
@@ -146,6 +204,20 @@
       "title": "Nodes",
       "type": "array"
     },
+    "qa_issues": {
+      "items": {
+        "$ref": "#/$defs/RelationshipGraphIssue"
+      },
+      "title": "Qa Issues",
+      "type": "array"
+    },
+    "qa_summary": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Qa Summary",
+      "type": "object"
+    },
     "title": {
       "title": "Title",
       "type": "string"
@@ -158,6 +230,7 @@
     "catalog_link",
     "graph_json_link",
     "counts",
+    "qa_summary",
     "nodes",
     "edges"
   ],

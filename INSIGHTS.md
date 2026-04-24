@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 21:58:49 BST - Graph QA should surface curation gaps, not block breadth
+
+The relationship graph now includes a QA section in both HTML and JSON. It flags orphan records, missing reciprocal protocol-dataset links, protocols without linked datasets, protocols without report-backed slices, and datasets without report-backed slices, with severity levels so expected breadth gaps can remain informational while structural asymmetries appear as warnings.
+
+This matches the atlas contribution model: lightweight catalog-only protocols are useful and should not fail validation, but they should be visible as incomplete. The graph QA turns incompleteness into a curated worklist rather than hiding it in the record files.
+
 ## 2026-04-24 21:49:40 BST - The atlas graph is now an exported artifact
 
 The static build now writes `derived/graph.html` and `derived/graph.json` from the same catalog payload as the table and detail pages. The graph has typed nodes for task families, protocols, datasets, and vertical slices, plus typed edges for family-protocol, family-slice, protocol-dataset, protocol-slice, and dataset-slice relationships.

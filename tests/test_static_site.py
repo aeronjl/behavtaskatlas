@@ -253,6 +253,8 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["graph_json_link"] == "graph.json"
     assert graph_payload["counts"]["nodes"] == 18
     assert graph_payload["counts"]["edges"] == 21
+    assert graph_payload["counts"]["qa_issues"] == 13
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 1, "info": 12, "total": 13}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
@@ -278,7 +280,27 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         "edge_type": "dataset_slice",
         "label": "dataset backs slice",
     } in graph_payload["edges"]
+    assert {
+        "issue_id": (
+            "missing_protocol_reciprocal::dataset.roitman-shadlen-rdm-pyddm::"
+            "protocol.random-dot-motion-classic-macaque"
+        ),
+        "severity": "warning",
+        "issue_type": "missing_protocol_reciprocal",
+        "node_id": "dataset.roitman-shadlen-rdm-pyddm",
+        "related_node_id": "protocol.random-dot-motion-classic-macaque",
+        "message": "Dataset lists protocol, but protocol does not declare dataset.",
+    } in graph_payload["qa_issues"]
+    assert {
+        "issue_id": "protocol_without_slice::protocol.human-rdm-button-reaction-time",
+        "severity": "info",
+        "issue_type": "protocol_without_slice",
+        "node_id": "protocol.human-rdm-button-reaction-time",
+        "related_node_id": None,
+        "message": "Protocol has no report-backed vertical slice yet.",
+    } in graph_payload["qa_issues"]
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
+    assert rdm_protocol["declared_dataset_ids"] == []
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
     assert rdm_protocol["detail_link"] == "protocol-random-dot-motion-classic-macaque.html"
     assert rdm_protocol["report_status"] == "available"
@@ -318,6 +340,8 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in html
     assert 'href="graph.html"' in html
     assert "Relationship Graph" in graph_html
+    assert "Graph QA" in graph_html
+    assert "missing_protocol_reciprocal" in graph_html
     assert "protocol uses dataset" in graph_html
     assert 'href="protocol-random-dot-motion-classic-macaque.html"' in graph_html
     assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in graph_html

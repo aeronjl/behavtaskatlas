@@ -294,6 +294,7 @@ class CatalogProtocolRow(StrictModel):
     evidence_type: str
     choice_type: str
     response_modalities: list[str] = Field(default_factory=list)
+    declared_dataset_ids: list[str] = Field(default_factory=list)
     dataset_ids: list[str] = Field(default_factory=list)
     slice_ids: list[str] = Field(default_factory=list)
     curation_status: str
@@ -438,6 +439,15 @@ class RelationshipGraphEdge(StrictModel):
     label: str
 
 
+class RelationshipGraphIssue(StrictModel):
+    issue_id: str
+    severity: Literal["info", "warning", "error"]
+    issue_type: str
+    node_id: str | None = None
+    related_node_id: str | None = None
+    message: str
+
+
 class RelationshipGraphPayload(StrictModel):
     graph_schema_version: str
     title: str
@@ -447,6 +457,8 @@ class RelationshipGraphPayload(StrictModel):
     catalog_link: str
     graph_json_link: str
     counts: dict[str, int]
+    qa_summary: dict[str, int]
+    qa_issues: list[RelationshipGraphIssue] = Field(default_factory=list)
     nodes: list[RelationshipGraphNode]
     edges: list[RelationshipGraphEdge]
 

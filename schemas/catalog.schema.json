@@ -568,6 +568,13 @@
           "title": "Dataset Ids",
           "type": "array"
         },
+        "declared_dataset_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Declared Dataset Ids",
+          "type": "array"
+        },
         "detail_link": {
           "title": "Detail Link",
           "type": "string"

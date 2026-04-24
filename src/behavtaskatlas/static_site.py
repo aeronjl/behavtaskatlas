@@ -231,6 +231,7 @@ def build_relationship_graph_payload(
         catalog_path=catalog_path,
     )
     edges = _relationship_graph_edges(catalog_payload)
+    qa_issues = _relationship_graph_qa_issues(catalog_payload, nodes=nodes, edges=edges)
     return {
         "graph_schema_version": "0.1.0",
         "title": "behavtaskatlas Relationship Graph",
@@ -246,7 +247,10 @@ def build_relationship_graph_payload(
             "protocols": len(catalog_payload.get("protocols", [])),
             "datasets": len(catalog_payload.get("datasets", [])),
             "vertical_slices": len(catalog_payload.get("vertical_slices", [])),
+            "qa_issues": len(qa_issues),
         },
+        "qa_summary": _qa_summary(qa_issues),
+        "qa_issues": qa_issues,
         "nodes": nodes,
         "edges": edges,
     }
@@ -399,6 +403,7 @@ def _catalog_protocol_row(
         "evidence_type": protocol.stimulus.evidence_type,
         "choice_type": protocol.choice.choice_type,
         "response_modalities": protocol.choice.response_modalities,
+        "declared_dataset_ids": sorted(protocol.dataset_ids),
         "dataset_ids": dataset_ids,
         "slice_ids": slice_ids,
         "curation_status": protocol.curation_status,
@@ -746,6 +751,167 @@ def _relationship_graph_edges(catalog_payload: dict[str, Any]) -> list[dict[str,
     return sorted(edges, key=lambda edge: (edge["edge_type"], edge["source"], edge["target"]))
 
 
+def _relationship_graph_qa_issues(
+    catalog_payload: dict[str, Any],
+    *,
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    node_ids = {node["node_id"] for node in nodes}
+    degrees = {node_id: 0 for node_id in node_ids}
+    for edge in edges:
+        if edge["source"] in degrees:
+            degrees[edge["source"]] += 1
+        if edge["target"] in degrees:
+            degrees[edge["target"]] += 1
+
+    protocols = {row["protocol_id"]: row for row in catalog_payload.get("protocols", [])}
+    datasets = {row["dataset_id"]: row for row in catalog_payload.get("datasets", [])}
+
+    for node in nodes:
+        if degrees.get(node["node_id"], 0) == 0:
+            issues.append(
+                _graph_issue(
+                    "orphan_record",
+                    "warning",
+                    node["node_id"],
+                    None,
+                    f"{node['node_type']} record has no graph relationships.",
+                )
+            )
+
+    for family in catalog_payload.get("task_families", []):
+        if (
+            not family.get("protocol_count")
+            and not family.get("dataset_count")
+            and not family.get("slice_count")
+        ):
+            issues.append(
+                _graph_issue(
+                    "family_without_members",
+                    "warning",
+                    family["family_id"],
+                    None,
+                    "Task family has no linked protocols, datasets, or slices.",
+                )
+            )
+
+    for protocol in protocols.values():
+        protocol_id = protocol["protocol_id"]
+        declared_dataset_ids = set(protocol.get("declared_dataset_ids", []))
+        displayed_dataset_ids = set(protocol.get("dataset_ids", []))
+        slice_ids = set(protocol.get("slice_ids", []))
+        if not displayed_dataset_ids:
+            issues.append(
+                _graph_issue(
+                    "protocol_without_dataset",
+                    "info",
+                    protocol_id,
+                    None,
+                    "Protocol has no linked dataset record yet.",
+                )
+            )
+        if not slice_ids:
+            issues.append(
+                _graph_issue(
+                    "protocol_without_slice",
+                    "info",
+                    protocol_id,
+                    None,
+                    "Protocol has no report-backed vertical slice yet.",
+                )
+            )
+        for dataset_id in declared_dataset_ids:
+            dataset = datasets.get(dataset_id)
+            if dataset and protocol_id not in set(dataset.get("protocol_ids", [])):
+                issues.append(
+                    _graph_issue(
+                        "missing_dataset_reciprocal",
+                        "warning",
+                        protocol_id,
+                        dataset_id,
+                        "Protocol declares dataset, but dataset does not list protocol.",
+                    )
+                )
+
+    for dataset in datasets.values():
+        dataset_id = dataset["dataset_id"]
+        protocol_ids = set(dataset.get("protocol_ids", []))
+        if not protocol_ids:
+            issues.append(
+                _graph_issue(
+                    "dataset_without_protocol",
+                    "warning",
+                    dataset_id,
+                    None,
+                    "Dataset has no linked protocol records.",
+                )
+            )
+        if not dataset.get("slice_ids", []):
+            issues.append(
+                _graph_issue(
+                    "dataset_without_slice",
+                    "info",
+                    dataset_id,
+                    None,
+                    "Dataset has no report-backed vertical slice yet.",
+                )
+            )
+        for protocol_id in protocol_ids:
+            protocol = protocols.get(protocol_id)
+            if protocol and dataset_id not in set(protocol.get("declared_dataset_ids", [])):
+                issues.append(
+                    _graph_issue(
+                        "missing_protocol_reciprocal",
+                        "warning",
+                        dataset_id,
+                        protocol_id,
+                        "Dataset lists protocol, but protocol does not declare dataset.",
+                    )
+                )
+
+    return sorted(
+        issues,
+        key=lambda issue: (
+            {"error": 0, "warning": 1, "info": 2}[issue["severity"]],
+            issue["issue_type"],
+            issue.get("node_id") or "",
+            issue.get("related_node_id") or "",
+        ),
+    )
+
+
+def _graph_issue(
+    issue_type: str,
+    severity: str,
+    node_id: str,
+    related_node_id: str | None,
+    message: str,
+) -> dict[str, Any]:
+    issue_id_parts = [issue_type, node_id]
+    if related_node_id:
+        issue_id_parts.append(related_node_id)
+    issue_id = "::".join(issue_id_parts)
+    return {
+        "issue_id": issue_id,
+        "severity": severity,
+        "issue_type": issue_type,
+        "node_id": node_id,
+        "related_node_id": related_node_id,
+        "message": message,
+    }
+
+
+def _qa_summary(issues: list[dict[str, Any]]) -> dict[str, int]:
+    summary = {"error": 0, "warning": 0, "info": 0, "total": len(issues)}
+    for issue in issues:
+        severity = issue.get("severity")
+        if severity in summary:
+            summary[severity] += 1
+    return summary
+
+
 def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for item in slices:
@@ -1030,6 +1196,11 @@ def static_relationship_graph_html(payload: dict[str, Any]) -> str:
             _metric("Protocols", counts.get("protocols")),
             _metric("Datasets", counts.get("datasets")),
             _metric("Slices", counts.get("vertical_slices")),
+            _metric("QA issues", counts.get("qa_issues")),
+            "</section>",
+            "<section>",
+            "<h2>Graph QA</h2>",
+            _graph_qa_table(payload.get("qa_issues", [])),
             "</section>",
             "<section>",
             "<h2>Node Types</h2>",
@@ -1403,6 +1574,21 @@ def _graph_type_table(nodes: list[dict[str, Any]]) -> str:
         for node_type, count in sorted(counts.items(), key=lambda item: item[0])
     ]
     return _html_table(rows, [("node_type", "Node type"), ("count", "Count")])
+
+
+def _graph_qa_table(issues: list[dict[str, Any]]) -> str:
+    if not issues:
+        return '<p class="empty">No graph QA issues detected.</p>'
+    return _html_table(
+        issues,
+        [
+            ("severity", "Severity"),
+            ("issue_type", "Issue"),
+            ("node_id", "Node"),
+            ("related_node_id", "Related node"),
+            ("message", "Message"),
+        ],
+    )
 
 
 def _graph_node_table(nodes: list[dict[str, Any]]) -> str:
