@@ -237,6 +237,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.human-rdm-button-reaction-time"
     )
+    mouse_unbiased_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-contrast-wheel-unbiased"
+    )
     rat_clicks_protocol = next(
         row
         for row in payload["protocols"]
@@ -284,16 +289,16 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
     assert graph_payload["counts"]["nodes"] == 18
-    assert graph_payload["counts"]["edges"] == 23
-    assert graph_payload["counts"]["qa_issues"] == 10
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 10, "total": 10}
+    assert graph_payload["counts"]["edges"] == 24
+    assert graph_payload["counts"]["qa_issues"] == 9
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 9, "total": 9}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 10, "open": 10}
-    assert queue_payload["priority_counts"] == {"normal": 10}
-    assert queue_payload["action_counts"]["needs dataset"] == 5
+    assert queue_payload["counts"] == {"items": 9, "open": 9}
+    assert queue_payload["priority_counts"] == {"normal": 9}
+    assert queue_payload["action_counts"]["needs dataset"] == 4
     assert queue_payload["action_counts"]["needs vertical slice"] == 5
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert any(
@@ -312,6 +317,12 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         and node["href"] == "dataset-roitman-shadlen-rdm-pyddm.html"
         for node in graph_payload["nodes"]
     )
+    assert {
+        "source": "protocol.mouse-visual-contrast-wheel-unbiased",
+        "target": "dataset.ibl-public-behavior",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
     assert {
         "source": "protocol.poisson-clicks-evidence-accumulation",
         "target": "protocol.rat-auditory-clicks-nose-poke",
@@ -376,6 +387,19 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert not any(
         item["source_issue_id"]
         == "protocol_without_slice::protocol.rat-auditory-clicks-nose-poke"
+        for item in queue_payload["items"]
+    )
+    assert mouse_unbiased_protocol["dataset_ids"] == ["dataset.ibl-public-behavior"]
+    assert mouse_unbiased_protocol["declared_dataset_ids"] == ["dataset.ibl-public-behavior"]
+    assert mouse_unbiased_protocol["report_status"] == "no slice"
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_dataset::protocol.mouse-visual-contrast-wheel-unbiased"
+        for item in queue_payload["items"]
+    )
+    assert any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.mouse-visual-contrast-wheel-unbiased"
         for item in queue_payload["items"]
     )
     assert rdm_detail["stimulus"]["evidence_type"] == "stochastic-motion"

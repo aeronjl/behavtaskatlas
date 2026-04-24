@@ -12,7 +12,7 @@ description: >
   isolates contrast and stimulus side as the primary decision variables.
 species:
   - mouse
-curation_status: stub
+curation_status: data-linked
 stimulus:
   modalities:
     - visual
@@ -58,6 +58,8 @@ apparatus:
   - response wheel
   - visual display
   - water delivery
+dataset_ids:
+  - dataset.ibl-public-behavior
 expected_analyses:
   - psychometric curve by contrast
   - chronometric curve by contrast
@@ -77,8 +79,13 @@ provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Catalog-only protocol variant added to test breadth without a vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Linked to the broad IBL public behavioral dataset because IBL public data
+    include behavior acquired during the standardized training pipeline, and IBL
+    tooling distinguishes `trainingChoiceWorld` from biased and ephys
+    choice-world sessions. The exact unbiased-session subset still needs a
+    report-backed vertical slice.
 open_questions:
   - Decide whether this should be modeled as a variant of the IBL protocol or a separate record.
-  - Link a concrete unbiased session or dataset before promoting beyond stub status.
+  - Identify a concrete unbiased training session subset before adding a vertical slice.

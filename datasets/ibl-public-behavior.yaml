@@ -7,6 +7,7 @@ description: >
   standardized visual decision-making task in mice.
 protocol_ids:
   - protocol.ibl-visual-decision-v1
+  - protocol.mouse-visual-contrast-wheel-unbiased
 species:
   - mouse
 curation_status: data-linked
@@ -42,7 +43,12 @@ provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Initial dataset metadata for the first planned vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Initial dataset metadata for the first planned vertical slice. The broad
+    public behavior dataset also covers IBL training-phase choice-world data,
+    so it can back the catalog-only unbiased visual contrast wheel protocol
+    while the exact session subset remains to be curated.
 caveats:
   - Exact licensing and field-level mappings must be verified before harmonization.
+  - The unbiased protocol link is broad; a vertical slice should pin a concrete trainingChoiceWorld session subset.

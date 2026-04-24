@@ -14,7 +14,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
 - Nine current protocol records: one abstract template, three report-backed
-  concrete protocols, and five catalog-only variants for breadth testing.
+  concrete protocols, one data-linked catalog variant, and four remaining
+  dataset-seeking variants for breadth testing.
 
 ## Local Workflow
 

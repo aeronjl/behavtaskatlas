@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 00:29:52 BST - Broad datasets can back catalog variants before slice subsets are pinned
+
+The mouse unbiased visual contrast wheel protocol is now linked to the broad IBL public behavioral dataset. This is justified as metadata because IBL public behavior includes training-phase choice-world data, and IBL tooling distinguishes `trainingChoiceWorld` from biased and ephys choice-world sessions.
+
+The atlas should still treat this as incomplete for analysis: the broad dataset link removes the `needs dataset` queue item, but the protocol keeps its `needs vertical slice` item until a concrete unbiased-session subset is selected and reported. This is the right granularity for early curation, where broad archive coverage and analysis-ready subsets are different commitments.
+
 ## 2026-04-25 00:25:32 BST - Protocol templates need different QA pressure from concrete variants
 
 Protocols now declare whether they are abstract `template` records or concrete executable records. The rat auditory-clicks protocol points back to the generic Poisson clicks template with `template_protocol_id`, and the relationship graph exports a protocol-variant edge between them.
