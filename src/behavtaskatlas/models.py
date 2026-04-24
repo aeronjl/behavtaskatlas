@@ -284,6 +284,7 @@ class CatalogFamilyRow(StrictModel):
 
 class CatalogProtocolRow(StrictModel):
     protocol_id: str
+    detail_link: str
     name: str
     family_id: str
     family_name: str | None = None
@@ -295,6 +296,49 @@ class CatalogProtocolRow(StrictModel):
     dataset_ids: list[str] = Field(default_factory=list)
     slice_ids: list[str] = Field(default_factory=list)
     curation_status: str
+    report_status: str
+
+
+class CatalogLinkedDataset(StrictModel):
+    dataset_id: str
+    name: str
+    source_url: str
+    license: str | None = None
+    curation_status: str
+
+
+class CatalogLinkedSlice(StrictModel):
+    slice_id: str
+    title: str
+    report_status: str
+    artifact_status: str
+    primary_link: str | None = None
+
+
+class CatalogProtocolDetail(StrictModel):
+    protocol_id: str
+    detail_link: str
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+    description: str
+    family_id: str
+    family_name: str | None = None
+    species: list[str] = Field(default_factory=list)
+    curation_status: str
+    stimulus: dict[str, Any]
+    choice: dict[str, Any]
+    timing: list[dict[str, Any]] = Field(default_factory=list)
+    feedback: dict[str, Any]
+    training: dict[str, Any]
+    apparatus: list[str] = Field(default_factory=list)
+    software: list[str] = Field(default_factory=list)
+    expected_analyses: list[str] = Field(default_factory=list)
+    interpretive_claims: list[dict[str, Any]] = Field(default_factory=list)
+    datasets: list[CatalogLinkedDataset] = Field(default_factory=list)
+    vertical_slices: list[CatalogLinkedSlice] = Field(default_factory=list)
+    references: list[dict[str, Any]] = Field(default_factory=list)
+    provenance: dict[str, Any]
+    open_questions: list[str] = Field(default_factory=list)
     report_status: str
 
 
@@ -336,6 +380,7 @@ class CatalogPayload(StrictModel):
     counts: dict[str, int]
     task_families: list[CatalogFamilyRow]
     protocols: list[CatalogProtocolRow]
+    protocol_details: list[CatalogProtocolDetail]
     datasets: list[CatalogDatasetRow]
     vertical_slices: list[CatalogSliceRow]
 

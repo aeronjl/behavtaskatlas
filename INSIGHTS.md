@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 21:08:31 BST - Protocol records need inspectable pages
+
+The generated catalog now writes one static detail page per protocol and links each protocol table row to that page. The detail pages expose the richer protocol metadata that was already present in YAML: description, stimulus and choice structure, timing phases, linked datasets, report-backed slices, expected analyses, interpretive claims, references, provenance, and open questions.
+
+This is an important product step for the MVP because search and filters help users find candidate tasks, but inspectable protocol pages are what make the catalog feel citable and curatable. It also keeps the architecture file-first: the same committed records generate the browse table, machine-readable JSON, and human-readable protocol pages.
+
 ## 2026-04-24 20:52:48 BST - Static catalog browsing is enough for the MVP
 
 The catalog HTML now has dependency-free protocol browsing: text search plus filters for species, modality, evidence type, and report status. This keeps the MVP deployable as static files while making the breadth catalog usable as it grows beyond the three report-backed slices.

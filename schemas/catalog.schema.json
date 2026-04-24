@@ -115,6 +115,254 @@
       "title": "CatalogFamilyRow",
       "type": "object"
     },
+    "CatalogLinkedDataset": {
+      "additionalProperties": false,
+      "properties": {
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "name",
+        "source_url",
+        "curation_status"
+      ],
+      "title": "CatalogLinkedDataset",
+      "type": "object"
+    },
+    "CatalogLinkedSlice": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_status": {
+          "title": "Artifact Status",
+          "type": "string"
+        },
+        "primary_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Link"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "slice_id": {
+          "title": "Slice Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slice_id",
+        "title",
+        "report_status",
+        "artifact_status"
+      ],
+      "title": "CatalogLinkedSlice",
+      "type": "object"
+    },
+    "CatalogProtocolDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "apparatus": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Apparatus",
+          "type": "array"
+        },
+        "choice": {
+          "additionalProperties": true,
+          "title": "Choice",
+          "type": "object"
+        },
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "datasets": {
+          "items": {
+            "$ref": "#/$defs/CatalogLinkedDataset"
+          },
+          "title": "Datasets",
+          "type": "array"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "detail_link": {
+          "title": "Detail Link",
+          "type": "string"
+        },
+        "expected_analyses": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Expected Analyses",
+          "type": "array"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "family_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Name"
+        },
+        "feedback": {
+          "additionalProperties": true,
+          "title": "Feedback",
+          "type": "object"
+        },
+        "interpretive_claims": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Interpretive Claims",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "open_questions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Open Questions",
+          "type": "array"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "references": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "software": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Software",
+          "type": "array"
+        },
+        "species": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Species",
+          "type": "array"
+        },
+        "stimulus": {
+          "additionalProperties": true,
+          "title": "Stimulus",
+          "type": "object"
+        },
+        "timing": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Timing",
+          "type": "array"
+        },
+        "training": {
+          "additionalProperties": true,
+          "title": "Training",
+          "type": "object"
+        },
+        "vertical_slices": {
+          "items": {
+            "$ref": "#/$defs/CatalogLinkedSlice"
+          },
+          "title": "Vertical Slices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "protocol_id",
+        "detail_link",
+        "name",
+        "description",
+        "family_id",
+        "curation_status",
+        "stimulus",
+        "choice",
+        "feedback",
+        "training",
+        "provenance",
+        "report_status"
+      ],
+      "title": "CatalogProtocolDetail",
+      "type": "object"
+    },
     "CatalogProtocolRow": {
       "additionalProperties": false,
       "properties": {
@@ -132,6 +380,10 @@
           },
           "title": "Dataset Ids",
           "type": "array"
+        },
+        "detail_link": {
+          "title": "Detail Link",
+          "type": "string"
         },
         "evidence_type": {
           "title": "Evidence Type",
@@ -196,6 +448,7 @@
       },
       "required": [
         "protocol_id",
+        "detail_link",
         "name",
         "family_id",
         "evidence_type",
@@ -339,6 +592,13 @@
       "title": "Generated At",
       "type": "string"
     },
+    "protocol_details": {
+      "items": {
+        "$ref": "#/$defs/CatalogProtocolDetail"
+      },
+      "title": "Protocol Details",
+      "type": "array"
+    },
     "protocols": {
       "items": {
         "$ref": "#/$defs/CatalogProtocolRow"
@@ -379,6 +639,7 @@
     "counts",
     "task_families",
     "protocols",
+    "protocol_details",
     "datasets",
     "vertical_slices"
   ],

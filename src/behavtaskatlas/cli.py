@@ -61,6 +61,7 @@ from behavtaskatlas.static_site import (
     write_static_catalog_json,
     write_static_index_html,
     write_static_manifest_json,
+    write_static_protocol_pages,
 )
 from behavtaskatlas.validation import validate_repository
 
@@ -1147,11 +1148,13 @@ def _site_index(
     )
     write_static_catalog_html(catalog_path, catalog_payload)
     write_static_catalog_json(catalog_json_path, catalog_payload)
+    protocol_pages = write_static_protocol_pages(catalog_path, catalog_payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote static index to {index_path}")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog to {catalog_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
+    print(f"Wrote {len(protocol_pages)} protocol detail pages")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
 
