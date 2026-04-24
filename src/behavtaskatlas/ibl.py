@@ -454,6 +454,26 @@ def write_psychometric_svg(
     path.write_text(psychometric_svg(summary_rows, x_axis_label=x_axis_label), encoding="utf-8")
 
 
+def write_ibl_visual_report_html(
+    path: Path,
+    analysis_result: dict[str, Any],
+    *,
+    provenance: dict[str, Any] | None = None,
+    psychometric_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        ibl_visual_report_html(
+            analysis_result,
+            provenance=provenance,
+            psychometric_svg_text=psychometric_svg_text,
+            artifact_links=artifact_links,
+        ),
+        encoding="utf-8",
+    )
+
+
 def psychometric_svg(
     summary_rows: list[dict[str, Any]],
     *,
@@ -566,6 +586,369 @@ def psychometric_svg(
 
     elements.append("</svg>")
     return "\n".join(elements) + "\n"
+
+
+def ibl_visual_report_html(
+    analysis_result: dict[str, Any],
+    *,
+    provenance: dict[str, Any] | None = None,
+    psychometric_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> str:
+    provenance = provenance or {}
+    artifact_links = artifact_links or {}
+    prior_results = analysis_result.get("prior_results", [])
+    summary_rows = analysis_result.get("summary_rows", [])
+    source = provenance.get("source", {}) if isinstance(provenance.get("source"), dict) else {}
+    title = "IBL Visual Decision Report"
+    svg = psychometric_svg_text or (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
+        '<text x="20" y="60">Psychometric plot not available</text></svg>'
+    )
+    metrics = [
+        ("Trials", analysis_result.get("n_trials")),
+        ("Response trials", analysis_result.get("n_response_trials")),
+        ("No-response trials", analysis_result.get("n_no_response_trials")),
+        ("Prior blocks", len(prior_results)),
+        ("Summary rows", len(summary_rows)),
+        ("Subject", source.get("subject")),
+    ]
+
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(title)}</title>",
+        "<style>",
+        _ibl_report_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        f"<p class=\"eyebrow\">{escape(str(analysis_result.get('analysis_id', 'analysis')))}</p>",
+        f"<h1>{escape(title)}</h1>",
+        "<p class=\"lede\">Single-session visual 2AFC report generated from the "
+        "canonical IBL slice artifacts, including OpenAlyx provenance and descriptive "
+        "psychometric fits.</p>",
+        "</header>",
+        '<section class="metrics" aria-label="Report metrics">',
+    ]
+    for label, value in metrics:
+        html.extend(
+            [
+                '<div class="metric">',
+                f"<span>{escape(label)}</span>",
+                f"<strong>{escape(_report_format_cell(value))}</strong>",
+                "</div>",
+            ]
+        )
+
+    html.extend(
+        [
+            "</section>",
+            '<section class="grid-two">',
+            "<div>",
+            "<h2>Session</h2>",
+            _report_definition_list(
+                [
+                    ("EID", provenance.get("eid")),
+                    ("Lab", source.get("lab")),
+                    ("Subject", source.get("subject")),
+                    ("Started", source.get("start_time")),
+                    ("Task protocol", source.get("task_protocol")),
+                ]
+            ),
+            "</div>",
+            "<div>",
+            "<h2>Provenance</h2>",
+            _report_definition_list(
+                [
+                    ("Dataset", analysis_result.get("dataset_id")),
+                    ("Protocol", analysis_result.get("protocol_id")),
+                    ("Revision", source.get("revision")),
+                    ("Generated", analysis_result.get("generated_at")),
+                    ("Commit", analysis_result.get("behavtaskatlas_commit")),
+                    ("Git dirty", analysis_result.get("behavtaskatlas_git_dirty")),
+                ]
+            ),
+            "</div>",
+            "</section>",
+            '<section class="figure-section">',
+            "<h2>Psychometric Summary</h2>",
+            '<div class="figure-wrap">',
+            svg,
+            "</div>",
+            "</section>",
+            "<section>",
+            "<h2>Prior-Block Fits</h2>",
+            _report_html_table(
+                _ibl_prior_report_rows(prior_results),
+                [
+                    ("prior_context", "Prior"),
+                    ("n_trials", "Trials"),
+                    ("n_response_trials", "Responses"),
+                    ("n_contrast_levels", "Contrast levels"),
+                    ("empirical_bias_contrast", "Empirical bias"),
+                    ("empirical_threshold_contrast", "Empirical threshold"),
+                    ("fit_bias_contrast", "Fit bias"),
+                    ("fit_threshold_contrast", "Fit threshold"),
+                    ("fit_status", "Fit status"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Psychometric Points</h2>",
+            _report_html_table(
+                summary_rows,
+                [
+                    ("prior_context", "Prior"),
+                    ("stimulus_value", "Contrast"),
+                    ("n_trials", "Trials"),
+                    ("n_response", "Responses"),
+                    ("n_no_response", "No response"),
+                    ("n_right", "Right choices"),
+                    ("p_right", "P(right)"),
+                    ("p_correct", "P(correct)"),
+                ],
+            ),
+            "</section>",
+        ]
+    )
+    if artifact_links:
+        html.extend(["<section>", "<h2>Generated Files</h2>", '<ul class="artifact-list">'])
+        for label, href in artifact_links.items():
+            html.append(f'<li><a href="{escape(href, quote=True)}">{escape(label)}</a></li>')
+        html.extend(["</ul>", "</section>"])
+
+    caveats = analysis_result.get("caveats", [])
+    if caveats:
+        html.extend(["<section>", "<h2>Caveats</h2>", "<ul>"])
+        html.extend(f"<li>{escape(str(caveat))}</li>" for caveat in caveats)
+        html.extend(["</ul>", "</section>"])
+
+    html.extend(["</main>", "</body>", "</html>"])
+    return "\n".join(html) + "\n"
+
+
+def _ibl_prior_report_rows(prior_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for prior_result in prior_results:
+        fit = prior_result.get("fit")
+        if not isinstance(fit, dict):
+            fit = {}
+        rows.append(
+            {
+                "prior_context": prior_result.get("prior_context"),
+                "n_trials": prior_result.get("n_trials"),
+                "n_response_trials": prior_result.get("n_response_trials"),
+                "n_contrast_levels": prior_result.get("n_contrast_levels"),
+                "empirical_bias_contrast": prior_result.get("empirical_bias_contrast"),
+                "empirical_threshold_contrast": prior_result.get(
+                    "empirical_threshold_contrast"
+                ),
+                "fit_bias_contrast": fit.get("bias_contrast"),
+                "fit_threshold_contrast": fit.get("threshold_contrast"),
+                "fit_status": fit.get("status"),
+            }
+        )
+    return rows
+
+
+def _ibl_report_css() -> str:
+    return """
+:root {
+  color-scheme: light;
+  --ink: #17212b;
+  --muted: #5f6c76;
+  --line: #d8dee4;
+  --panel: #f6f8fa;
+  --accent: #145f91;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.45;
+}
+main {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+header {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  line-height: 1.04;
+}
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+.lede {
+  max-width: 760px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+section {
+  margin-top: 28px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--panel);
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.42rem;
+}
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+dl {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.34fr) 1fr;
+  gap: 8px 14px;
+  margin: 0;
+}
+dt {
+  color: var(--muted);
+  font-weight: 800;
+}
+dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.figure-wrap,
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.figure-wrap {
+  padding: 12px;
+}
+.figure-wrap svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th,
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--panel);
+  color: #2f3b45;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+.artifact-list {
+  columns: 2;
+  padding-left: 18px;
+}
+a {
+  color: var(--accent);
+}
+@media (max-width: 720px) {
+  main {
+    width: min(100vw - 20px, 1180px);
+    padding-top: 20px;
+  }
+  dl {
+    grid-template-columns: 1fr;
+  }
+  .artifact-list {
+    columns: 1;
+  }
+}
+""".strip()
+
+
+def _report_definition_list(rows: list[tuple[str, Any]]) -> str:
+    parts = ["<dl>"]
+    for label, value in rows:
+        parts.append(f"<dt>{escape(label)}</dt>")
+        parts.append(f"<dd>{escape(_report_format_cell(value))}</dd>")
+    parts.append("</dl>")
+    return "\n".join(parts)
+
+
+def _report_html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
+    if not rows:
+        return '<p class="empty">No rows available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for _, label in columns:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        parts.append("<tr>")
+        for key, _ in columns:
+            parts.append(f"<td>{escape(_report_format_cell(row.get(key)))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _report_format_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if _is_finite_number(value):
+        numeric = float(value)
+        if numeric.is_integer():
+            return f"{int(numeric):,}"
+        return f"{numeric:.4g}"
+    return str(value)
 
 
 def _axis_tick_values(x_min: float, x_max: float, max_ticks: int = 9) -> list[float]:

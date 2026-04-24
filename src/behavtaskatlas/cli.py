@@ -35,6 +35,7 @@ from behavtaskatlas.ibl import (
     summarize_canonical_trials,
     write_analysis_json,
     write_canonical_trials_csv,
+    write_ibl_visual_report_html,
     write_provenance_json,
     write_psychometric_svg,
     write_summary_csv,
@@ -86,6 +87,37 @@ def main(argv: list[str] | None = None) -> int:
         "--trials-csv",
         default=None,
         help="Optional explicit canonical trial CSV path",
+    )
+
+    ibl_report_parser = subparsers.add_parser(
+        "ibl-report",
+        help="Render a static HTML report from an analyzed IBL visual decision session",
+    )
+    ibl_report_parser.add_argument("--eid", default=DEFAULT_IBL_EID, help="IBL session UUID/eid")
+    ibl_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_DERIVED_DIR),
+        help="Directory containing generated IBL artifacts",
+    )
+    ibl_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    ibl_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    ibl_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    ibl_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
     )
 
     clicks_parser = subparsers.add_parser(
@@ -254,6 +286,15 @@ def main(argv: list[str] | None = None) -> int:
             derived_dir=Path(args.derived_dir),
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
         )
+    if args.command == "ibl-report":
+        return _ibl_report(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
     if args.command == "clicks-harmonize":
         return _clicks_harmonize(
             mat_file=Path(args.mat_file),
@@ -408,6 +449,71 @@ def _ibl_analyze(
     print(f"Wrote psychometric summary to {summary_path}")
     print(f"Wrote analysis result to {result_path}")
     print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _ibl_report(
+    *,
+    eid: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / eid
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or session_dir / "psychometric.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"IBL analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas ibl-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = None
+    if psychometric_svg_path.exists():
+        psychometric_svg_text = psychometric_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", session_dir / "psychometric_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("canonical trials CSV", session_dir / "trials.csv"),
+            ("harmonization summary CSV", session_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_ibl_visual_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote IBL visual decision report to {report_path}")
+    if psychometric_svg_text is None:
+        print(
+            "Psychometric SVG not found, wrote report without inline plot: "
+            f"{psychometric_svg_path}"
+        )
     return 0
 
 
@@ -813,6 +919,13 @@ def _clicks_batch_row_template(*, mat_file: Path, parsed_field: str) -> dict:
 
 def _relative_artifact_link(path: Path, base_dir: Path) -> str:
     return os.path.relpath(path, base_dir).replace(os.sep, "/")
+
+
+def _read_json_object_file(path: Path) -> dict[str, Any]:
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return loaded
 
 
 if __name__ == "__main__":

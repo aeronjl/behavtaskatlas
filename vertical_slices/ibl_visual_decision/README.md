@@ -54,6 +54,7 @@ The default command targets the first selected public session:
 uv sync --extra ibl
 uv run behavtaskatlas ibl-harmonize
 uv run behavtaskatlas ibl-analyze
+uv run behavtaskatlas ibl-report
 ```
 
 By default this writes ignored local artifacts under:
@@ -68,6 +69,7 @@ The command has been verified against this session and generated:
 - 27 summary rows grouped by signed contrast and prior context.
 - Descriptive analysis JSON.
 - Dependency-free SVG psychometric plot.
+- Static HTML report.
 - Fitted four-parameter logistic psychometric estimates per prior block.
 - 32 no-response trials.
 - 0 missing-stimulus trials.
@@ -82,13 +84,14 @@ The selected session metadata is:
 - start time: `2023-10-19T12:54:25.961859`
 - task protocol: `_iblrig_tasks_ephysChoiceWorld`
 - source URL: `https://openalyx.internationalbrainlab.org/sessions/ebce500b-c530-47de-8cb1-963c552703ea`
+- report: `derived/ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/report.html`
 
 ## Next Steps
 
 1. Confirm IBL data licensing and whether derived canonical trial tables can be committed.
 2. Tighten handling of IBL dataset revisions in provenance.
-3. Generate a psychometric summary by signed contrast and block prior.
-4. Add a plotting or model-fitting step once the trial table policy is settled.
+3. Add confidence intervals or bootstrap bands around fitted psychometric summaries.
+4. Decide whether the report should include response-time summaries once trial table policy is settled.
 
 ## Source Notes
 

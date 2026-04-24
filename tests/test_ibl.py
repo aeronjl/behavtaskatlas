@@ -8,6 +8,7 @@ from behavtaskatlas.ibl import (
     feedback_label,
     harmonize_ibl_visual_trial,
     harmonize_ibl_visual_trials,
+    ibl_visual_report_html,
     load_canonical_trials_csv,
     provenance_payload,
     psychometric_svg,
@@ -254,3 +255,66 @@ def test_psychometric_svg_contains_prior_label() -> None:
     assert "<svg" in svg
     assert "p_left=0.5" in svg
     assert "Custom signed evidence" in svg
+
+
+def test_ibl_visual_report_html_contains_session_and_fit_tables() -> None:
+    html = ibl_visual_report_html(
+        {
+            "analysis_id": "analysis.ibl-visual-decision.descriptive-psychometric",
+            "protocol_id": "protocol.ibl-visual-decision-v1",
+            "dataset_id": "dataset.ibl-public-behavior",
+            "generated_at": "2026-04-24T18:00:00+00:00",
+            "behavtaskatlas_commit": "abc1234",
+            "behavtaskatlas_git_dirty": False,
+            "n_trials": 10,
+            "n_response_trials": 9,
+            "n_no_response_trials": 1,
+            "prior_results": [
+                {
+                    "prior_context": "p_left=0.5",
+                    "n_trials": 10,
+                    "n_response_trials": 9,
+                    "n_contrast_levels": 2,
+                    "empirical_bias_contrast": 0.0,
+                    "empirical_threshold_contrast": 12.5,
+                    "fit": {
+                        "status": "ok",
+                        "bias_contrast": -1.0,
+                        "threshold_contrast": 14.5,
+                    },
+                }
+            ],
+            "summary_rows": [
+                {
+                    "prior_context": "p_left=0.5",
+                    "stimulus_value": 25.0,
+                    "n_trials": 10,
+                    "n_response": 9,
+                    "n_no_response": 1,
+                    "n_right": 6,
+                    "p_right": 2 / 3,
+                    "p_correct": 0.8,
+                }
+            ],
+            "caveats": ["Escape <unsafe> text"],
+        },
+        provenance={
+            "eid": "session",
+            "source": {
+                "lab": "lab",
+                "subject": "subject",
+                "start_time": "2023-10-19T12:54:25",
+                "task_protocol": "_iblrig_tasks_ephysChoiceWorld",
+                "revision": "2025-03-03",
+            },
+        },
+        psychometric_svg_text="<svg><text>Psychometric</text></svg>",
+        artifact_links={"analysis result JSON": "analysis_result.json"},
+    )
+
+    assert "IBL Visual Decision Report" in html
+    assert "session" in html
+    assert "p_left=0.5" in html
+    assert "analysis_result.json" in html
+    assert "<svg><text>Psychometric</text></svg>" in html
+    assert "Escape &lt;unsafe&gt; text" in html

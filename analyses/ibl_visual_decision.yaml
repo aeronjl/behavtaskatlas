@@ -1,7 +1,7 @@
 analysis_id: analysis.ibl-visual-decision.baseline-plan
 protocol_id: protocol.ibl-visual-decision-v1
 dataset_id: dataset.ibl-public-behavior
-status: implemented-descriptive
+status: real-file-static-report-run
 first_verified_session:
   eid: ebce500b-c530-47de-8cb1-963c552703ea
   subject: MFD_09
@@ -22,6 +22,7 @@ implemented_outputs:
   - descriptive analysis result JSON
   - dependency-free SVG psychometric plot
   - fitted four-parameter logistic psychometric estimates per prior block
+  - static HTML report over session provenance, psychometric fits, summary rows, and artifact links
 inputs:
   - canonical trial table generated from IBL ALF trials table/object
 grouping_variables:

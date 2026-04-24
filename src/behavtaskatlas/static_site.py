@@ -149,6 +149,7 @@ def _ibl_visual_slice_payload(
         if session_dirs:
             session_dir = session_dirs[0]
     analysis_path = session_dir / "analysis_result.json"
+    report_path = session_dir / "report.html"
     analysis = _read_json_object(analysis_path)
     metrics = []
     if analysis:
@@ -161,18 +162,25 @@ def _ibl_visual_slice_payload(
     return {
         "id": "slice.ibl-visual-decision",
         "title": "IBL Visual Decision",
-        "status_label": "Report pending" if analysis_path.exists() else "Analysis pending",
-        "report_status": "missing",
+        "status_label": _report_status_label(
+            report_path=report_path,
+            artifact_path=analysis_path,
+        ),
+        "report_status": "available" if report_path.exists() else "missing",
         "artifact_status": "available" if analysis_path.exists() else "missing",
         "description": (
             "First visual 2AFC slice with OpenAlyx provenance, canonical trials, "
             "and fitted descriptive psychometrics for one public IBL session."
         ),
-        "primary_link": _link_if_exists(session_dir / "psychometric.svg", index_path),
-        "primary_link_label": "Open psychometric SVG",
+        "primary_link": _link_if_exists(report_path, index_path)
+        or _link_if_exists(session_dir / "psychometric.svg", index_path),
+        "primary_link_label": "Open report"
+        if report_path.exists()
+        else "Open psychometric SVG",
         "metrics": metrics,
         "links": _existing_links(
             [
+                ("Report HTML", report_path),
                 ("Analysis result JSON", analysis_path),
                 ("Psychometric SVG", session_dir / "psychometric.svg"),
                 ("Canonical trials CSV", session_dir / "trials.csv"),
@@ -217,6 +225,14 @@ def _slice_card(item: dict[str, Any]) -> str:
         parts.append("</ul>")
     parts.append("</article>")
     return "\n".join(parts)
+
+
+def _report_status_label(*, report_path: Path, artifact_path: Path) -> str:
+    if report_path.exists():
+        return "Report available"
+    if artifact_path.exists():
+        return "Report pending"
+    return "Analysis pending"
 
 
 def _index_css() -> str:
