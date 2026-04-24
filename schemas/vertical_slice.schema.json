@@ -1,0 +1,245 @@
+{
+  "$defs": {
+    "ArtifactLinkSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "path_type": {
+          "default": "derived",
+          "enum": [
+            "derived",
+            "repository"
+          ],
+          "title": "Path Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "path"
+      ],
+      "title": "ArtifactLinkSpec",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "format": "date",
+          "title": "Created",
+          "type": "string"
+        },
+        "curators": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Curators",
+          "type": "array"
+        },
+        "source_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Notes"
+        },
+        "updated": {
+          "format": "date",
+          "title": "Updated",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created",
+        "updated"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "VerticalSliceComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_outputs": {
+          "title": "Analysis Outputs",
+          "type": "string"
+        },
+        "canonical_axis": {
+          "title": "Canonical Axis",
+          "type": "string"
+        },
+        "choice_type": {
+          "title": "Choice Type",
+          "type": "string"
+        },
+        "data_scope": {
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "response_modality": {
+          "title": "Response Modality",
+          "type": "string"
+        },
+        "species": {
+          "title": "Species",
+          "type": "string"
+        },
+        "stimulus_metric": {
+          "title": "Stimulus Metric",
+          "type": "string"
+        }
+      },
+      "required": [
+        "species",
+        "modality",
+        "stimulus_metric",
+        "evidence_type",
+        "choice_type",
+        "response_modality",
+        "analysis_outputs",
+        "data_scope",
+        "canonical_axis"
+      ],
+      "title": "VerticalSliceComparison",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_result_path": {
+      "title": "Analysis Result Path",
+      "type": "string"
+    },
+    "artifact_links": {
+      "items": {
+        "$ref": "#/$defs/ArtifactLinkSpec"
+      },
+      "title": "Artifact Links",
+      "type": "array"
+    },
+    "comparison": {
+      "$ref": "#/$defs/VerticalSliceComparison"
+    },
+    "curation_status": {
+      "title": "Curation Status",
+      "type": "string"
+    },
+    "dataset_id": {
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "display_order": {
+      "title": "Display Order",
+      "type": "integer"
+    },
+    "family_id": {
+      "title": "Family Id",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "object_type": {
+      "const": "vertical_slice",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "primary_artifact_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Primary Artifact Label"
+    },
+    "primary_artifact_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Primary Artifact Path"
+    },
+    "protocol_id": {
+      "title": "Protocol Id",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "report_path": {
+      "title": "Report Path",
+      "type": "string"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "object_type",
+    "schema_version",
+    "id",
+    "title",
+    "description",
+    "curation_status",
+    "display_order",
+    "family_id",
+    "protocol_id",
+    "dataset_id",
+    "report_path",
+    "analysis_result_path",
+    "comparison",
+    "provenance"
+  ],
+  "title": "VerticalSlice",
+  "type": "object"
+}

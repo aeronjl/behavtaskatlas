@@ -145,6 +145,45 @@ class Implementation(StrictModel):
     provenance: Provenance
 
 
+class ArtifactLinkSpec(StrictModel):
+    label: str
+    path: str
+    path_type: Literal["derived", "repository"] = "derived"
+
+
+class VerticalSliceComparison(StrictModel):
+    species: str
+    modality: str
+    stimulus_metric: str
+    evidence_type: str
+    choice_type: str
+    response_modality: str
+    analysis_outputs: str
+    data_scope: str
+    canonical_axis: str
+
+
+class VerticalSlice(StrictModel):
+    object_type: Literal["vertical_slice"]
+    schema_version: str
+    id: str
+    title: str
+    description: str
+    curation_status: str
+    display_order: int
+    family_id: str
+    protocol_id: str
+    dataset_id: str
+    report_path: str
+    analysis_result_path: str
+    primary_artifact_path: str | None = None
+    primary_artifact_label: str | None = None
+    artifact_links: list[ArtifactLinkSpec] = Field(default_factory=list)
+    comparison: VerticalSliceComparison
+    provenance: Provenance
+    notes: str | None = None
+
+
 class CanonicalTrial(StrictModel):
     protocol_id: str
     dataset_id: str | None = None
@@ -171,7 +210,67 @@ class CanonicalTrial(StrictModel):
     source: dict[str, Any] = Field(default_factory=dict)
 
 
-Record = TaskFamily | Protocol | Dataset | Implementation
+class ManifestLink(StrictModel):
+    label: str
+    href: str
+
+
+class ManifestMetric(StrictModel):
+    label: str
+    value: Any = None
+
+
+class ManifestComparisonRow(StrictModel):
+    slice_id: str
+    title: str
+    family_id: str
+    protocol_id: str
+    dataset_id: str
+    species: str
+    modality: str
+    stimulus_metric: str
+    evidence_type: str
+    choice_type: str
+    response_modality: str
+    analysis_outputs: str
+    data_scope: str
+    canonical_axis: str
+    report_status: str
+    artifact_status: str
+    primary_link: str | None = None
+    trial_count: int | None = None
+
+
+class ManifestSlice(StrictModel):
+    id: str
+    title: str
+    family_id: str
+    protocol_id: str
+    dataset_id: str
+    status_label: str
+    report_status: str
+    artifact_status: str
+    description: str
+    primary_link: str | None = None
+    primary_link_label: str
+    metrics: list[ManifestMetric] = Field(default_factory=list)
+    links: list[ManifestLink] = Field(default_factory=list)
+    comparison: VerticalSliceComparison
+
+
+class ReportManifest(StrictModel):
+    manifest_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    derived_dir: str
+    manifest_link: str
+    comparison_rows: list[ManifestComparisonRow]
+    slices: list[ManifestSlice]
+
+
+Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
 
 
 MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
@@ -179,12 +278,14 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "protocol": Protocol,
     "dataset": Dataset,
     "implementation": Implementation,
+    "vertical_slice": VerticalSlice,
 }
 
 
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     **MODEL_BY_OBJECT_TYPE,
     "canonical_trial": CanonicalTrial,
+    "report_manifest": ReportManifest,
 }
 
 

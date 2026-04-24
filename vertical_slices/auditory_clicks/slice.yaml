@@ -1,0 +1,49 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.auditory-clicks
+title: Auditory Clicks Evidence Accumulation
+description: >
+  Brody Lab Poisson clicks slice with real local batch processing, per-rat
+  psychometrics, and aggregate click-time evidence kernel.
+curation_status: analysis-verified
+display_order: 10
+family_id: family.auditory-click-accumulation
+protocol_id: protocol.poisson-clicks-evidence-accumulation
+dataset_id: dataset.brody-lab-poisson-clicks-2009-2024
+report_path: auditory_clicks/report.html
+analysis_result_path: auditory_clicks/aggregate_result.json
+primary_artifact_path: auditory_clicks/aggregate_kernel.svg
+primary_artifact_label: Open aggregate kernel SVG
+artifact_links:
+  - label: Report HTML
+    path: auditory_clicks/report.html
+  - label: Aggregate result JSON
+    path: auditory_clicks/aggregate_result.json
+  - label: Aggregate kernel SVG
+    path: auditory_clicks/aggregate_kernel.svg
+  - label: Batch summary CSV
+    path: auditory_clicks/batch_summary.csv
+  - label: Slice notes
+    path: vertical_slices/auditory_clicks/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/auditory_clicks.yaml
+    path_type: repository
+comparison:
+  species: rat
+  modality: auditory
+  stimulus_metric: signed click-count difference
+  evidence_type: pulse-train
+  choice_type: 2afc
+  response_modality: nose-poke
+  analysis_outputs: psychometric bias, click-time evidence kernel
+  data_scope: local batch of extracted rat `.mat` files
+  canonical_axis: right-minus-left click count
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: >
+    Vertical-slice report metadata extracted from the generated static-index
+    payload so comparison fields are YAML-backed.

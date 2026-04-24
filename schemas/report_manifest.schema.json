@@ -1,0 +1,369 @@
+{
+  "$defs": {
+    "ManifestComparisonRow": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_outputs": {
+          "title": "Analysis Outputs",
+          "type": "string"
+        },
+        "artifact_status": {
+          "title": "Artifact Status",
+          "type": "string"
+        },
+        "canonical_axis": {
+          "title": "Canonical Axis",
+          "type": "string"
+        },
+        "choice_type": {
+          "title": "Choice Type",
+          "type": "string"
+        },
+        "data_scope": {
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "primary_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Link"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "response_modality": {
+          "title": "Response Modality",
+          "type": "string"
+        },
+        "slice_id": {
+          "title": "Slice Id",
+          "type": "string"
+        },
+        "species": {
+          "title": "Species",
+          "type": "string"
+        },
+        "stimulus_metric": {
+          "title": "Stimulus Metric",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "trial_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trial Count"
+        }
+      },
+      "required": [
+        "slice_id",
+        "title",
+        "family_id",
+        "protocol_id",
+        "dataset_id",
+        "species",
+        "modality",
+        "stimulus_metric",
+        "evidence_type",
+        "choice_type",
+        "response_modality",
+        "analysis_outputs",
+        "data_scope",
+        "canonical_axis",
+        "report_status",
+        "artifact_status"
+      ],
+      "title": "ManifestComparisonRow",
+      "type": "object"
+    },
+    "ManifestLink": {
+      "additionalProperties": false,
+      "properties": {
+        "href": {
+          "title": "Href",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "href"
+      ],
+      "title": "ManifestLink",
+      "type": "object"
+    },
+    "ManifestMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "ManifestMetric",
+      "type": "object"
+    },
+    "ManifestSlice": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_status": {
+          "title": "Artifact Status",
+          "type": "string"
+        },
+        "comparison": {
+          "$ref": "#/$defs/VerticalSliceComparison"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/ManifestLink"
+          },
+          "title": "Links",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/ManifestMetric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "primary_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Link"
+        },
+        "primary_link_label": {
+          "title": "Primary Link Label",
+          "type": "string"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "report_status": {
+          "title": "Report Status",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "family_id",
+        "protocol_id",
+        "dataset_id",
+        "status_label",
+        "report_status",
+        "artifact_status",
+        "description",
+        "primary_link_label",
+        "comparison"
+      ],
+      "title": "ManifestSlice",
+      "type": "object"
+    },
+    "VerticalSliceComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_outputs": {
+          "title": "Analysis Outputs",
+          "type": "string"
+        },
+        "canonical_axis": {
+          "title": "Canonical Axis",
+          "type": "string"
+        },
+        "choice_type": {
+          "title": "Choice Type",
+          "type": "string"
+        },
+        "data_scope": {
+          "title": "Data Scope",
+          "type": "string"
+        },
+        "evidence_type": {
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "response_modality": {
+          "title": "Response Modality",
+          "type": "string"
+        },
+        "species": {
+          "title": "Species",
+          "type": "string"
+        },
+        "stimulus_metric": {
+          "title": "Stimulus Metric",
+          "type": "string"
+        }
+      },
+      "required": [
+        "species",
+        "modality",
+        "stimulus_metric",
+        "evidence_type",
+        "choice_type",
+        "response_modality",
+        "analysis_outputs",
+        "data_scope",
+        "canonical_axis"
+      ],
+      "title": "VerticalSliceComparison",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "comparison_rows": {
+      "items": {
+        "$ref": "#/$defs/ManifestComparisonRow"
+      },
+      "title": "Comparison Rows",
+      "type": "array"
+    },
+    "derived_dir": {
+      "title": "Derived Dir",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "manifest_link": {
+      "title": "Manifest Link",
+      "type": "string"
+    },
+    "manifest_schema_version": {
+      "title": "Manifest Schema Version",
+      "type": "string"
+    },
+    "slices": {
+      "items": {
+        "$ref": "#/$defs/ManifestSlice"
+      },
+      "title": "Slices",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "manifest_schema_version",
+    "title",
+    "generated_at",
+    "derived_dir",
+    "manifest_link",
+    "comparison_rows",
+    "slices"
+  ],
+  "title": "ReportManifest",
+  "type": "object"
+}

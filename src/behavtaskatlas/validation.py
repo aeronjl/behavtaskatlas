@@ -7,7 +7,13 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from behavtaskatlas.models import Dataset, Protocol, TaskFamily, model_from_record
+from behavtaskatlas.models import (
+    Dataset,
+    Protocol,
+    TaskFamily,
+    VerticalSlice,
+    model_from_record,
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +58,9 @@ def iter_record_paths(root: Path) -> list[Path]:
         record_dir = root / directory
         if record_dir.exists():
             paths.extend(sorted(record_dir.glob("*.yaml")))
+    slice_dir = root / "vertical_slices"
+    if slice_dir.exists():
+        paths.extend(sorted(slice_dir.glob("*/slice.yaml")))
     return paths
 
 
@@ -82,6 +91,8 @@ def validate_repository(root: Path) -> ValidationReport:
     family_ids = {record.id for record in records if isinstance(record, TaskFamily)}
     protocol_ids = {record.id for record in records if isinstance(record, Protocol)}
     dataset_ids = {record.id for record in records if isinstance(record, Dataset)}
+    protocol_by_id = {record.id: record for record in records if isinstance(record, Protocol)}
+    dataset_by_id = {record.id: record for record in records if isinstance(record, Dataset)}
 
     for record in records:
         path = _path_for_record(root, record.id)
@@ -104,6 +115,36 @@ def validate_repository(root: Path) -> ValidationReport:
                     issues.append(
                         ValidationIssue(path, f"Unknown protocol_id {protocol_id!r}")
                     )
+
+        if isinstance(record, VerticalSlice):
+            if record.family_id not in family_ids:
+                issues.append(ValidationIssue(path, f"Unknown family_id {record.family_id!r}"))
+            protocol = protocol_by_id.get(record.protocol_id)
+            if protocol is None:
+                issues.append(
+                    ValidationIssue(path, f"Unknown protocol_id {record.protocol_id!r}")
+                )
+            elif protocol.family_id != record.family_id:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"protocol_id {record.protocol_id!r} does not belong to "
+                        f"family_id {record.family_id!r}",
+                    )
+                )
+            dataset = dataset_by_id.get(record.dataset_id)
+            if dataset is None:
+                issues.append(
+                    ValidationIssue(path, f"Unknown dataset_id {record.dataset_id!r}")
+                )
+            elif record.protocol_id not in dataset.protocol_ids:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"dataset_id {record.dataset_id!r} does not reference "
+                        f"protocol_id {record.protocol_id!r}",
+                    )
+                )
 
     return ValidationReport(records=records, issues=issues)
 
@@ -155,6 +196,21 @@ def _validate_common_vocab(
         )
         check(record.feedback.feedback_type, "feedback_types", "feedback.feedback_type")
 
+    if isinstance(record, VerticalSlice):
+        check(record.comparison.species, "species", "comparison.species")
+        check(record.comparison.modality, "modalities", "comparison.modality")
+        check(
+            record.comparison.evidence_type,
+            "evidence_types",
+            "comparison.evidence_type",
+        )
+        check(record.comparison.choice_type, "choice_types", "comparison.choice_type")
+        check(
+            record.comparison.response_modality,
+            "response_modalities",
+            "comparison.response_modality",
+        )
+
     return issues
 
 
@@ -169,4 +225,3 @@ def _path_for_record(root: Path, record_id: str | None) -> Path:
         if data.get("id") == record_id:
             return path
     return root
-

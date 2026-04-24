@@ -1,0 +1,49 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.ibl-visual-decision
+title: IBL Visual Decision
+description: >
+  First visual 2AFC slice with OpenAlyx provenance, canonical trials, and
+  fitted descriptive psychometrics for one public IBL session.
+curation_status: analysis-verified
+display_order: 20
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-public-behavior
+report_path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/report.html
+analysis_result_path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/analysis_result.json
+primary_artifact_path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/report.html
+  - label: Analysis result JSON
+    path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/analysis_result.json
+  - label: Psychometric SVG
+    path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/psychometric.svg
+  - label: Canonical trials CSV
+    path: ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/trials.csv
+  - label: Slice notes
+    path: vertical_slices/ibl_visual_decision/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/ibl_visual_decision.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: signed contrast
+  evidence_type: static
+  choice_type: 2afc
+  response_modality: wheel
+  analysis_outputs: prior-block psychometric fits
+  data_scope: one OpenAlyx public session
+  canonical_axis: right contrast positive, left contrast negative
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-24
+  updated: 2026-04-24
+  source_notes: >
+    Vertical-slice report metadata extracted from the generated static-index
+    payload so comparison fields are YAML-backed.

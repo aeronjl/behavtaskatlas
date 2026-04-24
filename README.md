@@ -113,11 +113,11 @@ Build the local static report index:
 uv run behavtaskatlas site-index
 ```
 
-This writes `derived/index.html` and `derived/manifest.json`. The HTML index
-links available vertical-slice reports, shows a cross-slice comparison table, and
-links generated analysis artifacts without committing raw or derived data. The
-JSON manifest carries the same slice links and comparison rows for downstream
-tooling.
+This writes `derived/index.html` and `derived/manifest.json` from the YAML-backed
+records in `vertical_slices/*/slice.yaml`. The HTML index links available
+vertical-slice reports, shows a cross-slice comparison table, and links generated
+analysis artifacts without committing raw or derived data. The JSON manifest
+carries the same slice links and comparison rows for downstream tooling.
 
 ## Repository Layout
 
@@ -132,6 +132,6 @@ tooling.
 ├── src/               # Python validation package
 ├── task_families/     # Abstract task-family records
 ├── tests/             # Validation tests
-├── vertical_slices/   # Deep end-to-end MVP slices
+├── vertical_slices/   # Deep end-to-end MVP slices and slice manifests
 └── vocabularies/      # Controlled vocabulary source files
 ```

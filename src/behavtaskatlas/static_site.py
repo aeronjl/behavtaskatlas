@@ -7,24 +7,31 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
+from behavtaskatlas.models import ReportManifest, VerticalSlice
+from behavtaskatlas.validation import load_yaml
+
 
 def build_static_index_payload(
     *,
     derived_dir: Path,
     index_path: Path,
     manifest_path: Path | None = None,
+    root: Path = Path("."),
 ) -> dict[str, Any]:
-    from behavtaskatlas.ibl import DEFAULT_IBL_EID, current_git_commit, current_git_dirty
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
     manifest_path = manifest_path or index_path.with_name("manifest.json")
+    records = load_vertical_slice_records(root)
     slices = [
-        _auditory_clicks_slice_payload(derived_dir=derived_dir, index_path=index_path),
-        _ibl_visual_slice_payload(
+        _vertical_slice_payload(
+            record,
             derived_dir=derived_dir,
             index_path=index_path,
-            default_eid=DEFAULT_IBL_EID,
-        ),
-        _random_dot_motion_slice_payload(derived_dir=derived_dir, index_path=index_path),
+            root=root,
+        )
+        for record in records
     ]
     return {
         "manifest_schema_version": "0.1.0",
@@ -46,21 +53,32 @@ def write_static_index_html(path: Path, payload: dict[str, Any]) -> None:
 
 def write_static_manifest_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    ReportManifest.model_validate(payload)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def load_vertical_slice_records(root: Path = Path(".")) -> list[VerticalSlice]:
+    records = []
+    for path in sorted((root / "vertical_slices").glob("*/slice.yaml")):
+        try:
+            records.append(VerticalSlice.model_validate(load_yaml(path)))
+        except (OSError, ValueError, ValidationError) as exc:
+            raise ValueError(f"Invalid vertical slice record {path}: {exc}") from exc
+    return sorted(records, key=lambda record: (record.display_order, record.id))
 
 
 def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for item in slices:
         comparison = item.get("comparison", {})
-        metrics = {label: value for label, value in item.get("metrics", [])}
+        metrics = {metric["label"]: metric.get("value") for metric in item.get("metrics", [])}
         rows.append(
             {
                 "slice_id": item.get("id"),
                 "title": item.get("title"),
-                "family_id": comparison.get("family_id"),
-                "protocol_id": comparison.get("protocol_id"),
-                "dataset_id": comparison.get("dataset_id"),
+                "family_id": item.get("family_id"),
+                "protocol_id": item.get("protocol_id"),
+                "dataset_id": item.get("dataset_id"),
                 "species": comparison.get("species"),
                 "modality": comparison.get("modality"),
                 "stimulus_metric": comparison.get("stimulus_metric"),
@@ -161,194 +179,93 @@ def static_index_html(payload: dict[str, Any]) -> str:
     return "\n".join(html) + "\n"
 
 
-def _auditory_clicks_slice_payload(*, derived_dir: Path, index_path: Path) -> dict[str, Any]:
-    slice_dir = derived_dir / "auditory_clicks"
-    aggregate_result_path = slice_dir / "aggregate_result.json"
-    report_path = slice_dir / "report.html"
-    aggregate = _read_json_object(aggregate_result_path)
-    metrics = []
-    if aggregate:
-        metrics = [
-            ("Rats", aggregate.get("n_ok")),
-            ("Trials", aggregate.get("n_trials_total")),
-            ("Psychometric rows", len(aggregate.get("psychometric_bias_rows", []))),
-            ("Kernel bins", len(aggregate.get("kernel_summary_rows", []))),
-        ]
-    return {
-        "id": "slice.auditory-clicks",
-        "title": "Auditory Clicks Evidence Accumulation",
-        "status_label": "Report available" if report_path.exists() else "Report pending",
-        "report_status": "available" if report_path.exists() else "missing",
-        "artifact_status": "available" if aggregate_result_path.exists() else "missing",
-        "description": (
-            "Brody Lab Poisson clicks slice with real local batch processing, per-rat "
-            "psychometrics, and aggregate click-time evidence kernel."
-        ),
-        "primary_link": _link_if_exists(report_path, index_path),
-        "primary_link_label": "Open report",
-        "metrics": metrics,
-        "links": _existing_links(
-            [
-                ("Report HTML", report_path),
-                ("Aggregate result JSON", aggregate_result_path),
-                ("Aggregate kernel SVG", slice_dir / "aggregate_kernel.svg"),
-                ("Batch summary CSV", slice_dir / "batch_summary.csv"),
-                ("Slice notes", Path("vertical_slices/auditory_clicks/README.md")),
-                ("Analysis record", Path("analyses/auditory_clicks.yaml")),
-            ],
-            index_path=index_path,
-        ),
-        "comparison": {
-            "family_id": "family.auditory-click-accumulation",
-            "protocol_id": "protocol.poisson-clicks-evidence-accumulation",
-            "dataset_id": "dataset.brody-lab-poisson-clicks-2009-2024",
-            "species": "rat",
-            "modality": "auditory",
-            "stimulus_metric": "signed click-count difference",
-            "evidence_type": "pulse-train",
-            "choice_type": "2afc",
-            "response_modality": "nose-poke",
-            "analysis_outputs": "psychometric bias, click-time evidence kernel",
-            "data_scope": "local batch of extracted rat `.mat` files",
-            "canonical_axis": "right-minus-left click count",
-            "trial_count": aggregate.get("n_trials_total") if aggregate else None,
-        },
-    }
-
-
-def _ibl_visual_slice_payload(
+def _vertical_slice_payload(
+    record: VerticalSlice,
     *,
     derived_dir: Path,
     index_path: Path,
-    default_eid: str,
+    root: Path,
 ) -> dict[str, Any]:
-    slice_dir = derived_dir / "ibl_visual_decision"
-    session_dir = slice_dir / default_eid
-    if not session_dir.exists():
-        session_dirs = sorted(path for path in slice_dir.glob("*") if path.is_dir())
-        if session_dirs:
-            session_dir = session_dirs[0]
-    analysis_path = session_dir / "analysis_result.json"
-    report_path = session_dir / "report.html"
+    report_path = derived_dir / record.report_path
+    analysis_path = derived_dir / record.analysis_result_path
+    primary_artifact_path = (
+        derived_dir / record.primary_artifact_path if record.primary_artifact_path else None
+    )
     analysis = _read_json_object(analysis_path)
-    metrics = []
-    if analysis:
-        metrics = [
-            ("Trials", analysis.get("n_trials")),
-            ("Response trials", analysis.get("n_response_trials")),
-            ("No-response trials", analysis.get("n_no_response_trials")),
-            ("Prior blocks", len(analysis.get("prior_results", []))),
-        ]
+    primary_link = _link_if_exists(report_path, index_path)
+    if primary_link is None and primary_artifact_path is not None:
+        primary_link = _link_if_exists(primary_artifact_path, index_path)
     return {
-        "id": "slice.ibl-visual-decision",
-        "title": "IBL Visual Decision",
+        "id": record.id,
+        "title": record.title,
+        "family_id": record.family_id,
+        "protocol_id": record.protocol_id,
+        "dataset_id": record.dataset_id,
         "status_label": _report_status_label(
             report_path=report_path,
             artifact_path=analysis_path,
         ),
         "report_status": "available" if report_path.exists() else "missing",
         "artifact_status": "available" if analysis_path.exists() else "missing",
-        "description": (
-            "First visual 2AFC slice with OpenAlyx provenance, canonical trials, "
-            "and fitted descriptive psychometrics for one public IBL session."
-        ),
-        "primary_link": _link_if_exists(report_path, index_path)
-        or _link_if_exists(session_dir / "psychometric.svg", index_path),
+        "description": record.description.strip(),
+        "primary_link": primary_link,
         "primary_link_label": "Open report"
         if report_path.exists()
-        else "Open psychometric SVG",
-        "metrics": metrics,
-        "links": _existing_links(
-            [
-                ("Report HTML", report_path),
-                ("Analysis result JSON", analysis_path),
-                ("Psychometric SVG", session_dir / "psychometric.svg"),
-                ("Canonical trials CSV", session_dir / "trials.csv"),
-                ("Slice notes", Path("vertical_slices/ibl_visual_decision/README.md")),
-                ("Analysis record", Path("analyses/ibl_visual_decision.yaml")),
-            ],
-            index_path=index_path,
-        ),
-        "comparison": {
-            "family_id": "family.visual-2afc-contrast",
-            "protocol_id": "protocol.ibl-visual-decision-v1",
-            "dataset_id": "dataset.ibl-public-behavior",
-            "species": "mouse",
-            "modality": "visual",
-            "stimulus_metric": "signed contrast",
-            "evidence_type": "static",
-            "choice_type": "2afc",
-            "response_modality": "wheel",
-            "analysis_outputs": "prior-block psychometric fits",
-            "data_scope": "one OpenAlyx public session",
-            "canonical_axis": "right contrast positive, left contrast negative",
-            "trial_count": analysis.get("n_trials") if analysis else None,
-        },
+        else record.primary_artifact_label or "Open artifact",
+        "metrics": _slice_metrics(record.id, analysis),
+        "links": _slice_links(record, derived_dir=derived_dir, index_path=index_path, root=root),
+        "comparison": record.comparison.model_dump(),
     }
 
 
-def _random_dot_motion_slice_payload(*, derived_dir: Path, index_path: Path) -> dict[str, Any]:
-    from behavtaskatlas.rdm import DEFAULT_RDM_SESSION_ID
-
-    session_dir = derived_dir / "random_dot_motion" / DEFAULT_RDM_SESSION_ID
-    analysis_path = session_dir / "analysis_result.json"
-    report_path = session_dir / "report.html"
-    analysis = _read_json_object(analysis_path)
-    metrics = []
-    if analysis:
-        metrics = [
-            ("Trials", analysis.get("n_trials")),
-            ("Response trials", analysis.get("n_response_trials")),
-            ("Coherence levels", len(analysis.get("chronometric_rows", []))),
-            ("Summary rows", len(analysis.get("summary_rows", []))),
+def _slice_metrics(slice_id: str, analysis: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if analysis is None:
+        return []
+    if slice_id == "slice.auditory-clicks":
+        return [
+            _metric_payload("Rats", analysis.get("n_ok")),
+            _metric_payload("Trials", analysis.get("n_trials_total")),
+            _metric_payload(
+                "Psychometric rows",
+                len(analysis.get("psychometric_bias_rows", [])),
+            ),
+            _metric_payload("Kernel bins", len(analysis.get("kernel_summary_rows", []))),
         ]
-    return {
-        "id": "slice.random-dot-motion",
-        "title": "Random-Dot Motion",
-        "status_label": _report_status_label(
-            report_path=report_path,
-            artifact_path=analysis_path,
-        ),
-        "report_status": "available" if report_path.exists() else "missing",
-        "artifact_status": "available" if analysis_path.exists() else "missing",
-        "description": (
-            "Roitman-Shadlen macaque random-dot motion slice with target-coded "
-            "psychometric and chronometric summaries from a processed PyDDM CSV."
-        ),
-        "primary_link": _link_if_exists(report_path, index_path)
-        or _link_if_exists(session_dir / "psychometric.svg", index_path),
-        "primary_link_label": "Open report"
-        if report_path.exists()
-        else "Open psychometric SVG",
-        "metrics": metrics,
-        "links": _existing_links(
-            [
-                ("Report HTML", report_path),
-                ("Analysis result JSON", analysis_path),
-                ("Psychometric SVG", session_dir / "psychometric.svg"),
-                ("Chronometric SVG", session_dir / "chronometric.svg"),
-                ("Canonical trials CSV", session_dir / "trials.csv"),
-                ("Slice notes", Path("vertical_slices/random_dot_motion/README.md")),
-                ("Analysis record", Path("analyses/random_dot_motion.yaml")),
-            ],
-            index_path=index_path,
-        ),
-        "comparison": {
-            "family_id": "family.random-dot-motion",
-            "protocol_id": "protocol.random-dot-motion-classic-macaque",
-            "dataset_id": "dataset.roitman-shadlen-rdm-pyddm",
-            "species": "non-human-primate",
-            "modality": "visual",
-            "stimulus_metric": "signed motion coherence",
-            "evidence_type": "stochastic-motion",
-            "choice_type": "2afc",
-            "response_modality": "saccade",
-            "analysis_outputs": "psychometric and chronometric summaries",
-            "data_scope": "processed PyDDM CSV across two macaques",
-            "canonical_axis": "target 1 positive, target 2 negative",
-            "trial_count": analysis.get("n_trials") if analysis else None,
-        },
-    }
+    if slice_id == "slice.ibl-visual-decision":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+            _metric_payload("No-response trials", analysis.get("n_no_response_trials")),
+            _metric_payload("Prior blocks", len(analysis.get("prior_results", []))),
+        ]
+    if slice_id == "slice.random-dot-motion":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+            _metric_payload("Coherence levels", len(analysis.get("chronometric_rows", []))),
+            _metric_payload("Summary rows", len(analysis.get("summary_rows", []))),
+        ]
+    return []
+
+
+def _metric_payload(label: str, value: Any) -> dict[str, Any]:
+    return {"label": label, "value": value}
+
+
+def _slice_links(
+    record: VerticalSlice,
+    *,
+    derived_dir: Path,
+    index_path: Path,
+    root: Path,
+) -> list[dict[str, str]]:
+    links = []
+    for link in record.artifact_links:
+        base = derived_dir if link.path_type == "derived" else root
+        path = base / link.path
+        if path.exists():
+            links.append({"label": link.label, "href": _relative_link(path, index_path)})
+    return links
 
 
 def _slice_card(item: dict[str, Any]) -> str:
@@ -365,8 +282,8 @@ def _slice_card(item: dict[str, Any]) -> str:
         f"<p>{escape(str(item.get('description', '')))}</p>",
         '<div class="metric-grid">',
     ]
-    for label, value in item.get("metrics", []):
-        parts.append(_small_metric(label, value))
+    for metric in item.get("metrics", []):
+        parts.append(_small_metric(metric["label"], metric.get("value")))
     parts.append("</div>")
     if primary_link:
         parts.append(
@@ -674,21 +591,6 @@ def _definition_list(rows: list[tuple[str, Any]]) -> str:
         parts.append(f"<dd>{escape(_format_cell(value))}</dd>")
     parts.append("</dl>")
     return "\n".join(parts)
-
-
-def _existing_links(
-    links: list[tuple[str, Path]],
-    *,
-    index_path: Path,
-) -> list[dict[str, str]]:
-    return [
-        {
-            "label": label,
-            "href": _relative_link(path, index_path),
-        }
-        for label, path in links
-        if path.exists()
-    ]
 
 
 def _link_if_exists(path: Path, index_path: Path) -> str | None:
