@@ -9,6 +9,7 @@ description: >
   non-frozen trials and associated stimulus metadata.
 protocol_ids:
   - protocol.poisson-clicks-evidence-accumulation
+  - protocol.rat-auditory-clicks-nose-poke
 species:
   - rat
 curation_status: data-linked
@@ -52,7 +53,9 @@ provenance:
   updated: 2026-04-24
   source_notes: >
     Dataset metadata drafted from the Zenodo record and used to start the
-    second vertical slice with local raw-data storage kept out of git.
+    second vertical slice with local raw-data storage kept out of git. The
+    archive also backs the concrete rat nose-poke protocol record, while that
+    protocol remains without its own report-backed slice.
 caveats:
   - The parsed archive does not include all trials, violation trials, or trials longer than 1 s.
   - Day/session breaks are not identified in the parsed release.

@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-24 23:11:40 BST - Queue items should shrink through reciprocal metadata
+
+The first curation-queue reduction linked the concrete rat auditory-clicks nose-poke protocol to the Brody Lab parsed Poisson Clicks dataset, and added the reciprocal protocol id back to the dataset record. This removes one `needs dataset` item while preserving the separate `needs vertical slice` item for that protocol.
+
+That distinction matters for the MVP: linking a known dataset should be lightweight metadata work, while adding a report-backed slice remains a deeper analysis commitment. The queue can therefore track incremental open-science progress without forcing every useful curation action to become a full vertical slice immediately.
+
 ## 2026-04-24 23:06:32 BST - Graph QA should become a curation queue
 
 The relationship graph now has enough structure to generate a contributor-facing worklist. Turning QA issues into `curation_queue.html` and `curation_queue.json` makes incompleteness operational: protocol records without datasets and protocols without vertical slices become grouped action items rather than passive warnings.

@@ -13,7 +13,7 @@ description: >
   feedback.
 species:
   - rat
-curation_status: literature-curated
+curation_status: data-linked
 stimulus:
   modalities:
     - auditory
@@ -65,6 +65,8 @@ apparatus:
   - auditory speakers
   - nose-poke ports
   - water delivery
+dataset_ids:
+  - dataset.brody-lab-poisson-clicks-2009-2024
 expected_analyses:
   - psychometric curve by click count difference
   - chronometric curve by evidence strength
@@ -86,7 +88,11 @@ provenance:
     - behavtaskatlas
   created: 2026-04-24
   updated: 2026-04-24
-  source_notes: Catalog-only rat variant added to test breadth without a vertical slice.
+  source_notes: >
+    Rat protocol variant linked to the Brody Lab parsed Poisson Clicks archive,
+    which covers rats trained on this task family between 2009 and 2024. It
+    remains without a separate vertical slice until the generic clicks slice is
+    split or this protocol gets its own report.
 open_questions:
   - Reconcile this source-specific protocol with the generic Poisson clicks seed record.
   - Add exact port/timing conventions from source implementations.
