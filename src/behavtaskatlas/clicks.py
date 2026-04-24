@@ -6,6 +6,7 @@ import json
 import math
 import statistics
 from datetime import UTC, datetime
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -432,6 +433,24 @@ def write_aggregate_kernel_svg(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text(aggregate_kernel_svg(rows), encoding="utf-8")
 
 
+def write_clicks_aggregate_report_html(
+    path: Path,
+    result: dict[str, Any],
+    *,
+    aggregate_kernel_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        clicks_aggregate_report_html(
+            result,
+            aggregate_kernel_svg_text=aggregate_kernel_svg_text,
+            artifact_links=artifact_links,
+        ),
+        encoding="utf-8",
+    )
+
+
 def write_evidence_kernel_svg(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(evidence_kernel_svg(rows), encoding="utf-8")
@@ -553,6 +572,168 @@ def aggregate_kernel_svg(rows: list[dict[str, Any]]) -> str:
     return "\n".join(elements) + "\n"
 
 
+def clicks_aggregate_report_html(
+    result: dict[str, Any],
+    *,
+    aggregate_kernel_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> str:
+    artifact_links = artifact_links or {}
+    psychometric_rows = result.get("psychometric_bias_rows", [])
+    kernel_rows = result.get("kernel_summary_rows", [])
+    rat_results = result.get("rat_results", [])
+    gamma_contexts = result.get("gamma_contexts", [])
+    task_types = result.get("task_types", [])
+
+    title = "Auditory Clicks Aggregate Report"
+    metrics = [
+        ("Rats ok", result.get("n_ok")),
+        ("Batch failures", result.get("n_failed")),
+        ("Artifact errors", result.get("n_artifact_errors")),
+        ("Parsed trials", _format_integer(result.get("n_trials_total"))),
+        ("Psychometric rows", _format_integer(len(psychometric_rows))),
+        ("Kernel bins", _format_integer(len(kernel_rows))),
+    ]
+    kernel_svg = aggregate_kernel_svg_text or (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="760" height="120">'
+        '<text x="20" y="60">Aggregate kernel plot not available</text></svg>'
+    )
+
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(title)}</title>",
+        "<style>",
+        _aggregate_report_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        f"<p class=\"eyebrow\">{escape(str(result.get('analysis_id', 'analysis')))}</p>",
+        f"<h1>{escape(title)}</h1>",
+        "<p class=\"lede\">Batch-level view of the Brody Lab Poisson clicks slice, "
+        "generated from local aggregate artifacts rather than raw MATLAB files.</p>",
+        "</header>",
+        '<section class="metrics" aria-label="Aggregate metrics">',
+    ]
+    for label, value in metrics:
+        html.extend(
+            [
+                '<div class="metric">',
+                f"<span>{escape(label)}</span>",
+                f"<strong>{escape(_format_cell(value))}</strong>",
+                "</div>",
+            ]
+        )
+    html.extend(
+        [
+            "</section>",
+            '<section class="grid-two">',
+            "<div>",
+            "<h2>Coverage</h2>",
+            _definition_list(
+                [
+                    ("Protocol", result.get("protocol_id")),
+                    ("Dataset", result.get("dataset_id")),
+                    ("Task types", ", ".join(str(item) for item in task_types)),
+                    ("Gamma contexts", ", ".join(str(item) for item in gamma_contexts)),
+                ]
+            ),
+            "</div>",
+            "<div>",
+            "<h2>Provenance</h2>",
+            _definition_list(
+                [
+                    ("Generated", result.get("generated_at")),
+                    ("Commit", result.get("behavtaskatlas_commit")),
+                    ("Git dirty", result.get("behavtaskatlas_git_dirty")),
+                    ("Batch summary", result.get("batch_summary_path")),
+                ]
+            ),
+            "</div>",
+            "</section>",
+            '<section class="figure-section">',
+            "<h2>Evidence Kernel</h2>",
+            '<div class="figure-wrap">',
+            kernel_svg,
+            "</div>",
+            "</section>",
+            "<section>",
+            "<h2>Per-Rat Coverage</h2>",
+            _html_table(
+                rat_results,
+                [
+                    ("subject_id", "Rat"),
+                    ("task_type", "Task"),
+                    ("n_trials", "Trials"),
+                    ("n_psychometric_prior_contexts", "Prior contexts"),
+                    ("n_kernel_rows", "Kernel rows"),
+                    ("n_kernel_excluded_trials", "Kernel exclusions"),
+                    ("status", "Status"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Psychometric Bias By Rat And Gamma</h2>",
+            _html_table(
+                psychometric_rows,
+                [
+                    ("subject_id", "Rat"),
+                    ("prior_context", "Gamma"),
+                    ("n_trials", "Trials"),
+                    ("n_click_difference_levels", "Levels"),
+                    ("empirical_bias_click_difference", "Empirical bias"),
+                    ("fit_bias_click_difference", "Fit bias"),
+                    ("fit_threshold_click_difference", "Fit threshold"),
+                    ("fit_status", "Fit status"),
+                ],
+            ),
+            "</section>",
+            "<section>",
+            "<h2>Aggregate Kernel Summary</h2>",
+            _html_table(
+                kernel_rows,
+                [
+                    ("bin_index", "Bin"),
+                    ("bin_start", "Start"),
+                    ("bin_end", "End"),
+                    ("n_rats", "Rats"),
+                    ("total_trials", "Trials"),
+                    ("mean_choice_difference", "Mean choice difference"),
+                    ("min_choice_difference", "Min"),
+                    ("max_choice_difference", "Max"),
+                    ("mean_point_biserial_r", "Mean r"),
+                ],
+            ),
+            "</section>",
+        ]
+    )
+    if artifact_links:
+        html.extend(
+            [
+                "<section>",
+                "<h2>Generated Files</h2>",
+                '<ul class="artifact-list">',
+            ]
+        )
+        for label, href in artifact_links.items():
+            html.append(f'<li><a href="{escape(href, quote=True)}">{escape(label)}</a></li>')
+        html.extend(["</ul>", "</section>"])
+
+    caveats = result.get("caveats", [])
+    if caveats:
+        html.extend(["<section>", "<h2>Caveats</h2>", "<ul>"])
+        html.extend(f"<li>{escape(str(caveat))}</li>" for caveat in caveats)
+        html.extend(["</ul>", "</section>"])
+
+    html.extend(["</main>", "</body>", "</html>"])
+    return "\n".join(html) + "\n"
+
+
 def evidence_kernel_svg(rows: list[dict[str, Any]]) -> str:
     width = 720
     height = 420
@@ -670,6 +851,210 @@ def brody_clicks_provenance_payload(
             "Day/session breaks are not identified in the parsed release.",
         ],
     }
+
+
+def _aggregate_report_css() -> str:
+    return """
+:root {
+  color-scheme: light;
+  --ink: #17212b;
+  --muted: #5f6c76;
+  --line: #d8dee4;
+  --panel: #f6f8fa;
+  --accent: #1464a5;
+  --ok: #237a57;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.45;
+}
+main {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+header {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.03;
+}
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+.lede {
+  max-width: 760px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+section {
+  margin-top: 28px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--panel);
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.45rem;
+}
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+dl {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.34fr) 1fr;
+  gap: 8px 14px;
+  margin: 0;
+}
+dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.figure-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+.figure-wrap svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th,
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--panel);
+  color: #2f3b45;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+.artifact-list {
+  columns: 2;
+  padding-left: 18px;
+}
+a {
+  color: var(--accent);
+}
+@media (max-width: 720px) {
+  main {
+    width: min(100vw - 20px, 1180px);
+    padding-top: 20px;
+  }
+  dl {
+    grid-template-columns: 1fr;
+  }
+  .artifact-list {
+    columns: 1;
+  }
+}
+""".strip()
+
+
+def _definition_list(rows: list[tuple[str, Any]]) -> str:
+    parts = ["<dl>"]
+    for label, value in rows:
+        parts.append(f"<dt>{escape(label)}</dt>")
+        parts.append(f"<dd>{escape(_format_cell(value))}</dd>")
+    parts.append("</dl>")
+    return "\n".join(parts)
+
+
+def _html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
+    if not rows:
+        return '<p class="empty">No rows available.</p>'
+    parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
+    for _, label in columns:
+        parts.append(f"<th>{escape(label)}</th>")
+    parts.extend(["</tr>", "</thead>", "<tbody>"])
+    for row in rows:
+        parts.append("<tr>")
+        for key, _ in columns:
+            parts.append(f"<td>{escape(_format_cell(row.get(key)))}</td>")
+        parts.append("</tr>")
+    parts.extend(["</tbody>", "</table>", "</div>"])
+    return "\n".join(parts)
+
+
+def _format_integer(value: Any) -> str:
+    numeric = _optional_int(value)
+    if numeric is None:
+        return ""
+    return f"{numeric:,}"
+
+
+def _format_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    numeric = _optional_float(value)
+    if numeric is not None:
+        if numeric.is_integer():
+            return f"{int(numeric):,}"
+        return f"{numeric:.4g}"
+    return str(value)
 
 
 def _read_csv_dicts(path: Path) -> list[dict[str, str]]:

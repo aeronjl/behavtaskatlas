@@ -82,6 +82,7 @@ Run a local batch over extracted rat files:
 ```bash
 uv run behavtaskatlas clicks-batch --mat-dir data/raw/brody_clicks/extracted --max-files 5
 uv run behavtaskatlas clicks-aggregate
+uv run behavtaskatlas clicks-report
 ```
 
 By default this writes ignored local artifacts under:
@@ -124,6 +125,14 @@ Verified local aggregate run:
   to about 1.4 clicks through later bins, confirming that the batch aggregate is
   reading the per-rat click-time kernels rather than only scalar click counts.
 
+Verified local report run:
+
+- Static report: `derived/auditory_clicks/report.html`
+- Source inputs: `aggregate_result.json` and `aggregate_kernel.svg`
+- Contents: top-level aggregate metrics, coverage/provenance, inline evidence-kernel
+  SVG, per-rat table, per-rat/gamma psychometric table, kernel summary table, links
+  to generated aggregate CSV/JSON/SVG files, and caveats.
+
 ## Data Policy
 
 The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP development, but raw archives and extracted `.mat` files stay under ignored `data/raw/`. Real ingestion should operate on local `.mat` files from the archive or on a small extracted fixture if release policy allows.
@@ -132,4 +141,4 @@ The Zenodo archive is 8.1 GB. It is acceptable to download locally for MVP devel
 
 1. Upgrade the descriptive evidence kernel to a multivariate click-time weighting model.
 2. Decide whether to support MATLAB v7.3/HDF5 files if future archive releases require it.
-3. Add a small static report page that can browse the aggregate files without committing raw data.
+3. Add a first public static index that can link this slice report to other task slices.

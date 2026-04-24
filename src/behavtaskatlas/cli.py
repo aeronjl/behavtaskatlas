@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from behavtaskatlas.clicks import (
     write_aggregate_kernel_summary_csv,
     write_aggregate_kernel_svg,
     write_aggregate_psychometric_bias_csv,
+    write_clicks_aggregate_report_html,
     write_clicks_batch_summary_csv,
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
@@ -191,6 +193,31 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional explicit path to a clicks batch_summary.csv",
     )
 
+    clicks_report_parser = subparsers.add_parser(
+        "clicks-report",
+        help="Render a static HTML report from existing clicks aggregate outputs",
+    )
+    clicks_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_CLICKS_DERIVED_DIR),
+        help="Directory containing generated auditory-clicks aggregate artifacts",
+    )
+    clicks_report_parser.add_argument(
+        "--aggregate-result",
+        default=None,
+        help="Optional explicit path to aggregate_result.json",
+    )
+    clicks_report_parser.add_argument(
+        "--aggregate-kernel-svg",
+        default=None,
+        help="Optional explicit path to aggregate_kernel.svg",
+    )
+    clicks_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -240,6 +267,15 @@ def main(argv: list[str] | None = None) -> int:
         return _clicks_aggregate(
             derived_dir=Path(args.derived_dir),
             batch_summary=Path(args.batch_summary) if args.batch_summary else None,
+        )
+    if args.command == "clicks-report":
+        return _clicks_report(
+            derived_dir=Path(args.derived_dir),
+            aggregate_result=Path(args.aggregate_result) if args.aggregate_result else None,
+            aggregate_kernel_svg=Path(args.aggregate_kernel_svg)
+            if args.aggregate_kernel_svg
+            else None,
+            out_file=Path(args.out_file) if args.out_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -559,6 +595,70 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     return 0
 
 
+def _clicks_report(
+    *,
+    derived_dir: Path,
+    aggregate_result: Path | None,
+    aggregate_kernel_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    result_path = aggregate_result or derived_dir / "aggregate_result.json"
+    kernel_svg_path = aggregate_kernel_svg or derived_dir / "aggregate_kernel.svg"
+    report_path = out_file or derived_dir / "report.html"
+    if not result_path.exists():
+        print(
+            f"Clicks aggregate result not found: {result_path}. "
+            "Run `uv run behavtaskatlas clicks-aggregate` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = json.loads(result_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not isinstance(loaded, dict):
+        print(f"Expected JSON object in {result_path}", file=sys.stderr)
+        return 2
+
+    kernel_svg_text = None
+    if kernel_svg_path.exists():
+        kernel_svg_text = kernel_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        "aggregate result JSON": _relative_artifact_link(result_path, report_dir),
+        "aggregate psychometric bias CSV": _relative_artifact_link(
+            derived_dir / "aggregate_psychometric_bias.csv",
+            report_dir,
+        ),
+        "aggregate kernel summary CSV": _relative_artifact_link(
+            derived_dir / "aggregate_kernel_summary.csv",
+            report_dir,
+        ),
+        "aggregate kernel SVG": _relative_artifact_link(kernel_svg_path, report_dir),
+        "batch summary CSV": _relative_artifact_link(
+            derived_dir / "batch_summary.csv",
+            report_dir,
+        ),
+    }
+    write_clicks_aggregate_report_html(
+        report_path,
+        loaded,
+        aggregate_kernel_svg_text=kernel_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote clicks aggregate report to {report_path}")
+    if kernel_svg_text is None:
+        print(
+            "Aggregate kernel SVG not found, wrote report without inline plot: "
+            f"{kernel_svg_path}"
+        )
+    return 0
+
+
 def _write_clicks_harmonization_outputs(
     *,
     trials: list[CanonicalTrial],
@@ -678,6 +778,10 @@ def _clicks_batch_row_template(*, mat_file: Path, parsed_field: str) -> dict:
         "output_dir": None,
     }
     return 0
+
+
+def _relative_artifact_link(path: Path, base_dir: Path) -> str:
+    return os.path.relpath(path, base_dir).replace(os.sep, "/")
 
 
 if __name__ == "__main__":

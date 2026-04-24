@@ -7,6 +7,7 @@ from behavtaskatlas.clicks import (
     aggregate_kernel_svg,
     analyze_brody_clicks,
     analyze_brody_clicks_evidence_kernel,
+    clicks_aggregate_report_html,
     evidence_kernel_svg,
     harmonize_brody_clicks_trial,
     harmonize_brody_clicks_trials,
@@ -316,6 +317,72 @@ def test_aggregate_kernel_svg_contains_title() -> None:
 
     assert "<svg" in svg
     assert "Mean choice-triggered evidence" in svg
+
+
+def test_clicks_aggregate_report_html_contains_artifact_links_and_tables() -> None:
+    html = clicks_aggregate_report_html(
+        {
+            "analysis_id": "analysis.auditory-clicks.batch-aggregate",
+            "protocol_id": "protocol.poisson-clicks-evidence-accumulation",
+            "dataset_id": "dataset.brody-lab-poisson-clicks-2009-2024",
+            "generated_at": "2026-04-24T18:00:00+00:00",
+            "behavtaskatlas_commit": "abc1234",
+            "behavtaskatlas_git_dirty": False,
+            "batch_summary_path": "batch_summary.csv",
+            "n_ok": 1,
+            "n_failed": 0,
+            "n_artifact_errors": 0,
+            "n_trials_total": 100,
+            "task_types": ["location"],
+            "gamma_contexts": ["gamma=-1"],
+            "rat_results": [
+                {
+                    "subject_id": "A080",
+                    "task_type": "location",
+                    "n_trials": 100,
+                    "n_psychometric_prior_contexts": 1,
+                    "n_kernel_rows": 2,
+                    "n_kernel_excluded_trials": 0,
+                    "status": "ok",
+                }
+            ],
+            "psychometric_bias_rows": [
+                {
+                    "subject_id": "A080",
+                    "prior_context": "gamma=-1",
+                    "n_trials": 100,
+                    "n_click_difference_levels": 4,
+                    "empirical_bias_click_difference": -0.5,
+                    "fit_bias_click_difference": -0.4,
+                    "fit_threshold_click_difference": 4.4,
+                    "fit_status": "ok",
+                }
+            ],
+            "kernel_summary_rows": [
+                {
+                    "bin_index": 0,
+                    "bin_start": 0.0,
+                    "bin_end": 0.5,
+                    "n_rats": 1,
+                    "total_trials": 100,
+                    "mean_choice_difference": 2.0,
+                    "min_choice_difference": 2.0,
+                    "max_choice_difference": 2.0,
+                    "mean_point_biserial_r": 0.2,
+                }
+            ],
+            "caveats": ["Escape <unsafe> text"],
+        },
+        aggregate_kernel_svg_text="<svg><text>Plot</text></svg>",
+        artifact_links={"aggregate result JSON": "aggregate_result.json"},
+    )
+
+    assert "Auditory Clicks Aggregate Report" in html
+    assert "A080" in html
+    assert "gamma=-1" in html
+    assert "aggregate_result.json" in html
+    assert "<svg><text>Plot</text></svg>" in html
+    assert "Escape &lt;unsafe&gt; text" in html
 
 
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:
