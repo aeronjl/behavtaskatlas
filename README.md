@@ -13,8 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template, five report-backed
-  concrete protocols, and three remaining dataset-seeking variants for breadth
+- Nine current protocol records: one abstract template, six report-backed
+  concrete protocols, and two remaining dataset-seeking variants for breadth
   testing.
 
 ## Local Workflow
@@ -92,6 +92,22 @@ Batch runs also write `derived/auditory_clicks/batch_summary.csv`. Aggregate run
 read those existing batch outputs and write a per-rat/gamma psychometric bias table,
 a cross-rat evidence-kernel summary, a JSON result, and an SVG plot. Report runs
 render those aggregate artifacts as a dependency-free static HTML page.
+
+Download and run the Mendeley Data human Poisson clicks DBS OFF/ON slice:
+
+```bash
+uv run --extra clicks behavtaskatlas human-clicks-download
+uv run --extra clicks behavtaskatlas human-clicks-harmonize
+uv run --extra clicks behavtaskatlas human-clicks-analyze
+uv run --extra clicks behavtaskatlas human-clicks-report
+uv run behavtaskatlas site-index
+```
+
+The human clicks slice writes ignored local artifacts under
+`derived/human_auditory_clicks/london-dbs-poisson-clicks-mendeley/`. It emits
+canonical trials, DBS-context psychometrics, a response-window click-time
+evidence kernel, dependency-free SVG plots, and a static report. The raw
+Mendeley MATLAB file stays under ignored `data/raw/human_clicks_mendeley/`.
 
 Download and run the Roitman-Shadlen random-dot motion slice from the pinned
 processed PyDDM CSV:

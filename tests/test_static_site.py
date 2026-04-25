@@ -59,8 +59,11 @@ def test_static_index_links_available_slice_reports(tmp_path) -> None:
 
     assert payload["slices"][0]["report_status"] == "available"
     assert payload["slices"][0]["primary_link"] == "auditory_clicks/report.html"
-    assert payload["slices"][1]["artifact_status"] == "available"
-    assert payload["slices"][1]["report_status"] == "missing"
+    ibl_slice = next(
+        item for item in payload["slices"] if item["id"] == "slice.ibl-visual-decision"
+    )
+    assert ibl_slice["artifact_status"] == "available"
+    assert ibl_slice["report_status"] == "missing"
     assert "Auditory Clicks Evidence Accumulation" in html
     assert "IBL Visual Decision" in html
     assert "Atlas Comparison" in html
@@ -89,7 +92,9 @@ def test_static_index_promotes_ibl_report_when_available(tmp_path) -> None:
         index_path=derived_dir / "index.html",
     )
 
-    ibl_slice = payload["slices"][1]
+    ibl_slice = next(
+        item for item in payload["slices"] if item["id"] == "slice.ibl-visual-decision"
+    )
     assert ibl_slice["report_status"] == "available"
     assert ibl_slice["primary_link"] == (
         f"ibl_visual_decision/{DEFAULT_IBL_EID}/report.html"
@@ -167,7 +172,7 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 5
+    assert len(loaded["comparison_rows"]) == 6
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
 
@@ -251,6 +256,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.rat-auditory-clicks-nose-poke"
     )
+    human_clicks_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.human-auditory-clicks-button"
+    )
     poisson_clicks_protocol = next(
         row
         for row in payload["protocols"]
@@ -261,6 +271,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     )
     auditory_slice = next(
         row for row in payload["vertical_slices"] if row["slice_id"] == "slice.auditory-clicks"
+    )
+    human_clicks_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.human-auditory-clicks-dbs"
     )
     mouse_unbiased_slice = next(
         row
@@ -282,6 +297,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["datasets"]
         if row["dataset_id"] == "dataset.palmer-huk-shadlen-human-rdm-cosmo2017"
     )
+    human_clicks_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.london-human-poisson-clicks-dbs-mendeley"
+    )
     rdm_detail = next(
         row
         for row in payload["protocol_details"]
@@ -297,28 +317,28 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
 
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
-    assert payload["counts"]["datasets"] == 4
-    assert payload["counts"]["vertical_slices"] == 5
+    assert payload["counts"]["datasets"] == 5
+    assert payload["counts"]["vertical_slices"] == 6
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
-    assert len(payload["dataset_details"]) == 4
+    assert len(payload["dataset_details"]) == 5
     assert len(protocol_pages) == 9
-    assert len(dataset_pages) == 4
+    assert len(dataset_pages) == 5
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 21
-    assert graph_payload["counts"]["edges"] == 31
-    assert graph_payload["counts"]["qa_issues"] == 6
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 6, "total": 6}
+    assert graph_payload["counts"]["nodes"] == 23
+    assert graph_payload["counts"]["edges"] == 35
+    assert graph_payload["counts"]["qa_issues"] == 4
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 4, "total": 4}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 6, "open": 6}
-    assert queue_payload["priority_counts"] == {"normal": 6}
-    assert queue_payload["action_counts"]["needs dataset"] == 3
-    assert queue_payload["action_counts"]["needs vertical slice"] == 3
+    assert queue_payload["counts"] == {"items": 4, "open": 4}
+    assert queue_payload["priority_counts"] == {"normal": 4}
+    assert queue_payload["action_counts"]["needs dataset"] == 2
+    assert queue_payload["action_counts"]["needs vertical slice"] == 2
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert not any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -351,6 +371,24 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         "target": "dataset.palmer-huk-shadlen-human-rdm-cosmo2017",
         "edge_type": "protocol_dataset",
         "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-auditory-clicks-button",
+        "target": "dataset.london-human-poisson-clicks-dbs-mendeley",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-auditory-clicks-button",
+        "target": "slice.human-auditory-clicks-dbs",
+        "edge_type": "protocol_slice",
+        "label": "protocol has slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.london-human-poisson-clicks-dbs-mendeley",
+        "target": "slice.human-auditory-clicks-dbs",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
     } in graph_payload["edges"]
     assert {
         "source": "protocol.human-rdm-button-reaction-time",
@@ -399,6 +437,14 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         issue["issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
         for issue in graph_payload["qa_issues"]
     )
+    assert not any(
+        issue["issue_id"] == "protocol_without_slice::protocol.human-auditory-clicks-button"
+        for issue in graph_payload["qa_issues"]
+    )
+    assert not any(
+        issue["issue_id"] == "protocol_without_dataset::protocol.human-auditory-clicks-button"
+        for issue in graph_payload["qa_issues"]
+    )
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["declared_dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
@@ -430,6 +476,29 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert not any(
         item["source_issue_id"]
         == "protocol_without_slice::protocol.rat-auditory-clicks-nose-poke"
+        for item in queue_payload["items"]
+    )
+    assert human_clicks_protocol["dataset_ids"] == [
+        "dataset.london-human-poisson-clicks-dbs-mendeley"
+    ]
+    assert human_clicks_protocol["declared_dataset_ids"] == [
+        "dataset.london-human-poisson-clicks-dbs-mendeley"
+    ]
+    assert human_clicks_protocol["slice_ids"] == ["slice.human-auditory-clicks-dbs"]
+    assert human_clicks_protocol["report_status"] == "analysis pending"
+    assert human_clicks_slice["protocol_id"] == "protocol.human-auditory-clicks-button"
+    assert human_clicks_slice["report_status"] == "missing"
+    assert human_clicks_dataset["detail_link"] == (
+        "dataset-london-human-poisson-clicks-dbs-mendeley.html"
+    )
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_dataset::protocol.human-auditory-clicks-button"
+        for item in queue_payload["items"]
+    )
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.human-auditory-clicks-button"
         for item in queue_payload["items"]
     )
     assert mouse_unbiased_protocol["dataset_ids"] == ["dataset.ibl-public-behavior"]

@@ -1,0 +1,52 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.human-auditory-clicks-dbs
+title: Human Auditory Clicks DBS
+description: >
+  Mendeley Data human Poisson clicks DBS OFF/ON slice with canonical trials,
+  psychometrics split by DBS context, and a response-window click-time
+  evidence kernel.
+curation_status: analysis-verified
+display_order: 15
+family_id: family.auditory-click-accumulation
+protocol_id: protocol.human-auditory-clicks-button
+dataset_id: dataset.london-human-poisson-clicks-dbs-mendeley
+report_path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/report.html
+analysis_result_path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/analysis_result.json
+primary_artifact_path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/evidence_kernel.svg
+primary_artifact_label: Open evidence-kernel SVG
+artifact_links:
+  - label: Report HTML
+    path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/report.html
+  - label: Analysis result JSON
+    path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/analysis_result.json
+  - label: Evidence-kernel SVG
+    path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/evidence_kernel.svg
+  - label: Psychometric SVG
+    path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/psychometric.svg
+  - label: Canonical trials CSV
+    path: human_auditory_clicks/london-dbs-poisson-clicks-mendeley/trials.csv
+  - label: Slice notes
+    path: vertical_slices/human_auditory_clicks/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/human_auditory_clicks.yaml
+    path_type: repository
+comparison:
+  species: human
+  modality: auditory
+  stimulus_metric: signed click-count difference at response
+  evidence_type: pulse-train
+  choice_type: 2afc
+  response_modality: button-press
+  analysis_outputs: psychometric by DBS context and response-window evidence kernel
+  data_scope: one Mendeley Data MATLAB file with 8 DBS patient participants
+  canonical_axis: right-minus-left click count at response
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Vertical-slice report metadata for the downloaded Mendeley Data
+    `poisson_clicks_rawdata.mat` file.

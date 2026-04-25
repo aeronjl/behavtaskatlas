@@ -12,7 +12,7 @@ description: >
   count difference control the sensory evidence.
 species:
   - human
-curation_status: literature-curated
+curation_status: data-linked
 stimulus:
   modalities:
     - auditory
@@ -58,6 +58,8 @@ training:
 apparatus:
   - headphones or speakers
   - keyboard or button box
+dataset_ids:
+  - dataset.london-human-poisson-clicks-dbs-mendeley
 expected_analyses:
   - psychometric curve by click count difference
   - chronometric curve by evidence strength
@@ -74,12 +76,21 @@ references:
       accumulate evidence for decision-making. Science, 2013.
     url: https://www.science.org/doi/10.1126/science.1233912
     doi: 10.1126/science.1233912
+  - id: ref.london-2018-poisson-clicks-dbs
+    citation: >
+      London D. Poisson Clicks Task, DBS OFF/ON. Mendeley Data, V1, 2018.
+    url: https://data.mendeley.com/datasets/3j86m7mjx2/1
+    doi: 10.17632/3j86m7mjx2.1
 provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Catalog-only human variant added to test breadth without a vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Human variant now has a concrete Mendeley Data DBS OFF/ON dataset and
+    report-backed vertical slice. The protocol remains broader than that
+    clinical source, so DBS-specific caveats live on the dataset and slice.
 open_questions:
   - Separate auditory side, interval, and response-device variants when source records require it.
-  - Add exact click-generation parameters from a concrete implementation.
+  - Clarify how the source alpha, beta, and gamma parameters map onto the click-generation equations.
+  - Add a non-DBS healthy-human source when a public trial table is identified.

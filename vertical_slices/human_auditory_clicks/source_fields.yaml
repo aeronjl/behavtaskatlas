@@ -1,0 +1,49 @@
+slice_id: slice.human-auditory-clicks-dbs
+protocol_id: protocol.human-auditory-clicks-button
+dataset_id: dataset.london-human-poisson-clicks-dbs-mendeley
+source_url: https://data.mendeley.com/datasets/3j86m7mjx2/1
+source_doi: 10.17632/3j86m7mjx2.1
+source_file: poisson_clicks_rawdata.mat
+source_file_id: dce6ed60-2585-45aa-957c-a731ff6b9790
+source_file_sha256: 1040c8fe110e8eec206fb589f30dbff681429de4bb64162a116fdec17904d49a
+source_trial_count: 5085
+source_patient_count: 8
+source_patient_session_count: 19
+source_dbs_states:
+  - off
+  - on
+required_fields:
+  - dur
+  - rt
+  - cdiff
+  - cans
+  - choice
+  - corr
+  - dbs
+  - sesstime
+  - trialpar.ctl
+  - trialpar.ctr
+  - session
+  - pt
+canonical_mapping:
+  subject_id: patient id from `pt`
+  session_id: base dataset id plus patient and session numbers from `pt` and `session`
+  trial_index: global row index within the MATLAB vectors
+  stimulus_value: negative `cdiff`, yielding right-minus-left clicks at response
+  stimulus_side: positive right-minus-left values are right, negative values are left, zero is none
+  evidence_strength: absolute value of right-minus-left clicks at response
+  choice: source `choice` maps 1 to left and 0 to right
+  correct: source `corr` maps 1 to correct and 0 to incorrect
+  response_time: source `rt`, seconds relative to trial start
+  feedback: none
+  prior_context: source `dbs` maps 0 to `dbs=off` and 1 to `dbs=on`
+  task_variables.left_click_times: source `trialpar.ctl` filtered to click times <= `rt`
+  task_variables.right_click_times: source `trialpar.ctr` filtered to click times <= `rt`
+  task_variables.all_left_click_times: full source `trialpar.ctl`
+  task_variables.all_right_click_times: full source `trialpar.ctr`
+  task_variables.scheduled_stimulus_duration: source `dur`
+  task_variables.stimulus_duration: source `rt`, used for response-window kernel normalization
+source_notes:
+  - The Mendeley description states that `cdiff` is left-right clicks at response.
+  - The source correctness and choice fields use left as 1 and right as 0.
+  - The vertical slice keeps scheduled post-response click times in task_variables but excludes them from the response-window evidence kernel.

@@ -7,10 +7,14 @@ from behavtaskatlas.clicks import (
     aggregate_kernel_svg,
     analyze_brody_clicks,
     analyze_brody_clicks_evidence_kernel,
+    analyze_human_clicks,
+    analyze_human_clicks_evidence_kernel,
     clicks_aggregate_report_html,
+    clicks_session_report_html,
     evidence_kernel_svg,
     harmonize_brody_clicks_trial,
     harmonize_brody_clicks_trials,
+    harmonize_human_clicks_trial,
     write_clicks_batch_summary_csv,
 )
 
@@ -93,6 +97,48 @@ def test_harmonize_brody_clicks_trials_accepts_scalar_click_time() -> None:
     assert trials[0].task_variables["left_click_times"] == [0.1]
 
 
+def test_harmonize_human_clicks_trial_flips_source_cdiff_and_truncates_clicks() -> None:
+    trial = harmonize_human_clicks_trial(
+        {
+            "dur": 5.5,
+            "rt": 2.0,
+            "cdiff": -1,
+            "cans": 0,
+            "choice": 0,
+            "corr": 1,
+            "dbs": 1,
+            "pt": 5,
+            "session": 2,
+            "left_click_times": [0.1, 2.2],
+            "right_click_times": [0.2, 0.6, 2.4],
+            "alpha": 1.0,
+            "beta": 2.5,
+            "gamma": 0.4,
+        },
+        session_id="human-clicks-patient-05-session-02",
+        trial_index=0,
+    )
+
+    assert trial.protocol_id == "protocol.human-auditory-clicks-button"
+    assert trial.dataset_id == "dataset.london-human-poisson-clicks-dbs-mendeley"
+    assert trial.subject_id == "patient-05"
+    assert trial.block_id == "patient-05-session-02"
+    assert trial.stimulus_value == 1.0
+    assert trial.stimulus_side == "right"
+    assert trial.choice == "right"
+    assert trial.correct is True
+    assert trial.feedback == "none"
+    assert trial.prior_context == "dbs=on"
+    assert trial.response_time == pytest.approx(2.0)
+    assert trial.task_variables["source_cdiff_left_minus_right"] == -1
+    assert trial.task_variables["left_click_count"] == 1
+    assert trial.task_variables["right_click_count"] == 2
+    assert trial.task_variables["left_click_times"] == [0.1]
+    assert trial.task_variables["right_click_times"] == [0.2, 0.6]
+    assert trial.task_variables["all_left_click_times"] == [0.1, 2.2]
+    assert trial.task_variables["scheduled_stimulus_duration"] == pytest.approx(5.5)
+
+
 def test_analyze_brody_clicks_returns_click_difference_metrics() -> None:
     trials = harmonize_brody_clicks_trials(
         {
@@ -117,6 +163,54 @@ def test_analyze_brody_clicks_returns_click_difference_metrics() -> None:
     assert result["prior_results"][0]["n_click_difference_levels"] == 4
     assert result["prior_results"][0]["empirical_bias_click_difference"] == 0.0
     assert result["prior_results"][0]["fit"]["method"] == "four_parameter_logistic_binomial_mle"
+
+
+def test_analyze_human_clicks_returns_dbs_context_metrics() -> None:
+    trials = [
+        harmonize_human_clicks_trial(
+            {
+                "dur": 1.0,
+                "rt": 1.0,
+                "cdiff": 4,
+                "cans": 1,
+                "choice": 1,
+                "corr": 1,
+                "dbs": 0,
+                "pt": 5,
+                "session": 1,
+                "left_click_times": [0.1, 0.3, 0.5, 0.7],
+                "right_click_times": [],
+            },
+            session_id="s",
+            trial_index=0,
+        ),
+        harmonize_human_clicks_trial(
+            {
+                "dur": 1.0,
+                "rt": 1.0,
+                "cdiff": -4,
+                "cans": 0,
+                "choice": 0,
+                "corr": 1,
+                "dbs": 1,
+                "pt": 5,
+                "session": 2,
+                "left_click_times": [],
+                "right_click_times": [0.1, 0.3, 0.5, 0.7],
+            },
+            session_id="s",
+            trial_index=1,
+        ),
+    ]
+
+    result = analyze_human_clicks(trials)
+
+    assert result["analysis_id"] == "analysis.human-auditory-clicks.descriptive-psychometric"
+    assert result["protocol_id"] == "protocol.human-auditory-clicks-button"
+    assert result["dataset_id"] == "dataset.london-human-poisson-clicks-dbs-mendeley"
+    assert result["report_title"] == "Human Auditory Clicks DBS Report"
+    assert [row["prior_context"] for row in result["prior_results"]] == ["dbs=off", "dbs=on"]
+    assert result["summary_rows"][0]["stimulus_value"] == -4.0
 
 
 def test_analyze_brody_clicks_evidence_kernel_uses_click_timing() -> None:
@@ -158,6 +252,53 @@ def test_analyze_brody_clicks_evidence_kernel_uses_click_timing() -> None:
     assert result["summary_rows"][0]["point_biserial_r"] == pytest.approx(1.0)
     assert result["summary_rows"][1]["point_biserial_r"] == pytest.approx(-1.0)
     assert result["summary_rows"][0]["normalized_weight"] == pytest.approx(0.5)
+
+
+def test_analyze_human_clicks_evidence_kernel_uses_human_metadata() -> None:
+    trials = [
+        harmonize_human_clicks_trial(
+            {
+                "dur": 1.0,
+                "rt": 1.0,
+                "cdiff": 0,
+                "cans": 0,
+                "choice": 0,
+                "corr": 1,
+                "dbs": 0,
+                "pt": 5,
+                "session": 1,
+                "left_click_times": [0.75],
+                "right_click_times": [0.25],
+            },
+            session_id="s",
+            trial_index=0,
+        ),
+        harmonize_human_clicks_trial(
+            {
+                "dur": 1.0,
+                "rt": 1.0,
+                "cdiff": 0,
+                "cans": 1,
+                "choice": 1,
+                "corr": 1,
+                "dbs": 1,
+                "pt": 6,
+                "session": 1,
+                "left_click_times": [0.25],
+                "right_click_times": [0.75],
+            },
+            session_id="s",
+            trial_index=1,
+        ),
+    ]
+
+    result = analyze_human_clicks_evidence_kernel(trials, n_bins=2)
+
+    assert result["analysis_id"] == "analysis.human-auditory-clicks.evidence-kernel"
+    assert result["protocol_id"] == "protocol.human-auditory-clicks-button"
+    assert result["dataset_id"] == "dataset.london-human-poisson-clicks-dbs-mendeley"
+    assert result["summary_rows"][0]["choice_difference"] == 2.0
+    assert result["summary_rows"][1]["choice_difference"] == -2.0
 
 
 def test_evidence_kernel_svg_contains_axis_label() -> None:
@@ -383,6 +524,75 @@ def test_clicks_aggregate_report_html_contains_artifact_links_and_tables() -> No
     assert "aggregate_result.json" in html
     assert "<svg><text>Plot</text></svg>" in html
     assert "Escape &lt;unsafe&gt; text" in html
+
+
+def test_clicks_session_report_html_contains_human_clicks_sections() -> None:
+    html = clicks_session_report_html(
+        {
+            "analysis_id": "analysis.human-auditory-clicks.descriptive-psychometric",
+            "protocol_id": "protocol.human-auditory-clicks-button",
+            "dataset_id": "dataset.london-human-poisson-clicks-dbs-mendeley",
+            "report_title": "Human Auditory Clicks DBS Report",
+            "generated_at": "2026-04-25T01:00:00+00:00",
+            "behavtaskatlas_commit": "abc1234",
+            "behavtaskatlas_git_dirty": False,
+            "n_trials": 2,
+            "n_response_trials": 2,
+            "response_time_origin": "response time",
+            "summary_rows": [],
+            "prior_results": [
+                {
+                    "prior_context": "dbs=off",
+                    "n_trials": 1,
+                    "n_response_trials": 1,
+                    "n_click_difference_levels": 1,
+                    "empirical_bias_click_difference": -4,
+                    "empirical_threshold_click_difference": None,
+                    "fit": {
+                        "status": "insufficient_data",
+                        "bias_click_difference": None,
+                        "threshold_click_difference": None,
+                    },
+                }
+            ],
+            "caveats": ["Escape <analysis>"],
+        },
+        kernel_result={
+            "summary_rows": [
+                {
+                    "bin_index": 0,
+                    "bin_start": 0.0,
+                    "bin_end": 0.5,
+                    "n_trials": 2,
+                    "choice_difference": 2.0,
+                    "point_biserial_r": 1.0,
+                    "normalized_weight": 0.5,
+                }
+            ],
+            "caveats": ["Kernel caveat"],
+        },
+        provenance={
+            "source": {
+                "mendeley_doi": "10.17632/3j86m7mjx2.1",
+                "source_file_name": "poisson_clicks_rawdata.mat",
+                "source_file_sha256": "hash",
+                "subjects": ["patient-05"],
+                "patient_sessions": ["patient-05-session-01"],
+                "dbs_contexts": ["dbs=off"],
+            }
+        },
+        psychometric_svg_text="<svg><text>Psychometric</text></svg>",
+        evidence_kernel_svg_text="<svg><text>Kernel</text></svg>",
+        artifact_links={"analysis result JSON": "analysis_result.json"},
+    )
+
+    assert "Human Auditory Clicks DBS Report" in html
+    assert "10.17632/3j86m7mjx2.1" in html
+    assert "dbs=off" in html
+    assert "analysis_result.json" in html
+    assert "Psychometric" in html
+    assert "Kernel caveat" in html
+    assert "Escape &lt;analysis&gt;" in html
 
 
 def test_harmonize_brody_clicks_trial_requires_fields() -> None:

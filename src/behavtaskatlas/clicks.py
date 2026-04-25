@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import statistics
+import urllib.request
 from datetime import UTC, datetime
 from html import escape
 from pathlib import Path
@@ -17,6 +18,23 @@ BRODY_CLICKS_DATASET_ID = "dataset.brody-lab-poisson-clicks-2009-2024"
 DEFAULT_CLICKS_DERIVED_DIR = Path("derived/auditory_clicks")
 DEFAULT_CLICKS_SESSION_ID = "B075-parsed"
 CLICKS_PSYCHOMETRIC_X_AXIS_LABEL = "Signed click-count difference (right minus left clicks)"
+HUMAN_CLICKS_PROTOCOL_ID = "protocol.human-auditory-clicks-button"
+HUMAN_CLICKS_DATASET_ID = "dataset.london-human-poisson-clicks-dbs-mendeley"
+DEFAULT_HUMAN_CLICKS_RAW_MAT = Path("data/raw/human_clicks_mendeley/poisson_clicks_rawdata.mat")
+DEFAULT_HUMAN_CLICKS_DERIVED_DIR = Path("derived/human_auditory_clicks")
+DEFAULT_HUMAN_CLICKS_SESSION_ID = "london-dbs-poisson-clicks-mendeley"
+MENDELEY_HUMAN_CLICKS_DATASET_URL = "https://data.mendeley.com/datasets/3j86m7mjx2/1"
+MENDELEY_HUMAN_CLICKS_FILE_ID = "dce6ed60-2585-45aa-957c-a731ff6b9790"
+MENDELEY_HUMAN_CLICKS_DOWNLOAD_URL = (
+    "https://data.mendeley.com/public-files/datasets/3j86m7mjx2/files/"
+    f"{MENDELEY_HUMAN_CLICKS_FILE_ID}/file_downloaded"
+)
+MENDELEY_HUMAN_CLICKS_SHA256 = (
+    "1040c8fe110e8eec206fb589f30dbff681429de4bb64162a116fdec17904d49a"
+)
+HUMAN_CLICKS_PSYCHOMETRIC_X_AXIS_LABEL = (
+    "Signed click-count difference at response (right minus left clicks)"
+)
 EVIDENCE_KERNEL_SUMMARY_FIELDS = [
     "bin_index",
     "bin_start",
@@ -83,6 +101,25 @@ AGGREGATE_KERNEL_SUMMARY_FIELDS = [
 ]
 
 
+def download_human_clicks_mendeley_mat(
+    path: Path = DEFAULT_HUMAN_CLICKS_RAW_MAT,
+    *,
+    url: str = MENDELEY_HUMAN_CLICKS_DOWNLOAD_URL,
+) -> dict[str, Any]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(url, headers={"User-Agent": "behavtaskatlas/0.1"})
+    with urllib.request.urlopen(request) as response:
+        content = response.read()
+    path.write_bytes(content)
+    return {
+        "source_url": url,
+        "dataset_url": MENDELEY_HUMAN_CLICKS_DATASET_URL,
+        "output_path": str(path),
+        "n_bytes": len(content),
+        "sha256": file_sha256(path),
+    }
+
+
 def harmonize_brody_clicks_trial(
     source: dict[str, Any],
     *,
@@ -137,6 +174,74 @@ def harmonize_brody_clicks_trial(
     )
 
 
+def harmonize_human_clicks_trial(
+    source: dict[str, Any],
+    *,
+    session_id: str,
+    trial_index: int,
+) -> CanonicalTrial:
+    required = ["dur", "rt", "cdiff", "cans", "choice", "corr", "dbs", "pt", "session"]
+    missing = sorted(field for field in required if field not in source)
+    if missing:
+        joined = ", ".join(missing)
+        raise ValueError(f"Missing required human clicks trial fields: {joined}")
+
+    response_time = _required_float(source["rt"], field="rt")
+    scheduled_duration = _required_float(source["dur"], field="dur")
+    source_cdiff = _required_int(source["cdiff"], field="cdiff")
+    click_difference = -source_cdiff
+    left_times_all = _float_list(source.get("left_click_times", []))
+    right_times_all = _float_list(source.get("right_click_times", []))
+    left_times = [time for time in left_times_all if time <= response_time]
+    right_times = [time for time in right_times_all if time <= response_time]
+    patient_id = _required_int(source["pt"], field="pt")
+    source_session = _required_int(source["session"], field="session")
+
+    return CanonicalTrial(
+        protocol_id=HUMAN_CLICKS_PROTOCOL_ID,
+        dataset_id=HUMAN_CLICKS_DATASET_ID,
+        subject_id=f"patient-{patient_id:02d}",
+        session_id=session_id,
+        trial_index=trial_index,
+        stimulus_modality="auditory",
+        stimulus_value=float(click_difference),
+        stimulus_units="right minus left clicks at response",
+        stimulus_side=_evidence_side(click_difference),
+        evidence_strength=abs(float(click_difference)),
+        evidence_units="absolute click count difference at response",
+        choice=_human_left_is_one_choice_label(source["choice"]),
+        correct=_optional_hit(source.get("corr")),
+        response_time=response_time,
+        response_time_origin="response time in seconds relative to trial start",
+        feedback="none",
+        prior_context=_dbs_context(source["dbs"]),
+        block_id=f"patient-{patient_id:02d}-session-{source_session:02d}",
+        task_variables={
+            "patient": patient_id,
+            "source_session": source_session,
+            "dbs": _required_int(source["dbs"], field="dbs"),
+            "dbs_label": _dbs_label(source["dbs"]),
+            "left_click_count": len(left_times),
+            "right_click_count": len(right_times),
+            "click_count_difference": click_difference,
+            "source_cdiff_left_minus_right": source_cdiff,
+            "correct_answer": _human_left_is_one_choice_label(source["cans"]),
+            "correct_answer_code": _required_int(source["cans"], field="cans"),
+            "choice_code": _required_int(source["choice"], field="choice"),
+            "stimulus_duration": response_time,
+            "scheduled_stimulus_duration": scheduled_duration,
+            "left_click_times": left_times,
+            "right_click_times": right_times,
+            "all_left_click_times": left_times_all,
+            "all_right_click_times": right_times_all,
+            "alpha": _optional_float(source.get("alpha")),
+            "beta": _optional_float(source.get("beta")),
+            "gamma": _optional_float(source.get("gamma")),
+        },
+        source={key: _json_safe_value(value) for key, value in source.items()},
+    )
+
+
 def harmonize_brody_clicks_trials(
     parsed: dict[str, Any],
     *,
@@ -156,6 +261,24 @@ def harmonize_brody_clicks_trials(
             trial_index=index,
         )
         for index in range(n_trials)
+    ]
+
+
+def harmonize_human_clicks_trials(
+    rows: list[dict[str, Any]],
+    *,
+    base_session_id: str = DEFAULT_HUMAN_CLICKS_SESSION_ID,
+    limit: int | None = None,
+) -> list[CanonicalTrial]:
+    if limit is not None:
+        rows = rows[:limit]
+    return [
+        harmonize_human_clicks_trial(
+            row,
+            session_id=_human_clicks_session_id(row, base_session_id=base_session_id),
+            trial_index=index,
+        )
+        for index, row in enumerate(rows)
     ]
 
 
@@ -207,6 +330,45 @@ def load_brody_clicks_mat(
     return trials, details
 
 
+def load_human_clicks_mendeley_mat(
+    mat_file: Path,
+    *,
+    session_id: str = DEFAULT_HUMAN_CLICKS_SESSION_ID,
+    limit: int | None = None,
+) -> tuple[list[CanonicalTrial], dict[str, Any]]:
+    try:
+        import scipy.io
+    except ImportError as exc:
+        raise RuntimeError(
+            "Human clicks ingestion requires scipy. Install it with `uv sync --extra clicks`."
+        ) from exc
+
+    loaded = scipy.io.loadmat(mat_file, squeeze_me=True, simplify_cells=True)
+    data = loaded.get("data")
+    if not isinstance(data, dict):
+        raise ValueError("Expected MATLAB variable `data` to load as a mapping")
+
+    rows, session_parameters = _human_clicks_rows(data)
+    trials = harmonize_human_clicks_trials(rows, base_session_id=session_id, limit=limit)
+    details = {
+        "source_file": str(mat_file),
+        "source_file_name": mat_file.name,
+        "source_file_sha256": file_sha256(mat_file),
+        "source_url": MENDELEY_HUMAN_CLICKS_DATASET_URL,
+        "source_file_download_url": MENDELEY_HUMAN_CLICKS_DOWNLOAD_URL,
+        "source_file_id": MENDELEY_HUMAN_CLICKS_FILE_ID,
+        "mendeley_doi": "10.17632/3j86m7mjx2.1",
+        "n_trials": len(trials),
+        "subjects": sorted({trial.subject_id for trial in trials if trial.subject_id}),
+        "patient_sessions": sorted({trial.block_id for trial in trials if trial.block_id}),
+        "dbs_contexts": sorted(
+            {trial.prior_context for trial in trials if trial.prior_context}
+        ),
+        "session_parameters": session_parameters,
+    }
+    return trials, details
+
+
 def analyze_brody_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
     from behavtaskatlas.ibl import analyze_canonical_psychometric
 
@@ -237,10 +399,72 @@ def analyze_brody_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
     )
 
 
+def analyze_human_clicks(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    from behavtaskatlas.ibl import analyze_canonical_psychometric
+
+    return analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.human-auditory-clicks.descriptive-psychometric",
+        protocol_id=HUMAN_CLICKS_PROTOCOL_ID,
+        dataset_id=HUMAN_CLICKS_DATASET_ID,
+        report_title="Human Auditory Clicks DBS Report",
+        stimulus_label="Signed click-count difference",
+        stimulus_units="right minus left clicks at response",
+        stimulus_metric_name="click_difference",
+        caveats=[
+            (
+                "The Mendeley dataset contains Parkinson's disease patient trials "
+                "with DBS off/on labels, not a broad healthy-volunteer reference sample."
+            ),
+            (
+                "The source `cdiff` field is left-minus-right clicks at response. "
+                "The atlas canonical axis flips this to right-minus-left for "
+                "cross-clicks consistency."
+            ),
+            (
+                "Click-time kernels use click events up to the response time. The "
+                "source also includes the pre-scheduled trial duration and clicks "
+                "after response in task_variables for auditability."
+            ),
+        ],
+    )
+
+
 def analyze_brody_clicks_evidence_kernel(
     trials: list[CanonicalTrial],
     *,
     n_bins: int = 10,
+) -> dict[str, Any]:
+    return _analyze_clicks_evidence_kernel(
+        trials,
+        n_bins=n_bins,
+        analysis_id="analysis.auditory-clicks.evidence-kernel",
+        protocol_id=BRODY_CLICKS_PROTOCOL_ID,
+        dataset_id=BRODY_CLICKS_DATASET_ID,
+    )
+
+
+def analyze_human_clicks_evidence_kernel(
+    trials: list[CanonicalTrial],
+    *,
+    n_bins: int = 10,
+) -> dict[str, Any]:
+    return _analyze_clicks_evidence_kernel(
+        trials,
+        n_bins=n_bins,
+        analysis_id="analysis.human-auditory-clicks.evidence-kernel",
+        protocol_id=HUMAN_CLICKS_PROTOCOL_ID,
+        dataset_id=HUMAN_CLICKS_DATASET_ID,
+    )
+
+
+def _analyze_clicks_evidence_kernel(
+    trials: list[CanonicalTrial],
+    *,
+    n_bins: int,
+    analysis_id: str,
+    protocol_id: str,
+    dataset_id: str,
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
@@ -251,13 +475,13 @@ def analyze_brody_clicks_evidence_kernel(
     included = [example for example in examples if example is not None]
     rows = _evidence_kernel_rows(included, n_bins=n_bins)
     return {
-        "analysis_id": "analysis.auditory-clicks.evidence-kernel",
+        "analysis_id": analysis_id,
         "analysis_type": "choice_triggered_evidence_kernel",
         "generated_at": datetime.now(UTC).isoformat(),
         "behavtaskatlas_commit": current_git_commit(),
         "behavtaskatlas_git_dirty": current_git_dirty(),
-        "protocol_id": BRODY_CLICKS_PROTOCOL_ID,
-        "dataset_id": BRODY_CLICKS_DATASET_ID,
+        "protocol_id": protocol_id,
+        "dataset_id": dataset_id,
         "n_trials": len(trials),
         "n_analyzed_trials": len(included),
         "n_excluded_trials": len(trials) - len(included),
@@ -735,6 +959,166 @@ def clicks_aggregate_report_html(
     return "\n".join(html) + "\n"
 
 
+def write_clicks_session_report_html(
+    path: Path,
+    analysis_result: dict[str, Any],
+    *,
+    kernel_result: dict[str, Any] | None = None,
+    provenance: dict[str, Any] | None = None,
+    psychometric_svg_text: str | None = None,
+    evidence_kernel_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        clicks_session_report_html(
+            analysis_result,
+            kernel_result=kernel_result,
+            provenance=provenance,
+            psychometric_svg_text=psychometric_svg_text,
+            evidence_kernel_svg_text=evidence_kernel_svg_text,
+            artifact_links=artifact_links,
+        ),
+        encoding="utf-8",
+    )
+
+
+def clicks_session_report_html(
+    analysis_result: dict[str, Any],
+    *,
+    kernel_result: dict[str, Any] | None = None,
+    provenance: dict[str, Any] | None = None,
+    psychometric_svg_text: str | None = None,
+    evidence_kernel_svg_text: str | None = None,
+    artifact_links: dict[str, str] | None = None,
+) -> str:
+    kernel_result = kernel_result or {}
+    provenance = provenance or {}
+    artifact_links = artifact_links or {}
+    source = provenance.get("source", {}) if isinstance(provenance.get("source"), dict) else {}
+    title = str(analysis_result.get("report_title") or "Auditory Clicks Report")
+    prior_results = analysis_result.get("prior_results", [])
+    summary_rows = analysis_result.get("summary_rows", [])
+    kernel_rows = kernel_result.get("summary_rows", [])
+    subjects = source.get("subjects") if isinstance(source.get("subjects"), list) else []
+    patient_sessions = (
+        source.get("patient_sessions") if isinstance(source.get("patient_sessions"), list) else []
+    )
+
+    html = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>{escape(title)}</title>",
+        "<style>",
+        _aggregate_report_css(),
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        "<header>",
+        f"<p class=\"eyebrow\">{escape(str(analysis_result.get('analysis_id', 'analysis')))}</p>",
+        f"<h1>{escape(title)}</h1>",
+        f"<p class=\"lede\">{escape(_clicks_session_report_lede(analysis_result))}</p>",
+        "</header>",
+        '<section class="metrics" aria-label="Session metrics">',
+        _metric_html("Trials", analysis_result.get("n_trials")),
+        _metric_html("Response trials", analysis_result.get("n_response_trials")),
+        _metric_html("Subjects", len(subjects)),
+        _metric_html("Patient sessions", len(patient_sessions)),
+        _metric_html("Psychometric rows", len(summary_rows)),
+        _metric_html("Kernel bins", len(kernel_rows)),
+        "</section>",
+        '<section class="grid-two">',
+        "<div>",
+        "<h2>Source</h2>",
+        _definition_list(
+            [
+                ("Dataset", analysis_result.get("dataset_id")),
+                ("Protocol", analysis_result.get("protocol_id")),
+                ("Source DOI", source.get("mendeley_doi")),
+                ("Source file", source.get("source_file_name")),
+                ("Subjects", ", ".join(str(item) for item in subjects)),
+                ("DBS contexts", ", ".join(str(item) for item in source.get("dbs_contexts", []))),
+            ]
+        ),
+        "</div>",
+        "<div>",
+        "<h2>Provenance</h2>",
+        _definition_list(
+            [
+                ("Generated", analysis_result.get("generated_at")),
+                ("Commit", analysis_result.get("behavtaskatlas_commit")),
+                ("Git dirty", analysis_result.get("behavtaskatlas_git_dirty")),
+                ("File SHA256", source.get("source_file_sha256")),
+                ("Response time", analysis_result.get("response_time_origin")),
+            ]
+        ),
+        "</div>",
+        "</section>",
+        "<section>",
+        "<h2>Psychometric Summary</h2>",
+        '<div class="figure-wrap">',
+        psychometric_svg_text or _missing_svg("Psychometric plot not available"),
+        "</div>",
+        "</section>",
+        "<section>",
+        "<h2>Evidence Kernel</h2>",
+        '<div class="figure-wrap">',
+        evidence_kernel_svg_text or _missing_svg("Evidence-kernel plot not available"),
+        "</div>",
+        "</section>",
+        "<section>",
+        "<h2>Psychometric Fit</h2>",
+        _html_table(
+            _clicks_prior_report_rows(prior_results),
+            [
+                ("prior_context", "Context"),
+                ("n_trials", "Trials"),
+                ("n_response_trials", "Responses"),
+                ("n_click_difference_levels", "Levels"),
+                ("empirical_bias_click_difference", "Empirical bias"),
+                ("empirical_threshold_click_difference", "Empirical threshold"),
+                ("fit_bias_click_difference", "Fit bias"),
+                ("fit_threshold_click_difference", "Fit threshold"),
+                ("fit_status", "Fit status"),
+            ],
+        ),
+        "</section>",
+        "<section>",
+        "<h2>Kernel Rows</h2>",
+        _html_table(
+            kernel_rows,
+            [
+                ("bin_index", "Bin"),
+                ("bin_start", "Start"),
+                ("bin_end", "End"),
+                ("n_trials", "Trials"),
+                ("choice_difference", "Choice difference"),
+                ("point_biserial_r", "Point-biserial r"),
+                ("normalized_weight", "Normalized weight"),
+            ],
+        ),
+        "</section>",
+    ]
+    if artifact_links:
+        html.extend(["<section>", "<h2>Generated Files</h2>", '<ul class="artifact-list">'])
+        for label, href in artifact_links.items():
+            html.append(f'<li><a href="{escape(href, quote=True)}">{escape(label)}</a></li>')
+        html.extend(["</ul>", "</section>"])
+
+    caveats = [*analysis_result.get("caveats", []), *kernel_result.get("caveats", [])]
+    if caveats:
+        html.extend(["<section>", "<h2>Caveats</h2>", "<ul>"])
+        html.extend(f"<li>{escape(str(caveat))}</li>" for caveat in caveats)
+        html.extend(["</ul>", "</section>"])
+
+    html.extend(["</main>", "</body>", "</html>"])
+    return "\n".join(html) + "\n"
+
+
 def evidence_kernel_svg(rows: list[dict[str, Any]]) -> str:
     width = 720
     height = 420
@@ -850,6 +1234,59 @@ def brody_clicks_provenance_payload(
             ),
             "The parsed release excludes violations, frozen trials, and trials longer than 1 s.",
             "Day/session breaks are not identified in the parsed release.",
+        ],
+    }
+
+
+def human_clicks_provenance_payload(
+    *,
+    details: dict[str, Any],
+    output_files: dict[str, str],
+    trials: list[CanonicalTrial],
+) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    return {
+        "protocol_id": HUMAN_CLICKS_PROTOCOL_ID,
+        "dataset_id": HUMAN_CLICKS_DATASET_ID,
+        "source": {
+            "mendeley_dataset_url": MENDELEY_HUMAN_CLICKS_DATASET_URL,
+            "mendeley_file_download_url": MENDELEY_HUMAN_CLICKS_DOWNLOAD_URL,
+            "mendeley_file_id": MENDELEY_HUMAN_CLICKS_FILE_ID,
+            "expected_sha256": MENDELEY_HUMAN_CLICKS_SHA256,
+            **details,
+        },
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "n_trials": len(trials),
+        "source_fields": [
+            "dur",
+            "rt",
+            "cdiff",
+            "cans",
+            "choice",
+            "corr",
+            "dbs",
+            "sesstime",
+            "trialpar.ctl",
+            "trialpar.ctr",
+            "alpha",
+            "beta",
+            "gamma",
+            "session",
+            "pt",
+        ],
+        "outputs": output_files,
+        "caveats": [
+            (
+                "The dataset is a Parkinson's disease patient DBS off/on dataset, "
+                "so it should not be treated as a generic healthy-human benchmark."
+            ),
+            (
+                "The source `cdiff` field is left-minus-right clicks at response; "
+                "canonical trials use right-minus-left for consistency with the "
+                "rat clicks slice."
+            ),
         ],
     }
 
@@ -1022,6 +1459,17 @@ def _definition_list(rows: list[tuple[str, Any]]) -> str:
     return "\n".join(parts)
 
 
+def _metric_html(label: str, value: Any) -> str:
+    return "\n".join(
+        [
+            '<div class="metric">',
+            f"<span>{escape(label)}</span>",
+            f"<strong>{escape(_format_cell(value))}</strong>",
+            "</div>",
+        ]
+    )
+
+
 def _html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
     if not rows:
         return '<p class="empty">No rows available.</p>'
@@ -1036,6 +1484,52 @@ def _html_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> s
         parts.append("</tr>")
     parts.extend(["</tbody>", "</table>", "</div>"])
     return "\n".join(parts)
+
+
+def _clicks_session_report_lede(analysis_result: dict[str, Any]) -> str:
+    if analysis_result.get("protocol_id") == HUMAN_CLICKS_PROTOCOL_ID:
+        return (
+            "Human Poisson-clicks slice generated from the Mendeley DBS off/on "
+            "MATLAB file, with psychometrics split by DBS context and a "
+            "response-window click-time evidence kernel."
+        )
+    return (
+        "Auditory-clicks slice generated from canonical trial artifacts, with "
+        "descriptive psychometrics and a click-time evidence kernel."
+    )
+
+
+def _clicks_prior_report_rows(prior_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for prior_result in prior_results:
+        fit = prior_result.get("fit")
+        if not isinstance(fit, dict):
+            fit = {}
+        rows.append(
+            {
+                "prior_context": prior_result.get("prior_context") or "all trials",
+                "n_trials": prior_result.get("n_trials"),
+                "n_response_trials": prior_result.get("n_response_trials"),
+                "n_click_difference_levels": prior_result.get("n_click_difference_levels"),
+                "empirical_bias_click_difference": prior_result.get(
+                    "empirical_bias_click_difference"
+                ),
+                "empirical_threshold_click_difference": prior_result.get(
+                    "empirical_threshold_click_difference"
+                ),
+                "fit_bias_click_difference": fit.get("bias_click_difference"),
+                "fit_threshold_click_difference": fit.get("threshold_click_difference"),
+                "fit_status": fit.get("status"),
+            }
+        )
+    return rows
+
+
+def _missing_svg(message: str) -> str:
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
+        f'<text x="20" y="60">{escape(message)}</text></svg>'
+    )
 
 
 def _format_integer(value: Any) -> str:
@@ -1068,6 +1562,99 @@ def _read_json_dict(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise ValueError(f"Expected JSON object in {path}")
     return loaded
+
+
+def _human_clicks_rows(data: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    required = [
+        "dur",
+        "rt",
+        "cdiff",
+        "cans",
+        "choice",
+        "corr",
+        "dbs",
+        "sesstime",
+        "trialpar",
+        "session",
+        "pt",
+    ]
+    missing = sorted(field for field in required if field not in data)
+    if missing:
+        joined = ", ".join(missing)
+        raise ValueError(f"Missing required human clicks MATLAB fields: {joined}")
+
+    n_trials = len(data["cdiff"])
+    for field in required:
+        actual = len(data[field])
+        if actual != n_trials:
+            raise ValueError(f"Field {field!r} has length {actual}, expected {n_trials}")
+
+    session_parameters = _human_clicks_session_parameters(data, n_trials=n_trials)
+    parameters_by_session = {
+        (row["patient"], row["source_session"]): row for row in session_parameters
+    }
+    rows = []
+    for index in range(n_trials):
+        patient = _required_int(_index_value(data["pt"], index), field="pt")
+        source_session = _required_int(_index_value(data["session"], index), field="session")
+        trialpar = _index_value(data["trialpar"], index)
+        if not isinstance(trialpar, dict):
+            raise ValueError(f"Expected trialpar[{index}] to load as a mapping")
+        row = {
+            "dur": _index_value(data["dur"], index),
+            "rt": _index_value(data["rt"], index),
+            "cdiff": _index_value(data["cdiff"], index),
+            "cans": _index_value(data["cans"], index),
+            "choice": _index_value(data["choice"], index),
+            "corr": _index_value(data["corr"], index),
+            "dbs": _index_value(data["dbs"], index),
+            "sesstime": _index_value(data["sesstime"], index),
+            "session": source_session,
+            "pt": patient,
+            "left_click_times": _float_list(trialpar.get("ctl", [])),
+            "right_click_times": _float_list(trialpar.get("ctr", [])),
+        }
+        parameters = parameters_by_session.get((patient, source_session), {})
+        for field in ["alpha", "beta", "gamma"]:
+            if field in parameters:
+                row[field] = parameters[field]
+        rows.append(row)
+    return rows, session_parameters
+
+
+def _human_clicks_session_parameters(
+    data: dict[str, Any],
+    *,
+    n_trials: int,
+) -> list[dict[str, Any]]:
+    combos: list[tuple[int, int]] = []
+    for index in range(n_trials):
+        combo = (
+            _required_int(_index_value(data["pt"], index), field="pt"),
+            _required_int(_index_value(data["session"], index), field="session"),
+        )
+        if combo not in combos:
+            combos.append(combo)
+
+    rows = []
+    for index, (patient, source_session) in enumerate(combos):
+        row: dict[str, Any] = {
+            "patient": patient,
+            "source_session": source_session,
+            "session_id": f"patient-{patient:02d}-session-{source_session:02d}",
+        }
+        for field in ["alpha", "beta", "gamma"]:
+            values = data.get(field)
+            if values is not None and len(values) == len(combos):
+                row[field] = _optional_float(_index_value(values, index))
+        rows.append(row)
+    return rows
+
+
+def _human_clicks_session_id(row: dict[str, Any], *, base_session_id: str) -> str:
+    patient = _required_int(row["pt"], field="pt")
+    source_session = _required_int(row["session"], field="session")
+    return f"{base_session_id}-patient-{patient:02d}-session-{source_session:02d}"
 
 
 def _batch_rat_result_template(
@@ -1371,6 +1958,28 @@ def _evidence_side(click_difference: int) -> str:
     return "none"
 
 
+def _human_left_is_one_choice_label(value: Any) -> str:
+    numeric = _as_float(value)
+    if numeric == 1.0:
+        return "left"
+    if numeric == 0.0:
+        return "right"
+    return "unknown"
+
+
+def _dbs_label(value: Any) -> str:
+    numeric = _as_float(value)
+    if numeric == 1.0:
+        return "on"
+    if numeric == 0.0:
+        return "off"
+    return "unknown"
+
+
+def _dbs_context(value: Any) -> str:
+    return f"dbs={_dbs_label(value)}"
+
+
 def _optional_gamma(value: Any) -> str | None:
     numeric = _optional_float(value)
     if numeric is None:
@@ -1402,10 +2011,22 @@ def _optional_float(value: Any) -> float | None:
     return numeric
 
 
+def _required_float(value: Any, *, field: str) -> float:
+    numeric = _optional_float(value)
+    if numeric is None:
+        raise ValueError(f"Field {field} must be numeric, got {value!r}")
+    return numeric
+
+
 def _optional_int(value: Any) -> int | None:
     numeric = _optional_float(value)
     if numeric is None:
         return None
+    return int(numeric)
+
+
+def _required_int(value: Any, *, field: str) -> int:
+    numeric = _required_float(value, field=field)
     return int(numeric)
 
 

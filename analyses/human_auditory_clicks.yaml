@@ -1,0 +1,39 @@
+analysis_id: analysis.human-auditory-clicks.baseline-plan
+protocol_id: protocol.human-auditory-clicks-button
+dataset_id: dataset.london-human-poisson-clicks-dbs-mendeley
+status: real-file-static-report-run
+inputs:
+  - canonical trial table generated from local Mendeley `poisson_clicks_rawdata.mat`
+verified_outputs:
+  - 5085 canonical trial rows from the Mendeley MATLAB `data` struct
+  - 303 summary rows grouped by DBS context and click-count difference
+  - two psychometric prior contexts, `dbs=off` and `dbs=on`
+  - analysis result JSON with empirical and fitted psychometric metrics
+  - dependency-free SVG psychometric plot
+  - 10-bin response-window click-time evidence-kernel summary CSV
+  - evidence-kernel result JSON with 5085 analyzed trials and 0 exclusions
+  - dependency-free SVG evidence-kernel plot
+  - static HTML report generated from ignored local artifacts
+grouping_variables:
+  - click count difference at response
+  - DBS state
+  - patient
+  - patient session
+implemented_outputs:
+  - trial count by click-count difference and DBS context
+  - proportion rightward choice by click-count difference and DBS context
+  - accuracy by click-count difference and DBS context
+  - response-time summaries by click-count difference and DBS context
+  - choice-triggered evidence kernel by normalized response-window click time
+deferred_outputs:
+  - patient-level hierarchical psychometric model
+  - DBS OFF versus ON contrast model
+  - accumulation model fit using exact click times
+  - comparison against the Brunton 2013 healthy-human task implementation
+provenance_requirements:
+  - source Mendeley DOI
+  - source `.mat` filename and hash
+  - Mendeley public file id
+  - adapter version or commit hash
+  - date generated
+  - sign-convention caveat for `cdiff`

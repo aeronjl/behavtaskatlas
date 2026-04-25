@@ -11,16 +11,26 @@ from behavtaskatlas.clicks import (
     CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     DEFAULT_CLICKS_DERIVED_DIR,
     DEFAULT_CLICKS_SESSION_ID,
+    DEFAULT_HUMAN_CLICKS_DERIVED_DIR,
+    DEFAULT_HUMAN_CLICKS_RAW_MAT,
+    DEFAULT_HUMAN_CLICKS_SESSION_ID,
+    HUMAN_CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     aggregate_brody_clicks_batch,
     analyze_brody_clicks,
     analyze_brody_clicks_evidence_kernel,
+    analyze_human_clicks,
+    analyze_human_clicks_evidence_kernel,
     brody_clicks_provenance_payload,
+    download_human_clicks_mendeley_mat,
+    human_clicks_provenance_payload,
     load_brody_clicks_mat,
+    load_human_clicks_mendeley_mat,
     write_aggregate_kernel_summary_csv,
     write_aggregate_kernel_svg,
     write_aggregate_psychometric_bias_csv,
     write_clicks_aggregate_report_html,
     write_clicks_batch_summary_csv,
+    write_clicks_session_report_html,
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
 )
@@ -388,6 +398,108 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    human_clicks_download_parser = subparsers.add_parser(
+        "human-clicks-download",
+        help="Download the Mendeley human Poisson clicks DBS MATLAB file",
+    )
+    human_clicks_download_parser.add_argument(
+        "--out-file",
+        default=str(DEFAULT_HUMAN_CLICKS_RAW_MAT),
+        help="Local output path under ignored raw-data storage",
+    )
+
+    human_clicks_parser = subparsers.add_parser(
+        "human-clicks-harmonize",
+        help="Harmonize the Mendeley human Poisson clicks DBS MATLAB file",
+    )
+    human_clicks_parser.add_argument(
+        "--mat-file",
+        default=str(DEFAULT_HUMAN_CLICKS_RAW_MAT),
+        help="Path to the local Mendeley `.mat` file",
+    )
+    human_clicks_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_HUMAN_CLICKS_DERIVED_DIR),
+        help="Directory for generated human auditory-clicks artifacts",
+    )
+    human_clicks_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_CLICKS_SESSION_ID,
+        help="Base session id for generated patient-session rows",
+    )
+    human_clicks_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    human_clicks_analyze_parser = subparsers.add_parser(
+        "human-clicks-analyze",
+        help="Analyze harmonized Mendeley human Poisson clicks artifacts",
+    )
+    human_clicks_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_CLICKS_SESSION_ID,
+        help="Session directory name for the processed dataset",
+    )
+    human_clicks_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_CLICKS_DERIVED_DIR),
+        help="Directory containing generated human auditory-clicks artifacts",
+    )
+    human_clicks_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+    human_clicks_analyze_parser.add_argument(
+        "--kernel-bins",
+        type=int,
+        default=10,
+        help="Number of normalized time bins for the evidence-kernel analysis",
+    )
+
+    human_clicks_report_parser = subparsers.add_parser(
+        "human-clicks-report",
+        help="Render a static HTML report from analyzed human auditory-clicks artifacts",
+    )
+    human_clicks_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_CLICKS_SESSION_ID,
+        help="Analyzed session directory name",
+    )
+    human_clicks_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_CLICKS_DERIVED_DIR),
+        help="Directory containing generated human auditory-clicks artifacts",
+    )
+    human_clicks_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    human_clicks_report_parser.add_argument(
+        "--kernel-result",
+        default=None,
+        help="Optional explicit path to evidence_kernel_result.json",
+    )
+    human_clicks_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    human_clicks_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    human_clicks_report_parser.add_argument(
+        "--evidence-kernel-svg",
+        default=None,
+        help="Optional explicit path to evidence_kernel.svg",
+    )
+    human_clicks_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     rdm_download_parser = subparsers.add_parser(
         "rdm-download",
         help="Download the processed Roitman-Shadlen random-dot motion CSV",
@@ -727,6 +839,35 @@ def main(argv: list[str] | None = None) -> int:
             aggregate_result=Path(args.aggregate_result) if args.aggregate_result else None,
             aggregate_kernel_svg=Path(args.aggregate_kernel_svg)
             if args.aggregate_kernel_svg
+            else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "human-clicks-download":
+        return _human_clicks_download(out_file=Path(args.out_file))
+    if args.command == "human-clicks-harmonize":
+        return _human_clicks_harmonize(
+            mat_file=Path(args.mat_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+        )
+    if args.command == "human-clicks-analyze":
+        return _human_clicks_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+            kernel_bins=args.kernel_bins,
+        )
+    if args.command == "human-clicks-report":
+        return _human_clicks_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            kernel_result=Path(args.kernel_result) if args.kernel_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            evidence_kernel_svg=Path(args.evidence_kernel_svg)
+            if args.evidence_kernel_svg
             else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
@@ -1251,6 +1392,194 @@ def _clicks_report(
             "Aggregate kernel SVG not found, wrote report without inline plot: "
             f"{kernel_svg_path}"
         )
+    return 0
+
+
+def _human_clicks_download(*, out_file: Path) -> int:
+    try:
+        details = download_human_clicks_mendeley_mat(out_file)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded {details['n_bytes']} bytes to {out_file}")
+    print(f"SHA256 {details['sha256']}")
+    return 0
+
+
+def _human_clicks_harmonize(
+    *,
+    mat_file: Path,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+) -> int:
+    if not mat_file.exists():
+        print(
+            f"Human clicks MATLAB file not found: {mat_file}. "
+            "Run `uv run --extra clicks behavtaskatlas human-clicks-download` first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_human_clicks_mendeley_mat(
+            mat_file,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        human_clicks_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _human_clicks_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+    kernel_bins: int,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra clicks behavtaskatlas human-clicks-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    try:
+        result = analyze_human_clicks(trials)
+        kernel_result = analyze_human_clicks_evidence_kernel(trials, n_bins=kernel_bins)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+    kernel_summary_path = session_dir / "evidence_kernel_summary.csv"
+    kernel_result_path = session_dir / "evidence_kernel_result.json"
+    kernel_plot_path = session_dir / "evidence_kernel.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        plot_path,
+        result["summary_rows"],
+        x_axis_label=HUMAN_CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
+    )
+    write_evidence_kernel_summary_csv(kernel_summary_path, kernel_result["summary_rows"])
+    write_analysis_json(kernel_result_path, kernel_result)
+    write_evidence_kernel_svg(kernel_plot_path, kernel_result["summary_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    print(f"Wrote evidence-kernel summary to {kernel_summary_path}")
+    print(f"Wrote evidence-kernel result to {kernel_result_path}")
+    print(f"Wrote evidence-kernel plot to {kernel_plot_path}")
+    return 0
+
+
+def _human_clicks_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    kernel_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    evidence_kernel_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    kernel_path = kernel_result or session_dir / "evidence_kernel_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or session_dir / "psychometric.svg"
+    evidence_kernel_svg_path = evidence_kernel_svg or session_dir / "evidence_kernel.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Human clicks analysis result not found: {analysis_path}. "
+            "Run `uv run --extra clicks behavtaskatlas human-clicks-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        loaded_kernel = _read_json_object_file(kernel_path) if kernel_path.exists() else None
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = (
+        psychometric_svg_path.read_text(encoding="utf-8")
+        if psychometric_svg_path.exists()
+        else None
+    )
+    evidence_kernel_svg_text = (
+        evidence_kernel_svg_path.read_text(encoding="utf-8")
+        if evidence_kernel_svg_path.exists()
+        else None
+    )
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("evidence-kernel result JSON", kernel_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", session_dir / "psychometric_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("evidence-kernel summary CSV", session_dir / "evidence_kernel_summary.csv"),
+            ("evidence-kernel SVG", evidence_kernel_svg_path),
+            ("canonical trials CSV", session_dir / "trials.csv"),
+        ]
+        if path.exists()
+    }
+    write_clicks_session_report_html(
+        report_path,
+        loaded,
+        kernel_result=loaded_kernel,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        evidence_kernel_svg_text=evidence_kernel_svg_text,
+        artifact_links=artifact_links,
+    )
+    print(f"Wrote human clicks report to {report_path}")
     return 0
 
 

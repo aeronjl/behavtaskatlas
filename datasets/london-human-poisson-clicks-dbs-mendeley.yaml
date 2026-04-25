@@ -1,0 +1,67 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.london-human-poisson-clicks-dbs-mendeley
+name: London human Poisson clicks DBS OFF/ON dataset from Mendeley Data
+description: >
+  MATLAB dataset contributed by Dennis London to Mendeley Data for a human
+  Poisson clicks perceptual decision task with deep brain stimulation OFF/ON
+  labels. The file contains 5,085 patient trials, click timing vectors,
+  response times, choices, correctness, DBS state, patient ids, session ids,
+  and session-level alpha, beta, and gamma task parameters.
+protocol_ids:
+  - protocol.human-auditory-clicks-button
+species:
+  - human
+curation_status: data-linked
+source_url: https://data.mendeley.com/datasets/3j86m7mjx2/1
+access_notes: >
+  The MVP downloads the single public `poisson_clicks_rawdata.mat` file from
+  Mendeley Data into ignored local raw-data storage. The landing page and
+  public-files endpoint expose the file id, SHA-256, license, DOI, and task
+  field description without authentication.
+license: CC-BY-4.0
+data_formats:
+  - MATLAB .mat
+  - derived canonical trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: Patient identifier formatted from the source `pt` field.
+  session_id: Patient-session identifier derived from the source `pt` and `session` fields.
+  trial_index: Global row index within `poisson_clicks_rawdata.mat`.
+  stimulus_value: Source `cdiff` is left-minus-right clicks at response; atlas stimulus value is right-minus-left clicks at response.
+  stimulus_side: Positive right-minus-left click difference mapped to right, negative to left, zero to none.
+  evidence_strength: Absolute right-minus-left click difference at response.
+  choice: Source `choice` mapped as 1 left and 0 right.
+  correct: Source `corr` mapped as 1 correct and 0 incorrect.
+  response_time: Source `rt` in seconds relative to trial start.
+  feedback: No reward-feedback field is available; correctness is preserved separately.
+  prior_context: Source `dbs` mapped to `dbs=off` or `dbs=on`.
+  task_variables: >
+    Patient id, source session id, DBS state, source choice/correct-answer
+    codes, response-window left/right click counts and times, full scheduled
+    left/right click-time vectors, scheduled duration, response-window
+    duration, source cdiff, alpha, beta, and gamma.
+references:
+  - id: ref.london-2018-poisson-clicks-dbs
+    citation: >
+      London D. Poisson Clicks Task, DBS OFF/ON. Mendeley Data, V1, 2018.
+    url: https://data.mendeley.com/datasets/3j86m7mjx2/1
+    doi: 10.17632/3j86m7mjx2.1
+  - id: ref.brunton-2013-clicks
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013.
+    url: https://www.science.org/doi/10.1126/science.1233912
+    doi: 10.1126/science.1233912
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Dataset metadata drafted from the Mendeley Data landing page, public
+    snapshot API, and downloaded MATLAB file while building the human auditory
+    clicks DBS vertical slice.
+caveats:
+  - The dataset is a Parkinson's disease DBS OFF/ON patient dataset, not a broad healthy-volunteer benchmark.
+  - The source `cdiff` sign convention is left-minus-right; the atlas flips it to right-minus-left.
+  - Trial records include scheduled click trains beyond the response time, so the evidence-kernel slice uses only clicks up to `rt`.

@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 02:09:46 BST - Human clicks source access is solvable through the page API
+
+The OSF node originally considered for human clicks exposes no API-visible files, but the Mendeley Data page for `Poisson Clicks Task, DBS OFF/ON` does expose its file through the page's own public API: `poisson_clicks_rawdata.mat`, 1.9 MB, CC-BY-4.0, DOI `10.17632/3j86m7mjx2.1`. That lets the human auditory-clicks protocol become a real vertical slice instead of a source-access blocker.
+
+The implementation lesson is that source-access adapters may need to model repository-specific discovery paths, not just published public APIs. The resulting slice maps source `cdiff` from left-minus-right into the atlas right-minus-left axis, uses only pre-response click times for the evidence kernel, and preserves full scheduled click trains in `task_variables` for auditability.
+
 ## 2026-04-25 01:50:59 BST - Human RDM turns cross-species comparison into a first-class slice
 
 The human random-dot motion button reaction-time protocol now has a CoSMo2017-backed Palmer-Huk-Shadlen vertical slice. The same RDM analysis surface can compare macaque saccade RDM and human button-response RDM while preserving distinct provenance, response modality, and signed-coherence conventions.
