@@ -1,0 +1,56 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.macaque-rdm-confidence-wager
+title: Macaque RDM Confidence Wagering
+description: >
+  Kiani-Shadlen macaque random-dot motion confidence slice with source-data
+  summaries for motion-strength accuracy and sure-target choice from the
+  Khalvati-Kiani-Rao Nature Communications source-data ZIP.
+curation_status: analysis-verified
+display_order: 55
+family_id: family.random-dot-motion
+protocol_id: protocol.macaque-rdm-confidence-wager
+dataset_id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+report_path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/report.html
+analysis_result_path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/analysis_result.json
+primary_artifact_path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/confidence.svg
+primary_artifact_label: Open confidence SVG
+artifact_links:
+  - label: Report HTML
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/report.html
+  - label: Analysis result JSON
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/analysis_result.json
+  - label: Confidence SVG
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/confidence.svg
+  - label: Accuracy SVG
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/accuracy.svg
+  - label: Canonical source-row CSV
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/trials.csv
+  - label: Slice notes
+    path: vertical_slices/macaque_rdm_confidence/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/macaque_rdm_confidence.yaml
+    path_type: repository
+comparison:
+  species: non-human-primate
+  modality: visual
+  stimulus_metric: absolute motion coherence
+  evidence_type: stochastic-motion
+  choice_type: wagering
+  response_modality: saccade
+  analysis_outputs: sure-target probability and accuracy summaries
+  data_scope: Nature Communications figure source-data rows across two macaques
+  canonical_axis: absolute motion strength because signed direction is unavailable
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    First confidence/wagering slice; analysis is explicit that the source ZIP
+    contains figure source-data rows rather than a complete raw trial export.
+notes: >
+  This slice preserves confidence-specific variables in `task_variables` and
+  treats the canonical table as a source-row table, not a deduplicated raw trial
+  table.

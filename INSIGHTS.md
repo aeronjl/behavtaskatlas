@@ -2,6 +2,21 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 13:31:32 BST - Confidence data needs source-row honesty
+
+The macaque RDM confidence/wagering protocol can now be linked to public data
+through the Khalvati-Kiani-Rao Nature Communications source-data ZIP. It is
+useful enough for an MVP slice because the figure CSVs expose row-level motion
+strength, motion duration, correctness, and sure-target choice across two
+monkeys.
+
+The technical caveat is the point: these are figure source-data rows, not the
+full raw Kiani-Shadlen behavioral export. The adapter therefore treats the
+canonical table as source rows, maps coherence onto absolute motion strength,
+keeps direction choice unknown, and preserves the confidence/wager variables in
+`task_variables`. This is better than overclaiming signed psychometrics from a
+source that does not carry sign, choice, session id, or response-time fields.
+
 ## 2026-04-25 02:56:06 BST - Human visual contrast needs explicit low/high-frequency conventions
 
 The Walsh et al. OSF behavioural stats matrix makes the human visual contrast protocol sliceable without downloading the large raw EEG archives: `1. Behavioural Analysis.mat` contains 66,200 processed behavioural rows across 12 observers, with cue context, pulse type, exposure bin, RT, correctness, difficulty, reward, and lower-frequency response coding.

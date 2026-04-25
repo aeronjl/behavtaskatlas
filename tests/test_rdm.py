@@ -2,10 +2,16 @@ import pytest
 
 from behavtaskatlas.rdm import (
     HUMAN_RDM_PROTOCOL_ID,
+    MACAQUE_RDM_CONFIDENCE_DATASET_ID,
+    MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID,
     analyze_human_rdm,
+    analyze_macaque_rdm_confidence,
     analyze_roitman_rdm,
     harmonize_human_rdm_phs_trial,
+    harmonize_macaque_rdm_confidence_source_row,
     harmonize_roitman_rdm_trial,
+    macaque_rdm_confidence_choice_svg,
+    macaque_rdm_confidence_report_html,
     rdm_chronometric_svg,
     rdm_report_html,
     summarize_rdm_chronometric,
@@ -84,6 +90,66 @@ def test_harmonize_human_rdm_phs_trial_zero_coherence_matches_source_convention(
     assert right_trial.stimulus_side == "none"
     assert right_trial.correct is True
     assert left_trial.correct is False
+
+
+def test_harmonize_macaque_rdm_confidence_accuracy_source_row() -> None:
+    trial = harmonize_macaque_rdm_confidence_source_row(
+        {
+            "Motion Strength (%)": "6.4",
+            "Motion duration (msc)": "229",
+            "Correct": "1",
+            "_source_measure": "accuracy_no_sure_target",
+            "_figure_panels": "Fig. 1b black dots and Fig. 4a",
+            "_monkey": "M1",
+            "_strength_file": "strength.csv",
+            "_duration_file": "duration.csv",
+            "_source_row_index": 2,
+            "_outcome_field": "Correct",
+            "_sure_target_available": False,
+            "_sure_target_chosen": None,
+        },
+        session_id="session",
+        trial_index=0,
+    )
+
+    assert trial.protocol_id == MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID
+    assert trial.dataset_id == MACAQUE_RDM_CONFIDENCE_DATASET_ID
+    assert trial.subject_id == "kiani-shadlen-m1"
+    assert trial.stimulus_value == pytest.approx(6.4)
+    assert trial.stimulus_side == "unknown"
+    assert trial.choice == "unknown"
+    assert trial.correct is True
+    assert trial.response_time is None
+    assert trial.task_variables["motion_duration_ms"] == pytest.approx(229)
+    assert trial.task_variables["sure_target_available"] is False
+
+
+def test_harmonize_macaque_rdm_confidence_sure_target_source_row() -> None:
+    trial = harmonize_macaque_rdm_confidence_source_row(
+        {
+            "Motion strength (%)": "0.0",
+            "Motion duration (msc)": "108",
+            "Sure target": "1",
+            "_source_measure": "sure_target_choice",
+            "_figure_panels": "Fig. 1c and Fig. 4c",
+            "_monkey": "M2",
+            "_strength_file": "strength.csv",
+            "_duration_file": "duration.csv",
+            "_source_row_index": 3,
+            "_outcome_field": "Sure target",
+            "_sure_target_available": True,
+            "_sure_target_chosen": None,
+        },
+        session_id="session",
+        trial_index=1,
+    )
+
+    assert trial.subject_id == "kiani-shadlen-m2"
+    assert trial.stimulus_value == pytest.approx(0.0)
+    assert trial.stimulus_side == "none"
+    assert trial.correct is None
+    assert trial.feedback == "reward"
+    assert trial.task_variables["sure_target_chosen"] is True
 
 
 def test_harmonize_roitman_rdm_trial_uses_errors_to_infer_stimulus() -> None:
@@ -169,6 +235,94 @@ def test_analyze_human_rdm_adds_chronometric_rows() -> None:
     assert chrono[0]["p_correct"] == pytest.approx(1.0)
 
 
+def test_analyze_macaque_rdm_confidence_summarizes_accuracy_and_sure_choice() -> None:
+    trials = [
+        harmonize_macaque_rdm_confidence_source_row(
+            {
+                "Motion Strength (%)": "3.2",
+                "Motion duration (msc)": "200",
+                "Correct": "1",
+                "_source_measure": "accuracy_no_sure_target",
+                "_figure_panels": "Fig. 1b black dots and Fig. 4a",
+                "_monkey": "M1",
+                "_strength_file": "strength.csv",
+                "_duration_file": "duration.csv",
+                "_source_row_index": 0,
+                "_outcome_field": "Correct",
+                "_sure_target_available": False,
+                "_sure_target_chosen": None,
+            },
+            session_id="session",
+            trial_index=0,
+        ),
+        harmonize_macaque_rdm_confidence_source_row(
+            {
+                "Motion Strength (%)": "3.2",
+                "Motion duration (msc)": "300",
+                "Correct": "0",
+                "_source_measure": "accuracy_no_sure_target",
+                "_figure_panels": "Fig. 1b black dots and Fig. 4a",
+                "_monkey": "M1",
+                "_strength_file": "strength.csv",
+                "_duration_file": "duration.csv",
+                "_source_row_index": 1,
+                "_outcome_field": "Correct",
+                "_sure_target_available": False,
+                "_sure_target_chosen": None,
+            },
+            session_id="session",
+            trial_index=1,
+        ),
+        harmonize_macaque_rdm_confidence_source_row(
+            {
+                "Motion strength (%)": "3.2",
+                "Motion duration (msc)": "250",
+                "Sure target": "1",
+                "_source_measure": "sure_target_choice",
+                "_figure_panels": "Fig. 1c and Fig. 4c",
+                "_monkey": "M1",
+                "_strength_file": "strength.csv",
+                "_duration_file": "duration.csv",
+                "_source_row_index": 2,
+                "_outcome_field": "Sure target",
+                "_sure_target_available": True,
+                "_sure_target_chosen": None,
+            },
+            session_id="session",
+            trial_index=2,
+        ),
+        harmonize_macaque_rdm_confidence_source_row(
+            {
+                "Motion strength (%)": "3.2",
+                "Motion duration (msc)": "350",
+                "Sure target": "0",
+                "_source_measure": "sure_target_choice",
+                "_figure_panels": "Fig. 1c and Fig. 4c",
+                "_monkey": "M1",
+                "_strength_file": "strength.csv",
+                "_duration_file": "duration.csv",
+                "_source_row_index": 3,
+                "_outcome_field": "Sure target",
+                "_sure_target_available": True,
+                "_sure_target_chosen": None,
+            },
+            session_id="session",
+            trial_index=3,
+        ),
+    ]
+
+    result = analyze_macaque_rdm_confidence(trials)
+
+    assert result["analysis_id"] == "analysis.macaque-rdm-confidence.source-data-summary"
+    assert result["protocol_id"] == MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID
+    assert result["n_accuracy_rows"] == 2
+    assert result["n_sure_target_choice_rows"] == 2
+    assert result["accuracy_rows"][0]["p_correct"] == pytest.approx(0.5)
+    assert result["accuracy_rows"][0]["median_motion_duration_ms"] == pytest.approx(250)
+    assert result["confidence_rows"][0]["p_sure_target"] == pytest.approx(0.5)
+    assert result["confidence_rows"][0]["median_motion_duration_ms"] == pytest.approx(300)
+
+
 def test_rdm_chronometric_svg_contains_axis_label() -> None:
     svg = rdm_chronometric_svg(
         [
@@ -186,6 +340,25 @@ def test_rdm_chronometric_svg_contains_axis_label() -> None:
 
     assert "<svg" in svg
     assert "Motion coherence" in svg
+
+
+def test_macaque_rdm_confidence_svg_contains_axis_label() -> None:
+    svg = macaque_rdm_confidence_choice_svg(
+        [
+            {
+                "monkey": "M1",
+                "motion_strength_percent": 3.2,
+                "n_source_rows": 2,
+                "n_sure_target": 1,
+                "p_sure_target": 0.5,
+                "median_motion_duration_ms": 300,
+                "mean_motion_duration_ms": 300,
+            }
+        ]
+    )
+
+    assert "<svg" in svg
+    assert "P(sure target)" in svg
 
 
 def test_rdm_report_html_contains_source_and_artifact_links() -> None:
@@ -265,3 +438,56 @@ def test_rdm_report_html_supports_human_rdm_source() -> None:
     assert "Human Random-Dot Motion Report" in html
     assert "Palmer-Huk-Shadlen human random-dot motion" in html
     assert "phs-ah" in html
+
+
+def test_macaque_rdm_confidence_report_html_contains_source_row_caveat() -> None:
+    html = macaque_rdm_confidence_report_html(
+        {
+            "analysis_id": "analysis.macaque-rdm-confidence.source-data-summary",
+            "report_title": "Macaque RDM Confidence Wagering Report",
+            "protocol_id": MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID,
+            "dataset_id": MACAQUE_RDM_CONFIDENCE_DATASET_ID,
+            "generated_at": "2026-04-25T12:00:00+00:00",
+            "behavtaskatlas_commit": "abc123",
+            "behavtaskatlas_git_dirty": False,
+            "n_source_rows": 4,
+            "n_accuracy_rows": 2,
+            "n_sure_target_choice_rows": 2,
+            "subjects": ["kiani-shadlen-m1"],
+            "motion_strength_levels": [3.2],
+            "confidence_rows": [
+                {
+                    "monkey": "M1",
+                    "motion_strength_percent": 3.2,
+                    "n_source_rows": 2,
+                    "n_sure_target": 1,
+                    "p_sure_target": 0.5,
+                }
+            ],
+            "accuracy_rows": [
+                {
+                    "source_measure": "accuracy_no_sure_target",
+                    "monkey": "M1",
+                    "motion_strength_percent": 3.2,
+                    "n_source_rows": 2,
+                    "n_correct": 1,
+                    "p_correct": 0.5,
+                }
+            ],
+            "caveats": ["source-data rows are not raw trials"],
+        },
+        provenance={
+            "source": {
+                "article_url": "https://www.nature.com/articles/s41467-021-25419-4",
+                "source_data_url": "https://example.org/source.zip",
+                "source_tables": [{}, {}],
+            }
+        },
+        accuracy_svg_text="<svg><text>Accuracy</text></svg>",
+        confidence_svg_text="<svg><text>Confidence</text></svg>",
+        artifact_links={"analysis result JSON": "analysis_result.json"},
+    )
+
+    assert "Macaque RDM Confidence Wagering Report" in html
+    assert "source-data rows are not raw trials" in html
+    assert "analysis_result.json" in html

@@ -70,6 +70,9 @@ from behavtaskatlas.rdm import (
     DEFAULT_HUMAN_RDM_DERIVED_DIR,
     DEFAULT_HUMAN_RDM_RAW_DIR,
     DEFAULT_HUMAN_RDM_SESSION_ID,
+    DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR,
+    DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_ZIP,
+    DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID,
     DEFAULT_RDM_DERIVED_DIR,
     DEFAULT_RDM_RAW_CSV,
     DEFAULT_RDM_SESSION_ID,
@@ -77,13 +80,22 @@ from behavtaskatlas.rdm import (
     HUMAN_RDM_SUBJECT_IDS,
     RDM_PSYCHOMETRIC_X_AXIS_LABEL,
     analyze_human_rdm,
+    analyze_macaque_rdm_confidence,
     analyze_roitman_rdm,
     download_human_rdm_phs_files,
+    download_macaque_rdm_confidence_source_data,
     download_roitman_rdm_csv,
     human_rdm_provenance_payload,
     load_human_rdm_phs_mats,
+    load_macaque_rdm_confidence_source_data,
     load_roitman_rdm_csv,
+    macaque_rdm_confidence_provenance_payload,
     rdm_provenance_payload,
+    write_macaque_rdm_confidence_accuracy_csv,
+    write_macaque_rdm_confidence_accuracy_svg,
+    write_macaque_rdm_confidence_choice_csv,
+    write_macaque_rdm_confidence_choice_svg,
+    write_macaque_rdm_confidence_report_html,
     write_rdm_chronometric_csv,
     write_rdm_chronometric_svg,
     write_rdm_report_html,
@@ -794,6 +806,102 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    macaque_confidence_download_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-download",
+        help="Download Khalvati-Kiani-Rao macaque RDM confidence source-data ZIP",
+    )
+    macaque_confidence_download_parser.add_argument(
+        "--out-file",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_ZIP),
+        help="Local output path under ignored raw-data storage",
+    )
+
+    macaque_confidence_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-harmonize",
+        help="Harmonize macaque RDM confidence source-data rows",
+    )
+    macaque_confidence_parser.add_argument(
+        "--source-zip",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_ZIP),
+        help="Path to the downloaded Nature Communications source-data ZIP",
+    )
+    macaque_confidence_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR),
+        help="Directory for generated macaque confidence artifacts",
+    )
+    macaque_confidence_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID,
+        help="Session directory name for the processed source-data rows",
+    )
+    macaque_confidence_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional source-row limit",
+    )
+
+    macaque_confidence_analyze_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-analyze",
+        help="Analyze harmonized macaque RDM confidence source-data artifacts",
+    )
+    macaque_confidence_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    macaque_confidence_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR),
+        help="Directory containing generated macaque confidence artifacts",
+    )
+    macaque_confidence_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    macaque_confidence_report_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-report",
+        help="Render a static HTML report from macaque RDM confidence artifacts",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID,
+        help="Analyzed session directory name",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR),
+        help="Directory containing generated macaque confidence artifacts",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--accuracy-svg",
+        default=None,
+        help="Optional explicit path to accuracy.svg",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--confidence-svg",
+        default=None,
+        help="Optional explicit path to confidence.svg",
+    )
+    macaque_confidence_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     site_index_parser = subparsers.add_parser(
         "site-index",
         help="Render a static index linking generated vertical-slice reports",
@@ -1045,6 +1153,31 @@ def main(argv: list[str] | None = None) -> int:
             provenance=Path(args.provenance) if args.provenance else None,
             psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
             chronometric_svg=Path(args.chronometric_svg) if args.chronometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "macaque-rdm-confidence-download":
+        return _macaque_rdm_confidence_download(out_file=Path(args.out_file))
+    if args.command == "macaque-rdm-confidence-harmonize":
+        return _macaque_rdm_confidence_harmonize(
+            source_zip=Path(args.source_zip),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+        )
+    if args.command == "macaque-rdm-confidence-analyze":
+        return _macaque_rdm_confidence_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "macaque-rdm-confidence-report":
+        return _macaque_rdm_confidence_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            accuracy_svg=Path(args.accuracy_svg) if args.accuracy_svg else None,
+            confidence_svg=Path(args.confidence_svg) if args.confidence_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
     if args.command == "site-index":
@@ -2073,6 +2206,168 @@ def _human_rdm_analyze(
     print(f"Wrote psychometric plot to {plot_path}")
     print(f"Wrote chronometric summary to {chronometric_path}")
     print(f"Wrote chronometric plot to {chronometric_plot_path}")
+    return 0
+
+
+def _macaque_rdm_confidence_download(*, out_file: Path) -> int:
+    try:
+        details = download_macaque_rdm_confidence_source_data(out_file)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded {details['n_bytes']} bytes to {out_file}")
+    print(f"SHA256 {details['sha256']}")
+    return 0
+
+
+def _macaque_rdm_confidence_harmonize(
+    *,
+    source_zip: Path,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+) -> int:
+    try:
+        trials, details = load_macaque_rdm_confidence_source_data(
+            source_zip,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        macaque_rdm_confidence_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} source rows to {trials_path}")
+    print(f"Wrote {len(summary)} generic summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _macaque_rdm_confidence_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical source-row CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas macaque-rdm-confidence-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_macaque_rdm_confidence(trials)
+
+    result_path = session_dir / "analysis_result.json"
+    accuracy_summary_path = session_dir / "accuracy_summary.csv"
+    confidence_summary_path = session_dir / "confidence_summary.csv"
+    accuracy_plot_path = session_dir / "accuracy.svg"
+    confidence_plot_path = session_dir / "confidence.svg"
+
+    write_analysis_json(result_path, result)
+    write_macaque_rdm_confidence_accuracy_csv(accuracy_summary_path, result["accuracy_rows"])
+    write_macaque_rdm_confidence_choice_csv(confidence_summary_path, result["confidence_rows"])
+    write_macaque_rdm_confidence_accuracy_svg(accuracy_plot_path, result["accuracy_rows"])
+    write_macaque_rdm_confidence_choice_svg(confidence_plot_path, result["confidence_rows"])
+
+    print(f"Analyzed {len(trials)} source rows from {trials_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote accuracy summary to {accuracy_summary_path}")
+    print(f"Wrote confidence summary to {confidence_summary_path}")
+    print(f"Wrote accuracy plot to {accuracy_plot_path}")
+    print(f"Wrote confidence plot to {confidence_plot_path}")
+    return 0
+
+
+def _macaque_rdm_confidence_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    accuracy_svg: Path | None,
+    confidence_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    accuracy_svg_path = accuracy_svg or session_dir / "accuracy.svg"
+    confidence_svg_path = confidence_svg or session_dir / "confidence.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Macaque RDM confidence analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas macaque-rdm-confidence-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    accuracy_svg_text = (
+        accuracy_svg_path.read_text(encoding="utf-8") if accuracy_svg_path.exists() else None
+    )
+    confidence_svg_text = (
+        confidence_svg_path.read_text(encoding="utf-8")
+        if confidence_svg_path.exists()
+        else None
+    )
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("accuracy summary CSV", session_dir / "accuracy_summary.csv"),
+            ("confidence summary CSV", session_dir / "confidence_summary.csv"),
+            ("accuracy SVG", accuracy_svg_path),
+            ("confidence SVG", confidence_svg_path),
+            ("canonical source-row CSV", session_dir / "trials.csv"),
+            ("generic harmonization summary CSV", session_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_macaque_rdm_confidence_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        accuracy_svg_text=accuracy_svg_text,
+        confidence_svg_text=confidence_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote macaque RDM confidence report to {report_path}")
     return 0
 
 

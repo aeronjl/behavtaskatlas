@@ -13,9 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template, seven report-backed
-  concrete protocols, and one remaining dataset-seeking variant for breadth
-  testing.
+- Nine current protocol records: one abstract template and eight report-backed
+  concrete protocols.
 
 ## Local Workflow
 
@@ -142,6 +141,23 @@ The human RDM slice writes ignored local artifacts under
 canonical trials, psychometric and chronometric summaries, descriptive fit
 results, dependency-free SVG plots, and a static report. The raw MATLAB files
 stay under ignored `data/raw/human_random_dot_motion/`.
+
+Download and run the macaque RDM confidence/wagering slice from the Khalvati,
+Kiani, and Rao Nature Communications source-data ZIP:
+
+```bash
+uv run behavtaskatlas macaque-rdm-confidence-download
+uv run behavtaskatlas macaque-rdm-confidence-harmonize
+uv run behavtaskatlas macaque-rdm-confidence-analyze
+uv run behavtaskatlas macaque-rdm-confidence-report
+uv run behavtaskatlas site-index
+```
+
+The macaque confidence slice writes ignored local artifacts under
+`derived/macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/`.
+It emits canonical source-data rows, accuracy and sure-target choice summaries,
+dependency-free SVG plots, and a static report. The raw source-data ZIP stays
+under ignored `data/raw/macaque_rdm_confidence_khalvati/`.
 
 Generate the mouse unbiased visual contrast training slice from the pinned
 OpenAlyx trainingChoiceWorld session:

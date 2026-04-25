@@ -1,0 +1,75 @@
+slice_id: slice.macaque-rdm-confidence-wager
+protocol_id: protocol.macaque-rdm-confidence-wager
+dataset_id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+source_article: https://www.nature.com/articles/s41467-021-25419-4
+source_data_url: https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-021-25419-4/MediaObjects/41467_2021_25419_MOESM3_ESM.zip
+source_code_repository: https://github.com/koosha66/POMDP-Confidence
+source_object: Nature Communications source-data ZIP for article 10.1038/s41467-021-25419-4
+source_subjects:
+  - M1
+  - M2
+source_row_count: 174160
+source_rows_excluded_before_pairing:
+  - 5066 zero-strength white-dot accuracy rows are dropped before pairing strength and duration because the duration source table omits zero-strength accuracy rows.
+source_tables:
+  - source_measure: accuracy_no_sure_target
+    figure_panels: Fig. 1b black dots and Fig. 4a
+    monkey: M1
+    strength_file: source_data/1b(black dots)&4a_strength_M1.csv
+    duration_file: source_data/1b(black dots)&4a_duration_M1.csv
+    paired_rows: 37209
+  - source_measure: accuracy_no_sure_target
+    figure_panels: Fig. 1b black dots and Fig. 4a
+    monkey: M2
+    strength_file: source_data/1b(black dots)&4a_strength_M2.csv
+    duration_file: source_data/1b(black dots)&4a_duration_M2.csv
+    paired_rows: 25300
+  - source_measure: accuracy_sure_available_direction_chosen
+    figure_panels: Fig. 1b white dots and Fig. 4d
+    monkey: M1
+    strength_file: source_data/1b(white dots)&4d_strength_M1.csv
+    duration_file: source_data/1b(white dots)&4d_duration_M1.csv
+    paired_rows: 22613
+  - source_measure: accuracy_sure_available_direction_chosen
+    figure_panels: Fig. 1b white dots and Fig. 4d
+    monkey: M2
+    strength_file: source_data/1b(white dots)&4d_coh_M2.csv
+    duration_file: source_data/1b(white dots)&4d_duration_M2.csv
+    paired_rows: 15572
+  - source_measure: sure_target_choice
+    figure_panels: Fig. 1c and Fig. 4c
+    monkey: M1
+    strength_file: source_data/1c&4c_strength_M1.csv
+    duration_file: source_data/1c&4c_duration_M1.csv
+    paired_rows: 43151
+  - source_measure: sure_target_choice
+    figure_panels: Fig. 1c and Fig. 4c
+    monkey: M2
+    strength_file: source_data/1c&4c_strength_M2.csv
+    duration_file: source_data/1c&4c_duration_M2.csv
+    paired_rows: 30315
+required_fields:
+  - Motion Strength (%)
+  - Motion strength (%)
+  - Motion duration (msc)
+  - Correct
+  - Sure target
+canonical_mapping:
+  subject_id: Source `M1` or `M2` mapped to `kiani-shadlen-m1` or `kiani-shadlen-m2`.
+  session_id: Fixed processed source-data id `khalvati-kiani-rao-natcomm2021-source-data`.
+  trial_index: Global row index across paired source-data CSVs.
+  stimulus_value: Absolute motion strength percentage; signed direction is unavailable.
+  stimulus_side: Unknown for nonzero motion strengths; none for zero-strength rows.
+  evidence_strength: Absolute motion strength percentage.
+  choice: Unknown because direction choice and sure-target responses cannot be represented as left/right choices from these CSVs.
+  correct: Source `Correct` mapped to boolean for accuracy rows; empty for sure-target choice rows.
+  response_time: Empty because source duration is stimulus duration, not response time.
+  prior_context: Source measure name.
+  task_variables.motion_duration_ms: Source `Motion duration (msc)` value.
+  task_variables.sure_target_available: Whether the source measure came from sure-target trials.
+  task_variables.sure_target_chosen: Source `Sure target` mapped to boolean where available.
+  task_variables.source_measure: Source-data table type used for grouping.
+source_notes:
+  - The source-data ZIP is sufficient for figure-level accuracy and sure-target summaries but not for reconstructing signed direction choice.
+  - `Motion duration (msc)` is preserved as written in the source header and interpreted as milliseconds.
+  - The canonical CSV generated for this slice should be read as a source-row table, not a unique raw-trial table.

@@ -172,7 +172,7 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 7
+    assert len(loaded["comparison_rows"]) == 8
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
 
@@ -281,6 +281,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.human-rdm-button-reaction-time"
     )
+    macaque_confidence_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.macaque-rdm-confidence-wager"
+    )
     mouse_unbiased_protocol = next(
         row
         for row in payload["protocols"]
@@ -332,6 +337,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["vertical_slices"]
         if row["slice_id"] == "slice.human-random-dot-motion"
     )
+    macaque_confidence_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.macaque-rdm-confidence-wager"
+    )
     rdm_dataset = next(
         row
         for row in payload["datasets"]
@@ -341,6 +351,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         row
         for row in payload["datasets"]
         if row["dataset_id"] == "dataset.palmer-huk-shadlen-human-rdm-cosmo2017"
+    )
+    macaque_confidence_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.khalvati-kiani-rao-rdm-confidence-source-data"
     )
     human_clicks_dataset = next(
         row
@@ -367,28 +382,27 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
 
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
-    assert payload["counts"]["datasets"] == 6
-    assert payload["counts"]["vertical_slices"] == 7
+    assert payload["counts"]["datasets"] == 7
+    assert payload["counts"]["vertical_slices"] == 8
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
-    assert len(payload["dataset_details"]) == 6
+    assert len(payload["dataset_details"]) == 7
     assert len(protocol_pages) == 9
-    assert len(dataset_pages) == 6
+    assert len(dataset_pages) == 7
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 25
-    assert graph_payload["counts"]["edges"] == 39
-    assert graph_payload["counts"]["qa_issues"] == 2
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 2, "total": 2}
+    assert graph_payload["counts"]["nodes"] == 27
+    assert graph_payload["counts"]["edges"] == 43
+    assert graph_payload["counts"]["qa_issues"] == 0
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 0, "total": 0}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 2, "open": 2}
-    assert queue_payload["priority_counts"] == {"normal": 2}
-    assert queue_payload["action_counts"]["needs dataset"] == 1
-    assert queue_payload["action_counts"]["needs vertical slice"] == 1
+    assert queue_payload["counts"] == {"items": 0, "open": 0}
+    assert queue_payload["priority_counts"] == {}
+    assert queue_payload["action_counts"] == {}
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert not any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -500,6 +514,24 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         "edge_type": "dataset_slice",
         "label": "dataset backs slice",
     } in graph_payload["edges"]
+    assert {
+        "source": "protocol.macaque-rdm-confidence-wager",
+        "target": "dataset.khalvati-kiani-rao-rdm-confidence-source-data",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.macaque-rdm-confidence-wager",
+        "target": "slice.macaque-rdm-confidence-wager",
+        "edge_type": "protocol_slice",
+        "label": "protocol has slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.khalvati-kiani-rao-rdm-confidence-source-data",
+        "target": "slice.macaque-rdm-confidence-wager",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
     assert not any(issue["severity"] == "warning" for issue in graph_payload["qa_issues"])
     assert not any(
         issue["issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -521,6 +553,15 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert not any(
         issue["issue_id"]
         == "protocol_without_slice::protocol.human-visual-contrast-2afc-keyboard"
+        for issue in graph_payload["qa_issues"]
+    )
+    assert not any(
+        issue["issue_id"]
+        == "protocol_without_dataset::protocol.macaque-rdm-confidence-wager"
+        for issue in graph_payload["qa_issues"]
+    )
+    assert not any(
+        issue["issue_id"] == "protocol_without_slice::protocol.macaque-rdm-confidence-wager"
         for issue in graph_payload["qa_issues"]
     )
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
@@ -653,6 +694,18 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert human_rdm_dataset["detail_link"] == (
         "dataset-palmer-huk-shadlen-human-rdm-cosmo2017.html"
     )
+    assert macaque_confidence_protocol["dataset_ids"] == [
+        "dataset.khalvati-kiani-rao-rdm-confidence-source-data"
+    ]
+    assert macaque_confidence_protocol["slice_ids"] == [
+        "slice.macaque-rdm-confidence-wager"
+    ]
+    assert macaque_confidence_protocol["report_status"] == "analysis pending"
+    assert macaque_confidence_slice["protocol_id"] == "protocol.macaque-rdm-confidence-wager"
+    assert macaque_confidence_slice["report_status"] == "missing"
+    assert macaque_confidence_dataset["detail_link"] == (
+        "dataset-khalvati-kiani-rao-rdm-confidence-source-data.html"
+    )
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
     assert loaded["catalog_schema_version"] == "0.1.0"
     assert "Browse Protocols" in html
@@ -684,5 +737,5 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "signed motion coherence" in html
     assert "signed contrast difference" in html
     assert "Curation Queue" in queue_html
-    assert "needs vertical slice" in queue_html
+    assert "No curation queue items available." in queue_html
     assert 'href="protocol-human-rdm-button-reaction-time.html"' not in queue_html

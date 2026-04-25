@@ -12,7 +12,7 @@ description: >
   sensory evidence, while the wager response probes decision confidence.
 species:
   - non-human-primate
-curation_status: literature-curated
+curation_status: data-linked
 stimulus:
   modalities:
     - visual
@@ -62,6 +62,8 @@ apparatus:
   - visual display
   - eye tracking
   - fluid reward
+dataset_ids:
+  - dataset.khalvati-kiani-rao-rdm-confidence-source-data
 expected_analyses:
   - psychometric curve by motion coherence
   - confidence or wager probability by coherence and accuracy
@@ -77,12 +79,22 @@ references:
       decision by neurons in the parietal cortex. Science, 2009.
     url: https://pubmed.ncbi.nlm.nih.gov/19423820/
     doi: 10.1126/science.1169405
+  - id: ref.khalvati-kiani-rao-2021
+    citation: >
+      Khalvati K, Kiani R, Rao RPN. Bayesian inference with incomplete
+      knowledge explains perceptual confidence and its deviations from
+      accuracy. Nature Communications, 2021.
+    url: https://www.nature.com/articles/s41467-021-25419-4
+    doi: 10.1038/s41467-021-25419-4
 provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Linked to the Khalvati-Kiani-Rao Nature Communications source-data ZIP so
+    the Kiani-Shadlen confidence/wagering task has a first report-backed slice.
 open_questions:
   - Decide whether confidence and wagering should be modeled as task variants or analysis claims.
-  - Add target layout fields before linking trial-level data.
+  - Add target layout fields if full raw behavioral files are recovered.
+  - Split figure source-data rows from unique raw trial rows if a complete behavioral export is linked.

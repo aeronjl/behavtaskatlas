@@ -1,0 +1,69 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+name: Khalvati-Kiani-Rao macaque RDM confidence source data
+description: >
+  Source-data ZIP distributed with Khalvati, Kiani, and Rao 2021 for a
+  Kiani-Shadlen macaque random-dot motion confidence task. The CSV files used
+  by the MVP contain figure source rows for motion strength, motion duration,
+  correctness, and sure-target choice for two monkeys.
+protocol_ids:
+  - protocol.macaque-rdm-confidence-wager
+species:
+  - non-human-primate
+curation_status: data-linked
+source_url: https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-021-25419-4/MediaObjects/41467_2021_25419_MOESM3_ESM.zip
+access_notes: >
+  The MVP downloads the Nature Communications source-data ZIP into ignored
+  local raw-data storage. The authors also provide analysis/model code through
+  the POMDP-Confidence GitHub repository, but the complete raw behavioral
+  MATLAB files are not included in this committed atlas record.
+license: >
+  Nature Communications source-data reuse terms and original behavioral data
+  redistribution terms should be confirmed before publishing derived tables.
+data_formats:
+  - CSV files inside ZIP
+  - derived canonical source-row tables to be generated
+expected_trial_table_mapping:
+  subject_id: Monkey label formatted from source `M1` and `M2` figure files.
+  session_id: Fixed processed source-data identifier because source session ids are not retained.
+  trial_index: Global row index across paired figure source-data CSVs.
+  stimulus_value: Absolute motion strength percentage because motion direction/sign is not retained.
+  stimulus_side: Unknown for nonzero motion strengths and none for zero-strength rows.
+  evidence_strength: Absolute percent motion coherence.
+  choice: Unknown because direction choice and sure-target saccade labels are not represented in the canonical left/right choice vocabulary.
+  correct: Boolean from `Correct` for accuracy source rows; empty for sure-target choice rows.
+  response_time: Not mapped; source `Motion duration (msc)` is stored as a task variable rather than a response time.
+  prior_context: Source-data row type, such as no-sure accuracy or sure-target choice.
+  task_variables: Source panel, monkey, motion strength, motion duration, sure-target availability/chosen flags, and source file names.
+references:
+  - id: ref.kiani-shadlen-2009
+    citation: >
+      Kiani R, Shadlen MN. Representation of confidence associated with a
+      decision by neurons in the parietal cortex. Science, 2009.
+    url: https://pubmed.ncbi.nlm.nih.gov/19423820/
+    doi: 10.1126/science.1169405
+  - id: ref.khalvati-kiani-rao-2021
+    citation: >
+      Khalvati K, Kiani R, Rao RPN. Bayesian inference with incomplete
+      knowledge explains perceptual confidence and its deviations from
+      accuracy. Nature Communications, 2021.
+    url: https://www.nature.com/articles/s41467-021-25419-4
+    doi: 10.1038/s41467-021-25419-4
+  - id: ref.pomdp-confidence-code
+    citation: >
+      Khalvati, Kiani, and Rao. POMDP-Confidence analysis and modeling code.
+    url: https://github.com/koosha66/POMDP-Confidence
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Dataset metadata drafted for the macaque confidence/wagering vertical slice
+    using the Nature Communications source-data ZIP for article
+    10.1038/s41467-021-25419-4.
+caveats:
+  - The source-data CSVs are figure source data, not a full raw behavioral export.
+  - Signed motion direction, direction choice, raw session id, and saccade response time are not preserved in the CSVs used by this slice.
+  - Some source rows may describe overlapping underlying trials across figure panels; source panel identity is preserved in `task_variables`.

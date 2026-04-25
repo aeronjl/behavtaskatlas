@@ -1,0 +1,36 @@
+analysis_id: analysis.macaque-rdm-confidence.source-data-summary
+protocol_id: protocol.macaque-rdm-confidence-wager
+dataset_id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+status: nature-source-data-static-report-run
+inputs:
+  - Nature Communications source-data ZIP for article 10.1038/s41467-021-25419-4
+verified_outputs:
+  - 174160 canonical source-data rows across two macaques and three source measures
+  - 22 accuracy summary rows grouped by source measure, monkey, and motion strength
+  - 13 sure-target choice summary rows grouped by monkey and motion strength
+  - analysis result JSON with source-row counts and caveats
+  - dependency-free SVG accuracy plot
+  - dependency-free SVG confidence plot
+  - static HTML report generated from ignored local artifacts
+grouping_variables:
+  - source measure
+  - monkey
+  - absolute motion strength
+implemented_outputs:
+  - canonical source-row table
+  - no-sure-target accuracy by motion strength
+  - direction-choice accuracy when sure target is available
+  - sure-target choice probability by motion strength
+  - static report over source provenance, accuracy rows, confidence rows, and artifact links
+deferred_outputs:
+  - signed direction-choice psychometric curve from a complete raw trial table
+  - per-session summaries if session labels are recovered
+  - model fits matching the POMDP-Confidence codebase
+  - neural firing-rate linkage from the original Kiani-Shadlen recordings
+provenance_requirements:
+  - Nature article URL and DOI
+  - source-data ZIP URL and SHA-256
+  - source file names and paired-row counts
+  - adapter version or commit hash
+  - date generated
+  - figure-source-data caveat

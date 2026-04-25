@@ -1709,6 +1709,13 @@ def _slice_metrics(slice_id: str, analysis: dict[str, Any] | None) -> list[dict[
             _metric_payload("Coherence levels", len(analysis.get("chronometric_rows", []))),
             _metric_payload("Summary rows", len(analysis.get("summary_rows", []))),
         ]
+    if slice_id == "slice.macaque-rdm-confidence-wager":
+        return [
+            _metric_payload("Source rows", analysis.get("n_source_rows")),
+            _metric_payload("Accuracy rows", analysis.get("n_accuracy_rows")),
+            _metric_payload("Sure-target rows", analysis.get("n_sure_target_choice_rows")),
+            _metric_payload("Confidence rows", len(analysis.get("confidence_rows", []))),
+        ]
     if "n_trials" in analysis:
         metrics = [
             _metric_payload("Trials", analysis.get("n_trials")),
