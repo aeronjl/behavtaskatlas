@@ -19,6 +19,9 @@ ibl = [
 rdm = [
     "scipy>=1.13",
 ]
+visual = [
+    "scipy>=1.13",
+]
 
 [project.scripts]
 behavtaskatlas = "behavtaskatlas.cli:main"

@@ -1,0 +1,50 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.human-visual-contrast-prior-cue
+title: Human Visual Contrast Prior Cue
+description: >
+  Walsh et al. OSF human contrast-discrimination slice with probabilistic cues,
+  canonical trials, and descriptive psychometric summaries over a
+  lower-frequency-target signed contrast convention.
+curation_status: analysis-verified
+display_order: 30
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+report_path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/report.html
+analysis_result_path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/analysis_result.json
+primary_artifact_path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/report.html
+  - label: Analysis result JSON
+    path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/analysis_result.json
+  - label: Psychometric SVG
+    path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/psychometric.svg
+  - label: Canonical trials CSV
+    path: human_visual_contrast/walsh-prior-cue-human-contrast-osf/trials.csv
+  - label: Slice notes
+    path: vertical_slices/human_visual_contrast/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/human_visual_contrast.yaml
+    path_type: repository
+comparison:
+  species: human
+  modality: visual
+  stimulus_metric: signed contrast difference
+  evidence_type: mixed
+  choice_type: 2afc
+  response_modality: button-press
+  analysis_outputs: cue-split psychometric summaries
+  data_scope: OSF processed behavioural stats matrix, 12 human observers
+  canonical_axis: lower-frequency target positive, higher-frequency target negative
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Vertical-slice report metadata for Walsh et al.'s OSF human contrast
+    discrimination behavioural stats dataset.

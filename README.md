@@ -13,8 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template, six report-backed
-  concrete protocols, and two remaining dataset-seeking variants for breadth
+- Nine current protocol records: one abstract template, seven report-backed
+  concrete protocols, and one remaining dataset-seeking variant for breadth
   testing.
 
 ## Local Workflow
@@ -158,6 +158,24 @@ This writes ignored local artifacts under
 `derived/mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/`.
 It reuses the IBL canonical trial adapter while stamping trials with the
 mouse-unbiased protocol id.
+
+Download and run the Walsh et al. human visual contrast prior-cue slice from
+OSF:
+
+```bash
+uv sync --extra visual
+uv run --extra visual behavtaskatlas human-visual-download
+uv run --extra visual behavtaskatlas human-visual-harmonize
+uv run behavtaskatlas human-visual-analyze
+uv run behavtaskatlas human-visual-report
+uv run behavtaskatlas site-index
+```
+
+The human visual contrast slice writes ignored local artifacts under
+`derived/human_visual_contrast/walsh-prior-cue-human-contrast-osf/`. It emits
+canonical trials, cue-split psychometric summaries, a descriptive fit result,
+a dependency-free SVG plot, and a static report. The raw OSF downloads stay
+under ignored `data/raw/human_visual_contrast_walsh/`.
 
 Build the local static report index:
 

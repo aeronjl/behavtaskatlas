@@ -34,6 +34,17 @@ from behavtaskatlas.clicks import (
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
 )
+from behavtaskatlas.human_visual import (
+    DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR,
+    DEFAULT_HUMAN_VISUAL_CONTRAST_RAW_DIR,
+    DEFAULT_HUMAN_VISUAL_CONTRAST_RAW_MAT,
+    DEFAULT_HUMAN_VISUAL_CONTRAST_SESSION_ID,
+    HUMAN_VISUAL_CONTRAST_PSYCHOMETRIC_X_AXIS_LABEL,
+    analyze_human_visual_contrast,
+    download_walsh_human_visual_contrast_files,
+    human_visual_contrast_provenance_payload,
+    load_walsh_human_visual_contrast_mat,
+)
 from behavtaskatlas.ibl import (
     DEFAULT_DERIVED_DIR,
     DEFAULT_IBL_EID,
@@ -262,6 +273,92 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional explicit path to psychometric.svg",
     )
     mouse_unbiased_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    human_visual_download_parser = subparsers.add_parser(
+        "human-visual-download",
+        help="Download Walsh et al. OSF human visual contrast source files",
+    )
+    human_visual_download_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_HUMAN_VISUAL_CONTRAST_RAW_DIR),
+        help="Directory for downloaded OSF source files",
+    )
+
+    human_visual_parser = subparsers.add_parser(
+        "human-visual-harmonize",
+        help="Harmonize Walsh et al. OSF human visual contrast trials",
+    )
+    human_visual_parser.add_argument(
+        "--mat-file",
+        default=str(DEFAULT_HUMAN_VISUAL_CONTRAST_RAW_MAT),
+        help="Path to the downloaded `1. Behavioural Analysis.mat` file",
+    )
+    human_visual_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR),
+        help="Directory for generated artifacts",
+    )
+    human_visual_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_VISUAL_CONTRAST_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    human_visual_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    human_visual_analyze_parser = subparsers.add_parser(
+        "human-visual-analyze",
+        help="Analyze a harmonized Walsh et al. human visual contrast dataset",
+    )
+    human_visual_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_VISUAL_CONTRAST_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    human_visual_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    human_visual_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    human_visual_report_parser = subparsers.add_parser(
+        "human-visual-report",
+        help="Render a static HTML report from the human visual contrast analysis",
+    )
+    human_visual_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_VISUAL_CONTRAST_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    human_visual_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    human_visual_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    human_visual_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    human_visual_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    human_visual_report_parser.add_argument(
         "--out-file",
         default=None,
         help="Optional report HTML output path",
@@ -803,6 +900,30 @@ def main(argv: list[str] | None = None) -> int:
             psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
+    if args.command == "human-visual-download":
+        return _human_visual_download(raw_dir=Path(args.raw_dir))
+    if args.command == "human-visual-harmonize":
+        return _human_visual_harmonize(
+            mat_file=Path(args.mat_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+        )
+    if args.command == "human-visual-analyze":
+        return _human_visual_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "human-visual-report":
+        return _human_visual_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
     if args.command == "clicks-harmonize":
         return _clicks_harmonize(
             mat_file=Path(args.mat_file),
@@ -1118,6 +1239,171 @@ def _ibl_report(
     )
 
     print(f"Wrote IBL-style visual report to {report_path}")
+    if psychometric_svg_text is None:
+        print(
+            "Psychometric SVG not found, wrote report without inline plot: "
+            f"{psychometric_svg_path}"
+        )
+    return 0
+
+
+def _human_visual_download(*, raw_dir: Path) -> int:
+    try:
+        details = download_walsh_human_visual_contrast_files(raw_dir)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded {details['n_files']} files ({details['n_bytes']} bytes) to {raw_dir}")
+    for file in details["files"]:
+        print(f"SHA256 {file['file_name']} {file['sha256']}")
+    return 0
+
+
+def _human_visual_harmonize(
+    *,
+    mat_file: Path,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+) -> int:
+    if not mat_file.exists():
+        print(
+            f"Human visual contrast MAT file not found: {mat_file}. "
+            "Run `uv run --extra visual behavtaskatlas human-visual-download` first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_walsh_human_visual_contrast_mat(
+            mat_file,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        human_visual_contrast_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _human_visual_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra visual behavtaskatlas human-visual-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_human_visual_contrast(trials)
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        plot_path,
+        result["summary_rows"],
+        x_axis_label=HUMAN_VISUAL_CONTRAST_PSYCHOMETRIC_X_AXIS_LABEL,
+    )
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _human_visual_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or session_dir / "psychometric.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Human visual contrast analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas human-visual-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = None
+    if psychometric_svg_path.exists():
+        psychometric_svg_text = psychometric_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", session_dir / "psychometric_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("canonical trials CSV", session_dir / "trials.csv"),
+            ("harmonization summary CSV", session_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_ibl_visual_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote human visual contrast report to {report_path}")
     if psychometric_svg_text is None:
         print(
             "Psychometric SVG not found, wrote report without inline plot: "

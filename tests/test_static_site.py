@@ -172,9 +172,44 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 6
+    assert len(loaded["comparison_rows"]) == 7
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
+
+
+def test_static_manifest_reads_generic_psychometric_metrics(tmp_path) -> None:
+    derived_dir = tmp_path / "derived"
+    visual_dir = derived_dir / "human_visual_contrast" / "walsh-prior-cue-human-contrast-osf"
+    visual_dir.mkdir(parents=True)
+    (visual_dir / "analysis_result.json").write_text(
+        json.dumps(
+            {
+                "n_trials": 66200,
+                "n_response_trials": 66200,
+                "n_no_response_trials": 0,
+                "prior_results": [{}, {}, {}],
+                "summary_rows": [{}, {}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_static_index_payload(
+        derived_dir=derived_dir,
+        index_path=derived_dir / "index.html",
+    )
+
+    visual_row = next(
+        item
+        for item in payload["comparison_rows"]
+        if item["slice_id"] == "slice.human-visual-contrast-prior-cue"
+    )
+    visual_slice = next(
+        item for item in payload["slices"] if item["id"] == "slice.human-visual-contrast-prior-cue"
+    )
+    assert visual_row["trial_count"] == 66200
+    assert {"label": "Prior contexts", "value": 3} in visual_slice["metrics"]
+    assert {"label": "Summary rows", "value": 2} in visual_slice["metrics"]
 
 
 def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
@@ -251,6 +286,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.mouse-visual-contrast-wheel-unbiased"
     )
+    human_visual_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.human-visual-contrast-2afc-keyboard"
+    )
     rat_clicks_protocol = next(
         row
         for row in payload["protocols"]
@@ -282,6 +322,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["vertical_slices"]
         if row["slice_id"] == "slice.mouse-visual-contrast-unbiased"
     )
+    human_visual_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.human-visual-contrast-prior-cue"
+    )
     human_rdm_slice = next(
         row
         for row in payload["vertical_slices"]
@@ -302,6 +347,11 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["datasets"]
         if row["dataset_id"] == "dataset.london-human-poisson-clicks-dbs-mendeley"
     )
+    human_visual_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.walsh-prior-cue-human-contrast-osf"
+    )
     rdm_detail = next(
         row
         for row in payload["protocol_details"]
@@ -317,28 +367,28 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
 
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
-    assert payload["counts"]["datasets"] == 5
-    assert payload["counts"]["vertical_slices"] == 6
+    assert payload["counts"]["datasets"] == 6
+    assert payload["counts"]["vertical_slices"] == 7
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
-    assert len(payload["dataset_details"]) == 5
+    assert len(payload["dataset_details"]) == 6
     assert len(protocol_pages) == 9
-    assert len(dataset_pages) == 5
+    assert len(dataset_pages) == 6
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 23
-    assert graph_payload["counts"]["edges"] == 35
-    assert graph_payload["counts"]["qa_issues"] == 4
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 4, "total": 4}
+    assert graph_payload["counts"]["nodes"] == 25
+    assert graph_payload["counts"]["edges"] == 39
+    assert graph_payload["counts"]["qa_issues"] == 2
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 2, "total": 2}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 4, "open": 4}
-    assert queue_payload["priority_counts"] == {"normal": 4}
-    assert queue_payload["action_counts"]["needs dataset"] == 2
-    assert queue_payload["action_counts"]["needs vertical slice"] == 2
+    assert queue_payload["counts"] == {"items": 2, "open": 2}
+    assert queue_payload["priority_counts"] == {"normal": 2}
+    assert queue_payload["action_counts"]["needs dataset"] == 1
+    assert queue_payload["action_counts"]["needs vertical slice"] == 1
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert not any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
@@ -363,6 +413,24 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert {
         "source": "dataset.ibl-public-behavior",
         "target": "slice.mouse-visual-contrast-unbiased",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-visual-contrast-2afc-keyboard",
+        "target": "dataset.walsh-prior-cue-human-contrast-osf",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-visual-contrast-2afc-keyboard",
+        "target": "slice.human-visual-contrast-prior-cue",
+        "edge_type": "protocol_slice",
+        "label": "protocol has slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.walsh-prior-cue-human-contrast-osf",
+        "target": "slice.human-visual-contrast-prior-cue",
         "edge_type": "dataset_slice",
         "label": "dataset backs slice",
     } in graph_payload["edges"]
@@ -445,6 +513,16 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         issue["issue_id"] == "protocol_without_dataset::protocol.human-auditory-clicks-button"
         for issue in graph_payload["qa_issues"]
     )
+    assert not any(
+        issue["issue_id"]
+        == "protocol_without_dataset::protocol.human-visual-contrast-2afc-keyboard"
+        for issue in graph_payload["qa_issues"]
+    )
+    assert not any(
+        issue["issue_id"]
+        == "protocol_without_slice::protocol.human-visual-contrast-2afc-keyboard"
+        for issue in graph_payload["qa_issues"]
+    )
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["declared_dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
@@ -517,6 +595,29 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         == "protocol_without_slice::protocol.mouse-visual-contrast-wheel-unbiased"
         for item in queue_payload["items"]
     )
+    assert human_visual_protocol["dataset_ids"] == [
+        "dataset.walsh-prior-cue-human-contrast-osf"
+    ]
+    assert human_visual_protocol["declared_dataset_ids"] == [
+        "dataset.walsh-prior-cue-human-contrast-osf"
+    ]
+    assert human_visual_protocol["slice_ids"] == ["slice.human-visual-contrast-prior-cue"]
+    assert human_visual_protocol["report_status"] == "analysis pending"
+    assert human_visual_slice["protocol_id"] == "protocol.human-visual-contrast-2afc-keyboard"
+    assert human_visual_slice["report_status"] == "missing"
+    assert human_visual_dataset["detail_link"] == (
+        "dataset-walsh-prior-cue-human-contrast-osf.html"
+    )
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_dataset::protocol.human-visual-contrast-2afc-keyboard"
+        for item in queue_payload["items"]
+    )
+    assert not any(
+        item["source_issue_id"]
+        == "protocol_without_slice::protocol.human-visual-contrast-2afc-keyboard"
+        for item in queue_payload["items"]
+    )
     assert rdm_detail["stimulus"]["evidence_type"] == "stochastic-motion"
     assert rdm_detail["choice"]["response_modalities"] == ["saccade"]
     assert rdm_detail["datasets"][0]["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
@@ -579,7 +680,9 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "Random-Dot Motion" in html
     assert "Human random-dot motion button reaction-time task" in html
     assert "Human Random-Dot Motion" in html
+    assert "Human Visual Contrast Prior Cue" in html
     assert "signed motion coherence" in html
+    assert "signed contrast difference" in html
     assert "Curation Queue" in queue_html
     assert "needs vertical slice" in queue_html
     assert 'href="protocol-human-rdm-button-reaction-time.html"' not in queue_html

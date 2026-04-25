@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 02:56:06 BST - Human visual contrast needs explicit low/high-frequency conventions
+
+The Walsh et al. OSF behavioural stats matrix makes the human visual contrast protocol sliceable without downloading the large raw EEG archives: `1. Behavioural Analysis.mat` contains 66,200 processed behavioural rows across 12 observers, with cue context, pulse type, exposure bin, RT, correctness, difficulty, reward, and lower-frequency response coding.
+
+The technical caveat is important for the atlas: the processed matrix does not preserve raw left/right tilt response or original session ids. The adapter therefore records a transparent canonical convention where `right` means lower-frequency response or target and positive signed contrast means the lower-frequency grating was the target. This keeps the slice comparable while preserving the source-specific convention in `task_variables`.
+
 ## 2026-04-25 02:09:46 BST - Human clicks source access is solvable through the page API
 
 The OSF node originally considered for human clicks exposes no API-visible files, but the Mendeley Data page for `Poisson Clicks Task, DBS OFF/ON` does expose its file through the page's own public API: `poisson_clicks_rawdata.mat`, 1.9 MB, CC-BY-4.0, DOI `10.17632/3j86m7mjx2.1`. That lets the human auditory-clicks protocol become a real vertical slice instead of a source-access blocker.

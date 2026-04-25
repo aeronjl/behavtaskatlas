@@ -6,13 +6,16 @@ name: Human visual contrast 2AFC keyboard task
 aliases:
   - human Gabor contrast discrimination
   - human grating contrast psychophysics
+  - human SSVEP contrast prior-cue task
 description: >
   Human observers judge which of two visual alternatives contains the stronger
-  or target contrast signal, commonly using keyboard or button responses.
-  Contrast is varied to estimate psychometric threshold and lapse parameters.
+  or target contrast signal, commonly using keyboard or button responses. The
+  first linked slice uses overlaid flickering gratings with probabilistic cues
+  and points feedback. Contrast is varied to estimate psychometric threshold
+  and lapse parameters.
 species:
   - human
-curation_status: literature-curated
+curation_status: data-linked
 stimulus:
   modalities:
     - visual
@@ -20,10 +23,14 @@ stimulus:
     - contrast
     - stimulus interval
     - stimulus side
+    - probabilistic cue
+    - flicker frequency
   evidence_type: adaptive
   evidence_schedule: >
     Contrast levels are sampled across trials, often with fixed grids or
-    adaptive procedures designed to estimate a psychometric function.
+    adaptive procedures designed to estimate a psychometric function. The first
+    linked slice uses session-titrated target/distractor contrast differences
+    and valid, invalid, or neutral cues.
   units:
     - percent contrast
     - Michelson contrast
@@ -39,8 +46,8 @@ choice:
     Keyboard or button responses indicate which side or interval contained the
     target visual contrast.
 feedback:
-  feedback_type: none
-  notes: Feedback is protocol-dependent and often omitted in adult psychophysics.
+  feedback_type: mixed
+  notes: Feedback is protocol-dependent; the first linked slice uses points feedback.
 timing:
   - name: fixation
     duration: protocol-specific
@@ -59,6 +66,8 @@ training:
 apparatus:
   - calibrated visual display
   - keyboard or response box
+dataset_ids:
+  - dataset.walsh-prior-cue-human-contrast-osf
 expected_analyses:
   - psychometric curve by contrast
   - threshold and lapse estimates
@@ -74,12 +83,24 @@ references:
       and goodness of fit. Perception & Psychophysics, 2001.
     url: https://doi.org/10.3758/BF03194544
     doi: 10.3758/BF03194544
+  - id: ref.walsh-2024-prior-cues
+    citation: >
+      Walsh K, McGovern DP, Dully J, Kelly SP, O'Connell RG. Prior probability
+      cues bias sensory encoding with increasing task exposure. eLife 12:
+      RP91135, 2024.
+    url: https://elifesciences.org/articles/91135
+    doi: 10.7554/eLife.91135.3
 provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Linked to Walsh et al.'s OSF behavioural stats dataset so the human visual
+    contrast protocol has a first report-backed vertical slice. The protocol id
+    remains stable, but the first source uses mouse/button responses rather than
+    a literal keyboard.
 open_questions:
   - Split side-based and interval-based variants if detailed datasets are linked.
-  - Add display calibration and staircase details for source-specific records.
+  - Decide whether the Walsh SSVEP prior-cue task should eventually become a more specific concrete protocol variant.
+  - Add display calibration and staircase details for source-specific records beyond the current processed stats slice.

@@ -1,0 +1,32 @@
+analysis_id: analysis.human-visual-contrast.descriptive-psychometric
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+status: osf-static-report-run
+inputs:
+  - canonical trial table generated from OSF `1. Behavioural Analysis.mat`
+verified_outputs:
+  - 66200 canonical trial rows from the processed behavioural stats matrix
+  - psychometric summary rows grouped by cue context and signed contrast
+  - analysis result JSON with empirical and fitted psychometric metrics
+  - dependency-free SVG psychometric plot
+  - static HTML report generated from ignored local artifacts
+grouping_variables:
+  - signed target-distractor contrast difference
+  - cue context
+implemented_outputs:
+  - trial count by signed contrast and cue context
+  - proportion lower-frequency response by signed contrast
+  - accuracy by signed contrast
+  - descriptive psychometric fit per cue context
+deferred_outputs:
+  - psychometrics split by task-exposure bin
+  - pulse-specific contrast-response effects
+  - raw per-session reconstruction from the larger OSF behavioural archive
+  - EEG/SSVEP encoding analyses
+provenance_requirements:
+  - OSF project DOI
+  - OSF source file URLs
+  - source file SHA-256
+  - MATLAB analysis and task script names
+  - date generated
+  - adapter version or commit hash

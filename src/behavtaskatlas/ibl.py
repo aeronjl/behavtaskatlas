@@ -657,13 +657,14 @@ def ibl_visual_report_html(
         '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="120">'
         '<text x="20" y="60">Psychometric plot not available</text></svg>'
     )
+    subject_label, subject_value = _visual_report_subject_metric(source)
     metrics = [
         ("Trials", analysis_result.get("n_trials")),
         ("Response trials", analysis_result.get("n_response_trials")),
         ("No-response trials", analysis_result.get("n_no_response_trials")),
         ("Prior blocks", len(prior_results)),
         ("Summary rows", len(summary_rows)),
-        ("Subject", source.get("subject")),
+        (subject_label, subject_value),
     ]
 
     html = [
@@ -682,9 +683,7 @@ def ibl_visual_report_html(
         "<header>",
         f"<p class=\"eyebrow\">{escape(str(analysis_result.get('analysis_id', 'analysis')))}</p>",
         f"<h1>{escape(title)}</h1>",
-        "<p class=\"lede\">Single-session visual 2AFC report generated from the "
-        "canonical IBL slice artifacts, including OpenAlyx provenance and descriptive "
-        "psychometric fits.</p>",
+        f"<p class=\"lede\">{escape(_visual_report_lede(analysis_result))}</p>",
         "</header>",
         '<section class="metrics" aria-label="Report metrics">',
     ]
@@ -704,15 +703,7 @@ def ibl_visual_report_html(
             '<section class="grid-two">',
             "<div>",
             "<h2>Session</h2>",
-            _report_definition_list(
-                [
-                    ("EID", provenance.get("eid")),
-                    ("Lab", source.get("lab")),
-                    ("Subject", source.get("subject")),
-                    ("Started", source.get("start_time")),
-                    ("Task protocol", source.get("task_protocol")),
-                ]
-            ),
+            _report_definition_list(_visual_report_source_rows(provenance, source)),
             "</div>",
             "<div>",
             "<h2>Provenance</h2>",
@@ -807,6 +798,61 @@ def _ibl_prior_report_rows(prior_results: list[dict[str, Any]]) -> list[dict[str
             }
         )
     return rows
+
+
+def _visual_report_lede(analysis_result: dict[str, Any]) -> str:
+    protocol_id = analysis_result.get("protocol_id")
+    if protocol_id == "protocol.human-visual-contrast-2afc-keyboard":
+        return (
+            "Human contrast-discrimination report generated from the Walsh et al. "
+            "OSF behavioural stats dataset, with cue-split psychometrics over a "
+            "lower-frequency-target signed contrast convention."
+        )
+    if protocol_id == MOUSE_UNBIASED_VISUAL_PROTOCOL_ID:
+        return (
+            "Single-session visual 2AFC report generated from canonical IBL "
+            "trainingChoiceWorld slice artifacts, including OpenAlyx provenance "
+            "and descriptive psychometric fits."
+        )
+    return (
+        "Single-session visual 2AFC report generated from the canonical IBL slice "
+        "artifacts, including OpenAlyx provenance and descriptive psychometric fits."
+    )
+
+
+def _visual_report_subject_metric(source: dict[str, Any]) -> tuple[str, Any]:
+    subjects = source.get("subjects")
+    if isinstance(subjects, list):
+        return ("Subjects", len(subjects))
+    return ("Subject", source.get("subject"))
+
+
+def _visual_report_source_rows(
+    provenance: dict[str, Any],
+    source: dict[str, Any],
+) -> list[tuple[str, Any]]:
+    if source.get("osf_project_url"):
+        subjects = source.get("subjects")
+        subject_text = (
+            ", ".join(str(subject) for subject in subjects)
+            if isinstance(subjects, list)
+            else None
+        )
+        return [
+            ("OSF project", source.get("osf_project_url")),
+            ("OSF DOI", source.get("osf_doi")),
+            ("Source file", source.get("source_file_name")),
+            ("Subjects", subject_text),
+            ("Analysis script", source.get("behavioural_analysis_script_url")),
+            ("Task script", source.get("experiment_task_script_url")),
+        ]
+    return [
+        ("EID", provenance.get("eid")),
+        ("Lab", source.get("lab")),
+        ("Subject", source.get("subject")),
+        ("Started", source.get("start_time")),
+        ("Task protocol", source.get("task_protocol")),
+    ]
 
 
 def _ibl_report_css() -> str:

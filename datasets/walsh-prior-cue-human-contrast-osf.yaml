@@ -1,0 +1,76 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.walsh-prior-cue-human-contrast-osf
+name: Walsh prior-cue human contrast discrimination OSF dataset
+description: >
+  Public OSF dataset for a human contrast-discrimination EEG/SSVEP task in
+  which valid, invalid, and neutral probabilistic cues bias decisions about the
+  relative contrast of two overlaid flickering gratings. The MVP uses the
+  processed behavioural stats matrix plus the original analysis and task
+  scripts to create canonical trial rows.
+protocol_ids:
+  - protocol.human-visual-contrast-2afc-keyboard
+species:
+  - human
+curation_status: data-linked
+source_url: https://osf.io/b92wm/
+access_notes: >
+  Download `1. Behavioural Analysis.mat` from the OSF Stats Datasets component
+  and the `Behavioural_Analysis.m` and `Experiment_Task.m` scripts from the OSF
+  Analysis Scripts and Task Script components. The processed MAT file is small
+  and contains the behavioural trial matrix used for mixed-effects analyses.
+license: Not specified on the OSF record.
+data_formats:
+  - MATLAB .mat
+  - MATLAB analysis scripts
+  - SPSS .sav companion stats datasets
+  - derived canonical trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: Source subject code 1-12 mapped to subject-A through subject-L.
+  session_id: Fixed processed dataset id `walsh-prior-cue-human-contrast-osf`.
+  trial_index: Row index within OSF `1. Behavioural Analysis.mat` variable `dataset`.
+  stimulus_value: >
+    `deltaC` converted to target-minus-distractor contrast percentage points;
+    positive values mean the lower-frequency grating was the target.
+  stimulus_side: >
+    Canonical convention only: lower-frequency target mapped to right and
+    higher-frequency target mapped to left.
+  evidence_strength: Absolute target-minus-distractor contrast difference.
+  choice: Source lower-frequency response flag mapped to canonical right; higher-frequency response mapped to left.
+  correct: Source performance code 1 correct and 2 incorrect.
+  response_time: Source RT in seconds from evidence onset.
+  feedback: Correct trials mapped to reward, incorrect trials to error.
+  prior_context: Source cue code mapped to cue=neutral, cue=valid, or cue=invalid.
+  training_stage: Source task-exposure bin 1-5.
+  task_variables: >
+    Cue code, pulse code, exposure bin, deltaC, target/distractor contrasts,
+    lower-frequency response, reconstructed target frequency, and the canonical
+    low/high-frequency convention.
+references:
+  - id: ref.walsh-2024-prior-cues
+    citation: >
+      Walsh K, McGovern DP, Dully J, Kelly SP, O'Connell RG. Prior probability
+      cues bias sensory encoding with increasing task exposure. eLife 12:
+      RP91135, 2024.
+    url: https://elifesciences.org/articles/91135
+    doi: 10.7554/eLife.91135.3
+  - id: ref.walsh-2023-osf
+    citation: >
+      Walsh K, McGovern DP, Dully J, Kelly SP, O'Connell RG. Prior probability
+      cues bias sensory encoding with increasing task exposure. Open Science
+      Framework, 2023.
+    url: https://osf.io/b92wm/
+    doi: 10.17605/OSF.IO/B92WM
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Dataset metadata drafted from the OSF project, eLife article, downloaded
+    behavioural stats MAT file, and the published MATLAB analysis/task scripts
+    while building the human visual contrast prior-cue vertical slice.
+caveats:
+  - The OSF record did not expose an explicit data license in its API metadata.
+  - The processed stats matrix preserves lower-frequency versus higher-frequency responses, not the original left/right tilt response.
+  - Raw EEG/behaviour archives are larger and are not required for this MVP behavioural slice.

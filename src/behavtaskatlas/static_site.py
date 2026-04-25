@@ -1709,6 +1709,22 @@ def _slice_metrics(slice_id: str, analysis: dict[str, Any] | None) -> list[dict[
             _metric_payload("Coherence levels", len(analysis.get("chronometric_rows", []))),
             _metric_payload("Summary rows", len(analysis.get("summary_rows", []))),
         ]
+    if "n_trials" in analysis:
+        metrics = [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+        ]
+        if "n_no_response_trials" in analysis:
+            metrics.append(
+                _metric_payload("No-response trials", analysis.get("n_no_response_trials"))
+            )
+        if "prior_results" in analysis:
+            metrics.append(
+                _metric_payload("Prior contexts", len(analysis.get("prior_results", [])))
+            )
+        if "summary_rows" in analysis:
+            metrics.append(_metric_payload("Summary rows", len(analysis.get("summary_rows", []))))
+        return metrics
     return []
 
 

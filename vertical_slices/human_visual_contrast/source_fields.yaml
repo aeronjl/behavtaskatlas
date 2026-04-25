@@ -1,0 +1,97 @@
+slice_id: slice.human-visual-contrast-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+source_repository: https://osf.io/b92wm/
+source_doi: 10.17605/OSF.IO/B92WM
+source_article: https://elifesciences.org/articles/91135
+source_object: OSF `1. Behavioural Analysis.mat` variable `dataset`
+source_analysis_script: OSF `Behavioural_Analysis.m`
+source_task_script: OSF `Experiment_Task.m`
+source_subject_count: 12
+source_trial_count: 66200
+source_columns:
+  - index: 1
+    name: response_time
+    description: Response time in seconds from evidence onset.
+  - index: 2
+    name: performance_code
+    description: 1 correct, 2 incorrect after original RT/performance filtering.
+  - index: 3
+    name: cue_code
+    description: 1 neutral, 2 valid, 3 invalid.
+  - index: 4
+    name: pulse_code
+    description: 1 no pulse, 2 positive, 3 neutral, 4 reverse.
+  - index: 5
+    name: trial_bin
+    description: Post-hoc task-exposure bin 1-5 from the original analysis.
+  - index: 6
+    name: subject_code
+    description: Subject code 1-12, mapped to A-L in the original script.
+  - index: 7
+    name: lower_frequency_response
+    description: Boolean flag for response to the lower flicker-frequency grating.
+  - index: 8
+    name: delta_c
+    description: Session-titrated target contrast fraction.
+  - index: 9
+    name: reward_points
+    description: 50 for correct trials and -25 for incorrect trials.
+source_delta_c_values:
+  - 0.515
+  - 0.52
+  - 0.53
+  - 0.535
+  - 0.54
+  - 0.55
+  - 0.555
+  - 0.56
+  - 0.565
+  - 0.57
+  - 0.575
+  - 0.58
+  - 0.585
+  - 0.59
+  - 0.6
+  - 0.61
+  - 0.625
+  - 0.63
+  - 0.64
+required_fields:
+  - response_time
+  - performance_code
+  - cue_code
+  - pulse_code
+  - trial_bin
+  - subject_code
+  - lower_frequency_response
+  - delta_c
+  - reward_points
+canonical_mapping:
+  subject_id: Source subject code mapped to `subject-A` through `subject-L`.
+  session_id: Fixed processed dataset id `walsh-prior-cue-human-contrast-osf`.
+  trial_index: Row index in the processed OSF stats matrix.
+  stimulus_value: >
+    `(2 * delta_c - 1) * 100`, signed positive if the lower-frequency grating
+    was reconstructed as the target and negative if the higher-frequency grating
+    was reconstructed as the target.
+  stimulus_side: >
+    Canonical convention only: lower-frequency target mapped to right and
+    higher-frequency target mapped to left.
+  evidence_strength: Absolute signed contrast difference.
+  choice: Lower-frequency response mapped to right; higher-frequency response mapped to left.
+  correct: Performance code 1 true and 2 false.
+  response_time: Response time in seconds.
+  response_time_origin: Evidence onset to button response.
+  feedback: Correct trials mapped to reward; incorrect trials mapped to error.
+  reward: Source reward points.
+  prior_context: Cue code mapped to cue=neutral, cue=valid, or cue=invalid.
+  training_stage: Trial bin mapped to exposure_bin_1 through exposure_bin_5.
+  task_variables: >
+    Source cue, pulse, exposure-bin, deltaC, target/distractor contrast,
+    lower-frequency response, reconstructed target frequency, and the explicit
+    canonical low/high-frequency convention.
+source_notes:
+  - The original analysis script filters to response times at least 100 ms and performance codes 1 or 2 before exporting this stats matrix.
+  - The processed stats matrix does not retain original per-session ids or raw left/right tilt responses.
+  - Target frequency is reconstructed from lower-frequency response and correctness.
