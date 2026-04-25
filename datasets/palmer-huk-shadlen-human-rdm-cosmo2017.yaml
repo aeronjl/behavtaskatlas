@@ -1,0 +1,60 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+name: Palmer-Huk-Shadlen human random-dot motion data from CoSMo2017
+description: >
+  MATLAB files distributed by the Drugowitsch Lab CoSMo2017 teaching
+  repository for Experiment 1 of Palmer, Huk, and Shadlen 2005. The files
+  contain signed motion coherence, left/right choice, and reaction time for
+  six human observers after CoSMo2017 preprocessing.
+protocol_ids:
+  - protocol.human-rdm-button-reaction-time
+species:
+  - human
+curation_status: data-linked
+source_url: https://github.com/DrugowitschLab/CoSMo2017
+access_notes: >
+  The MVP downloads six `phs_*.mat` files plus the source README and license
+  from a pinned CoSMo2017 commit into ignored local raw-data storage.
+license: >
+  CoSMo2017 is BSD-3-Clause licensed; original Palmer-Huk-Shadlen data
+  redistribution terms should still be confirmed before publishing derived
+  tables.
+data_formats:
+  - MATLAB .mat
+  - derived canonical trial tables to be generated
+expected_trial_table_mapping:
+  subject_id: Subject identifier formatted from each `phs_{subject}.mat` file name.
+  session_id: Fixed processed dataset identifier because the CoSMo2017 files are per-subject aggregates.
+  trial_index: Global row index across selected subject files after optional filtering.
+  stimulus_value: Signed motion coherence percentage, rightward motion positive and leftward motion negative.
+  stimulus_side: Positive coherence mapped to right, negative coherence mapped to left, zero coherence mapped to none.
+  evidence_strength: Absolute percent motion coherence.
+  choice: "`choice` mapped as 0 left and 1 right."
+  correct: Derived from signed coherence and choice using the CoSMo2017 zero-coherence convention.
+  response_time: "`rt` in seconds."
+  task_variables: Source subject id, signed coherence fraction, choice code, and zero-coherence correctness convention.
+references:
+  - id: ref.palmer-huk-shadlen-2005
+    citation: >
+      Palmer J, Huk AC, Shadlen MN. The effect of stimulus strength on the
+      speed and accuracy of a perceptual decision. Journal of Vision, 2005.
+    url: https://doi.org/10.1167/5.5.1
+    doi: 10.1167/5.5.1
+  - id: ref.drugowitsch-cosmo2017-phs
+    citation: >
+      Drugowitsch Lab. CoSMo2017 teaching repository, Palmer-Huk-Shadlen
+      behavioral data files and README.
+    url: https://github.com/DrugowitschLab/CoSMo2017
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Dataset metadata drafted for the fifth vertical slice using CoSMo2017
+    commit 5fbffc45adea2e7e30407a33931e39fb84219c83.
+caveats:
+  - CoSMo2017 removes bad trials and modifies the original data before distribution.
+  - CoSMo2017 assigns random choices to zero-coherence trials.
+  - Original dataset redistribution terms should be confirmed before committing derived tables.

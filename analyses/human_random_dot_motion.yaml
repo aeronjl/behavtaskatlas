@@ -1,0 +1,34 @@
+analysis_id: analysis.human-rdm.descriptive-psychometric
+protocol_id: protocol.human-rdm-button-reaction-time
+dataset_id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+status: cosmo2017-static-report-run
+inputs:
+  - six CoSMo2017 `phs_*.mat` files from pinned commit 5fbffc45adea2e7e30407a33931e39fb84219c83
+verified_outputs:
+  - 3373 canonical trial rows across six human observers
+  - psychometric summary rows grouped by signed motion coherence
+  - chronometric summary rows grouped by absolute motion coherence
+  - analysis result JSON with empirical and fitted psychometric metrics
+  - dependency-free SVG psychometric plot
+  - dependency-free SVG chronometric plot
+  - static HTML report generated from ignored local artifacts
+grouping_variables:
+  - signed right-positive motion coherence
+  - absolute motion coherence
+  - subject
+implemented_outputs:
+  - canonical trial table
+  - psychometric summary by signed motion coherence
+  - chronometric summary by absolute motion coherence
+  - fitted four-parameter logistic psychometric estimates
+  - static report over source provenance, psychometric rows, chronometric rows, and artifact links
+deferred_outputs:
+  - diffusion-model fit matching Palmer-Huk-Shadlen and CoSMo2017 scripts
+  - per-subject psychometric and chronometric split in the static report
+  - explicit speed-accuracy instruction metadata if original block annotations are recovered
+provenance_requirements:
+  - CoSMo2017 repository URL and commit hash
+  - source file hashes
+  - adapter version or commit hash
+  - date generated
+  - zero-coherence correctness caveat

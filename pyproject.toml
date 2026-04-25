@@ -16,6 +16,9 @@ clicks = [
 ibl = [
     "ONE-api>=3.5.0",
 ]
+rdm = [
+    "scipy>=1.13",
+]
 
 [project.scripts]
 behavtaskatlas = "behavtaskatlas.cli:main"

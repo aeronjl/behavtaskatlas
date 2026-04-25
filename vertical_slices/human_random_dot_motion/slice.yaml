@@ -1,0 +1,52 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.human-random-dot-motion
+title: Human Random-Dot Motion
+description: >
+  Palmer-Huk-Shadlen human random-dot motion reaction-time slice with
+  CoSMo2017 provenance, canonical trials, and descriptive psychometric and
+  chronometric summaries.
+curation_status: analysis-verified
+display_order: 35
+family_id: family.random-dot-motion
+protocol_id: protocol.human-rdm-button-reaction-time
+dataset_id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+report_path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/report.html
+analysis_result_path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/analysis_result.json
+primary_artifact_path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/report.html
+  - label: Analysis result JSON
+    path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/analysis_result.json
+  - label: Psychometric SVG
+    path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/psychometric.svg
+  - label: Chronometric SVG
+    path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/chronometric.svg
+  - label: Canonical trials CSV
+    path: human_random_dot_motion/palmer-huk-shadlen-cosmo2017/trials.csv
+  - label: Slice notes
+    path: vertical_slices/human_random_dot_motion/README.md
+    path_type: repository
+  - label: Analysis record
+    path: analyses/human_random_dot_motion.yaml
+    path_type: repository
+comparison:
+  species: human
+  modality: visual
+  stimulus_metric: signed motion coherence
+  evidence_type: stochastic-motion
+  choice_type: 2afc
+  response_modality: button-press
+  analysis_outputs: psychometric and chronometric summaries
+  data_scope: six CoSMo2017 Palmer-Huk-Shadlen subject files
+  canonical_axis: rightward motion positive, leftward motion negative
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-25
+  updated: 2026-04-25
+  source_notes: >
+    Vertical-slice report metadata for the CoSMo2017 Palmer-Huk-Shadlen human
+    reaction-time RDM files.

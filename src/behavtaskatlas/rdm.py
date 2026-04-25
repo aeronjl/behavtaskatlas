@@ -23,6 +23,20 @@ DEFAULT_RDM_CSV_URL = (
     f"{PYDDM_COMMIT}/doc/downloads/roitman_rts.csv"
 )
 RDM_PSYCHOMETRIC_X_AXIS_LABEL = "Signed motion coherence (%; target 1 positive)"
+
+HUMAN_RDM_PROTOCOL_ID = "protocol.human-rdm-button-reaction-time"
+HUMAN_RDM_DATASET_ID = "dataset.palmer-huk-shadlen-human-rdm-cosmo2017"
+DEFAULT_HUMAN_RDM_RAW_DIR = Path("data/raw/human_random_dot_motion/palmer_huk_shadlen")
+DEFAULT_HUMAN_RDM_DERIVED_DIR = Path("derived/human_random_dot_motion")
+DEFAULT_HUMAN_RDM_SESSION_ID = "palmer-huk-shadlen-cosmo2017"
+COSMO2017_COMMIT = "5fbffc45adea2e7e30407a33931e39fb84219c83"
+COSMO2017_REPOSITORY_URL = "https://github.com/DrugowitschLab/CoSMo2017"
+COSMO2017_RAW_BASE_URL = (
+    f"https://raw.githubusercontent.com/DrugowitschLab/CoSMo2017/{COSMO2017_COMMIT}"
+)
+HUMAN_RDM_SUBJECT_IDS = ("ah", "eh", "jd", "jp", "mk", "mm")
+HUMAN_RDM_SUPPORT_FILES = ("phs_data_README.txt", "LICENSE")
+HUMAN_RDM_PSYCHOMETRIC_X_AXIS_LABEL = "Signed motion coherence (%; right positive)"
 RDM_CHRONOMETRIC_FIELDS = [
     "evidence_strength",
     "n_trials",
@@ -48,6 +62,45 @@ def download_roitman_rdm_csv(
         "output_path": str(path),
         "n_bytes": len(content),
         "sha256": file_sha256(path),
+    }
+
+
+def download_human_rdm_phs_files(
+    out_dir: Path = DEFAULT_HUMAN_RDM_RAW_DIR,
+    *,
+    subjects: list[str] | None = None,
+    commit: str = COSMO2017_COMMIT,
+) -> dict[str, Any]:
+    selected_subjects = _normalize_human_rdm_subjects(subjects)
+    filenames = [f"phs_{subject}.mat" for subject in selected_subjects]
+    filenames.extend(HUMAN_RDM_SUPPORT_FILES)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    files = []
+    for filename in filenames:
+        url = _cosmo2017_raw_url(filename, commit=commit)
+        path = out_dir / filename
+        with urllib.request.urlopen(url) as response:
+            content = response.read()
+        path.write_bytes(content)
+        files.append(
+            {
+                "file_name": filename,
+                "source_url": url,
+                "output_path": str(path),
+                "n_bytes": len(content),
+                "sha256": file_sha256(path),
+            }
+        )
+
+    return {
+        "source_repository_url": COSMO2017_REPOSITORY_URL,
+        "source_repository_commit": commit,
+        "output_dir": str(out_dir),
+        "subjects": [f"phs-{subject}" for subject in selected_subjects],
+        "n_files": len(files),
+        "n_bytes": sum(int(file["n_bytes"]) for file in files),
+        "files": files,
     }
 
 
@@ -82,6 +135,76 @@ def load_roitman_rdm_csv(
         "source_repository_commit": PYDDM_COMMIT,
         "n_trials": len(trials),
         "monkeys": sorted({trial.subject_id for trial in trials if trial.subject_id}),
+        "coherence_levels": sorted(
+            {
+                trial.evidence_strength
+                for trial in trials
+                if trial.evidence_strength is not None
+            }
+        ),
+    }
+    return trials, details
+
+
+def load_human_rdm_phs_mats(
+    raw_dir: Path,
+    *,
+    session_id: str = DEFAULT_HUMAN_RDM_SESSION_ID,
+    subjects: list[str] | None = None,
+    limit: int | None = None,
+) -> tuple[list[CanonicalTrial], dict[str, Any]]:
+    selected_subjects = _normalize_human_rdm_subjects(subjects)
+    trials: list[CanonicalTrial] = []
+    source_files = []
+
+    for subject in selected_subjects:
+        mat_file = raw_dir / f"phs_{subject}.mat"
+        if not mat_file.exists():
+            raise FileNotFoundError(
+                f"Human RDM MATLAB file not found: {mat_file}. "
+                "Run `uv run --extra rdm behavtaskatlas human-rdm-download` first."
+            )
+        rows = _load_human_rdm_phs_rows(mat_file)
+        source_files.append(
+            {
+                "subject_id": f"phs-{subject}",
+                "source_file": str(mat_file),
+                "source_file_name": mat_file.name,
+                "source_file_sha256": file_sha256(mat_file),
+                "source_url": _cosmo2017_raw_url(mat_file.name),
+                "n_trials": len(rows),
+            }
+        )
+        for row in rows:
+            if limit is not None and len(trials) >= limit:
+                break
+            trials.append(
+                harmonize_human_rdm_phs_trial(
+                    row,
+                    subject_id=f"phs-{subject}",
+                    session_id=session_id,
+                    trial_index=len(trials),
+                )
+            )
+        if limit is not None and len(trials) >= limit:
+            break
+
+    details = {
+        "source_repository_url": COSMO2017_REPOSITORY_URL,
+        "source_repository_commit": COSMO2017_COMMIT,
+        "source_readme_url": _cosmo2017_raw_url("phs_data_README.txt"),
+        "source_license_url": _cosmo2017_raw_url("LICENSE"),
+        "source_files": source_files,
+        "n_source_files": len(source_files),
+        "n_trials": len(trials),
+        "subjects": sorted({trial.subject_id for trial in trials if trial.subject_id}),
+        "signed_coherence_levels": sorted(
+            {
+                trial.stimulus_value
+                for trial in trials
+                if trial.stimulus_value is not None
+            }
+        ),
         "coherence_levels": sorted(
             {
                 trial.evidence_strength
@@ -150,6 +273,53 @@ def harmonize_roitman_rdm_trial(
     )
 
 
+def harmonize_human_rdm_phs_trial(
+    source: dict[str, Any],
+    *,
+    subject_id: str,
+    session_id: str,
+    trial_index: int,
+) -> CanonicalTrial:
+    missing = sorted(field for field in ["rt", "choice", "cohs"] if field not in source)
+    if missing:
+        joined = ", ".join(missing)
+        raise ValueError(f"Missing required human RDM fields: {joined}")
+
+    choice_code = _required_int(source["choice"], field="choice")
+    if choice_code not in {0, 1}:
+        raise ValueError(f"Field choice must be 0 or 1, got {source['choice']!r}")
+    signed_fraction = _required_float(source["cohs"], field="cohs")
+    signed_percent = signed_fraction * 100.0
+
+    return CanonicalTrial(
+        protocol_id=HUMAN_RDM_PROTOCOL_ID,
+        dataset_id=HUMAN_RDM_DATASET_ID,
+        subject_id=subject_id,
+        session_id=session_id,
+        trial_index=trial_index,
+        stimulus_modality="visual",
+        stimulus_value=signed_percent,
+        stimulus_units="percent motion coherence, signed right positive",
+        stimulus_side=_target_side_from_signed_coherence(signed_percent),
+        evidence_strength=abs(signed_percent),
+        evidence_units="absolute percent motion coherence",
+        choice=_human_rdm_choice_label(choice_code),
+        correct=_human_rdm_correct_label(signed_fraction, choice_code),
+        response_time=_required_float(source["rt"], field="rt"),
+        response_time_origin="reaction time in seconds from CoSMo2017 PHS MATLAB file",
+        feedback="none",
+        prior_context=None,
+        task_variables={
+            "subject": subject_id,
+            "coherence_fraction": signed_fraction,
+            "signed_coherence_fraction_right_positive": signed_fraction,
+            "choice_code": choice_code,
+            "zero_coherence_correct_choice_convention": "right",
+        },
+        source={key: _json_safe_value(value) for key, value in source.items()},
+    )
+
+
 def analyze_roitman_rdm(trials: list[CanonicalTrial]) -> dict[str, Any]:
     from behavtaskatlas.ibl import analyze_canonical_psychometric
 
@@ -175,6 +345,41 @@ def analyze_roitman_rdm(trials: list[CanonicalTrial]) -> dict[str, Any]:
             (
                 "Reaction times are reported from the processed PyDDM CSV without "
                 "excluding short or long trials."
+            ),
+        ],
+    )
+    result["chronometric_rows"] = summarize_rdm_chronometric(trials)
+    return result
+
+
+def analyze_human_rdm(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    from behavtaskatlas.ibl import analyze_canonical_psychometric
+
+    result = analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.human-rdm.descriptive-psychometric",
+        protocol_id=HUMAN_RDM_PROTOCOL_ID,
+        dataset_id=HUMAN_RDM_DATASET_ID,
+        report_title="Human Random-Dot Motion Report",
+        stimulus_label="Signed motion coherence",
+        stimulus_units="percent coherence, signed right positive",
+        stimulus_metric_name="coherence",
+        caveats=[
+            (
+                "The CoSMo2017 PHS MATLAB files are modified from the original "
+                "Palmer-Huk-Shadlen Experiment 1 data: bad trials were removed, "
+                "motion direction and coherence were combined into signed coherence, "
+                "and reaction times were converted to seconds."
+            ),
+            (
+                "Choice is coded as 0 left and 1 right. Correctness is reconstructed "
+                "from signed coherence and choice using the CoSMo2017 analysis "
+                "convention that treats zero-coherence trials as rightward."
+            ),
+            (
+                "Empirical bias and threshold use linear interpolation over empirical "
+                "p(right). Fitted values use a four-parameter logistic model rather "
+                "than the Palmer-Huk-Shadlen diffusion-model fit."
             ),
         ],
     )
@@ -282,6 +487,43 @@ def rdm_provenance_payload(
     }
 
 
+def human_rdm_provenance_payload(
+    *,
+    details: dict[str, Any],
+    output_files: dict[str, str],
+    trials: list[CanonicalTrial],
+) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    return {
+        "protocol_id": HUMAN_RDM_PROTOCOL_ID,
+        "dataset_id": HUMAN_RDM_DATASET_ID,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "source": {
+            "cosmo2017_repository_url": COSMO2017_REPOSITORY_URL,
+            "cosmo2017_repository_commit": COSMO2017_COMMIT,
+            **details,
+        },
+        "n_trials": len(trials),
+        "subjects": sorted({trial.subject_id for trial in trials if trial.subject_id}),
+        "source_fields": ["rt", "choice", "cohs"],
+        "outputs": output_files,
+        "caveats": [
+            (
+                "The PHS files are distributed by CoSMo2017 as MATLAB files derived "
+                "from Palmer, Huk, and Shadlen Experiment 1."
+            ),
+            (
+                "CoSMo2017 pre-processing assigned random choices to zero-coherence "
+                "trials and its fitting scripts treat zero coherence as rightward for "
+                "correctness reconstruction."
+            ),
+        ],
+    }
+
+
 def rdm_chronometric_svg(rows: list[dict[str, Any]]) -> str:
     width = 720
     height = 420
@@ -380,7 +622,8 @@ def rdm_report_html(
     summary_rows = analysis_result.get("summary_rows", [])
     chronometric_rows = analysis_result.get("chronometric_rows", [])
     source = provenance.get("source", {}) if isinstance(provenance.get("source"), dict) else {}
-    title = "Random-Dot Motion Report"
+    subjects = _source_subjects(source)
+    title = str(analysis_result.get("report_title") or "Random-Dot Motion Report")
     html = [
         "<!doctype html>",
         '<html lang="en">',
@@ -397,14 +640,12 @@ def rdm_report_html(
         "<header>",
         f"<p class=\"eyebrow\">{escape(str(analysis_result.get('analysis_id', 'analysis')))}</p>",
         f"<h1>{escape(title)}</h1>",
-        "<p class=\"lede\">Roitman-Shadlen random-dot motion slice generated from "
-        "the processed PyDDM trial table, with target-coded psychometric and "
-        "chronometric summaries.</p>",
+        f"<p class=\"lede\">{escape(_rdm_report_lede(analysis_result))}</p>",
         "</header>",
         '<section class="metrics" aria-label="Report metrics">',
         _metric("Trials", analysis_result.get("n_trials")),
         _metric("Response trials", analysis_result.get("n_response_trials")),
-        _metric("Subjects", len(source.get("monkeys", []))),
+        _metric("Subjects", len(subjects)),
         _metric("Coherence levels", len(chronometric_rows)),
         _metric("Psychometric rows", len(summary_rows)),
         _metric("Prior blocks", len(prior_results)),
@@ -416,9 +657,9 @@ def rdm_report_html(
             [
                 ("Dataset", analysis_result.get("dataset_id")),
                 ("Protocol", analysis_result.get("protocol_id")),
-                ("PyDDM commit", source.get("source_repository_commit")),
-                ("Source file hash", source.get("source_file_sha256")),
-                ("Subjects", ", ".join(source.get("monkeys", []))),
+                ("Source commit", source.get("source_repository_commit")),
+                ("Source files", _source_file_summary(source)),
+                ("Subjects", ", ".join(subjects)),
             ]
         ),
         "</div>",
@@ -429,7 +670,7 @@ def rdm_report_html(
                 ("Generated", analysis_result.get("generated_at")),
                 ("Commit", analysis_result.get("behavtaskatlas_commit")),
                 ("Git dirty", analysis_result.get("behavtaskatlas_git_dirty")),
-                ("Response time", "saccade time minus stimulus onset"),
+                ("Response time", analysis_result.get("response_time_origin")),
             ]
         ),
         "</div>",
@@ -491,6 +732,36 @@ def rdm_report_html(
     return "\n".join(html) + "\n"
 
 
+def _rdm_report_lede(analysis_result: dict[str, Any]) -> str:
+    if analysis_result.get("protocol_id") == HUMAN_RDM_PROTOCOL_ID:
+        return (
+            "Palmer-Huk-Shadlen human random-dot motion slice generated from "
+            "CoSMo2017 MATLAB files, with signed-coherence psychometric and "
+            "chronometric summaries."
+        )
+    return (
+        "Roitman-Shadlen random-dot motion slice generated from the processed "
+        "PyDDM trial table, with target-coded psychometric and chronometric summaries."
+    )
+
+
+def _source_subjects(source: dict[str, Any]) -> list[str]:
+    for key in ["subjects", "monkeys"]:
+        value = source.get(key)
+        if isinstance(value, list):
+            return [str(item) for item in value]
+    return []
+
+
+def _source_file_summary(source: dict[str, Any]) -> str | None:
+    if source.get("source_file_sha256"):
+        return str(source["source_file_sha256"])
+    source_files = source.get("source_files")
+    if isinstance(source_files, list):
+        return f"{len(source_files)} files"
+    return None
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -532,6 +803,80 @@ def _correct_label(value: Any) -> bool:
     if numeric == 0.0:
         return False
     raise ValueError(f"Field correct must be 0 or 1, got {value!r}")
+
+
+def _human_rdm_choice_label(choice_code: int) -> str:
+    if choice_code == 1:
+        return "right"
+    if choice_code == 0:
+        return "left"
+    return "unknown"
+
+
+def _human_rdm_correct_label(signed_coherence_fraction: float, choice_code: int) -> bool:
+    correct_choice_code = 1 if signed_coherence_fraction >= 0 else 0
+    return choice_code == correct_choice_code
+
+
+def _load_human_rdm_phs_rows(mat_file: Path) -> list[dict[str, Any]]:
+    try:
+        from scipy.io import loadmat
+    except ImportError as exc:
+        raise RuntimeError(
+            "Loading human RDM MATLAB files requires scipy. "
+            "Run with `uv run --extra rdm ...`."
+        ) from exc
+
+    loaded = loadmat(mat_file, squeeze_me=True)
+    rts = _mat_vector(loaded, "rt")
+    choices = _mat_vector(loaded, "choice")
+    coherences = _mat_vector(loaded, "cohs")
+    lengths = {len(rts), len(choices), len(coherences)}
+    if len(lengths) != 1:
+        raise ValueError(
+            f"Human RDM MATLAB vectors have inconsistent lengths in {mat_file}: "
+            f"rt={len(rts)}, choice={len(choices)}, cohs={len(coherences)}"
+        )
+    return [
+        {
+            "rt": rts[index],
+            "choice": choices[index],
+            "cohs": coherences[index],
+        }
+        for index in range(len(rts))
+    ]
+
+
+def _mat_vector(loaded: dict[str, Any], field: str) -> list[Any]:
+    if field not in loaded:
+        raise ValueError(f"Missing required MATLAB field {field!r}")
+    value = loaded[field]
+    if hasattr(value, "reshape"):
+        return value.reshape(-1).tolist()
+    if isinstance(value, list | tuple):
+        return list(value)
+    return [value]
+
+
+def _normalize_human_rdm_subjects(subjects: list[str] | None) -> tuple[str, ...]:
+    if subjects is None:
+        return HUMAN_RDM_SUBJECT_IDS
+    normalized = tuple(subject.removeprefix("phs_").removeprefix("phs-") for subject in subjects)
+    invalid = sorted(set(normalized) - set(HUMAN_RDM_SUBJECT_IDS))
+    if invalid:
+        joined = ", ".join(invalid)
+        valid = ", ".join(HUMAN_RDM_SUBJECT_IDS)
+        raise ValueError(f"Unknown PHS subject id(s): {joined}. Expected one of: {valid}")
+    return normalized
+
+
+def _cosmo2017_raw_url(filename: str, *, commit: str = COSMO2017_COMMIT) -> str:
+    base_url = (
+        COSMO2017_RAW_BASE_URL
+        if commit == COSMO2017_COMMIT
+        else f"https://raw.githubusercontent.com/DrugowitschLab/CoSMo2017/{commit}"
+    )
+    return f"{base_url}/{filename}"
 
 
 def _prior_report_rows(prior_results: list[dict[str, Any]]) -> list[dict[str, Any]]:

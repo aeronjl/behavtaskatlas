@@ -13,7 +13,7 @@ description: >
   dependent measure.
 species:
   - human
-curation_status: literature-curated
+curation_status: data-linked
 stimulus:
   modalities:
     - visual
@@ -56,6 +56,8 @@ training:
 apparatus:
   - visual display
   - keyboard or button box
+dataset_ids:
+  - dataset.palmer-huk-shadlen-human-rdm-cosmo2017
 expected_analyses:
   - psychometric curve by motion coherence
   - chronometric curve by motion coherence
@@ -75,8 +77,11 @@ provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Catalog-only protocol added to test breadth without a vertical slice.
+  updated: 2026-04-25
+  source_notes: >
+    Linked to the CoSMo2017 MATLAB distribution of Palmer, Huk, and Shadlen
+    Experiment 1 so the human reaction-time RDM protocol has a first
+    report-backed vertical slice.
 open_questions:
-  - Add speed-accuracy instruction fields when a concrete dataset is linked.
+  - Add speed-accuracy instruction fields if original block annotations are recovered.
   - Decide whether fixed-duration and reaction-time RDM should be separate records.

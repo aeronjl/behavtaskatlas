@@ -167,7 +167,7 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 4
+    assert len(loaded["comparison_rows"]) == 5
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["trial_count"] == 6149
 
@@ -267,10 +267,20 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["vertical_slices"]
         if row["slice_id"] == "slice.mouse-visual-contrast-unbiased"
     )
+    human_rdm_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.human-random-dot-motion"
+    )
     rdm_dataset = next(
         row
         for row in payload["datasets"]
         if row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+    )
+    human_rdm_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.palmer-huk-shadlen-human-rdm-cosmo2017"
     )
     rdm_detail = next(
         row
@@ -287,33 +297,31 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
 
     assert payload["counts"]["task_families"] == 3
     assert payload["counts"]["protocols"] == 9
-    assert payload["counts"]["datasets"] == 3
-    assert payload["counts"]["vertical_slices"] == 4
+    assert payload["counts"]["datasets"] == 4
+    assert payload["counts"]["vertical_slices"] == 5
     assert payload["counts"]["report_available"] == 1
     assert len(payload["protocol_details"]) == 9
-    assert len(payload["dataset_details"]) == 3
+    assert len(payload["dataset_details"]) == 4
     assert len(protocol_pages) == 9
-    assert len(dataset_pages) == 3
+    assert len(dataset_pages) == 4
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 19
-    assert graph_payload["counts"]["edges"] == 27
-    assert graph_payload["counts"]["qa_issues"] == 8
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 8, "total": 8}
+    assert graph_payload["counts"]["nodes"] == 21
+    assert graph_payload["counts"]["edges"] == 31
+    assert graph_payload["counts"]["qa_issues"] == 6
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 6, "total": 6}
     assert graph_payload["catalog_link"] == "catalog.html"
     assert graph_payload["graph_json_link"] == "graph.json"
     assert graph_payload["curation_queue_link"] == "curation_queue.html"
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 8, "open": 8}
-    assert queue_payload["priority_counts"] == {"normal": 8}
-    assert queue_payload["action_counts"]["needs dataset"] == 4
-    assert queue_payload["action_counts"]["needs vertical slice"] == 4
+    assert queue_payload["counts"] == {"items": 6, "open": 6}
+    assert queue_payload["priority_counts"] == {"normal": 6}
+    assert queue_payload["action_counts"]["needs dataset"] == 3
+    assert queue_payload["action_counts"]["needs vertical slice"] == 3
     assert loaded_queue["queue_schema_version"] == "0.1.0"
-    assert any(
+    assert not any(
         item["source_issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
-        and item["action_type"] == "needs vertical slice"
-        and item["href"] == "protocol-human-rdm-button-reaction-time.html"
         for item in queue_payload["items"]
     )
     assert any(
@@ -335,6 +343,24 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert {
         "source": "dataset.ibl-public-behavior",
         "target": "slice.mouse-visual-contrast-unbiased",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-rdm-button-reaction-time",
+        "target": "dataset.palmer-huk-shadlen-human-rdm-cosmo2017",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.human-rdm-button-reaction-time",
+        "target": "slice.human-random-dot-motion",
+        "edge_type": "protocol_slice",
+        "label": "protocol has slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "dataset.palmer-huk-shadlen-human-rdm-cosmo2017",
+        "target": "slice.human-random-dot-motion",
         "edge_type": "dataset_slice",
         "label": "dataset backs slice",
     } in graph_payload["edges"]
@@ -369,14 +395,10 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         "label": "dataset backs slice",
     } in graph_payload["edges"]
     assert not any(issue["severity"] == "warning" for issue in graph_payload["qa_issues"])
-    assert {
-        "issue_id": "protocol_without_slice::protocol.human-rdm-button-reaction-time",
-        "severity": "info",
-        "issue_type": "protocol_without_slice",
-        "node_id": "protocol.human-rdm-button-reaction-time",
-        "related_node_id": None,
-        "message": "Protocol has no report-backed vertical slice yet.",
-    } in graph_payload["qa_issues"]
+    assert not any(
+        issue["issue_id"] == "protocol_without_slice::protocol.human-rdm-button-reaction-time"
+        for issue in graph_payload["qa_issues"]
+    )
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["declared_dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["slice_ids"] == ["slice.random-dot-motion"]
@@ -451,9 +473,16 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "Linked Protocols" in rdm_dataset_html
     assert "Trial Table Mapping" in rdm_dataset_html
     assert 'href="protocol-random-dot-motion-classic-macaque.html"' in rdm_dataset_html
-    assert human_rdm_protocol["dataset_ids"] == []
-    assert human_rdm_protocol["slice_ids"] == []
-    assert human_rdm_protocol["report_status"] == "no slice"
+    assert human_rdm_protocol["dataset_ids"] == [
+        "dataset.palmer-huk-shadlen-human-rdm-cosmo2017"
+    ]
+    assert human_rdm_protocol["slice_ids"] == ["slice.human-random-dot-motion"]
+    assert human_rdm_protocol["report_status"] == "analysis pending"
+    assert human_rdm_slice["protocol_id"] == "protocol.human-rdm-button-reaction-time"
+    assert human_rdm_slice["report_status"] == "missing"
+    assert human_rdm_dataset["detail_link"] == (
+        "dataset-palmer-huk-shadlen-human-rdm-cosmo2017.html"
+    )
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
     assert loaded["catalog_schema_version"] == "0.1.0"
     assert "Browse Protocols" in html
@@ -480,7 +509,8 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "applyFilters" in html
     assert "Random-Dot Motion" in html
     assert "Human random-dot motion button reaction-time task" in html
+    assert "Human Random-Dot Motion" in html
     assert "signed motion coherence" in html
     assert "Curation Queue" in queue_html
     assert "needs vertical slice" in queue_html
-    assert 'href="protocol-human-rdm-button-reaction-time.html"' in queue_html
+    assert 'href="protocol-human-rdm-button-reaction-time.html"' not in queue_html

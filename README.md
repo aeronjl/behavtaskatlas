@@ -13,8 +13,8 @@ The MVP goal is to make task protocols comparable by linking operational task st
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template, four report-backed
-  concrete protocols, and four remaining dataset-seeking variants for breadth
+- Nine current protocol records: one abstract template, five report-backed
+  concrete protocols, and three remaining dataset-seeking variants for breadth
   testing.
 
 ## Local Workflow
@@ -109,6 +109,23 @@ The RDM slice writes ignored local artifacts under
 psychometric and chronometric summaries, descriptive fit results, dependency-free
 SVG plots, and a static report. The raw processed CSV stays under ignored
 `data/raw/random_dot_motion/`.
+
+Download and run the Palmer-Huk-Shadlen human random-dot motion slice from the
+pinned CoSMo2017 MATLAB files:
+
+```bash
+uv run --extra rdm behavtaskatlas human-rdm-download
+uv run --extra rdm behavtaskatlas human-rdm-harmonize
+uv run behavtaskatlas human-rdm-analyze
+uv run behavtaskatlas human-rdm-report
+uv run behavtaskatlas site-index
+```
+
+The human RDM slice writes ignored local artifacts under
+`derived/human_random_dot_motion/palmer-huk-shadlen-cosmo2017/`. It emits
+canonical trials, psychometric and chronometric summaries, descriptive fit
+results, dependency-free SVG plots, and a static report. The raw MATLAB files
+stay under ignored `data/raw/human_random_dot_motion/`.
 
 Generate the mouse unbiased visual contrast training slice from the pinned
 OpenAlyx trainingChoiceWorld session:

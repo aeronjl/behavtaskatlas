@@ -46,12 +46,21 @@ from behavtaskatlas.ibl import (
 )
 from behavtaskatlas.models import SCHEMA_MODELS, CanonicalTrial
 from behavtaskatlas.rdm import (
+    DEFAULT_HUMAN_RDM_DERIVED_DIR,
+    DEFAULT_HUMAN_RDM_RAW_DIR,
+    DEFAULT_HUMAN_RDM_SESSION_ID,
     DEFAULT_RDM_DERIVED_DIR,
     DEFAULT_RDM_RAW_CSV,
     DEFAULT_RDM_SESSION_ID,
+    HUMAN_RDM_PSYCHOMETRIC_X_AXIS_LABEL,
+    HUMAN_RDM_SUBJECT_IDS,
     RDM_PSYCHOMETRIC_X_AXIS_LABEL,
+    analyze_human_rdm,
     analyze_roitman_rdm,
+    download_human_rdm_phs_files,
     download_roitman_rdm_csv,
+    human_rdm_provenance_payload,
+    load_human_rdm_phs_mats,
     load_roitman_rdm_csv,
     rdm_provenance_payload,
     write_rdm_chronometric_csv,
@@ -471,6 +480,111 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    human_rdm_download_parser = subparsers.add_parser(
+        "human-rdm-download",
+        help="Download Palmer-Huk-Shadlen human RDM MATLAB files from CoSMo2017",
+    )
+    human_rdm_download_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_HUMAN_RDM_RAW_DIR),
+        help="Local output directory under ignored raw-data storage",
+    )
+    human_rdm_download_parser.add_argument(
+        "--subject",
+        action="append",
+        choices=HUMAN_RDM_SUBJECT_IDS,
+        default=None,
+        help="Optional PHS subject id to download; may be passed more than once",
+    )
+
+    human_rdm_parser = subparsers.add_parser(
+        "human-rdm-harmonize",
+        help="Harmonize Palmer-Huk-Shadlen human RDM MATLAB files",
+    )
+    human_rdm_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_HUMAN_RDM_RAW_DIR),
+        help="Directory containing downloaded PHS MATLAB files",
+    )
+    human_rdm_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_HUMAN_RDM_DERIVED_DIR),
+        help="Directory for generated human RDM artifacts",
+    )
+    human_rdm_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_RDM_SESSION_ID,
+        help="Session directory name for the processed dataset",
+    )
+    human_rdm_parser.add_argument(
+        "--subject",
+        action="append",
+        choices=HUMAN_RDM_SUBJECT_IDS,
+        default=None,
+        help="Optional PHS subject id to harmonize; may be passed more than once",
+    )
+    human_rdm_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    human_rdm_analyze_parser = subparsers.add_parser(
+        "human-rdm-analyze",
+        help="Analyze harmonized Palmer-Huk-Shadlen human RDM artifacts",
+    )
+    human_rdm_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_RDM_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    human_rdm_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_RDM_DERIVED_DIR),
+        help="Directory containing generated human RDM artifacts",
+    )
+    human_rdm_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    human_rdm_report_parser = subparsers.add_parser(
+        "human-rdm-report",
+        help="Render a static HTML report from analyzed human RDM artifacts",
+    )
+    human_rdm_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_HUMAN_RDM_SESSION_ID,
+        help="Analyzed session directory name",
+    )
+    human_rdm_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_HUMAN_RDM_DERIVED_DIR),
+        help="Directory containing generated human RDM artifacts",
+    )
+    human_rdm_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    human_rdm_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    human_rdm_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    human_rdm_report_parser.add_argument(
+        "--chronometric-svg",
+        default=None,
+        help="Optional explicit path to chronometric.svg",
+    )
+    human_rdm_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     site_index_parser = subparsers.add_parser(
         "site-index",
         help="Render a static index linking generated vertical-slice reports",
@@ -633,6 +747,35 @@ def main(argv: list[str] | None = None) -> int:
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
         )
     if args.command == "rdm-report":
+        return _rdm_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            chronometric_svg=Path(args.chronometric_svg) if args.chronometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "human-rdm-download":
+        return _human_rdm_download(
+            out_dir=Path(args.out_dir),
+            subjects=args.subject,
+        )
+    if args.command == "human-rdm-harmonize":
+        return _human_rdm_harmonize(
+            raw_dir=Path(args.raw_dir),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            subjects=args.subject,
+            limit=args.limit,
+        )
+    if args.command == "human-rdm-analyze":
+        return _human_rdm_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "human-rdm-report":
         return _rdm_report(
             session_id=args.session_id,
             derived_dir=Path(args.derived_dir),
@@ -1122,6 +1265,18 @@ def _rdm_download(*, out_file: Path) -> int:
     return 0
 
 
+def _human_rdm_download(*, out_dir: Path, subjects: list[str] | None) -> int:
+    try:
+        details = download_human_rdm_phs_files(out_dir, subjects=subjects)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded {details['n_files']} files ({details['n_bytes']} bytes) to {out_dir}")
+    for file in details["files"]:
+        print(f"SHA256 {file['file_name']} {file['sha256']}")
+    return 0
+
+
 def _rdm_harmonize(
     *,
     csv_file: Path,
@@ -1157,6 +1312,51 @@ def _rdm_harmonize(
     write_provenance_json(
         provenance_path,
         rdm_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _human_rdm_harmonize(
+    *,
+    raw_dir: Path,
+    out_dir: Path,
+    session_id: str,
+    subjects: list[str] | None,
+    limit: int | None,
+) -> int:
+    try:
+        trials, details = load_human_rdm_phs_mats(
+            raw_dir,
+            session_id=session_id,
+            subjects=subjects,
+            limit=limit,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        human_rdm_provenance_payload(
             details=details,
             trials=trials,
             output_files={
@@ -1217,6 +1417,50 @@ def _rdm_analyze(
     return 0
 
 
+def _human_rdm_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra rdm behavtaskatlas human-rdm-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_human_rdm(trials)
+
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+    chronometric_path = session_dir / "chronometric_summary.csv"
+    chronometric_plot_path = session_dir / "chronometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        plot_path,
+        result["summary_rows"],
+        x_axis_label=HUMAN_RDM_PSYCHOMETRIC_X_AXIS_LABEL,
+    )
+    write_rdm_chronometric_csv(chronometric_path, result["chronometric_rows"])
+    write_rdm_chronometric_svg(chronometric_plot_path, result["chronometric_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    print(f"Wrote chronometric summary to {chronometric_path}")
+    print(f"Wrote chronometric plot to {chronometric_plot_path}")
+    return 0
+
+
 def _rdm_report(
     *,
     session_id: str,
@@ -1236,7 +1480,7 @@ def _rdm_report(
     if not analysis_path.exists():
         print(
             f"RDM analysis result not found: {analysis_path}. "
-            "Run `uv run behavtaskatlas rdm-analyze` first.",
+            "Run the matching RDM analyze command first.",
             file=sys.stderr,
         )
         return 2

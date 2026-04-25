@@ -2,6 +2,12 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-25 01:50:59 BST - Human RDM turns cross-species comparison into a first-class slice
+
+The human random-dot motion button reaction-time protocol now has a CoSMo2017-backed Palmer-Huk-Shadlen vertical slice. The same RDM analysis surface can compare macaque saccade RDM and human button-response RDM while preserving distinct provenance, response modality, and signed-coherence conventions.
+
+This removes both queue items for the human RDM protocol and drops the curation queue to six open items. The implementation lesson is that shared task families need adapters that are specific about source coding, especially here where CoSMo2017 preprocessed the original data, assigned zero-coherence choices, and uses a rightward zero-coherence convention for correctness reconstruction.
+
 ## 2026-04-25 00:44:45 BST - TrainingChoiceWorld adds a fourth report-backed slice
 
 The mouse unbiased visual contrast wheel protocol now has a concrete OpenAlyx `trainingChoiceWorld` session selected, harmonized, analyzed, and reported. This turns the broad IBL public behavior dataset link into an analysis-ready slice for one pinned session while preserving the distinction between archive coverage and the exact subset used for a report.

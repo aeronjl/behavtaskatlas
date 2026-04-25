@@ -1,0 +1,59 @@
+slice_id: slice.human-random-dot-motion
+protocol_id: protocol.human-rdm-button-reaction-time
+dataset_id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+source_repository: https://github.com/DrugowitschLab/CoSMo2017
+source_commit: 5fbffc45adea2e7e30407a33931e39fb84219c83
+source_readme_url: https://raw.githubusercontent.com/DrugowitschLab/CoSMo2017/5fbffc45adea2e7e30407a33931e39fb84219c83/phs_data_README.txt
+source_license_url: https://raw.githubusercontent.com/DrugowitschLab/CoSMo2017/5fbffc45adea2e7e30407a33931e39fb84219c83/LICENSE
+source_object: CoSMo2017 phs_*.mat files
+source_subject_files:
+  - phs_ah.mat
+  - phs_eh.mat
+  - phs_jd.mat
+  - phs_jp.mat
+  - phs_mk.mat
+  - phs_mm.mat
+source_subject_count: 6
+source_trial_count: 3373
+source_signed_coherence_levels_percent:
+  - -51.2
+  - -25.6
+  - -12.8
+  - -6.4
+  - -3.2
+  - 0
+  - 3.2
+  - 6.4
+  - 12.8
+  - 25.6
+  - 51.2
+source_absolute_coherence_levels_percent:
+  - 0
+  - 3.2
+  - 6.4
+  - 12.8
+  - 25.6
+  - 51.2
+required_fields:
+  - rt
+  - choice
+  - cohs
+canonical_mapping:
+  subject_id: subject identifier from `phs_{subject}.mat`
+  session_id: fixed processed dataset id `palmer-huk-shadlen-cosmo2017`
+  trial_index: global row index across selected subject files
+  stimulus_value: `cohs` converted to signed coherence percentage, right positive
+  stimulus_side: positive right, negative left, zero none
+  evidence_strength: absolute signed coherence percentage
+  choice: choice 0 mapped to left, choice 1 mapped to right
+  correct: choice compared with signed coherence, with zero coherence treated as rightward
+  response_time: rt in seconds
+  response_time_origin: CoSMo2017 reaction-time vector
+  feedback: none
+  task_variables.subject: source subject id
+  task_variables.coherence_fraction: signed source coherence fraction
+  task_variables.choice_code: source choice code
+source_notes:
+  - The CoSMo2017 README says bad trials were removed before distribution.
+  - The CoSMo2017 README says zero-coherence choices were assigned randomly.
+  - The CoSMo2017 fitting script treats zero-coherence trials as rightward for correctness reconstruction.

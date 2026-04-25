@@ -35,6 +35,9 @@ clicks = [
 ibl = [
     { name = "one-api" },
 ]
+rdm = [
+    { name = "scipy" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -48,8 +51,9 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "scipy", marker = "extra == 'clicks'", specifier = ">=1.13" },
+    { name = "scipy", marker = "extra == 'rdm'", specifier = ">=1.13" },
 ]
-provides-extras = ["clicks", "ibl"]
+provides-extras = ["clicks", "ibl", "rdm"]
 
 [package.metadata.requires-dev]
 dev = [
