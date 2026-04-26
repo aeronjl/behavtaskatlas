@@ -18,6 +18,7 @@ access_notes: >
   local raw-data storage. The authors also provide analysis/model code through
   the POMDP-Confidence GitHub repository, but the complete raw behavioral
   MATLAB files are not included in this committed atlas record.
+source_data_level: figure-source-data
 license: >
   Nature Communications source-data reuse terms and original behavioral data
   redistribution terms should be confirmed before publishing derived tables.

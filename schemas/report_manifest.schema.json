@@ -67,6 +67,10 @@
           "title": "Slice Id",
           "type": "string"
         },
+        "source_data_level": {
+          "title": "Source Data Level",
+          "type": "string"
+        },
         "species": {
           "title": "Species",
           "type": "string"
@@ -104,6 +108,7 @@
         "evidence_type",
         "choice_type",
         "response_modality",
+        "source_data_level",
         "analysis_outputs",
         "data_scope",
         "canonical_axis",
@@ -270,6 +275,10 @@
           "title": "Response Modality",
           "type": "string"
         },
+        "source_data_level": {
+          "title": "Source Data Level",
+          "type": "string"
+        },
         "species": {
           "title": "Species",
           "type": "string"
@@ -286,6 +295,7 @@
         "evidence_type",
         "choice_type",
         "response_modality",
+        "source_data_level",
         "analysis_outputs",
         "data_scope",
         "canonical_axis"
@@ -370,6 +380,11 @@
       ],
       "default": null,
       "title": "Graph Link"
+    },
+    "health": {
+      "additionalProperties": true,
+      "title": "Health",
+      "type": "object"
     },
     "manifest_link": {
       "title": "Manifest Link",

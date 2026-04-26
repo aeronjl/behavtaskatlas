@@ -67,11 +67,14 @@ def test_static_index_links_available_slice_reports(tmp_path) -> None:
     assert "Auditory Clicks Evidence Accumulation" in html
     assert "IBL Visual Decision" in html
     assert "Atlas Comparison" in html
+    assert "MVP Health" in html
+    assert "Source Data Levels" in html
     assert "Machine-readable manifest JSON" in html
     assert "Task catalog" in html
     assert "Relationship graph" in html
     assert "Curation queue" in html
     assert "signed click-count difference" in html
+    assert "processed-trial" in html
     assert "auditory_clicks/report.html" in html
     assert "Open psychometric SVG" in html
     assert "61,222" in html
@@ -174,7 +177,13 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["curation_queue_link"] == "curation_queue.html"
     assert len(loaded["comparison_rows"]) == 8
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
+    assert rdm_row["source_data_level"] == "processed-trial"
     assert rdm_row["trial_count"] == 6149
+    assert loaded["health"]["source_data_level_counts"] == {
+        "figure-source-data": 1,
+        "processed-trial": 6,
+        "raw-trial": 1,
+    }
 
 
 def test_static_manifest_reads_generic_psychometric_metrics(tmp_path) -> None:
@@ -244,6 +253,7 @@ def test_static_manifest_reads_source_row_metrics(tmp_path) -> None:
         item for item in payload["slices"] if item["id"] == "slice.macaque-rdm-confidence-wager"
     )
     assert confidence_row["trial_count"] == 174160
+    assert confidence_row["source_data_level"] == "figure-source-data"
     assert {"label": "Source rows", "value": 174160} in confidence_slice["metrics"]
     assert {"label": "Sure-target rows", "value": 73466} in confidence_slice["metrics"]
 
@@ -730,6 +740,7 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert human_rdm_dataset["detail_link"] == (
         "dataset-palmer-huk-shadlen-human-rdm-cosmo2017.html"
     )
+    assert human_rdm_dataset["source_data_level"] == "processed-trial"
     assert macaque_confidence_protocol["dataset_ids"] == [
         "dataset.khalvati-kiani-rao-rdm-confidence-source-data"
     ]
@@ -738,14 +749,20 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     ]
     assert macaque_confidence_protocol["report_status"] == "analysis pending"
     assert macaque_confidence_slice["protocol_id"] == "protocol.macaque-rdm-confidence-wager"
+    assert macaque_confidence_slice["source_data_level"] == "figure-source-data"
     assert macaque_confidence_slice["report_status"] == "missing"
     assert macaque_confidence_dataset["detail_link"] == (
         "dataset-khalvati-kiani-rao-rdm-confidence-source-data.html"
     )
+    assert macaque_confidence_dataset["source_data_level"] == "figure-source-data"
     assert rdm_slice["primary_link"] == "random_dot_motion/roitman-shadlen-pyddm/report.html"
+    assert rdm_slice["source_data_level"] == "processed-trial"
     assert loaded["catalog_schema_version"] == "0.1.0"
+    assert loaded["health"]["source_data_level_counts"]["figure-source-data"] == 1
     assert "Browse Protocols" in html
     assert "Protocol Catalog" in html
+    assert "MVP Health" in html
+    assert "Source level" in html
     assert 'href="protocol-random-dot-motion-classic-macaque.html"' in html
     assert 'href="dataset-roitman-shadlen-rdm-pyddm.html"' in html
     assert 'href="graph.html"' in html
@@ -770,6 +787,7 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert "Human random-dot motion button reaction-time task" in html
     assert "Human Random-Dot Motion" in html
     assert "Human Visual Contrast Prior Cue" in html
+    assert "figure-source-data" in html
     assert "signed motion coherence" in html
     assert "signed contrast difference" in html
     assert "Curation Queue" in queue_html

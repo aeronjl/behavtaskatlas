@@ -2,6 +2,19 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-26 21:42:30 BST - Source strength belongs in the product surface
+
+The atlas now treats source data level as first-class metadata on datasets and
+vertical slices. This matters because report-backed is not the same as raw:
+the current MVP mixes raw-trial, processed-trial, and figure-source-data slices,
+all of which are useful but support different claims.
+
+The static site now exposes that distinction through an MVP health dashboard,
+comparison rows, catalog tables, protocol links, and dataset pages. That makes
+the atlas more honest as it becomes more complete: users can see both that a
+task has a working report and whether the report rests on raw trials,
+processed trial tables, or figure source data.
+
 ## 2026-04-25 13:31:32 BST - Confidence data needs source-row honesty
 
 The macaque RDM confidence/wagering protocol can now be linked to public data

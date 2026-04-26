@@ -39,6 +39,7 @@ comparison:
   evidence_type: stochastic-motion
   choice_type: wagering
   response_modality: saccade
+  source_data_level: figure-source-data
   analysis_outputs: sure-target probability and accuracy summaries
   data_scope: Nature Communications figure source-data rows across two macaques
   canonical_axis: absolute motion strength because signed direction is unavailable

@@ -17,6 +17,7 @@ access_notes: >
   The MVP downloads the processed CSV from a pinned PyDDM repository commit into
   ignored local raw-data storage. The original dataset is linked by PyDDM and
   eLife to the Shadlen Lab RoitmanDataCode resource.
+source_data_level: processed-trial
 license: >
   PyDDM is MIT licensed; original Roitman-Shadlen data license should be
   confirmed before redistribution.

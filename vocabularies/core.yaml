@@ -62,3 +62,9 @@ curation_statuses:
   - analysis-verified
   - expert-reviewed
 
+source_data_levels:
+  - raw-trial
+  - processed-trial
+  - processed-session
+  - figure-source-data
+  - aggregate-only

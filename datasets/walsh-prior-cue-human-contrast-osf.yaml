@@ -19,6 +19,7 @@ access_notes: >
   and the `Behavioural_Analysis.m` and `Experiment_Task.m` scripts from the OSF
   Analysis Scripts and Task Script components. The processed MAT file is small
   and contains the behavioural trial matrix used for mixed-effects analyses.
+source_data_level: processed-trial
 license: Not specified on the OSF record.
 data_formats:
   - MATLAB .mat

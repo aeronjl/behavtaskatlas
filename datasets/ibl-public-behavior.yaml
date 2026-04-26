@@ -15,6 +15,7 @@ source_url: https://data.internationalbrainlab.org/
 access_notes: >
   The MVP should access detailed session and trial data through the IBL data
   access tooling and document exact extraction steps before harmonization.
+source_data_level: processed-trial
 license: To be confirmed from the source archive.
 data_formats:
   - repository-specific files

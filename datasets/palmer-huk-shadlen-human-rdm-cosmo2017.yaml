@@ -16,6 +16,7 @@ source_url: https://github.com/DrugowitschLab/CoSMo2017
 access_notes: >
   The MVP downloads six `phs_*.mat` files plus the source README and license
   from a pinned CoSMo2017 commit into ignored local raw-data storage.
+source_data_level: processed-trial
 license: >
   CoSMo2017 is BSD-3-Clause licensed; original Palmer-Huk-Shadlen data
   redistribution terms should still be confirmed before publishing derived

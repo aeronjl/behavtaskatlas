@@ -37,6 +37,7 @@ comparison:
   evidence_type: static
   choice_type: 2afc
   response_modality: wheel
+  source_data_level: processed-trial
   analysis_outputs: training-session psychometric fits
   data_scope: one OpenAlyx trainingChoiceWorld public session
   canonical_axis: right contrast positive, left contrast negative

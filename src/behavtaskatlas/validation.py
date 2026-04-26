@@ -219,6 +219,9 @@ def _validate_common_vocab(
         )
         check(record.feedback.feedback_type, "feedback_types", "feedback.feedback_type")
 
+    if isinstance(record, Dataset):
+        check(record.source_data_level, "source_data_levels", "source_data_level")
+
     if isinstance(record, VerticalSlice):
         check(record.comparison.species, "species", "comparison.species")
         check(record.comparison.modality, "modalities", "comparison.modality")
@@ -232,6 +235,11 @@ def _validate_common_vocab(
             record.comparison.response_modality,
             "response_modalities",
             "comparison.response_modality",
+        )
+        check(
+            record.comparison.source_data_level,
+            "source_data_levels",
+            "comparison.source_data_level",
         )
 
     return issues

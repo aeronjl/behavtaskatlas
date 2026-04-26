@@ -19,6 +19,7 @@ access_notes: >
   development under ignored `data/raw/`, while normal validation and tests should
   still run without the archive. Real ingestion operates on a local `.mat` file
   extracted from the archive.
+source_data_level: processed-trial
 license: CC-BY-4.0
 data_formats:
   - MATLAB .mat files

@@ -39,6 +39,7 @@ comparison:
   evidence_type: pulse-train
   choice_type: 2afc
   response_modality: button-press
+  source_data_level: raw-trial
   analysis_outputs: psychometric by DBS context and response-window evidence kernel
   data_scope: one Mendeley Data MATLAB file with 8 DBS patient participants
   canonical_axis: right-minus-left click count at response

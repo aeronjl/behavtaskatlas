@@ -19,6 +19,7 @@ access_notes: >
   Mendeley Data into ignored local raw-data storage. The landing page and
   public-files endpoint expose the file id, SHA-256, license, DOI, and task
   field description without authentication.
+source_data_level: raw-trial
 license: CC-BY-4.0
 data_formats:
   - MATLAB .mat

@@ -124,6 +124,7 @@ class Dataset(StrictModel):
     curation_status: str
     source_url: str
     access_notes: str
+    source_data_level: str
     license: str | None = None
     data_formats: list[str] = Field(default_factory=list)
     expected_trial_table_mapping: dict[str, str] = Field(default_factory=dict)
@@ -160,6 +161,7 @@ class VerticalSliceComparison(StrictModel):
     evidence_type: str
     choice_type: str
     response_modality: str
+    source_data_level: str
     analysis_outputs: str
     data_scope: str
     canonical_axis: str
@@ -234,6 +236,7 @@ class ManifestComparisonRow(StrictModel):
     evidence_type: str
     choice_type: str
     response_modality: str
+    source_data_level: str
     analysis_outputs: str
     data_scope: str
     canonical_axis: str
@@ -271,6 +274,7 @@ class ReportManifest(StrictModel):
     catalog_link: str | None = None
     graph_link: str | None = None
     curation_queue_link: str | None = None
+    health: dict[str, Any] = Field(default_factory=dict)
     comparison_rows: list[ManifestComparisonRow]
     slices: list[ManifestSlice]
 
@@ -311,6 +315,7 @@ class CatalogLinkedDataset(StrictModel):
     detail_link: str
     name: str
     source_url: str
+    source_data_level: str
     license: str | None = None
     curation_status: str
 
@@ -332,6 +337,7 @@ class CatalogLinkedSlice(StrictModel):
     title: str
     report_status: str
     artifact_status: str
+    source_data_level: str | None = None
     primary_link: str | None = None
 
 
@@ -372,6 +378,7 @@ class CatalogDatasetRow(StrictModel):
     protocol_ids: list[str] = Field(default_factory=list)
     species: list[str] = Field(default_factory=list)
     source_url: str
+    source_data_level: str
     license: str | None = None
     curation_status: str
     slice_ids: list[str] = Field(default_factory=list)
@@ -388,6 +395,7 @@ class CatalogDatasetDetail(StrictModel):
     curation_status: str
     source_url: str
     access_notes: str
+    source_data_level: str
     license: str | None = None
     data_formats: list[str] = Field(default_factory=list)
     expected_trial_table_mapping: dict[str, str] = Field(default_factory=dict)
@@ -407,6 +415,7 @@ class CatalogSliceRow(StrictModel):
     modality: str
     stimulus_metric: str
     evidence_type: str
+    source_data_level: str
     report_status: str
     artifact_status: str
     primary_link: str | None = None
@@ -424,6 +433,7 @@ class CatalogPayload(StrictModel):
     graph_link: str
     graph_json_link: str
     curation_queue_link: str
+    health: dict[str, Any] = Field(default_factory=dict)
     counts: dict[str, int]
     task_families: list[CatalogFamilyRow]
     protocols: list[CatalogProtocolRow]

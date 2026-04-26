@@ -39,6 +39,7 @@ comparison:
   evidence_type: stochastic-motion
   choice_type: 2afc
   response_modality: button-press
+  source_data_level: processed-trial
   analysis_outputs: psychometric and chronometric summaries
   data_scope: six CoSMo2017 Palmer-Huk-Shadlen subject files
   canonical_axis: rightward motion positive, leftward motion negative

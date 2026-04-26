@@ -38,6 +38,7 @@ comparison:
   evidence_type: stochastic-motion
   choice_type: 2afc
   response_modality: saccade
+  source_data_level: processed-trial
   analysis_outputs: psychometric and chronometric summaries
   data_scope: processed PyDDM CSV across two macaques
   canonical_axis: target 1 positive, target 2 negative

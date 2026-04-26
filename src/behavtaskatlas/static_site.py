@@ -22,6 +22,29 @@ from behavtaskatlas.models import (
 )
 from behavtaskatlas.validation import iter_record_paths, load_yaml
 
+SOURCE_DATA_LEVEL_LABELS = {
+    "raw-trial": "Raw trial",
+    "processed-trial": "Processed trial",
+    "processed-session": "Processed session",
+    "figure-source-data": "Figure source data",
+    "aggregate-only": "Aggregate only",
+}
+
+SOURCE_DATA_LEVEL_CAVEATS = {
+    "raw-trial": "Trial-level rows from a source that preserves raw behavioral trial structure.",
+    "processed-trial": (
+        "Trial-level rows after source-specific cleaning, recoding, or convenience export."
+    ),
+    "processed-session": (
+        "Session-level processed data; trial-level rows may require additional reconstruction."
+    ),
+    "figure-source-data": (
+        "Rows are source data for published figures and should not be treated as a complete "
+        "raw behavioral export."
+    ),
+    "aggregate-only": "Only aggregate summaries are available; trial-level analyses are limited.",
+}
+
 
 def build_static_index_payload(
     *,
@@ -31,6 +54,7 @@ def build_static_index_payload(
     catalog_path: Path | None = None,
     graph_path: Path | None = None,
     curation_queue_path: Path | None = None,
+    queue_counts: dict[str, int] | None = None,
     root: Path = Path("."),
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
@@ -39,7 +63,11 @@ def build_static_index_payload(
     catalog_path = catalog_path or index_path.with_name("catalog.html")
     graph_path = graph_path or index_path.with_name("graph.html")
     curation_queue_path = curation_queue_path or index_path.with_name("curation_queue.html")
-    records = load_vertical_slice_records(root)
+    records = load_repository_records(root)
+    vertical_slice_records = sorted(
+        [record for record in records if isinstance(record, VerticalSlice)],
+        key=lambda record: (record.display_order, record.id),
+    )
     slices = [
         _vertical_slice_payload(
             record,
@@ -47,8 +75,15 @@ def build_static_index_payload(
             index_path=index_path,
             root=root,
         )
-        for record in records
+        for record in vertical_slice_records
     ]
+    counts = _repository_counts(records)
+    health = _mvp_health_payload(
+        counts=counts,
+        slices=slices,
+        git_dirty=current_git_dirty(),
+        queue_counts=queue_counts,
+    )
     return {
         "manifest_schema_version": "0.1.0",
         "title": "behavtaskatlas MVP Reports",
@@ -60,6 +95,7 @@ def build_static_index_payload(
         "catalog_link": _relative_link(catalog_path, index_path),
         "graph_link": _relative_link(graph_path, index_path),
         "curation_queue_link": _relative_link(curation_queue_path, index_path),
+        "health": health,
         "comparison_rows": build_slice_comparison_rows(slices),
         "slices": slices,
     }
@@ -130,6 +166,22 @@ def build_catalog_payload(
         protocol.id: _protocol_detail_link(protocol.id) for protocol in protocols
     }
     detail_links_by_dataset = {dataset.id: _dataset_detail_link(dataset.id) for dataset in datasets}
+    counts = {
+        "task_families": len(task_families),
+        "protocols": len(protocols),
+        "datasets": len(datasets),
+        "vertical_slices": len(vertical_slices),
+        "report_available": sum(
+            1
+            for payload in slice_payloads.values()
+            if payload.get("report_status") == "available"
+        ),
+    }
+    health = _mvp_health_payload(
+        counts=counts,
+        slices=list(slice_payloads.values()),
+        git_dirty=current_git_dirty(),
+    )
 
     return {
         "catalog_schema_version": "0.1.0",
@@ -143,17 +195,8 @@ def build_catalog_payload(
         "graph_link": _relative_link(graph_path, catalog_path),
         "graph_json_link": _relative_link(graph_json_path, catalog_path),
         "curation_queue_link": _relative_link(curation_queue_path, catalog_path),
-        "counts": {
-            "task_families": len(task_families),
-            "protocols": len(protocols),
-            "datasets": len(datasets),
-            "vertical_slices": len(vertical_slices),
-            "report_available": sum(
-                1
-                for payload in slice_payloads.values()
-                if payload.get("report_status") == "available"
-            ),
-        },
+        "health": health,
+        "counts": counts,
         "task_families": [
             _catalog_family_row(
                 family,
@@ -408,6 +451,99 @@ def _slices_by_field(
     }
 
 
+def _repository_counts(records: list[Any]) -> dict[str, int]:
+    return {
+        "task_families": sum(isinstance(record, TaskFamily) for record in records),
+        "protocols": sum(isinstance(record, Protocol) for record in records),
+        "datasets": sum(isinstance(record, Dataset) for record in records),
+        "vertical_slices": sum(isinstance(record, VerticalSlice) for record in records),
+    }
+
+
+def _mvp_health_payload(
+    *,
+    counts: dict[str, int],
+    slices: list[dict[str, Any]],
+    git_dirty: bool | None,
+    queue_counts: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    source_level_counts = _source_data_level_counts(slices)
+    report_available = sum(1 for item in slices if item.get("report_status") == "available")
+    artifact_available = sum(1 for item in slices if item.get("artifact_status") == "available")
+    return {
+        "counts": counts,
+        "reports": {
+            "available": report_available,
+            "total": len(slices),
+            "missing": len(slices) - report_available,
+        },
+        "artifacts": {
+            "available": artifact_available,
+            "total": len(slices),
+            "missing": len(slices) - artifact_available,
+        },
+        "curation_queue": queue_counts or {"items": None, "open": None},
+        "provenance_clean": git_dirty is False,
+        "source_data_level_counts": source_level_counts,
+        "source_data_rows": _source_data_level_rows(slices),
+        "analysis_support_rows": _analysis_support_rows(slices),
+    }
+
+
+def _source_data_level_counts(slices: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in slices:
+        comparison = item.get("comparison", {})
+        level = str(comparison.get("source_data_level") or "unknown")
+        counts[level] = counts.get(level, 0) + 1
+    return dict(sorted(counts.items(), key=lambda pair: pair[0]))
+
+
+def _source_data_level_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for item in slices:
+        comparison = item.get("comparison", {})
+        level = str(comparison.get("source_data_level") or "unknown")
+        rows.append(
+            {
+                "slice": item.get("title"),
+                "source_data_level": level,
+                "source_data_label": _source_data_level_label(level),
+                "data_scope": comparison.get("data_scope"),
+                "caveat": _source_data_level_caveat(level),
+            }
+        )
+    return sorted(rows, key=lambda row: (str(row["source_data_level"]), str(row["slice"])))
+
+
+def _analysis_support_rows(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for item in slices:
+        comparison = item.get("comparison", {})
+        rows.append(
+            {
+                "slice": item.get("title"),
+                "source_data_level": comparison.get("source_data_level"),
+                "analysis_outputs": comparison.get("analysis_outputs"),
+                "report_status": item.get("report_status"),
+                "artifact_status": item.get("artifact_status"),
+            }
+        )
+    return sorted(rows, key=lambda row: str(row["slice"]))
+
+
+def _source_data_level_label(level: str | None) -> str:
+    if not level:
+        return ""
+    return SOURCE_DATA_LEVEL_LABELS.get(level, level)
+
+
+def _source_data_level_caveat(level: str | None) -> str:
+    if not level:
+        return ""
+    return SOURCE_DATA_LEVEL_CAVEATS.get(level, "")
+
+
 def _catalog_family_row(
     family: TaskFamily,
     *,
@@ -492,6 +628,7 @@ def _catalog_protocol_detail(
                 "title": slice_record.title,
                 "report_status": payload.get("report_status", "missing"),
                 "artifact_status": payload.get("artifact_status", "missing"),
+                "source_data_level": slice_record.comparison.source_data_level,
                 "primary_link": payload.get("primary_link"),
             }
         )
@@ -525,6 +662,7 @@ def _catalog_protocol_detail(
                 "detail_link": dataset_detail_links[dataset.id],
                 "name": dataset.name,
                 "source_url": dataset.source_url,
+                "source_data_level": dataset.source_data_level,
                 "license": dataset.license,
                 "curation_status": dataset.curation_status,
             }
@@ -551,6 +689,7 @@ def _catalog_dataset_row(
         "protocol_ids": dataset.protocol_ids,
         "species": dataset.species,
         "source_url": dataset.source_url,
+        "source_data_level": dataset.source_data_level,
         "license": dataset.license,
         "curation_status": dataset.curation_status,
         "slice_ids": [record.id for record in slices],
@@ -608,6 +747,7 @@ def _catalog_dataset_detail(
         "curation_status": dataset.curation_status,
         "source_url": dataset.source_url,
         "access_notes": dataset.access_notes,
+        "source_data_level": dataset.source_data_level,
         "license": dataset.license,
         "data_formats": dataset.data_formats,
         "expected_trial_table_mapping": dataset.expected_trial_table_mapping,
@@ -621,6 +761,7 @@ def _catalog_dataset_detail(
                 "artifact_status": slice_payloads.get(slice_record.id, {}).get(
                     "artifact_status", "missing"
                 ),
+                "source_data_level": slice_record.comparison.source_data_level,
                 "primary_link": slice_payloads.get(slice_record.id, {}).get("primary_link"),
             }
             for slice_record in slices
@@ -643,6 +784,7 @@ def _catalog_slice_row(record: VerticalSlice, payload: dict[str, Any]) -> dict[s
         "modality": comparison.modality,
         "stimulus_metric": comparison.stimulus_metric,
         "evidence_type": comparison.evidence_type,
+        "source_data_level": comparison.source_data_level,
         "report_status": payload.get("report_status", "missing"),
         "artifact_status": payload.get("artifact_status", "missing"),
         "primary_link": payload.get("primary_link"),
@@ -722,6 +864,7 @@ def _relationship_graph_nodes(
                 "status": dataset.get("curation_status"),
                 "metadata": {
                     "species": dataset.get("species", []),
+                    "source_data_level": dataset.get("source_data_level"),
                     "license": dataset.get("license"),
                     "protocol_ids": dataset.get("protocol_ids", []),
                     "slice_ids": dataset.get("slice_ids", []),
@@ -748,6 +891,7 @@ def _relationship_graph_nodes(
                     "modality": slice_row.get("modality"),
                     "stimulus_metric": slice_row.get("stimulus_metric"),
                     "evidence_type": slice_row.get("evidence_type"),
+                    "source_data_level": slice_row.get("source_data_level"),
                     "artifact_status": slice_row.get("artifact_status"),
                 },
             }
@@ -1108,6 +1252,7 @@ def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, 
                 "evidence_type": comparison.get("evidence_type"),
                 "choice_type": comparison.get("choice_type"),
                 "response_modality": comparison.get("response_modality"),
+                "source_data_level": comparison.get("source_data_level"),
                 "analysis_outputs": comparison.get("analysis_outputs"),
                 "data_scope": comparison.get("data_scope"),
                 "canonical_axis": comparison.get("canonical_axis"),
@@ -1185,6 +1330,10 @@ def static_index_html(payload: dict[str, Any]) -> str:
                 sum(1 for item in slices if item.get("artifact_status") == "available"),
             ),
             _metric("Commit", payload.get("behavtaskatlas_commit") or ""),
+            "</section>",
+            "<section>",
+            "<h2>MVP Health</h2>",
+            _health_dashboard(payload.get("health", {})),
             "</section>",
             "<section>",
             "<h2>Atlas Comparison</h2>",
@@ -1277,6 +1426,10 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
             _metric("Reports available", counts.get("report_available")),
             "</section>",
             "<section>",
+            "<h2>MVP Health</h2>",
+            _health_dashboard(payload.get("health", {})),
+            "</section>",
+            "<section>",
             "<h2>Browse Protocols</h2>",
             _catalog_filter_controls(payload.get("protocols", [])),
             "</section>",
@@ -1317,6 +1470,7 @@ def static_catalog_html(payload: dict[str, Any]) -> str:
                     ("modality", "Modality"),
                     ("stimulus_metric", "Stimulus metric"),
                     ("evidence_type", "Evidence"),
+                    ("source_data_level", "Source level"),
                     ("report_status", "Report"),
                     ("artifact_status", "Artifacts"),
                     ("primary_link", "Primary link"),
@@ -1610,6 +1764,7 @@ def static_dataset_detail_html(
             "</header>",
             '<section class="summary" aria-label="Dataset summary">',
             _metric("Species", detail.get("species")),
+            _metric("Source level", detail.get("source_data_level")),
             _metric("Protocols", len(detail.get("protocols", []))),
             _metric("Slices", len(detail.get("vertical_slices", []))),
             _metric("Formats", detail.get("data_formats")),
@@ -1986,6 +2141,7 @@ def _dataset_structure(detail: dict[str, Any]) -> str:
                 ("Protocol IDs", detail.get("protocol_ids")),
                 ("Curation status", detail.get("curation_status")),
                 ("Species", detail.get("species")),
+                ("Source data level", detail.get("source_data_level")),
                 ("Source URL", detail.get("source_url")),
                 ("Access notes", detail.get("access_notes")),
                 ("License", detail.get("license")),
@@ -2063,7 +2219,7 @@ def _dataset_curation_notes(detail: dict[str, Any]) -> str:
 
 def _protocol_dataset_table(rows: list[dict[str, Any]]) -> str:
     parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
-    for label in ["Dataset", "Dataset ID", "License", "Status"]:
+    for label in ["Dataset", "Dataset ID", "Source level", "License", "Status"]:
         parts.append(f"<th>{escape(label)}</th>")
     parts.extend(["</tr>", "</thead>", "<tbody>"])
     for row in rows:
@@ -2084,6 +2240,7 @@ def _protocol_dataset_table(rows: list[dict[str, Any]]) -> str:
         else:
             parts.append(f"<td>{escape(name)}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('dataset_id')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('source_data_level')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('license')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('curation_status')))}</td>")
         parts.append("</tr>")
@@ -2095,7 +2252,7 @@ def _protocol_slice_table(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return '<p class="empty">No report-backed vertical slice yet.</p>'
     parts = ['<div class="table-wrap">', "<table>", "<thead>", "<tr>"]
-    for label in ["Slice", "Slice ID", "Report", "Artifacts"]:
+    for label in ["Slice", "Slice ID", "Source level", "Report", "Artifacts"]:
         parts.append(f"<th>{escape(label)}</th>")
     parts.extend(["</tr>", "</thead>", "<tbody>"])
     for row in rows:
@@ -2110,6 +2267,7 @@ def _protocol_slice_table(rows: list[dict[str, Any]]) -> str:
         else:
             parts.append(f"<td>{escape(title)}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('slice_id')))}</td>")
+        parts.append(f"<td>{escape(_format_cell(row.get('source_data_level')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('report_status')))}</td>")
         parts.append(f"<td>{escape(_format_cell(row.get('artifact_status')))}</td>")
         parts.append("</tr>")
@@ -2489,12 +2647,62 @@ def _comparison_table(rows: list[dict[str, Any]]) -> str:
             ("evidence_type", "Evidence"),
             ("choice_type", "Choice"),
             ("response_modality", "Response"),
+            ("source_data_level", "Source level"),
             ("trial_count", "Trials"),
             ("analysis_outputs", "Outputs"),
             ("canonical_axis", "Canonical axis"),
             ("report_status", "Report"),
         ],
     )
+
+
+def _health_dashboard(health: dict[str, Any]) -> str:
+    if not health:
+        return '<p class="empty">No health payload available.</p>'
+    counts = health.get("counts", {})
+    reports = health.get("reports", {})
+    artifacts = health.get("artifacts", {})
+    queue = health.get("curation_queue", {})
+    source_counts = health.get("source_data_level_counts", {})
+    source_count_text = ", ".join(
+        f"{_source_data_level_label(str(level))}: {count}"
+        for level, count in sorted(source_counts.items())
+    )
+    parts = [
+        '<div class="summary" aria-label="MVP health summary">',
+        _metric("Task families", counts.get("task_families")),
+        _metric("Protocols", counts.get("protocols")),
+        _metric("Datasets", counts.get("datasets")),
+        _metric("Slices", counts.get("vertical_slices")),
+        _metric("Reports", f"{reports.get('available', 0)}/{reports.get('total', 0)}"),
+        _metric("Artifacts", f"{artifacts.get('available', 0)}/{artifacts.get('total', 0)}"),
+        _metric("Queue open", queue.get("open")),
+        _metric("Clean provenance", health.get("provenance_clean")),
+        "</div>",
+        "<h3>Source Data Levels</h3>",
+        f"<p>{escape(source_count_text or 'No source data levels recorded.')}</p>",
+        _html_table(
+            health.get("source_data_rows", []),
+            [
+                ("slice", "Slice"),
+                ("source_data_level", "Level"),
+                ("data_scope", "Data scope"),
+                ("caveat", "Interpretation"),
+            ],
+        ),
+        "<h3>Analysis Support</h3>",
+        _html_table(
+            health.get("analysis_support_rows", []),
+            [
+                ("slice", "Slice"),
+                ("source_data_level", "Level"),
+                ("analysis_outputs", "Outputs"),
+                ("report_status", "Report"),
+                ("artifact_status", "Artifacts"),
+            ],
+        ),
+    ]
+    return "\n".join(parts)
 
 
 def _catalog_filter_controls(protocols: list[dict[str, Any]]) -> str:
@@ -2633,6 +2841,7 @@ def _catalog_dataset_table(rows: list[dict[str, Any]]) -> str:
         ("name", "Dataset"),
         ("protocol_ids", "Protocols"),
         ("species", "Species"),
+        ("source_data_level", "Source level"),
         ("license", "License"),
         ("slice_ids", "Slices"),
         ("curation_status", "Status"),

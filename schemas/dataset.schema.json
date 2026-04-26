@@ -177,6 +177,10 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "source_data_level": {
+      "title": "Source Data Level",
+      "type": "string"
+    },
     "source_url": {
       "title": "Source Url",
       "type": "string"
@@ -200,6 +204,7 @@
     "curation_status",
     "source_url",
     "access_notes",
+    "source_data_level",
     "provenance"
   ],
   "title": "Dataset",

@@ -36,6 +36,7 @@ comparison:
   evidence_type: pulse-train
   choice_type: 2afc
   response_modality: nose-poke
+  source_data_level: processed-trial
   analysis_outputs: psychometric bias, click-time evidence kernel
   data_scope: local batch of extracted rat `.mat` files
   canonical_axis: right-minus-left click count

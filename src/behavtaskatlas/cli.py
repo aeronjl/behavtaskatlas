@@ -2461,16 +2461,6 @@ def _site_index(
     curation_queue_json_path = (
         curation_queue_json_file or index_path.with_name("curation_queue.json")
     )
-    payload = build_static_index_payload(
-        derived_dir=derived_dir,
-        index_path=index_path,
-        manifest_path=manifest_path,
-        catalog_path=catalog_path,
-        graph_path=graph_path,
-        curation_queue_path=curation_queue_path,
-    )
-    write_static_index_html(index_path, payload)
-    write_static_manifest_json(manifest_path, payload)
     catalog_payload = build_catalog_payload(
         root=Path("."),
         derived_dir=derived_dir,
@@ -2481,8 +2471,6 @@ def _site_index(
         graph_json_path=graph_json_path,
         curation_queue_path=curation_queue_path,
     )
-    write_static_catalog_html(catalog_path, catalog_payload)
-    write_static_catalog_json(catalog_json_path, catalog_payload)
     graph_payload = build_relationship_graph_payload(
         catalog_payload,
         graph_path=graph_path,
@@ -2490,14 +2478,28 @@ def _site_index(
         catalog_path=catalog_path,
         curation_queue_path=curation_queue_path,
     )
-    write_static_graph_html(graph_path, graph_payload)
-    write_static_graph_json(graph_json_path, graph_payload)
     curation_queue_payload = build_curation_queue_payload(
         graph_payload,
         queue_path=curation_queue_path,
         queue_json_path=curation_queue_json_path,
         graph_path=graph_path,
     )
+    catalog_payload["health"]["curation_queue"] = curation_queue_payload["counts"]
+    payload = build_static_index_payload(
+        derived_dir=derived_dir,
+        index_path=index_path,
+        manifest_path=manifest_path,
+        catalog_path=catalog_path,
+        graph_path=graph_path,
+        curation_queue_path=curation_queue_path,
+        queue_counts=curation_queue_payload["counts"],
+    )
+    write_static_index_html(index_path, payload)
+    write_static_manifest_json(manifest_path, payload)
+    write_static_catalog_html(catalog_path, catalog_payload)
+    write_static_catalog_json(catalog_json_path, catalog_payload)
+    write_static_graph_html(graph_path, graph_payload)
+    write_static_graph_json(graph_json_path, graph_payload)
     write_static_curation_queue_html(curation_queue_path, curation_queue_payload)
     write_static_curation_queue_json(curation_queue_json_path, curation_queue_payload)
     protocol_pages = write_static_protocol_pages(catalog_path, catalog_payload)
