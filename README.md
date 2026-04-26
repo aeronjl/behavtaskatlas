@@ -197,6 +197,7 @@ Build the local static report index:
 
 ```bash
 uv run behavtaskatlas site-index
+uv run behavtaskatlas release-check
 ```
 
 This writes `derived/index.html`, `derived/manifest.json`, `derived/catalog.html`,
@@ -222,6 +223,13 @@ for orphan records, missing reciprocal links, concrete protocols without
 datasets, concrete protocols without slices, and datasets without slices. The
 curation queue turns those graph QA issues into contributor-facing action items
 grouped by action type and priority.
+
+The release check writes `derived/release_status.json` and
+`derived/release_status.html`. It validates the repository records and generated
+static JSON, checks that the static payloads match the current clean commit,
+confirms that every vertical slice has a report and analysis artifact, requires
+an empty curation queue, scans publishable payloads for accidental `data/raw`
+links, and reports per-slice provenance staleness as a warning.
 
 ## Repository Layout
 

@@ -515,6 +515,28 @@ class CurationQueuePayload(StrictModel):
     items: list[CurationQueueItem]
 
 
+class ReleaseCheckItem(StrictModel):
+    check_id: str
+    label: str
+    status: Literal["ok", "warning", "error"]
+    message: str
+    path: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class ReleaseCheckPayload(StrictModel):
+    release_check_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    root: str
+    derived_dir: str
+    overall_status: Literal["ok", "warning", "error"]
+    counts: dict[str, int] = Field(default_factory=dict)
+    items: list[ReleaseCheckItem]
+
+
 Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
 
 
@@ -534,6 +556,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "catalog": CatalogPayload,
     "relationship_graph": RelationshipGraphPayload,
     "curation_queue": CurationQueuePayload,
+    "release_check": ReleaseCheckPayload,
 }
 
 

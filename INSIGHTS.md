@@ -2,6 +2,19 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-26 22:02:09 BST - Release readiness should be a generated artifact
+
+The MVP now needs a release check as a first-class output, not just a mental
+checklist. The static site can look complete while hiding stale generated
+payloads, dirty provenance, open graph-derived curation work, or accidental
+links back into ignored raw data.
+
+The release check therefore produces JSON and HTML beside the static site. It
+blocks on validation, static artifact provenance, report/artifact coverage, an
+empty queue, and raw-path exposure, while treating per-slice provenance
+staleness as a visible warning. That separates publish-blocking defects from
+useful audit signals.
+
 ## 2026-04-26 21:42:30 BST - Source strength belongs in the product surface
 
 The atlas now treats source data level as first-class metadata on datasets and

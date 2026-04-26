@@ -100,6 +100,11 @@ from behavtaskatlas.rdm import (
     write_rdm_chronometric_svg,
     write_rdm_report_html,
 )
+from behavtaskatlas.release import (
+    build_release_check_payload,
+    write_release_check_html,
+    write_release_check_json,
+)
 from behavtaskatlas.static_site import (
     build_catalog_payload,
     build_curation_queue_payload,
@@ -952,6 +957,31 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional machine-readable curation queue JSON output path",
     )
 
+    release_check_parser = subparsers.add_parser(
+        "release-check",
+        help="Run static release-readiness checks and render status artifacts",
+    )
+    release_check_parser.add_argument(
+        "--root",
+        default=".",
+        help="Repository root containing committed atlas records",
+    )
+    release_check_parser.add_argument(
+        "--derived-dir",
+        default="derived",
+        help="Derived artifact root containing generated static site files",
+    )
+    release_check_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional machine-readable release status JSON output path",
+    )
+    release_check_parser.add_argument(
+        "--html-file",
+        default=None,
+        help="Optional release status HTML output path",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -1197,6 +1227,13 @@ def main(argv: list[str] | None = None) -> int:
             curation_queue_json_file=Path(args.curation_queue_json_file)
             if args.curation_queue_json_file
             else None,
+        )
+    if args.command == "release-check":
+        return _release_check(
+            root=Path(args.root),
+            derived_dir=Path(args.derived_dir),
+            out_file=Path(args.out_file) if args.out_file else None,
+            html_file=Path(args.html_file) if args.html_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -2517,6 +2554,31 @@ def _site_index(
     print(f"Wrote {len(dataset_pages)} dataset detail pages")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
+
+
+def _release_check(
+    *,
+    root: Path,
+    derived_dir: Path,
+    out_file: Path | None,
+    html_file: Path | None,
+) -> int:
+    root = root.resolve()
+    derived_root = derived_dir if derived_dir.is_absolute() else root / derived_dir
+    out_path = out_file or derived_root / "release_status.json"
+    html_path = html_file or derived_root / "release_status.html"
+    payload = build_release_check_payload(root=root, derived_dir=derived_dir)
+    write_release_check_json(out_path, payload)
+    write_release_check_html(html_path, payload)
+    counts = payload["counts"]
+    print(f"Wrote release status JSON to {out_path}")
+    print(f"Wrote release status HTML to {html_path}")
+    print(
+        "Release check "
+        f"{payload['overall_status']}: {counts.get('errors', 0)} error(s), "
+        f"{counts.get('warnings', 0)} warning(s)"
+    )
+    return 1 if payload["overall_status"] == "error" else 0
 
 
 def _write_clicks_harmonization_outputs(
