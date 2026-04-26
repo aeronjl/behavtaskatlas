@@ -212,6 +212,42 @@ def test_static_manifest_reads_generic_psychometric_metrics(tmp_path) -> None:
     assert {"label": "Summary rows", "value": 2} in visual_slice["metrics"]
 
 
+def test_static_manifest_reads_source_row_metrics(tmp_path) -> None:
+    derived_dir = tmp_path / "derived"
+    confidence_dir = (
+        derived_dir / "macaque_rdm_confidence" / "khalvati-kiani-rao-natcomm2021-source-data"
+    )
+    confidence_dir.mkdir(parents=True)
+    (confidence_dir / "analysis_result.json").write_text(
+        json.dumps(
+            {
+                "n_source_rows": 174160,
+                "n_accuracy_rows": 100694,
+                "n_sure_target_choice_rows": 73466,
+                "confidence_rows": [{}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_static_index_payload(
+        derived_dir=derived_dir,
+        index_path=derived_dir / "index.html",
+    )
+
+    confidence_row = next(
+        item
+        for item in payload["comparison_rows"]
+        if item["slice_id"] == "slice.macaque-rdm-confidence-wager"
+    )
+    confidence_slice = next(
+        item for item in payload["slices"] if item["id"] == "slice.macaque-rdm-confidence-wager"
+    )
+    assert confidence_row["trial_count"] == 174160
+    assert {"label": "Source rows", "value": 174160} in confidence_slice["metrics"]
+    assert {"label": "Sure-target rows", "value": 73466} in confidence_slice["metrics"]
+
+
 def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     root = Path(__file__).resolve().parents[1]
     derived_dir = tmp_path / "derived"

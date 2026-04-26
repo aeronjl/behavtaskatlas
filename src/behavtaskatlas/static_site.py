@@ -1116,7 +1116,7 @@ def build_slice_comparison_rows(slices: list[dict[str, Any]]) -> list[dict[str, 
                 "primary_link": item.get("primary_link"),
                 "trial_count": _first_present_metric(
                     metrics,
-                    ["Trials", "Parsed trials"],
+                    ["Trials", "Parsed trials", "Source rows"],
                     fallback=comparison.get("trial_count"),
                 ),
             }
