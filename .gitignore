@@ -9,3 +9,6 @@ build/
 *.egg-info/
 data/raw/
 derived/
+web/node_modules/
+web/dist/
+web/.astro/

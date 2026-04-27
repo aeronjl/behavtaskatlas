@@ -1,0 +1,122 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { catalog, slugForId } from "../../lib/data";
+import type { CatalogDatasetDetail } from "../../lib/data";
+
+export function getStaticPaths() {
+  return catalog.dataset_details.map((dataset) => ({
+    params: { id: slugForId(dataset.dataset_id) },
+    props: { dataset },
+  }));
+}
+
+interface Props {
+  dataset: CatalogDatasetDetail;
+}
+
+const { dataset } = Astro.props;
+const trialMapping = (dataset.expected_trial_table_mapping ?? {}) as Record<
+  string,
+  string
+>;
+---
+
+<BaseLayout title={`${dataset.name} · Dataset`}>
+  <header class="mb-6">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Dataset</p>
+    <h1 class="text-3xl font-semibold tracking-tight">{dataset.name}</h1>
+    <p class="mt-2 text-sm text-slate-700">{dataset.description}</p>
+    <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 sm:grid-cols-4">
+      <dt class="text-slate-500">Source level</dt>
+      <dd>{dataset.source_data_level}</dd>
+      <dt class="text-slate-500">Species</dt>
+      <dd>{dataset.species.join(", ")}</dd>
+      <dt class="text-slate-500">Status</dt>
+      <dd>{dataset.curation_status}</dd>
+      <dt class="text-slate-500">License</dt>
+      <dd>{dataset.license ?? "—"}</dd>
+    </dl>
+    <p class="mt-3 text-sm">
+      <a href={dataset.source_url} class="text-accent">{dataset.source_url}</a>
+    </p>
+  </header>
+
+  <section class="mb-8 rounded-md border border-slate-200 bg-white p-4">
+    <h2 class="mb-2 text-sm font-semibold text-slate-700">Access notes</h2>
+    <p class="whitespace-pre-line text-sm text-slate-700">
+      {dataset.access_notes}
+    </p>
+  </section>
+
+  {
+    dataset.data_formats.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Data formats</h2>
+        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {dataset.data_formats.map((fmt) => (
+            <li>{fmt}</li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    Object.keys(trialMapping).length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Expected trial-table mapping
+        </h2>
+        <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Canonical field</th>
+                <th class="px-3 py-2">Source mapping</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {Object.entries(trialMapping).map(([key, value]) => (
+                <tr>
+                  <td class="px-3 py-2 font-mono text-xs">{key}</td>
+                  <td class="px-3 py-2 text-slate-700">{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ) : null
+  }
+
+  {
+    dataset.protocols.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Protocols</h2>
+        <ul class="space-y-1 text-sm">
+          {dataset.protocols.map((p) => (
+            <li>
+              <a href={`/protocols/${slugForId(p.protocol_id)}`}>{p.name}</a>{" "}
+              <span class="text-xs text-slate-500">
+                · {p.evidence_type} / {p.choice_type}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    dataset.caveats.length > 0 ? (
+      <section>
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Caveats</h2>
+        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {dataset.caveats.map((c) => (
+            <li>{c}</li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+</BaseLayout>

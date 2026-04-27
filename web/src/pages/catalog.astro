@@ -1,0 +1,165 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { catalog, slugForId } from "../lib/data";
+
+const counts = (catalog.counts ?? {}) as Record<string, number>;
+---
+
+<BaseLayout title={`Catalog · ${catalog.title}`}>
+  <header class="mb-6">
+    <h1 class="text-3xl font-semibold tracking-tight">Catalog</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      {counts.task_families ?? "?"} task families ·
+      {counts.protocols ?? "?"} protocols ·
+      {counts.datasets ?? "?"} datasets ·
+      {counts.vertical_slices ?? "?"} vertical slices ·
+      {counts.report_available ?? 0} reports available
+    </p>
+  </header>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">Task families</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Name</th>
+            <th class="px-3 py-2">Modalities</th>
+            <th class="px-3 py-2">Choice types</th>
+            <th class="px-3 py-2 text-right">Protocols</th>
+            <th class="px-3 py-2 text-right">Datasets</th>
+            <th class="px-3 py-2 text-right">Slices</th>
+            <th class="px-3 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {
+            catalog.task_families.map((family) => (
+              <tr>
+                <td class="px-3 py-2 font-medium">{family.name}</td>
+                <td class="px-3 py-2">{family.modalities.join(", ")}</td>
+                <td class="px-3 py-2">{family.choice_types.join(", ")}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {family.protocol_count}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {family.dataset_count}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {family.slice_count}
+                </td>
+                <td class="px-3 py-2 text-xs text-slate-600">
+                  {family.curation_status}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">Protocols</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Name</th>
+            <th class="px-3 py-2">Family</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">Evidence</th>
+            <th class="px-3 py-2">Choice</th>
+            <th class="px-3 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {
+            catalog.protocols.map((protocol) => (
+              <tr>
+                <td class="px-3 py-2">
+                  <a href={`/protocols/${slugForId(protocol.protocol_id)}`}>
+                    {protocol.name}
+                  </a>
+                </td>
+                <td class="px-3 py-2 text-slate-600">
+                  {protocol.family_name ?? protocol.family_id}
+                </td>
+                <td class="px-3 py-2">{protocol.species.join(", ")}</td>
+                <td class="px-3 py-2">{protocol.evidence_type}</td>
+                <td class="px-3 py-2">{protocol.choice_type}</td>
+                <td class="px-3 py-2 text-xs text-slate-600">
+                  {protocol.curation_status}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">Datasets</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Name</th>
+            <th class="px-3 py-2">Source level</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">License</th>
+            <th class="px-3 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {
+            catalog.datasets.map((dataset) => (
+              <tr>
+                <td class="px-3 py-2">
+                  <a href={`/datasets/${slugForId(dataset.dataset_id)}`}>
+                    {dataset.name}
+                  </a>
+                </td>
+                <td class="px-3 py-2">{dataset.source_data_level}</td>
+                <td class="px-3 py-2">{dataset.species.join(", ")}</td>
+                <td class="px-3 py-2 text-xs text-slate-600">
+                  {dataset.license ?? "—"}
+                </td>
+                <td class="px-3 py-2 text-xs text-slate-600">
+                  {dataset.curation_status}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-3 text-lg font-semibold">Vertical slices</h2>
+    <ul class="grid grid-cols-1 gap-2 md:grid-cols-2">
+      {
+        catalog.vertical_slices.map((slice) => (
+          <li class="rounded-md border border-slate-200 bg-white p-3 text-sm">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="font-medium">{slice.title}</span>
+              <span
+                class:list={[
+                  "rounded px-2 py-0.5 text-xs",
+                  slice.report_status === "available"
+                    ? "bg-ok-soft text-ok"
+                    : "bg-slate-100 text-slate-600",
+                ]}
+              >
+                {slice.report_status}
+              </span>
+            </div>
+            <div class="mt-1 text-xs text-slate-600">{slice.slice_id}</div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

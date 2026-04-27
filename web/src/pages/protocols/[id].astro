@@ -1,0 +1,229 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { catalog, slugForId } from "../../lib/data";
+import type { CatalogProtocolDetail } from "../../lib/data";
+
+export function getStaticPaths() {
+  return catalog.protocol_details.map((protocol) => ({
+    params: { id: slugForId(protocol.protocol_id) },
+    props: { protocol },
+  }));
+}
+
+interface Props {
+  protocol: CatalogProtocolDetail;
+}
+
+type Mapping = Record<string, unknown>;
+
+const { protocol } = Astro.props;
+const stimulus: Mapping = protocol.stimulus as Mapping;
+const choice: Mapping = protocol.choice as Mapping;
+const feedback: Mapping = protocol.feedback as Mapping;
+const training: Mapping = protocol.training as Mapping;
+
+const timingRows = (protocol.timing as Mapping[]).map((phase) => ({
+  name: String(phase.name ?? ""),
+  duration: String(phase.duration ?? ""),
+  description: phase.description ? String(phase.description) : null,
+}));
+
+const interpretiveClaims = (protocol.interpretive_claims as Mapping[]).map(
+  (claim) => ({
+    label: String(claim.label ?? ""),
+    confidence: String(claim.confidence ?? ""),
+    source: String(claim.source ?? ""),
+    caveat: claim.caveat ? String(claim.caveat) : null,
+  }),
+);
+
+function renderValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (Array.isArray(value)) return value.join(", ");
+  return String(value);
+}
+---
+
+<BaseLayout title={`${protocol.name} · Protocol`}>
+  <header class="mb-6">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Protocol</p>
+    <h1 class="text-3xl font-semibold tracking-tight">{protocol.name}</h1>
+    {
+      protocol.aliases.length > 0 ? (
+        <p class="mt-1 text-sm text-slate-600">
+          Aliases: {protocol.aliases.join(", ")}
+        </p>
+      ) : null
+    }
+    <p class="mt-2 text-sm text-slate-700">{protocol.description}</p>
+    <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 sm:grid-cols-4">
+      <dt class="text-slate-500">Family</dt>
+      <dd>{protocol.family_name ?? protocol.family_id}</dd>
+      <dt class="text-slate-500">Scope</dt>
+      <dd>{protocol.protocol_scope}</dd>
+      <dt class="text-slate-500">Species</dt>
+      <dd>{protocol.species.join(", ")}</dd>
+      <dt class="text-slate-500">Status</dt>
+      <dd>{protocol.curation_status}</dd>
+    </dl>
+  </header>
+
+  <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Stimulus</h2>
+      <dl class="space-y-1 text-sm">
+        {
+          Object.entries(stimulus).map(([key, value]) => (
+            <div class="grid grid-cols-3 gap-2">
+              <dt class="text-slate-500">{key}</dt>
+              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Choice</h2>
+      <dl class="space-y-1 text-sm">
+        {
+          Object.entries(choice).map(([key, value]) => (
+            <div class="grid grid-cols-3 gap-2">
+              <dt class="text-slate-500">{key}</dt>
+              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Feedback</h2>
+      <dl class="space-y-1 text-sm">
+        {
+          Object.entries(feedback).map(([key, value]) => (
+            <div class="grid grid-cols-3 gap-2">
+              <dt class="text-slate-500">{key}</dt>
+              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Training</h2>
+      <dl class="space-y-1 text-sm">
+        {
+          Object.entries(training).map(([key, value]) => (
+            <div class="grid grid-cols-3 gap-2">
+              <dt class="text-slate-500">{key}</dt>
+              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="mb-8">
+    <h2 class="mb-2 text-sm font-semibold text-slate-700">Trial timing</h2>
+    <ol class="space-y-2 text-sm">
+      {
+        timingRows.map((phase) => (
+          <li class="rounded-md border border-slate-200 bg-white p-3">
+            <div class="font-medium">{phase.name}</div>
+            <div class="text-xs text-slate-500">{phase.duration}</div>
+            {phase.description ? (
+              <p class="mt-1 text-slate-700">{phase.description}</p>
+            ) : null}
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  {
+    protocol.datasets.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Linked datasets</h2>
+        <ul class="space-y-1 text-sm">
+          {protocol.datasets.map((dataset) => (
+            <li>
+              <a href={`/datasets/${slugForId(dataset.dataset_id)}`}>
+                {dataset.name}
+              </a>{" "}
+              <span class="text-xs text-slate-500">
+                · {dataset.source_data_level}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    protocol.vertical_slices.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Vertical slices</h2>
+        <ul class="space-y-1 text-sm">
+          {protocol.vertical_slices.map((slice) => (
+            <li class="flex items-baseline justify-between">
+              <span>{slice.title}</span>
+              <span class="text-xs text-slate-500">{slice.report_status}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    protocol.expected_analyses.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Expected analyses
+        </h2>
+        <ul class="list-disc space-y-1 pl-5 text-sm">
+          {protocol.expected_analyses.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    interpretiveClaims.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Interpretive claims
+        </h2>
+        <ul class="space-y-2 text-sm">
+          {interpretiveClaims.map((claim) => (
+            <li class="rounded-md border border-slate-200 bg-white p-3">
+              <div class="font-medium">{claim.label}</div>
+              <div class="text-xs text-slate-500">
+                Confidence: {claim.confidence} · {claim.source}
+              </div>
+              {claim.caveat ? (
+                <p class="mt-1 text-slate-700">{claim.caveat}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    protocol.open_questions.length > 0 ? (
+      <section>
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Open questions</h2>
+        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          {protocol.open_questions.map((q) => (
+            <li>{q}</li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+</BaseLayout>

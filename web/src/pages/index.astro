@@ -1,0 +1,189 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { manifest } from "../lib/data";
+
+const health = manifest.health as Record<string, any>;
+const counts = (health?.counts ?? {}) as Record<string, number>;
+const sourceDataLevelCounts = (health?.source_data_level_counts ?? {}) as Record<
+  string,
+  number
+>;
+const provenanceClean = (health?.provenance_clean ?? {}) as Record<string, number>;
+const reports = (health?.reports ?? {}) as Record<string, number>;
+
+const summaryCards = [
+  { label: "Task families", value: counts.task_families },
+  { label: "Protocols", value: counts.protocols },
+  { label: "Datasets", value: counts.datasets },
+  { label: "Vertical slices", value: counts.vertical_slices },
+];
+---
+
+<BaseLayout
+  title={manifest.title}
+  description="A file-first atlas of sensory-guided decision-making tasks."
+>
+  <header class="mb-8">
+    <h1 class="text-3xl font-semibold tracking-tight">{manifest.title}</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      Generated {manifest.generated_at} from commit
+      <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">
+        {manifest.behavtaskatlas_commit ?? "unknown"}
+      </code>
+      {manifest.behavtaskatlas_git_dirty ? "(working tree dirty)" : null}
+    </p>
+  </header>
+
+  <section class="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    {
+      summaryCards.map((card) => (
+        <div class="rounded-md border border-slate-200 bg-white p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-500">
+            {card.label}
+          </div>
+          <div class="mt-1 text-2xl font-semibold text-slate-900">
+            {card.value ?? "—"}
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">Health dashboard</h2>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div class="rounded-md border border-slate-200 bg-white p-4">
+        <h3 class="mb-2 text-sm font-semibold text-slate-700">
+          Source data level
+        </h3>
+        <ul class="space-y-1 text-sm">
+          {
+            Object.entries(sourceDataLevelCounts).map(([level, n]) => (
+              <li class="flex justify-between">
+                <span class="text-slate-700">{level}</span>
+                <span class="font-mono text-slate-900">{n}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="rounded-md border border-slate-200 bg-white p-4">
+        <h3 class="mb-2 text-sm font-semibold text-slate-700">Reports</h3>
+        <ul class="space-y-1 text-sm">
+          {
+            Object.entries(reports).map(([key, n]) => (
+              <li class="flex justify-between">
+                <span class="text-slate-700">{key}</span>
+                <span class="font-mono text-slate-900">{n}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="rounded-md border border-slate-200 bg-white p-4">
+        <h3 class="mb-2 text-sm font-semibold text-slate-700">Provenance</h3>
+        <ul class="space-y-1 text-sm">
+          {
+            Object.entries(provenanceClean).map(([key, n]) => (
+              <li class="flex justify-between">
+                <span class="text-slate-700">{key}</span>
+                <span class="font-mono text-slate-900">{n}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <div class="mb-3 flex items-baseline justify-between">
+      <h2 class="text-lg font-semibold">Vertical slices</h2>
+      <a class="text-sm" href="/catalog">Browse full catalog →</a>
+    </div>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      {
+        manifest.slices.map((slice) => (
+          <article class="flex flex-col rounded-md border border-slate-200 bg-white p-4">
+            <header class="mb-2 flex items-baseline justify-between gap-3">
+              <h3 class="text-base font-semibold text-slate-900">
+                {slice.title}
+              </h3>
+              <span
+                class:list={[
+                  "rounded px-2 py-0.5 text-xs",
+                  slice.report_status === "available"
+                    ? "bg-ok-soft text-ok"
+                    : "bg-warn-soft text-warn",
+                ]}
+              >
+                {slice.status_label}
+              </span>
+            </header>
+            <p class="mb-3 flex-1 text-sm text-slate-600">{slice.description}</p>
+            <dl class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-700">
+              <dt class="text-slate-500">Species</dt>
+              <dd>{slice.comparison.species}</dd>
+              <dt class="text-slate-500">Modality</dt>
+              <dd>{slice.comparison.modality}</dd>
+              <dt class="text-slate-500">Choice type</dt>
+              <dd>{slice.comparison.choice_type}</dd>
+              <dt class="text-slate-500">Source level</dt>
+              <dd>{slice.comparison.source_data_level}</dd>
+            </dl>
+            {slice.primary_link ? (
+              <a
+                href={slice.primary_link}
+                class="text-sm font-medium text-accent"
+              >
+                {slice.primary_link_label} →
+              </a>
+            ) : null}
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-3 text-lg font-semibold">Comparison table</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Slice</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">Modality</th>
+            <th class="px-3 py-2">Evidence</th>
+            <th class="px-3 py-2">Choice</th>
+            <th class="px-3 py-2">Source level</th>
+            <th class="px-3 py-2">Trials</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {
+            manifest.comparison_rows.map((row) => (
+              <tr>
+                <td class="px-3 py-2">
+                  {row.primary_link ? (
+                    <a href={row.primary_link}>{row.title}</a>
+                  ) : (
+                    row.title
+                  )}
+                </td>
+                <td class="px-3 py-2">{row.species}</td>
+                <td class="px-3 py-2">{row.modality}</td>
+                <td class="px-3 py-2">{row.evidence_type}</td>
+                <td class="px-3 py-2">{row.choice_type}</td>
+                <td class="px-3 py-2">{row.source_data_level}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {row.trial_count ?? "—"}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
