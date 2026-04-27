@@ -2,6 +2,34 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-27 21:30:00 BST - Allen Visual Behavior slice forces go/no-go schema and h5py path
+
+The atlas now includes a non-2AFC visual task family backed by Allen Brain
+Observatory Visual Behavior open data. Adding it surfaced two design questions
+that the existing slices had quietly avoided:
+
+- The `CanonicalTrial.choice` Literal previously only carried left, right,
+  no-response, and unknown, even though `go-no-go` was already in the
+  vocabulary. Extending the Literal to include `go` and `withhold` is the
+  honest fix and is non-breaking for existing slices. The same kind of
+  coverage gap exists for `evidence_type`: change-detection tasks are not
+  scalar pulse-trains or stochastic motion, so a `change-detection` term was
+  added to vocabularies/core.yaml.
+- `allensdk` (latest 2.16.2) pins `scipy<1.11`, which conflicts hard with the
+  project's existing `scipy>=1.13` extras. Rather than fragmenting the
+  environment, the adapter reads Visual Behavior NWB files directly with
+  `h5py`, which has no scipy pin. The slice ships in `data-linked` status
+  with a CLI download helper that takes a public NWB URL; the user obtains a
+  session NWB out-of-band (Allen SDK in a separate venv, AWS CLI, or
+  documented public HTTPS URL) and runs the harmonize/analyze/report chain
+  locally. Provenance records the NWB SHA-256, byte size, and resolved
+  behavior_session_id; the slice will move to `analysis-verified` after a
+  first end-to-end local run pins a canonical session id.
+
+This is the first slice to exercise go and withhold choice values in the
+canonical trial table and the first slice whose evidence is a categorical
+transition rather than a scalar.
+
 ## 2026-04-27 07:44:06 BST - Aggregate slices need aggregate provenance
 
 The release check exposed a provenance mismatch in the auditory-clicks slice:

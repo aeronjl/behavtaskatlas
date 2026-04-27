@@ -194,6 +194,28 @@ canonical trials, cue-split psychometric summaries, a descriptive fit result,
 a dependency-free SVG plot, and a static report. The raw OSF downloads stay
 under ignored `data/raw/human_visual_contrast_walsh/`.
 
+Run the Allen Brain Observatory Visual Behavior change-detection slice from a
+local Visual Behavior NWB file:
+
+```bash
+uv sync --extra allen
+uv run --extra allen behavtaskatlas allen-visual-behavior-download \
+  --nwb-url https://visual-behavior-ophys-data.s3.amazonaws.com/<key>.nwb \
+  --out-file data/raw/allen_visual_behavior/behavior_session.nwb
+uv run --extra allen behavtaskatlas allen-visual-behavior-harmonize \
+  --nwb-file data/raw/allen_visual_behavior/behavior_session.nwb
+uv run behavtaskatlas allen-visual-behavior-analyze
+uv run behavtaskatlas allen-visual-behavior-report
+uv run behavtaskatlas site-index
+```
+
+The Allen slice writes ignored local artifacts under
+`derived/allen_visual_behavior/`. It emits canonical trials with go/withhold
+choice values, an outcome-count summary, a per-image-pair hit-rate table, a
+hit lick-latency SVG histogram, and a static report. The adapter reads the
+NWB trials table with `h5py` rather than `allensdk`, because allensdk pins
+`scipy<1.11` and conflicts with the project's other scipy-dependent extras.
+
 Build the local static report index:
 
 ```bash
