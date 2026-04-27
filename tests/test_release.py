@@ -40,8 +40,8 @@ def test_release_check_accepts_clean_generated_static_artifacts(tmp_path) -> Non
 
     assert not any(item["status"] == "error" for item in payload["items"])
     assert loaded["release_check_schema_version"] == "0.1.0"
-    assert payload["counts"]["vertical_slices"] == 8
-    assert payload["counts"]["reports_available"] == 8
+    assert payload["counts"]["vertical_slices"] == 9
+    assert payload["counts"]["reports_available"] == 9
     assert statuses["static.manifest"] == "ok"
     assert statuses["static.catalog"] == "ok"
     assert statuses["release.curation_queue"] == "ok"

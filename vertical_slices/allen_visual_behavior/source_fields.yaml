@@ -1,0 +1,46 @@
+slice_id: slice.allen-visual-behavior
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-brain-observatory-visual-behavior
+source_archive: https://portal.brain-map.org/explore/circuits/visual-behavior-2p
+source_object: NWB /intervals/trials table read directly via h5py
+license: Allen Institute Terms of Use
+required_fields:
+  - go
+  - catch
+  - hit
+  - miss
+  - false_alarm
+  - correct_reject
+  - aborted
+  - auto_rewarded
+  - initial_image_name
+  - change_image_name
+  - response_latency
+  - reward_volume
+optional_fields:
+  - change_time_no_display_delay
+  - trial_length
+  - lick_times
+  - reward_time
+  - session_type
+canonical_mapping:
+  stimulus_value: null; image change is categorical
+  stimulus_side: always none; stimuli are presented centrally
+  evidence_strength: null; the relevant evidence is a categorical image transition
+  choice: lick within response window go, withhold no-lick, aborted no-response
+  correct: True for hit and correct_reject, False for miss and false_alarm
+  response_time: response_latency seconds after change time
+  feedback: reward when hit or auto-rewarded with positive reward_volume, otherwise none
+  reward: reward_volume in mL when present
+  task_variables.outcome: hit, miss, false_alarm, correct_reject, aborted, auto_rewarded
+  task_variables.is_change: go column
+  task_variables.is_catch: catch column
+  task_variables.initial_image_name: pre-change image name
+  task_variables.change_image_name: change image name
+  task_variables.image_pair: initial->change label
+  task_variables.change_time_in_trial: change_time_no_display_delay
+source_notes:
+  - The Visual Behavior 2P AWS bucket carries NWB files that the Allen SDK fetches lazily.
+  - The slice pins one fully-trained behavior session and records the resolved behavior_session_id in provenance.
+  - Aborted trials (early licks before the change window) are filtered from rate calculations but preserved in canonical rows.
+  - Auto-rewarded trials are tagged in task_variables and excluded from hit and false-alarm rates.

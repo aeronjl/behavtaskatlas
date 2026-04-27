@@ -1,0 +1,68 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.allen-brain-observatory-visual-behavior
+name: Allen Brain Observatory Visual Behavior
+description: >
+  Open behavioral and two-photon / Neuropixels physiology dataset from the
+  Allen Institute, in which transgenic mice perform a standardized visual
+  change-detection task on natural-image streams. The atlas slice uses only
+  the behavior side of the dataset, accessed through the Allen SDK
+  VisualBehaviorOphysProjectCache from the public AWS Open Data S3 bucket.
+protocol_ids:
+  - protocol.mouse-visual-change-detection-allen
+species:
+  - mouse
+curation_status: data-linked
+source_url: https://portal.brain-map.org/explore/circuits/visual-behavior-2p
+access_notes: >
+  The atlas adapter reads Visual Behavior NWB files directly with h5py rather
+  than depending on allensdk, because allensdk pins scipy<1.11 which conflicts
+  with the rest of the project's scipy requirements. NWB files are downloaded
+  from the public visual-behavior-ophys-data AWS bucket via HTTPS into an
+  ignored local cache; the slice pins one behavior session and records the
+  NWB URL, file SHA-256, byte size, and resolved behavior_session_id in
+  provenance.
+source_data_level: raw-trial
+license: >
+  Allen Institute Terms of Use; Allen Brain Observatory data are released for
+  research and educational use with attribution.
+data_formats:
+  - NWB:N (Neurodata Without Borders) HDF5 files
+  - h5py-readable trials table at /intervals/trials
+expected_trial_table_mapping:
+  subject_id: BehaviorSession metadata mouse_id.
+  session_id: BehaviorSession behavior_session_id cast to string.
+  trial_index: Index of the row in BehaviorSession.trials.
+  stimulus_value: None; image change is categorical.
+  stimulus_side: Always none; stimuli are presented centrally.
+  evidence_strength: None; the evidence is a categorical image transition.
+  choice: Mapped from licking behavior; lick within response window is go, withhold is withhold, aborted (lick before change) is no-response.
+  correct: True for hits and correct rejections, False for misses and false alarms.
+  response_time: response_latency seconds after the change time.
+  feedback: reward when hit or auto-rewarded, otherwise none.
+  reward: reward_volume from the trial row when present.
+  task_variables: >
+    Preserves initial_image_name, change_image_name, change_time_in_trial,
+    is_change, is_catch, aborted, auto_rewarded, image_set, and trial_length.
+references:
+  - id: ref.garrett-2023-visual-behavior
+    citation: >
+      Garrett, M. E. et al. Stimulus novelty uncovers coding diversity in
+      visual cortical circuits. bioRxiv, 2023.
+    url: https://www.biorxiv.org/content/10.1101/2023.02.14.528085v1
+    doi: 10.1101/2023.02.14.528085
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-27
+  updated: 2026-04-27
+  source_notes: >
+    Dataset record drafted for the first Allen Visual Behavior slice; behavior
+    side only. Imaging and ephys modalities are out of MVP scope.
+caveats:
+  - The dataset bundles a strict training curriculum; the slice should pin one
+    fully-trained behavior session and record the training stage explicitly
+    rather than averaging across stages.
+  - Reading the NWB file directly avoids an allensdk dependency conflict but
+    couples the adapter to the NWB schema layout used by the Visual Behavior
+    release; future schema revisions may require adapter updates.

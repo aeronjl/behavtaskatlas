@@ -42,6 +42,7 @@ evidence_types:
   - staircase
   - adaptive
   - block-prior
+  - change-detection
   - mixed
 
 feedback_types:

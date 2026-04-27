@@ -1,0 +1,126 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-change-detection-allen
+family_id: family.visual-change-detection
+name: Allen Visual Behavior change detection
+aliases:
+  - Allen Brain Observatory Visual Behavior task
+  - VBO change detection
+description: >
+  Head-fixed mice view a stream of natural images flashed at a fixed cadence
+  (250 ms image, 500 ms gray) and must lick within a short response window
+  after the image identity changes. A subset of trials are catch trials in
+  which the image does not change, and the mouse must withhold licking. The
+  task is the standardized behavioral protocol used by the Allen Institute
+  Visual Behavior 2P and Visual Behavior Neuropixels datasets.
+species:
+  - mouse
+curation_status: data-linked
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - pre-change image identity
+    - change image identity
+    - flashes since trial start
+    - stimulus change indicator
+  evidence_type: change-detection
+  evidence_schedule: >
+    A repeating sequence of identical natural-image flashes is shown until a
+    pseudo-randomly scheduled change time, at which point one image is replaced
+    by a different image drawn from the same image set. On catch trials the
+    scheduled change does not occur and the mouse must withhold licking
+    through the response window.
+  units:
+    - flashes
+    - seconds
+  notes: >
+    The relevant operational evidence is a categorical image transition, not a
+    scalar contrast or coherence value. Image identity, change time, and
+    catch-trial flag are preserved as task variables.
+choice:
+  choice_type: go-no-go
+  alternatives:
+    - go
+    - withhold
+  response_modalities:
+    - lick
+  action_mapping: >
+    Licking the spout within the response window after a stimulus change is a
+    go response (hit). Withholding licking through the response window is a
+    no-go response (miss on change trials, correct rejection on catch trials).
+    Licking before the change window is an aborted trial.
+feedback:
+  feedback_type: reward
+  reward: Sweetened water for hits.
+  penalty: No active punishment beyond reward omission and trial abort on early licks.
+timing:
+  - name: image_flash
+    duration: 250 ms
+    description: One natural image is shown.
+  - name: gray_interval
+    duration: 500 ms
+    description: Gray screen between flashes.
+  - name: change_window
+    duration: response-limited
+    description: Response window after a scheduled change time.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: hit, miss, false alarm, or correct rejection
+training:
+  stages:
+    - habituation
+    - go-only static gratings
+    - go-only natural images
+    - full change detection
+  notes: >
+    Allen Visual Behavior follows a fixed multi-stage curriculum; only the
+    final stage is treated as the protocol-of-record for harmonized analyses.
+apparatus:
+  - head fixation
+  - visual display
+  - lick spout with capacitive sensor
+  - water delivery
+software:
+  - Allen Institute behavior task control
+dataset_ids:
+  - dataset.allen-brain-observatory-visual-behavior
+expected_analyses:
+  - hit rate, miss rate, false-alarm rate, correct-rejection rate
+  - d-prime by image change pair
+  - lick-latency distribution after change
+  - per-image-pair detectability table
+interpretive_claims:
+  - label: visual change detection
+    source: ref.garrett-2023-visual-behavior
+    confidence: high
+    caveat: >
+      The change-detection paradigm probes detection of a categorical
+      transition. Reading it as a measure of generic perceptual sensitivity
+      conflates change detection with novelty, image-set learning, and
+      task-rule familiarity.
+references:
+  - id: ref.garrett-2023-visual-behavior
+    citation: >
+      Garrett, M. E. et al. Stimulus novelty uncovers coding diversity in
+      visual cortical circuits. bioRxiv, 2023.
+    url: https://www.biorxiv.org/content/10.1101/2023.02.14.528085v1
+    doi: 10.1101/2023.02.14.528085
+  - id: ref.groblewski-2020-vbo
+    citation: >
+      Groblewski, P. A. et al. Characterization of learning, motivation, and
+      visual perception in five transgenic mouse lines. Frontiers in
+      Behavioral Neuroscience, 2020.
+    url: https://www.frontiersin.org/articles/10.3389/fnbeh.2020.00104/full
+    doi: 10.3389/fnbeh.2020.00104
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-27
+  updated: 2026-04-27
+  source_notes: >
+    Initial concrete protocol record for the Allen Visual Behavior change
+    detection task; harmonized via the Allen SDK BehaviorSession trial table.
+open_questions:
+  - Capture image-set membership (training vs. novel) in slice-level analyses.
+  - Decide whether auto-rewarded trials should be retained or filtered in canonical rows.

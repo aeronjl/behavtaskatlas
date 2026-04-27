@@ -200,7 +200,7 @@ class CanonicalTrial(StrictModel):
     stimulus_side: Literal["left", "right", "none", "unknown"] = "unknown"
     evidence_strength: float | None = None
     evidence_units: str | None = None
-    choice: Literal["left", "right", "no-response", "unknown"]
+    choice: Literal["left", "right", "go", "withhold", "no-response", "unknown"]
     correct: bool | None = None
     response_time: float | None = None
     response_time_origin: str | None = None

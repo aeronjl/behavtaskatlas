@@ -1,0 +1,55 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.visual-change-detection
+name: Visual change detection (go/no-go)
+aliases:
+  - visual change detection
+  - image change detection
+description: >
+  Sensory-guided go/no-go tasks in which subjects monitor a stream of repeated
+  visual stimuli and report a discrete change event. The operational evidence
+  is a categorical transition between stimuli rather than a scalar variable, so
+  this family is distinct from 2AFC contrast or motion discrimination even when
+  the stimuli themselves are visual.
+modalities:
+  - visual
+canonical_variables:
+  - pre-change stimulus identity
+  - change stimulus identity
+  - inter-flash interval
+  - change time within trial
+common_choice_types:
+  - go-no-go
+  - detection
+common_response_modalities:
+  - lick
+  - lever
+  - button-press
+curation_status: literature-curated
+references:
+  - id: ref.garrett-2023-visual-behavior
+    citation: >
+      Garrett, M. E. et al. Stimulus novelty uncovers coding diversity in
+      visual cortical circuits. bioRxiv, 2023.
+    url: https://www.biorxiv.org/content/10.1101/2023.02.14.528085v1
+    doi: 10.1101/2023.02.14.528085
+  - id: ref.groblewski-2020-vbo
+    citation: >
+      Groblewski, P. A. et al. Characterization of learning, motivation, and
+      visual perception in five transgenic mouse lines expressing GCaMP in
+      distinct cell populations. Frontiers in Behavioral Neuroscience, 2020.
+    url: https://www.frontiersin.org/articles/10.3389/fnbeh.2020.00104/full
+    doi: 10.3389/fnbeh.2020.00104
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-27
+  updated: 2026-04-27
+  source_notes: >
+    Initial family record introduced to give the atlas a non-2AFC visual task
+    backed by Allen Brain Observatory Visual Behavior open data.
+notes: >
+  Change-detection tasks share machinery with detection but the canonical
+  evidence is a categorical transition rather than a present/absent stimulus,
+  so both choice types are listed. Family stays focused on visual change
+  detection; auditory deviance-detection variants would be a sibling family.

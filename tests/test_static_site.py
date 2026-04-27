@@ -175,14 +175,14 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     assert loaded["catalog_link"] == "catalog.html"
     assert loaded["graph_link"] == "graph.html"
     assert loaded["curation_queue_link"] == "curation_queue.html"
-    assert len(loaded["comparison_rows"]) == 8
+    assert len(loaded["comparison_rows"]) == 9
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["source_data_level"] == "processed-trial"
     assert rdm_row["trial_count"] == 6149
     assert loaded["health"]["source_data_level_counts"] == {
         "figure-source-data": 1,
         "processed-trial": 6,
-        "raw-trial": 1,
+        "raw-trial": 2,
     }
 
 
@@ -426,20 +426,20 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     rdm_detail_path = derived_dir / rdm_protocol["detail_link"]
     rdm_dataset_path = derived_dir / rdm_dataset["detail_link"]
 
-    assert payload["counts"]["task_families"] == 3
-    assert payload["counts"]["protocols"] == 9
-    assert payload["counts"]["datasets"] == 7
-    assert payload["counts"]["vertical_slices"] == 8
+    assert payload["counts"]["task_families"] == 4
+    assert payload["counts"]["protocols"] == 10
+    assert payload["counts"]["datasets"] == 8
+    assert payload["counts"]["vertical_slices"] == 9
     assert payload["counts"]["report_available"] == 1
-    assert len(payload["protocol_details"]) == 9
-    assert len(payload["dataset_details"]) == 7
-    assert len(protocol_pages) == 9
-    assert len(dataset_pages) == 7
+    assert len(payload["protocol_details"]) == 10
+    assert len(payload["dataset_details"]) == 8
+    assert len(protocol_pages) == 10
+    assert len(dataset_pages) == 8
     assert payload["graph_link"] == "graph.html"
     assert payload["graph_json_link"] == "graph.json"
     assert payload["curation_queue_link"] == "curation_queue.html"
-    assert graph_payload["counts"]["nodes"] == 27
-    assert graph_payload["counts"]["edges"] == 43
+    assert graph_payload["counts"]["nodes"] == 31
+    assert graph_payload["counts"]["edges"] == 48
     assert graph_payload["counts"]["qa_issues"] == 0
     assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 0, "total": 0}
     assert graph_payload["catalog_link"] == "catalog.html"

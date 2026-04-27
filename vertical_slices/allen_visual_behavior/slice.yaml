@@ -1,0 +1,60 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.allen-visual-behavior
+title: Allen Visual Behavior Change Detection
+description: >
+  Single-session Allen Brain Observatory Visual Behavior slice mapping the
+  go/no-go change-detection task into the canonical trial model. First atlas
+  slice exercising go and withhold choice values.
+curation_status: data-linked
+display_order: 50
+family_id: family.visual-change-detection
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-brain-observatory-visual-behavior
+report_path: allen_visual_behavior/report.html
+analysis_result_path: allen_visual_behavior/analysis_result.json
+primary_artifact_path: allen_visual_behavior/lick_latency.svg
+primary_artifact_label: Open lick-latency SVG
+artifact_links:
+  - label: Report HTML
+    path: allen_visual_behavior/report.html
+  - label: Analysis result JSON
+    path: allen_visual_behavior/analysis_result.json
+  - label: Lick latency SVG
+    path: allen_visual_behavior/lick_latency.svg
+  - label: Outcome summary CSV
+    path: allen_visual_behavior/outcome_summary.csv
+  - label: Image-pair summary CSV
+    path: allen_visual_behavior/image_pair_summary.csv
+  - label: Canonical trials CSV
+    path: allen_visual_behavior/trials.csv
+  - label: Provenance JSON
+    path: allen_visual_behavior/provenance.json
+  - label: Slice notes
+    path: vertical_slices/allen_visual_behavior/README.md
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: image change vs no-change
+  evidence_type: change-detection
+  choice_type: go-no-go
+  response_modality: lick
+  source_data_level: raw-trial
+  analysis_outputs: hit/false-alarm rates, d-prime, per-image-pair table, lick latency
+  data_scope: one Allen Visual Behavior 2P behavior session
+  canonical_axis: lick=hit on change trials, withhold=correct rejection on catch trials
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-27
+  updated: 2026-04-27
+  source_notes: >
+    Initial slice manifest for the Allen Brain Observatory Visual Behavior
+    change-detection task. The behavior_session_id is recorded in the
+    generated provenance.json rather than pinned in this manifest until a
+    successful end-to-end local run confirms a stable default.
+notes: >
+  This slice ships in data-linked rather than analysis-verified status because
+  the report-backed run has not yet been executed locally; the curation
+  records and adapter exist but a session-pinned regeneration is still pending.
