@@ -7,6 +7,22 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from behavtaskatlas.allen import (
+    DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR,
+    DEFAULT_ALLEN_VISUAL_BEHAVIOR_RAW_DIR,
+    allen_visual_behavior_provenance_payload,
+    analyze_allen_change_detection,
+    download_allen_visual_behavior_session,
+    load_allen_visual_behavior_session,
+    write_change_detection_report_html,
+    write_image_pair_csv,
+    write_lick_latency_svg,
+    write_outcome_summary_csv,
+)
+from behavtaskatlas.allen import write_analysis_json as write_allen_analysis_json
+from behavtaskatlas.allen import (
+    write_canonical_trials_csv as write_allen_canonical_trials_csv,
+)
 from behavtaskatlas.clicks import (
     CLICKS_PSYCHOMETRIC_X_AXIS_LABEL,
     DEFAULT_CLICKS_DERIVED_DIR,
@@ -908,6 +924,76 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    allen_download_parser = subparsers.add_parser(
+        "allen-visual-behavior-download",
+        help="Download one Allen Visual Behavior NWB file from a public URL",
+    )
+    allen_download_parser.add_argument(
+        "--nwb-url",
+        required=True,
+        help="Public HTTPS URL pointing at a Visual Behavior behavior session NWB file",
+    )
+    allen_download_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional output NWB path; defaults to data/raw/allen_visual_behavior/<basename>",
+    )
+
+    allen_harmonize_parser = subparsers.add_parser(
+        "allen-visual-behavior-harmonize",
+        help="Harmonize one Allen Visual Behavior NWB file",
+    )
+    allen_harmonize_parser.add_argument(
+        "--nwb-file",
+        required=True,
+        help="Path to a downloaded Visual Behavior behavior session NWB file",
+    )
+    allen_harmonize_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR),
+        help="Directory for generated artifacts",
+    )
+    allen_harmonize_parser.add_argument(
+        "--limit", type=int, default=None, help="Optional trial limit"
+    )
+
+    allen_analyze_parser = subparsers.add_parser(
+        "allen-visual-behavior-analyze",
+        help="Analyze a harmonized Allen Visual Behavior session",
+    )
+    allen_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    allen_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    allen_report_parser = subparsers.add_parser(
+        "allen-visual-behavior-report",
+        help="Render a static HTML report for the Allen Visual Behavior slice",
+    )
+    allen_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    allen_report_parser.add_argument(
+        "--analysis-result", default=None, help="Optional explicit path to analysis_result.json"
+    )
+    allen_report_parser.add_argument(
+        "--provenance", default=None, help="Optional explicit path to provenance.json"
+    )
+    allen_report_parser.add_argument(
+        "--lick-latency-svg", default=None, help="Optional explicit path to lick_latency.svg"
+    )
+    allen_report_parser.add_argument(
+        "--out-file", default=None, help="Optional report HTML output path"
+    )
+
     site_index_parser = subparsers.add_parser(
         "site-index",
         help="Render a static index linking generated vertical-slice reports",
@@ -1209,6 +1295,30 @@ def main(argv: list[str] | None = None) -> int:
             provenance=Path(args.provenance) if args.provenance else None,
             accuracy_svg=Path(args.accuracy_svg) if args.accuracy_svg else None,
             confidence_svg=Path(args.confidence_svg) if args.confidence_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "allen-visual-behavior-download":
+        return _allen_visual_behavior_download(
+            nwb_url=args.nwb_url,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "allen-visual-behavior-harmonize":
+        return _allen_visual_behavior_harmonize(
+            nwb_file=Path(args.nwb_file),
+            out_dir=Path(args.out_dir),
+            limit=args.limit,
+        )
+    if args.command == "allen-visual-behavior-analyze":
+        return _allen_visual_behavior_analyze(
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "allen-visual-behavior-report":
+        return _allen_visual_behavior_report(
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            lick_latency_svg=Path(args.lick_latency_svg) if args.lick_latency_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
     if args.command == "site-index":
@@ -1580,6 +1690,151 @@ def _human_visual_report(
             "Psychometric SVG not found, wrote report without inline plot: "
             f"{psychometric_svg_path}"
         )
+    return 0
+
+
+def _allen_visual_behavior_download(
+    *,
+    nwb_url: str,
+    out_file: Path | None,
+) -> int:
+    target = out_file or DEFAULT_ALLEN_VISUAL_BEHAVIOR_RAW_DIR / nwb_url.rsplit("/", 1)[-1]
+    try:
+        details = download_allen_visual_behavior_session(
+            nwb_url=nwb_url,
+            out_file=target,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(
+        f"Downloaded {details['nwb_file_bytes']} bytes from {nwb_url} to "
+        f"{details['nwb_file']}"
+    )
+    print(f"SHA256 {details['nwb_file_sha256']}")
+    return 0
+
+
+def _allen_visual_behavior_harmonize(
+    *,
+    nwb_file: Path,
+    out_dir: Path,
+    limit: int | None,
+) -> int:
+    try:
+        trials, details = load_allen_visual_behavior_session(
+            nwb_file=nwb_file,
+            limit=limit,
+        )
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    trials_path = out_dir / "trials.csv"
+    outcome_path = out_dir / "outcome_summary.csv"
+    provenance_path = out_dir / "provenance.json"
+
+    write_allen_canonical_trials_csv(trials_path, trials)
+    outcome_counts: dict[str, int] = {}
+    for trial in trials:
+        outcome = str(trial.task_variables.get("outcome", "unknown"))
+        outcome_counts[outcome] = outcome_counts.get(outcome, 0) + 1
+    write_outcome_summary_csv(outcome_path, outcome_counts)
+    write_provenance_json(
+        provenance_path,
+        allen_visual_behavior_provenance_payload(
+            details=details,
+            output_files={
+                "trials": str(trials_path),
+                "outcome_summary": str(outcome_path),
+                "provenance": str(provenance_path),
+            },
+            trials=trials,
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote outcome summary to {outcome_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _allen_visual_behavior_analyze(
+    *,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    trials_path = trials_csv or derived_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical trials CSV not found: {trials_path}. "
+            "Run `uv run --extra allen behavtaskatlas allen-visual-behavior-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_allen_change_detection(trials)
+
+    image_pair_path = derived_dir / "image_pair_summary.csv"
+    result_path = derived_dir / "analysis_result.json"
+    plot_path = derived_dir / "lick_latency.svg"
+
+    write_image_pair_csv(image_pair_path, result["image_pair_summary"])
+    write_allen_analysis_json(result_path, result)
+    write_lick_latency_svg(plot_path, trials)
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote image pair summary to {image_pair_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote lick latency plot to {plot_path}")
+    return 0
+
+
+def _allen_visual_behavior_report(
+    *,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    lick_latency_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    analysis_path = analysis_result or derived_dir / "analysis_result.json"
+    provenance_path = provenance or derived_dir / "provenance.json"
+    lick_latency_path = lick_latency_svg or derived_dir / "lick_latency.svg"
+    report_path = out_file or derived_dir / "report.html"
+
+    if not analysis_path.exists():
+        print(
+            f"Allen Visual Behavior analysis result not found: {analysis_path}. "
+            "Run `behavtaskatlas allen-visual-behavior-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        analysis = _read_json_object_file(analysis_path)
+        provenance_payload_data = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else {}
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    if not lick_latency_path.exists():
+        print(
+            "Lick latency SVG not found at "
+            f"{lick_latency_path}; report will reference a missing image."
+        )
+
+    write_change_detection_report_html(
+        report_path,
+        analysis=analysis,
+        provenance=provenance_payload_data,
+        image_pair_rows=list(analysis.get("image_pair_summary") or []),
+    )
+
+    print(f"Wrote Allen Visual Behavior report to {report_path}")
     return 0
 
 

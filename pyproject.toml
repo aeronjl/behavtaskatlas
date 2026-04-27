@@ -10,6 +10,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+allen = [
+    "h5py>=3.10",
+]
 clicks = [
     "scipy>=1.13",
 ]
