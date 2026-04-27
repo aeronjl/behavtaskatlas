@@ -5,8 +5,11 @@ title: Allen Visual Behavior Change Detection
 description: >
   Single-session Allen Brain Observatory Visual Behavior slice mapping the
   go/no-go change-detection task into the canonical trial model. First atlas
-  slice exercising go and withhold choice values.
-curation_status: data-linked
+  slice exercising go and withhold choice values. Verified end-to-end with
+  Visual Behavior 2P behavior_session_id 899390684 (mouse 453911,
+  OPHYS_1_images_A, project VisualBehaviorMultiscope), an OPHYS_1 Familiar
+  session with 654 trials, hit rate 0.76, false-alarm rate 0.09, d-prime 1.99.
+curation_status: analysis-verified
 display_order: 50
 family_id: family.visual-change-detection
 protocol_id: protocol.mouse-visual-change-detection-allen
@@ -50,11 +53,14 @@ provenance:
   created: 2026-04-27
   updated: 2026-04-27
   source_notes: >
-    Initial slice manifest for the Allen Brain Observatory Visual Behavior
-    change-detection task. The behavior_session_id is recorded in the
-    generated provenance.json rather than pinned in this manifest until a
-    successful end-to-end local run confirms a stable default.
+    Slice manifest for the Allen Brain Observatory Visual Behavior change-
+    detection task. The canonical behavior_session_id is also recorded in
+    generated provenance.json (with NWB SHA-256, byte size, and session UUID)
+    so a rebuild can verify it is reading the same source bytes.
 notes: >
-  This slice ships in data-linked rather than analysis-verified status because
-  the report-backed run has not yet been executed locally; the curation
-  records and adapter exist but a session-pinned regeneration is still pending.
+  Public NWB URL pattern is
+  https://visual-behavior-ophys-data.s3.amazonaws.com/visual-behavior-ophys/behavior_sessions/behavior_session_<id>.nwb
+  for any behavior_session_id listed in the project_metadata/behavior_session_table.csv.
+  The slice's canonical session id is 899390684; sister sessions in the same
+  project can be substituted by passing --nwb-file pointing at a different
+  downloaded NWB.

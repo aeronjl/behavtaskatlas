@@ -210,8 +210,12 @@ def load_allen_visual_behavior_session(
     )
     details = {
         "behavior_session_id": behavior_session_id,
+        "behavior_session_uuid": nwb_meta.get("behavior_session_uuid"),
         "subject_id": subject_id,
         "session_type": nwb_meta.get("session_type"),
+        "project_code": nwb_meta.get("project_code"),
+        "equipment_name": nwb_meta.get("equipment_name"),
+        "stimulus_frame_rate": nwb_meta.get("stimulus_frame_rate"),
         "n_source_rows": len(rows),
         "n_trials": len(canonical),
         "nwb_file": str(nwb_file),
@@ -603,10 +607,15 @@ def allen_visual_behavior_provenance_payload(
             "portal_url": ALLEN_VISUAL_BEHAVIOR_PORTAL_URL,
             "s3_prefix": ALLEN_VISUAL_BEHAVIOR_S3_PREFIX,
             "behavior_session_id": details.get("behavior_session_id"),
+            "behavior_session_uuid": details.get("behavior_session_uuid"),
             "subject_id": details.get("subject_id"),
             "session_type": details.get("session_type"),
-            "cache": details.get("cache"),
-            "session_meta": details.get("session_meta"),
+            "project_code": details.get("project_code"),
+            "equipment_name": details.get("equipment_name"),
+            "stimulus_frame_rate": details.get("stimulus_frame_rate"),
+            "nwb_file": details.get("nwb_file"),
+            "nwb_file_sha256": details.get("nwb_file_sha256"),
+            "nwb_file_bytes": details.get("nwb_file_bytes"),
         },
         "source_fields": list(ALLEN_REQUIRED_TRIAL_FIELDS),
         "response_time_origin": "response_latency seconds after change time",
@@ -722,15 +731,37 @@ def _decode_nwb_scalar(value: Any) -> Any:
 
 def _nwb_session_metadata(handle: Any) -> dict[str, Any]:
     meta: dict[str, Any] = {}
-    session_id = _nwb_attr_or_dataset(handle, "general/session_id")
+    metadata_attrs: dict[str, Any] = {}
+    if "general/metadata" in handle:
+        attrs = handle["general/metadata"].attrs
+        metadata_attrs = {key: attrs[key] for key in attrs}
+    session_id = (
+        metadata_attrs.get("behavior_session_id")
+        or _nwb_attr_or_dataset(handle, "general/session_id")
+        or _nwb_attr_or_dataset(handle, "identifier")
+    )
     if session_id is not None:
-        meta["behavior_session_id"] = _coerce_int(session_id) or session_id
-    session_description = _nwb_attr_or_dataset(handle, "session_description")
-    if session_description is not None:
-        meta["session_type"] = session_description
+        decoded = _decode_nwb_scalar(session_id)
+        coerced = _coerce_int(decoded)
+        meta["behavior_session_id"] = coerced if coerced is not None else decoded
+    session_type = (
+        metadata_attrs.get("session_type")
+        or _nwb_attr_or_dataset(handle, "session_description")
+    )
+    if session_type is not None:
+        meta["session_type"] = _decode_nwb_scalar(session_type)
     subject_id = _nwb_attr_or_dataset(handle, "general/subject/subject_id")
     if subject_id is not None:
         meta["subject_id"] = subject_id
+    for attr in (
+        "behavior_session_uuid",
+        "equipment_name",
+        "project_code",
+        "stimulus_frame_rate",
+    ):
+        value = metadata_attrs.get(attr)
+        if value is not None:
+            meta[attr] = _decode_nwb_scalar(value)
     return meta
 
 
@@ -746,8 +777,9 @@ def _nwb_attr_or_dataset(handle: Any, path: str) -> Any:
     parts = path.rsplit("/", 1)
     if len(parts) == 2:
         parent_path, attr_name = parts
-        if parent_path in handle:
-            parent = handle[parent_path]
+        parent_target = "/" if parent_path == "" else parent_path
+        if parent_target in handle:
+            parent = handle[parent_target]
             if attr_name in parent.attrs:
                 return _decode_nwb_scalar(parent.attrs[attr_name])
     if path in handle.attrs:

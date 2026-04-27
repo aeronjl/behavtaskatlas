@@ -46,17 +46,19 @@ and `session_type`.
 
 ## Local Regeneration Command
 
-The slice operates on a Visual Behavior behavior NWB file. Obtain one via the
-Allen SDK in a separate environment, AWS CLI (`aws s3 cp s3://visual-behavior-ophys-data/...`),
-or the `allen-visual-behavior-download` helper if a public HTTPS URL is known.
+The canonical session for this slice is `behavior_session_id 899390684`
+(mouse `453911`, `OPHYS_1_images_A`, project `VisualBehaviorMultiscope`). It is
+served as a public NWB file from the Allen `visual-behavior-ophys-data` S3
+bucket. Sister sessions can be substituted by changing `--nwb-url` and
+`--nwb-file`.
 
 ```bash
 uv sync --extra allen
 uv run --extra allen behavtaskatlas allen-visual-behavior-download \
-  --nwb-url https://visual-behavior-ophys-data.s3.amazonaws.com/<key>.nwb \
-  --out-file data/raw/allen_visual_behavior/behavior_session.nwb
+  --nwb-url https://visual-behavior-ophys-data.s3.amazonaws.com/visual-behavior-ophys/behavior_sessions/behavior_session_899390684.nwb \
+  --out-file data/raw/allen_visual_behavior/behavior_session_899390684.nwb
 uv run --extra allen behavtaskatlas allen-visual-behavior-harmonize \
-  --nwb-file data/raw/allen_visual_behavior/behavior_session.nwb
+  --nwb-file data/raw/allen_visual_behavior/behavior_session_899390684.nwb
 uv run behavtaskatlas allen-visual-behavior-analyze
 uv run behavtaskatlas allen-visual-behavior-report
 uv run behavtaskatlas site-index
@@ -69,8 +71,21 @@ derived/allen_visual_behavior/
 ```
 
 The downloaded NWB file lives under `data/raw/allen_visual_behavior/`, which
-is also gitignored. The resolved `behavior_session_id`, NWB SHA-256, and byte
-size are recorded in `provenance.json`.
+is also gitignored. The resolved `behavior_session_id`, NWB SHA-256, byte
+size, and session UUID are recorded in `provenance.json`.
+
+Verified local run on `behavior_session_899390684.nwb`:
+
+- 654 trials harmonized; outcome counts: hit 180, miss 56, false_alarm 3,
+  correct_reject 31, aborted 379, auto_rewarded 5
+- Hit rate 0.76, false-alarm rate 0.09, d-prime 1.99 (matches the
+  `behavior_session_table.csv` per-session counts)
+- 56 distinct image pairs in the per-pair table
+- Median hit lick latency ~396 ms after change
+
+The Allen `behavior_session_table.csv` is published alongside the bucket at
+`s3://visual-behavior-ophys-data/visual-behavior-ophys/project_metadata/behavior_session_table.csv`
+and can be used to filter for other Familiar/OPHYS sessions.
 
 ## Data Policy
 
@@ -81,9 +96,9 @@ confirmed.
 
 ## Open Questions
 
-1. Pin a canonical default `behavior_session_id` in the slice manifest after
-   first successful run, mirroring how the IBL slice pins one OpenAlyx eid.
-2. Decide whether to filter or retain `auto_rewarded` trials in the canonical
+1. Decide whether to filter or retain `auto_rewarded` trials in the canonical
    table by default.
-3. Add a multi-session aggregate (subject-level pooling) once the single-
-   session slice is verified.
+2. Add a multi-session aggregate (subject-level pooling) once the single-
+   session slice has had its first cross-session sanity check.
+3. Consider switching the slice to a fully-trained `OPHYS_4` or later session
+   if a higher hit-rate / lower abort-rate exemplar is preferred.

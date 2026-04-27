@@ -2,6 +2,32 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-27 22:40:00 BST - Allen Visual Behavior slice verified end-to-end
+
+The change-detection slice now runs against a real public NWB file rather than
+synthetic test fixtures. Pinned canonical session is behavior_session_id
+899390684 (mouse 453911, OPHYS_1_images_A, project VisualBehaviorMultiscope),
+served at the deterministic path
+`s3://visual-behavior-ophys-data/visual-behavior-ophys/behavior_sessions/behavior_session_<id>.nwb`.
+The Visual Behavior project_metadata table at
+`s3://visual-behavior-ophys-data/visual-behavior-ophys/project_metadata/behavior_session_table.csv`
+exposes per-session hit/miss/false-alarm counts that the harmonized slice
+matches: 654 trials, hit rate 0.76, false-alarm rate 0.09, d-prime 1.99 — so
+the canonical-trial mapping is faithful to Allen's own counts.
+
+Verifying surfaced two adapter bugs that the synthetic tests had hidden. The
+NWB session id lives in HDF5 attributes on `/general/metadata`
+(`behavior_session_id`, `behavior_session_uuid`, `equipment_name`,
+`project_code`, `stimulus_frame_rate`, `session_type`), not as a
+`/general/session_id` dataset; the adapter now reads attributes first and
+falls back to `/identifier`. Several useful provenance fields were also
+populated in the harmonization details dict but dropped before reaching the
+provenance JSON; that wiring is fixed and provenance now records NWB
+SHA-256, byte size, session UUID, equipment, and project code so a rebuild
+can verify it is reading the same source bytes.
+
+The slice is promoted from data-linked to analysis-verified.
+
 ## 2026-04-27 21:30:00 BST - Allen Visual Behavior slice forces go/no-go schema and h5py path
 
 The atlas now includes a non-2AFC visual task family backed by Allen Brain
