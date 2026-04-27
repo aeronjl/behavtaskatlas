@@ -2,6 +2,18 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-27 07:44:06 BST - Aggregate slices need aggregate provenance
+
+The release check exposed a provenance mismatch in the auditory-clicks slice:
+per-rat provenance existed, but the report-backed artifact is the aggregate
+result at `derived/auditory_clicks/aggregate_result.json`. That aggregate needs
+its own provenance file rather than borrowing provenance from one input session.
+
+The fix is to make aggregate provenance an output of `clicks-aggregate`. It
+records the batch summary, per-rat artifact inputs, aggregate outputs, commit,
+and dirty state, while leaving raw-file provenance in the per-rat session
+directories where it belongs.
+
 ## 2026-04-26 22:02:09 BST - Release readiness should be a generated artifact
 
 The MVP now needs a release check as a first-class output, not just a mental

@@ -89,8 +89,9 @@ are written under ignored `derived/auditory_clicks/`. The clicks analysis emits
 both a baseline psychometric summary and a descriptive click-time evidence kernel.
 Batch runs also write `derived/auditory_clicks/batch_summary.csv`. Aggregate runs
 read those existing batch outputs and write a per-rat/gamma psychometric bias table,
-a cross-rat evidence-kernel summary, a JSON result, and an SVG plot. Report runs
-render those aggregate artifacts as a dependency-free static HTML page.
+a cross-rat evidence-kernel summary, a JSON result, an aggregate provenance JSON,
+and an SVG plot. Report runs render those aggregate artifacts as a
+dependency-free static HTML page.
 
 Download and run the Mendeley Data human Poisson clicks DBS OFF/ON slice:
 

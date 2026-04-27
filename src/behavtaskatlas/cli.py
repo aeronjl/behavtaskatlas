@@ -20,6 +20,7 @@ from behavtaskatlas.clicks import (
     analyze_brody_clicks_evidence_kernel,
     analyze_human_clicks,
     analyze_human_clicks_evidence_kernel,
+    brody_clicks_aggregate_provenance_payload,
     brody_clicks_provenance_payload,
     download_human_clicks_mendeley_mat,
     human_clicks_provenance_payload,
@@ -1767,6 +1768,7 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     kernel_summary_path = output_dir / "aggregate_kernel_summary.csv"
     result_path = output_dir / "aggregate_result.json"
     kernel_plot_path = output_dir / "aggregate_kernel.svg"
+    provenance_path = output_dir / "provenance.json"
 
     write_aggregate_psychometric_bias_csv(
         psychometric_path,
@@ -1775,12 +1777,27 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     write_aggregate_kernel_summary_csv(kernel_summary_path, result["kernel_summary_rows"])
     write_analysis_json(result_path, result)
     write_aggregate_kernel_svg(kernel_plot_path, result["kernel_summary_rows"])
+    write_provenance_json(
+        provenance_path,
+        brody_clicks_aggregate_provenance_payload(
+            result=result,
+            batch_summary_path=batch_summary_path,
+            output_files={
+                "aggregate_psychometric_bias": str(psychometric_path),
+                "aggregate_kernel_summary": str(kernel_summary_path),
+                "aggregate_result": str(result_path),
+                "aggregate_kernel": str(kernel_plot_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
 
     print(f"Aggregated {result['n_ok']} ok batch rows from {batch_summary_path}")
     print(f"Wrote aggregate psychometric bias table to {psychometric_path}")
     print(f"Wrote aggregate kernel summary to {kernel_summary_path}")
     print(f"Wrote aggregate result to {result_path}")
     print(f"Wrote aggregate kernel plot to {kernel_plot_path}")
+    print(f"Wrote aggregate provenance to {provenance_path}")
     if result["n_artifact_errors"]:
         print(f"Encountered {result['n_artifact_errors']} aggregate artifact errors")
         return 1
@@ -1796,6 +1813,7 @@ def _clicks_report(
 ) -> int:
     result_path = aggregate_result or derived_dir / "aggregate_result.json"
     kernel_svg_path = aggregate_kernel_svg or derived_dir / "aggregate_kernel.svg"
+    provenance_path = derived_dir / "provenance.json"
     report_path = out_file or derived_dir / "report.html"
     if not result_path.exists():
         print(
@@ -1830,6 +1848,7 @@ def _clicks_report(
             report_dir,
         ),
         "aggregate kernel SVG": _relative_artifact_link(kernel_svg_path, report_dir),
+        "aggregate provenance JSON": _relative_artifact_link(provenance_path, report_dir),
         "batch summary CSV": _relative_artifact_link(
             derived_dir / "batch_summary.csv",
             report_dir,

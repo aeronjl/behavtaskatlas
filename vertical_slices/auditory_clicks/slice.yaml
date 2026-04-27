@@ -21,6 +21,8 @@ artifact_links:
     path: auditory_clicks/aggregate_result.json
   - label: Aggregate kernel SVG
     path: auditory_clicks/aggregate_kernel.svg
+  - label: Aggregate provenance JSON
+    path: auditory_clicks/provenance.json
   - label: Batch summary CSV
     path: auditory_clicks/batch_summary.csv
   - label: Slice notes

@@ -637,6 +637,55 @@ def aggregate_brody_clicks_batch(batch_summary_path: Path) -> dict[str, Any]:
     }
 
 
+def brody_clicks_aggregate_provenance_payload(
+    *,
+    result: dict[str, Any],
+    batch_summary_path: Path,
+    output_files: dict[str, str],
+) -> dict[str, Any]:
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+
+    return {
+        "protocol_id": BRODY_CLICKS_PROTOCOL_ID,
+        "dataset_id": BRODY_CLICKS_DATASET_ID,
+        "source": {
+            "batch_summary_path": str(batch_summary_path),
+            "n_batch_rows": result.get("n_batch_rows"),
+            "n_ok": result.get("n_ok"),
+            "n_failed": result.get("n_failed"),
+            "n_artifact_errors": result.get("n_artifact_errors"),
+        },
+        "behavtaskatlas_commit": current_git_commit(),
+        "behavtaskatlas_git_dirty": current_git_dirty(),
+        "generated_at": datetime.now(UTC).isoformat(),
+        "inputs": {
+            "batch_summary": str(batch_summary_path),
+            "rat_artifacts": [
+                {
+                    "session_id": row.get("session_id"),
+                    "subject_id": row.get("subject_id"),
+                    "status": row.get("status"),
+                    "output_dir": row.get("output_dir"),
+                    "analysis_result_path": row.get("analysis_result_path"),
+                    "evidence_kernel_result_path": row.get("evidence_kernel_result_path"),
+                }
+                for row in result.get("rat_results", [])
+            ],
+        },
+        "outputs": output_files,
+        "caveats": [
+            (
+                "This is aggregate provenance over already generated per-rat artifacts; "
+                "raw `.mat` provenance remains in each rat session directory."
+            ),
+            (
+                "A clean aggregate provenance file requires rerunning the per-rat batch "
+                "and aggregate commands from the same clean commit."
+            ),
+        ],
+    }
+
+
 def write_aggregate_psychometric_bias_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:

@@ -9,6 +9,7 @@ from behavtaskatlas.clicks import (
     analyze_brody_clicks_evidence_kernel,
     analyze_human_clicks,
     analyze_human_clicks_evidence_kernel,
+    brody_clicks_aggregate_provenance_payload,
     clicks_aggregate_report_html,
     clicks_session_report_html,
     evidence_kernel_svg,
@@ -436,6 +437,19 @@ def test_aggregate_brody_clicks_batch_reads_batch_artifacts(tmp_path) -> None:
     assert first_kernel_row["min_choice_difference"] == pytest.approx(2.0)
     assert first_kernel_row["max_choice_difference"] == pytest.approx(4.0)
 
+    provenance = brody_clicks_aggregate_provenance_payload(
+        result=result,
+        batch_summary_path=batch_summary_path,
+        output_files={
+            "aggregate_result": str(derived_dir / "aggregate_result.json"),
+            "provenance": str(derived_dir / "provenance.json"),
+        },
+    )
+    assert provenance["protocol_id"] == "protocol.rat-auditory-clicks-nose-poke"
+    assert provenance["source"]["n_ok"] == 2
+    assert provenance["outputs"]["provenance"].endswith("provenance.json")
+    assert len(provenance["inputs"]["rat_artifacts"]) == 2
+
 
 def test_aggregate_kernel_svg_contains_title() -> None:
     svg = aggregate_kernel_svg(
@@ -515,13 +529,17 @@ def test_clicks_aggregate_report_html_contains_artifact_links_and_tables() -> No
             "caveats": ["Escape <unsafe> text"],
         },
         aggregate_kernel_svg_text="<svg><text>Plot</text></svg>",
-        artifact_links={"aggregate result JSON": "aggregate_result.json"},
+        artifact_links={
+            "aggregate result JSON": "aggregate_result.json",
+            "aggregate provenance JSON": "provenance.json",
+        },
     )
 
     assert "Auditory Clicks Aggregate Report" in html
     assert "A080" in html
     assert "gamma=-1" in html
     assert "aggregate_result.json" in html
+    assert "provenance.json" in html
     assert "<svg><text>Plot</text></svg>" in html
     assert "Escape &lt;unsafe&gt; text" in html
 
