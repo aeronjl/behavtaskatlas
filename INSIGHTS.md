@@ -2,6 +2,59 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-28 17:45:00 BST - Citation export, cross-record search, contributor docs, rat findings
+
+Closed out the four-item roadmap (citations → search →
+CONTRIBUTING → more findings) in one session. Atlas now has 29
+findings across 7 papers (was 24 / 6) and the static site exports
+71 search-indexable records.
+
+What changed:
+
+- **Citation export** (`src/behavtaskatlas/citations.py`).
+  `site-index` renders each Paper into BibTeX and RIS, emits
+  per-paper and atlas-wide files under `derived/citations/`, and
+  writes `derived/papers.json` with inline strings. The Astro
+  download buttons (`web/src/components/CitationDownloads.astro`)
+  use `data:` URLs to keep the site dependency-free — no Blob,
+  no JS, just `<a download>`. Title parsing strips the
+  trailing-initials prefix from the canonical citation field
+  (e.g. "Roitman JD, Shadlen MN. <title>. <venue>...") via a
+  regex looking for the first `". "` after the last author
+  surname; tested against the six existing papers.
+- **Atlas-wide search** (`src/behavtaskatlas/search.py`,
+  `web/src/components/SearchPanel.svelte`). One flat index
+  spanning papers, families, protocols, datasets, slices,
+  findings, and comparisons. Token-based ranking weights title
+  prefix > title contains > subtitle > keywords > body, and the
+  client-side panel highlights matches inline. Header search
+  input on every page hands off to `/search?q=`.
+- **CONTRIBUTING.md + PR/issue templates**. Walks new
+  contributors through dev setup, the ground rules (operational
+  variables before interpretation, provenance discipline, MVP
+  scope), and the two most common contributions. Bug + new-record
+  issue templates live under `.github/ISSUE_TEMPLATE/`.
+- **Brunton 2013 + per-rat clicks findings**. Anchored the
+  auditory_clicks slice to its published reference (Brunton et
+  al. 2013, Science) and extracted five per-rat psychometric
+  findings (A080, B075, B127, T014, T074) from the harmonized
+  trials. The slice-level concatenated `trials.csv` is generated
+  ad-hoc for now (per-rat trials are written by clicks-batch
+  under `*-parsed/`); a future change should add a
+  `clicks-aggregate-trials` step so the concatenation is part of
+  the pipeline. This adds **rat** as a species point to the
+  cross-paper psychometric overlay, alongside human, macaque,
+  and mouse.
+
+Why it matters: the citation export removes a friction point for
+researchers who want to cite this atlas in lit reviews. The
+search index makes 71 records reachable without page-by-page
+browsing — the previous `/findings` and `/papers` pages were the
+only entry points, and neither covered protocols, datasets, or
+the curation queue. Per-rat Brunton findings unblock cross-
+species psychometric comparisons that previously had a 3-species
+ceiling.
+
 ## 2026-04-28 14:30:00 BST - Meta-analysis Phases 3+4: more curves, importer, mature UI
 
 Continued the meta-analysis arc to substantively cover the agent's
