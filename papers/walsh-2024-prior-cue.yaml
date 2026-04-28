@@ -1,0 +1,43 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.walsh-2024-prior-cue
+citation: >
+  Walsh K, McGovern DP, Dully J, Kelly SP, O'Connell RG. Prior probability
+  cues bias sensory encoding with increasing task exposure. eLife 12:RP91135,
+  2024.
+authors:
+  - Walsh, Kevin
+  - McGovern, David P.
+  - Dully, Jessica
+  - Kelly, Simon P.
+  - O'Connell, Redmond G.
+year: 2024
+venue: eLife
+doi: 10.7554/eLife.91135.3
+url: https://elifesciences.org/articles/91135
+species:
+  - human
+n_subjects: 12
+protocol_ids:
+  - protocol.human-visual-contrast-2afc-keyboard
+dataset_ids:
+  - dataset.walsh-prior-cue-human-contrast-osf
+finding_ids:
+  - finding.walsh-2024-prior-cue.psychometric.cue-invalid
+  - finding.walsh-2024-prior-cue.psychometric.cue-neutral
+  - finding.walsh-2024-prior-cue.psychometric.cue-valid
+curation_status: data-linked
+notes: >
+  Source paper for the human visual contrast prior-cue slice. Stratification
+  is by cue context (invalid / neutral / valid); each gets its own finding.
+  The OSF "1. Behavioural Analysis.mat" file carries 66,200 processed
+  behavioural rows that the slice harmonizes; psychometric_summary.csv is
+  the per-cue-context aggregate.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Paper record introduced alongside the cross-paper threshold/disagreement
+    tooling; findings extracted from the slice's psychometric_summary.csv.

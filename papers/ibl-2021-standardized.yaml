@@ -1,0 +1,41 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.ibl-2021-standardized
+citation: >
+  The International Brain Laboratory et al. Standardized and reproducible
+  measurement of decision-making in mice. eLife, 2021, 10:e63711.
+authors:
+  - The International Brain Laboratory
+year: 2021
+venue: eLife
+doi: 10.7554/eLife.63711
+url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
+lab: International Brain Laboratory
+species:
+  - mouse
+n_subjects: 140
+protocol_ids:
+  - protocol.ibl-visual-decision-v1
+  - protocol.mouse-visual-contrast-wheel-unbiased
+dataset_ids:
+  - dataset.ibl-public-behavior
+finding_ids:
+  - finding.ibl-2021-standardized.psychometric.p_left-0.2
+  - finding.ibl-2021-standardized.psychometric.p_left-0.5
+  - finding.ibl-2021-standardized.psychometric.p_left-0.8
+curation_status: data-linked
+notes: >
+  Source paper for the IBL standardized visual decision task. The biased
+  trainingChoiceWorld variant carries blockwise prior_context labels
+  (p_left=0.2, 0.5, 0.8) which are extracted as separate findings.
+  The unbiased trainingChoiceWorld slice exists for navigation but is a
+  single training session with too few per-block trials to produce stable
+  psychometrics; no findings are currently extracted from it.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Paper record introduced alongside the cross-paper threshold/disagreement
+    tooling; findings extracted from the IBL slices' psychometric_summary.csv.

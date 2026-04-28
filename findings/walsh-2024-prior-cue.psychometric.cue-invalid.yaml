@@ -1,0 +1,140 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.walsh-2024-prior-cue.psychometric.cue-invalid
+paper_id: paper.walsh-2024-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+slice_id: slice.human-visual-contrast-prior-cue
+source_data_level: processed-trial
+n_trials: 10985
+stratification:
+  condition: cue=invalid
+curve:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -28.000000000000004
+    n: 68
+    y: 0.17647058823529413
+  - x: -26.0
+    n: 63
+    y: 0.36507936507936506
+  - x: -25.0
+    n: 65
+    y: 0.3230769230769231
+  - x: -21.999999999999996
+    n: 269
+    y: 0.5315985130111525
+  - x: -19.999999999999996
+    n: 188
+    y: 0.4627659574468085
+  - x: -17.999999999999993
+    n: 192
+    y: 0.4739583333333333
+  - x: -16.999999999999993
+    n: 148
+    y: 0.7432432432432432
+  - x: -15.999999999999993
+    n: 243
+    y: 0.7283950617283951
+  - x: -14.999999999999991
+    n: 337
+    y: 0.6053412462908012
+  - x: -13.99999999999999
+    n: 806
+    y: 0.6873449131513648
+  - x: -12.99999999999999
+    n: 102
+    y: 0.49019607843137253
+  - x: -12.00000000000001
+    n: 661
+    y: 0.8199697428139183
+  - x: -11.00000000000001
+    n: 71
+    y: 0.8591549295774648
+  - x: -10.000000000000009
+    n: 954
+    y: 0.8574423480083857
+  - x: -8.000000000000007
+    n: 340
+    y: 0.8382352941176471
+  - x: -7.000000000000006
+    n: 546
+    y: 0.8901098901098901
+  - x: -6.000000000000005
+    n: 308
+    y: 0.8538961038961039
+  - x: -4.0000000000000036
+    n: 111
+    y: 0.8378378378378378
+  - x: -3.0000000000000027
+    n: 124
+    y: 0.7903225806451613
+  - x: 3.0000000000000027
+    n: 103
+    y: 0.5922330097087378
+  - x: 4.0000000000000036
+    n: 101
+    y: 0.7425742574257426
+  - x: 6.000000000000005
+    n: 283
+    y: 0.558303886925795
+  - x: 7.000000000000006
+    n: 533
+    y: 0.5422138836772983
+  - x: 8.000000000000007
+    n: 342
+    y: 0.43859649122807015
+  - x: 10.000000000000009
+    n: 895
+    y: 0.7430167597765364
+  - x: 11.00000000000001
+    n: 69
+    y: 0.463768115942029
+  - x: 12.00000000000001
+    n: 609
+    y: 0.6420361247947455
+  - x: 12.99999999999999
+    n: 96
+    y: 0.8333333333333334
+  - x: 13.99999999999999
+    n: 793
+    y: 0.691046658259773
+  - x: 14.999999999999991
+    n: 336
+    y: 0.6517857142857143
+  - x: 15.999999999999993
+    n: 232
+    y: 0.853448275862069
+  - x: 16.999999999999993
+    n: 137
+    y: 0.5985401459854015
+  - x: 17.999999999999993
+    n: 191
+    y: 0.8586387434554974
+  - x: 19.999999999999996
+    n: 190
+    y: 0.8157894736842105
+  - x: 21.999999999999996
+    n: 276
+    y: 0.7971014492753623
+  - x: 25.0
+    n: 63
+    y: 0.7936507936507936
+  - x: 26.0
+    n: 64
+    y: 0.578125
+  - x: 28.000000000000004
+    n: 76
+    y: 0.7763157894736842
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='cue=invalid'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

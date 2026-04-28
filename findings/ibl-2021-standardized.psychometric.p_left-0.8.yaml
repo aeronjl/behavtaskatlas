@@ -1,0 +1,53 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.ibl-2021-standardized.psychometric.p_left-0.8
+paper_id: paper.ibl-2021-standardized
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-public-behavior
+slice_id: slice.ibl-visual-decision
+source_data_level: processed-trial
+n_trials: 248
+stratification:
+  condition: p_left=0.8
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 48
+    y: 0.0625
+  - x: -25.0
+    n: 45
+    y: 0.1111111111111111
+  - x: -12.5
+    n: 40
+    y: 0.375
+  - x: -6.25
+    n: 40
+    y: 0.575
+  - x: -0.0
+    n: 29
+    y: 0.4482758620689655
+  - x: 6.25
+    n: 9
+    y: 0.6666666666666666
+  - x: 12.5
+    n: 13
+    y: 0.3076923076923077
+  - x: 25.0
+    n: 10
+    y: 0.9
+  - x: 100.0
+    n: 14
+    y: 0.9285714285714286
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='p_left=0.8'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.
