@@ -25,6 +25,8 @@ finding_ids:
   - finding.roitman-shadlen-2002.chronometric
   - finding.roitman-shadlen-2002.psychometric.subject.monkey-1
   - finding.roitman-shadlen-2002.psychometric.subject.monkey-2
+  - finding.roitman-shadlen-2002.chronometric.subject.monkey-1
+  - finding.roitman-shadlen-2002.chronometric.subject.monkey-2
 curation_status: data-linked
 notes: >
   Pinned source for the Roitman-Shadlen processed PyDDM CSV used by the

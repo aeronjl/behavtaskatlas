@@ -1,0 +1,76 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.ddm-vanilla.roitman-shadlen-2002.psychometric.subject.monkey-2
+variant_id: model_variant.ddm-vanilla
+finding_ids:
+- finding.roitman-shadlen-2002.psychometric.subject.monkey-2
+- finding.roitman-shadlen-2002.chronometric.subject.monkey-2
+parameters:
+  drift_per_unit_evidence: 0.18185054757275176
+  boundary: 1.2077674687090492
+  non_decision_time: 0.358
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -1217.066780736267
+  aic: 2440.133561472534
+  bic: 2458.644118431173
+  n_trials: 3534.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.146324435382034
+  rt_sigma_assumed_s: 0.19006016956626012
+predictions:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 297
+    y: 1.3069469027377847e-05
+  - x: -25.6
+    n: 294
+    y: 0.003602173124235471
+  - x: -12.8
+    n: 292
+    y: 0.05671634235273889
+  - x: -6.4
+    n: 294
+    y: 0.19692070486324376
+  - x: -3.2
+    n: 297
+    y: 0.3311859295177934
+  - x: -0.0
+    n: 587
+    y: 0.5
+  - x: 3.2
+    n: 294
+    y: 0.6688140704822066
+  - x: 6.4
+    n: 295
+    y: 0.8030792951367562
+  - x: 12.8
+    n: 295
+    y: 0.9432836576472611
+  - x: 25.6
+    n: 296
+    y: 0.9963978268757645
+  - x: 51.2
+    n: 293
+    y: 0.9999869305309727
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: binomial NLL + Gaussian RT chi-squared
+  duration_seconds: 0.0029151439666748047
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 67b9019
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-vanilla;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

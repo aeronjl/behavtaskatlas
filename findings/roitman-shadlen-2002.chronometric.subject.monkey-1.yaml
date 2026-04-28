@@ -1,0 +1,44 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.roitman-shadlen-2002.chronometric.subject.monkey-1
+paper_id: paper.roitman-shadlen-2002
+protocol_id: protocol.random-dot-motion-classic-macaque
+dataset_id: dataset.roitman-shadlen-rdm-pyddm
+slice_id: slice.random-dot-motion
+source_data_level: processed-trial
+n_trials: 2615
+n_subjects: 1
+stratification:
+  subject_id: monkey-1
+curve:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 432
+    y: 0.763
+  - x: 3.2
+    n: 437
+    y: 0.756
+  - x: 6.4
+    n: 436
+    y: 0.7224999999999999
+  - x: 12.8
+    n: 436
+    y: 0.664
+  - x: 25.6
+    n: 436
+    y: 0.568
+  - x: 51.2
+    n: 438
+    y: 0.4435
+extraction_method: harmonized-pipeline
+extraction_notes: Median response time per |stimulus_value| from harmonized trials
+  for subject_id='monkey-1'; bins with <5 trials dropped.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28

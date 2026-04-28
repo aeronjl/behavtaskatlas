@@ -1,0 +1,76 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-jd
+variant_id: model_variant.ddm-vanilla
+finding_ids:
+- finding.palmer-huk-shadlen-2005.psychometric.subject.phs-jd
+- finding.palmer-huk-shadlen-2005.chronometric.subject.phs-jd
+parameters:
+  drift_per_unit_evidence: 0.37899997213474224
+  boundary: 0.9145564656312902
+  non_decision_time: 0.371799103144512
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -157.87638406515956
+  aic: 321.7527681303191
+  bic: 334.77384604150234
+  n_trials: 567.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.10909751464848871
+  rt_sigma_assumed_s: 0.11091538316312227
+predictions:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 47
+    y: 1.9618673020812953e-08
+  - x: -25.6
+    n: 47
+    y: 0.00014004705893187695
+  - x: -12.8
+    n: 48
+    y: 0.01169654837958443
+  - x: -6.4
+    n: 48
+    y: 0.09811489004971394
+  - x: -3.2
+    n: 47
+    y: 0.248024912567148
+  - x: 0.0
+    n: 95
+    y: 0.5
+  - x: 3.2
+    n: 48
+    y: 0.7519750874328519
+  - x: 6.4
+    n: 48
+    y: 0.901885109950286
+  - x: 12.8
+    n: 47
+    y: 0.9883034516204157
+  - x: 25.6
+    n: 46
+    y: 0.999859952941068
+  - x: 51.2
+    n: 46
+    y: 0.999999980381327
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: binomial NLL + Gaussian RT chi-squared
+  duration_seconds: 0.0023810863494873047
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 67b9019
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-vanilla;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

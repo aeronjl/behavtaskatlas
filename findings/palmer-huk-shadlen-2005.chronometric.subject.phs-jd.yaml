@@ -1,0 +1,44 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.palmer-huk-shadlen-2005.chronometric.subject.phs-jd
+paper_id: paper.palmer-huk-shadlen-2005
+protocol_id: protocol.human-rdm-button-reaction-time
+dataset_id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+slice_id: slice.human-random-dot-motion
+source_data_level: processed-trial
+n_trials: 567
+n_subjects: 1
+stratification:
+  subject_id: phs-jd
+curve:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 95
+    y: 0.6900000000000001
+  - x: 3.2
+    n: 95
+    y: 0.622
+  - x: 6.4
+    n: 96
+    y: 0.522
+  - x: 12.8
+    n: 95
+    y: 0.466
+  - x: 25.6
+    n: 93
+    y: 0.418
+  - x: 51.2
+    n: 93
+    y: 0.374
+extraction_method: harmonized-pipeline
+extraction_notes: Median response time per |stimulus_value| from harmonized trials
+  for subject_id='phs-jd'; bins with <5 trials dropped.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
