@@ -132,9 +132,11 @@
   }
 
   let chartContainer: HTMLDivElement | undefined = $state();
+  let disagreementContainer: HTMLDivElement | undefined = $state();
   let chartReady = $state(false);
   let vegaEmbed: any = null;
   let chartView: any = null;
+  let disagreementView: any = null;
 
   $effect(() => {
     if (!chartContainer || vegaEmbed) return;
@@ -158,11 +160,33 @@
   let fitEnabled = $state(false);
   let fitStatus = $state<FitStatus>("idle");
   let fitError = $state("");
+  type FitParams = {
+    mu: number;
+    sigma: number;
+    gamma: number;
+    lapse: number;
+  };
+  type PerCurveFit = {
+    finding_id: string;
+    line: Array<{ x: number; y: number }>;
+    params: FitParams | null;
+    threshold: number | null;
+    threshold_target_y: number;
+  };
+  type DisagreementPoint = {
+    x: number;
+    std: number;
+    min: number;
+    max: number;
+    n_curves: number;
+  };
   let fitData = $state<{
-    perCurve: Array<{ finding_id: string; line: Array<{ x: number; y: number }>; params: Record<string, number> | null }>;
-    pooled: { line: Array<{ x: number; y: number }>; ci_band: Array<{ x: number; y: number; lower: number; upper: number }> | null; params: Record<string, number> } | null;
+    perCurve: PerCurveFit[];
+    pooled: { line: Array<{ x: number; y: number }>; ci_band: Array<{ x: number; y: number; lower: number; upper: number }> | null; params: FitParams } | null;
+    disagreement: DisagreementPoint[];
     curveType: string;
     filterSignature: string;
+    targetY: number;
   } | null>(null);
 
   let pyodideRuntime: any = null;
@@ -237,6 +261,21 @@ def _smooth(params, x_min, x_max, n=80, force_lower=None):
     ]
 
 
+def _threshold_at(params, target_y, force_lower=None):
+    """Solve y(x) = target_y for x. Returns None if the target lies
+    outside the asymptotes."""
+    gamma = force_lower if force_lower is not None else params["gamma"]
+    lapse = params["lapse"]
+    span = 1.0 - gamma - lapse
+    if span <= 0:
+        return None
+    z = (target_y - gamma) / span
+    if z <= 0 or z >= 1:
+        return None
+    sig = max(float(params["sigma"]), 1e-6)
+    return float(params["mu"] - sig * np.log((1.0 - z) / z))
+
+
 def fit_curves(payload_json):
     payload = _fit_json.loads(payload_json)
     curves = payload["curves"]
@@ -245,6 +284,7 @@ def fit_curves(payload_json):
 
     per_curve = []
     all_points = []
+    target_y = float(payload.get("threshold_target", 0.75))
     for c in curves:
         params = _fit_one(c["points"], force_lower=pin_lower)
         if c["points"]:
@@ -257,10 +297,16 @@ def fit_curves(payload_json):
             )
         else:
             line = []
+        threshold = (
+            _threshold_at(params, target_y, force_lower=pin_lower)
+            if params else None
+        )
         per_curve.append({
             "finding_id": c["finding_id"],
             "params": params,
             "line": line,
+            "threshold": threshold,
+            "threshold_target_y": target_y,
         })
         all_points.extend(c["points"])
 
@@ -306,7 +352,36 @@ def fit_curves(payload_json):
                 "ci_band": ci_band,
             }
 
-    return _fit_json.dumps({"per_curve": per_curve, "pooled": pooled})
+    disagreement = []
+    if pooled is not None:
+        valid = [c for c in per_curve if c["params"] is not None]
+        if len(valid) >= 2:
+            pooled_xs = [p["x"] for p in pooled["line"]]
+            for x in pooled_xs:
+                ys = []
+                for c in valid:
+                    p = c["params"]
+                    gamma = pin_lower if pin_lower is not None else p["gamma"]
+                    ys.append(
+                        float(_logistic4(
+                            np.array([x]),
+                            p["mu"], p["sigma"], gamma, p["lapse"],
+                        )[0])
+                    )
+                arr = np.array(ys)
+                disagreement.append({
+                    "x": x,
+                    "std": float(np.std(arr, ddof=1)),
+                    "min": float(np.min(arr)),
+                    "max": float(np.max(arr)),
+                    "n_curves": len(ys),
+                })
+
+    return _fit_json.dumps({
+        "per_curve": per_curve,
+        "pooled": pooled,
+        "disagreement": disagreement,
+    })
 `;
 
   async function ensureFitRuntime(): Promise<any> {
@@ -366,10 +441,17 @@ def fit_curves(payload_json):
         finding_id: entry.finding_id,
         points: entry.points.map((p) => ({ x: p.x, y: p.y, n: p.n })),
       }));
+      const targetY =
+        currentCurveType === "psychometric"
+          ? 0.75
+          : currentCurveType === "accuracy_by_strength"
+            ? 0.84
+            : 0.75;
       const payload = JSON.stringify({
         curves,
         pin_lower: pinLowerFor(currentCurveType),
         n_bootstrap: 80,
+        threshold_target: targetY,
       });
       py.globals.set("_fit_payload", payload);
       const result: any = await py.runPythonAsync("fit_curves(_fit_payload)");
@@ -379,8 +461,10 @@ def fit_curves(payload_json):
       fitData = {
         perCurve: parsed.per_curve ?? [],
         pooled: parsed.pooled ?? null,
+        disagreement: parsed.disagreement ?? [],
         curveType: currentCurveType,
         filterSignature: signature,
+        targetY,
       };
       fitStatus = "done";
     } catch (err) {
@@ -429,6 +513,82 @@ def fit_curves(payload_json):
     }));
   });
 
+  const DISAGREEMENT_VALUES = $derived.by(() => {
+    if (!fitEnabled || !fitData?.disagreement) return [];
+    return fitData.disagreement;
+  });
+
+  type FitRow = {
+    finding_id: string;
+    paper_citation: string;
+    paper_year: number;
+    species: string | null;
+    n_trials: number | null;
+    mu: number | null;
+    sigma: number | null;
+    threshold: number | null;
+    gamma: number | null;
+    lapse: number | null;
+  };
+
+  type SortColumn =
+    | "paper_year"
+    | "paper_citation"
+    | "n_trials"
+    | "mu"
+    | "sigma"
+    | "threshold"
+    | "lapse";
+  let sortColumn = $state<SortColumn>("sigma");
+  let sortDir = $state<"asc" | "desc">("asc");
+
+  function setSort(col: SortColumn) {
+    if (sortColumn === col) {
+      sortDir = sortDir === "asc" ? "desc" : "asc";
+    } else {
+      sortColumn = col;
+      sortDir = col === "paper_year" ? "desc" : "asc";
+    }
+  }
+
+  const fitRows = $derived.by<FitRow[]>(() => {
+    if (!fitEnabled || !fitData) return [];
+    if (fitData.curveType !== currentCurveType) return [];
+    const rows: FitRow[] = fitData.perCurve.map((c) => {
+      const entry = filteredEntries.find((e) => e.finding_id === c.finding_id);
+      return {
+        finding_id: c.finding_id,
+        paper_citation: entry?.paper_citation ?? c.finding_id,
+        paper_year: entry?.paper_year ?? 0,
+        species: entry?.species ?? null,
+        n_trials: entry?.n_trials ?? null,
+        mu: c.params?.mu ?? null,
+        sigma: c.params?.sigma ?? null,
+        threshold: c.threshold,
+        gamma: c.params?.gamma ?? null,
+        lapse: c.params?.lapse ?? null,
+      };
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      const av = a[sortColumn];
+      const bv = b[sortColumn];
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (typeof av === "number" && typeof bv === "number") {
+        return (av - bv) * dir;
+      }
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return rows;
+  });
+
+  function fmtNum(v: number | null, digits = 2): string {
+    if (v === null || !Number.isFinite(v)) return "—";
+    return v.toFixed(digits);
+  }
+
   const fitStatusLabel = $derived(
     {
       idle: "",
@@ -441,6 +601,64 @@ def fit_curves(payload_json):
       error: `Error: ${fitError}`,
     }[fitStatus],
   );
+
+  $effect(() => {
+    if (!disagreementContainer || !chartReady || !vegaEmbed) return;
+    if (!fitEnabled || DISAGREEMENT_VALUES.length === 0) {
+      disagreementView?.finalize?.();
+      disagreementView = null;
+      disagreementContainer.innerHTML = "";
+      return;
+    }
+    const xTitle = filteredEntries[0]?.x_label ?? "x";
+    const spec = {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      width: "container" as const,
+      height: 110,
+      data: { values: DISAGREEMENT_VALUES },
+      layer: [
+        {
+          mark: { type: "area", opacity: 0.18, color: "#b35c00" },
+          encoding: {
+            x: { field: "x", type: "quantitative", title: xTitle },
+            y: { field: "min", type: "quantitative", title: "Fit y" },
+            y2: { field: "max" },
+          },
+        },
+        {
+          mark: { type: "line", color: "#b35c00", strokeWidth: 2 },
+          encoding: {
+            x: { field: "x", type: "quantitative", title: xTitle },
+            y: { field: "std", type: "quantitative", title: "σ across curves" },
+            tooltip: [
+              { field: "x", title: xTitle, format: ".3f" },
+              { field: "std", title: "σ across curves", format: ".3f" },
+              { field: "min", title: "Min fit y", format: ".3f" },
+              { field: "max", title: "Max fit y", format: ".3f" },
+              { field: "n_curves", title: "Curves" },
+            ],
+          },
+        },
+      ],
+      resolve: { scale: { y: "independent" as const } },
+      config: {
+        view: { stroke: "#cbd5e1" },
+        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
+      },
+    };
+    (async () => {
+      try {
+        const result = await vegaEmbed(disagreementContainer, spec, {
+          actions: false,
+          renderer: "svg",
+        });
+        disagreementView?.finalize?.();
+        disagreementView = result.view;
+      } catch (err) {
+        console.error("vega-embed (disagreement) failed", err);
+      }
+    })();
+  });
 
   $effect(() => {
     if (!chartContainer || !chartReady || !vegaEmbed) return;
@@ -672,10 +890,84 @@ def fit_curves(payload_json):
 
   <div bind:this={chartContainer} class="w-full"></div>
 
+  {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
+    <div class="mt-4">
+      <h3 class="mb-1 text-xs font-semibold text-slate-700">
+        Cross-paper disagreement
+      </h3>
+      <p class="mb-2 text-[11px] text-slate-500">
+        At each x, the orange band spans the per-curve fitted y values across
+        the {DISAGREEMENT_VALUES[0]?.n_curves ?? 0} selected papers; the line
+        is the across-curve standard deviation. High σ regions are where the
+        literature diverges most.
+      </p>
+      <div bind:this={disagreementContainer} class="w-full"></div>
+    </div>
+  {/if}
+
   <p class="mt-3 text-[11px] text-slate-500">
     Curves at different source-data levels are shown on shared axes for visual
     comparison; point shape encodes the source level. Values for figure-source-
     data findings should be read as published rather than as a complete raw
     behavioral export.
   </p>
+
+  {#if fitEnabled && fitRows.length > 0}
+    <div class="mt-6">
+      <h3 class="mb-2 text-sm font-semibold text-slate-700">Fit parameters</h3>
+      <p class="mb-2 text-[11px] text-slate-500">
+        Per-curve 4-parameter logistic. μ is the bias (mid-asymptote crossing);
+        σ is the slope; threshold is the {fitData?.targetY === 0.84 ? "84%" : "75%"} crossing
+        (in the same units as the x-axis); γ is the lower lapse, λ the upper
+        lapse.
+      </p>
+      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <table class="w-full text-xs">
+          <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+            <tr>
+              {@render sortHeader("paper_citation", "Paper", "left")}
+              {@render sortHeader("paper_year", "Year", "right")}
+              {@render sortHeader("n_trials", "Trials", "right")}
+              {@render sortHeader("mu", "μ (bias)", "right")}
+              {@render sortHeader("sigma", "σ (slope)", "right")}
+              {@render sortHeader(
+                "threshold",
+                fitData?.targetY === 0.84 ? "x at 84%" : "x at 75%",
+                "right",
+              )}
+              {@render sortHeader("lapse", "λ (upper lapse)", "right")}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {#each fitRows as row (row.finding_id)}
+              <tr>
+                <td class="px-3 py-2">
+                  <span class="block">{row.paper_citation}</span>
+                  <span class="text-[11px] text-slate-500">{row.species ?? "—"}</span>
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{row.paper_year || "—"}</td>
+                <td class="px-3 py-2 text-right font-mono">{row.n_trials?.toLocaleString() ?? "—"}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmtNum(row.mu)}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmtNum(row.sigma)}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmtNum(row.threshold)}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmtNum(row.lapse, 3)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
 </div>
+
+{#snippet sortHeader(col: SortColumn, label: string, align: "left" | "right" = "left")}
+  <th
+    class:list={[
+      "px-3 py-2 cursor-pointer select-none",
+      align === "right" ? "text-right" : "text-left",
+    ]}
+    onclick={() => setSort(col)}
+  >
+    {label}{sortColumn === col ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
+  </th>
+{/snippet}
