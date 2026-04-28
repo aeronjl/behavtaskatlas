@@ -1,0 +1,46 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.brunton-2013-rats-humans
+citation: >
+  Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+  accumulate evidence for decision-making. Science, 2013, 340(6128):95-98.
+authors:
+  - Brunton, Bingni W.
+  - Botvinick, Matthew M.
+  - Brody, Carlos D.
+year: 2013
+venue: Science
+doi: 10.1126/science.1233912
+url: https://www.science.org/doi/10.1126/science.1233912
+lab: Brody
+species:
+  - rat
+n_subjects: 5
+protocol_ids:
+  - protocol.rat-auditory-clicks-nose-poke
+dataset_ids:
+  - dataset.brody-lab-poisson-clicks-2009-2024
+finding_ids:
+  - finding.brunton-2013-rats-humans.psychometric.subject.a080
+  - finding.brunton-2013-rats-humans.psychometric.subject.b075
+  - finding.brunton-2013-rats-humans.psychometric.subject.b127
+  - finding.brunton-2013-rats-humans.psychometric.subject.t014
+  - finding.brunton-2013-rats-humans.psychometric.subject.t074
+curation_status: data-linked
+notes: >
+  Foundational paper for the Poisson clicks evidence-accumulation task in
+  rats. The Brody Lab archive used by the auditory_clicks vertical slice
+  contains rat sessions collected over 2009-2024 in this lineage; per-rat
+  psychometric findings here are extracted from the harmonized trials
+  table for the five rats currently included in the local batch
+  (A080, B075, B127, T014, T074).
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Paper record introduced to give the auditory_clicks slice a citation
+    anchor and unlock cross-paper psychometric comparisons including a
+    rat species point. Per-rat findings emitted via extract-finding
+    --by-subject against the slice-level concatenated trials.csv.
