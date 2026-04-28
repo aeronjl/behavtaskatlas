@@ -1,0 +1,28 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.walsh-prior-cue
+title: Walsh prior cues (valid / neutral / invalid)
+question: Do prior-probability cues bias contrast discrimination in humans?
+framing: >
+  Walsh et al. 2024 manipulate trial-by-trial prior cues (valid / neutral
+  / invalid). The prediction is that valid cues produce a bias toward the
+  cued side without changing slope, and invalid cues produce the opposite
+  shift.
+finding_ids:
+  - finding.walsh-2024-prior-cue.psychometric.cue-invalid
+  - finding.walsh-2024-prior-cue.psychometric.cue-neutral
+  - finding.walsh-2024-prior-cue.psychometric.cue-valid
+color_by: condition
+hint: >
+  Compare Δμ between valid and invalid; if cueing is symmetric,
+  |valid − neutral| ≈ |invalid − neutral|.
+display_order: 40
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial comparison record curated alongside the schema lift from
+    web/src/lib/comparisons.ts to YAML.

@@ -54,6 +54,7 @@ from behavtaskatlas.clicks import (
     write_evidence_kernel_svg,
 )
 from behavtaskatlas.findings import (
+    build_comparisons_index,
     build_findings_index,
     extract_accuracy_findings_for_slice,
     extract_chronometric_findings_for_slice,
@@ -3008,8 +3009,9 @@ def _site_index(
     write_static_curation_queue_json(curation_queue_json_path, curation_queue_payload)
 
     findings_path = derived_dir / "findings.json"
+    comparisons_path = derived_dir / "comparisons.json"
     records = load_repository_records(Path("."))
-    from behavtaskatlas.models import Finding, Paper, Protocol, TaskFamily
+    from behavtaskatlas.models import Comparison, Finding, Paper, Protocol, TaskFamily
 
     findings_payload = build_findings_index(
         papers=[r for r in records if isinstance(r, Paper)],
@@ -3023,16 +3025,27 @@ def _site_index(
         encoding="utf-8",
     )
 
+    comparisons_payload = build_comparisons_index(
+        comparisons=[r for r in records if isinstance(r, Comparison)],
+    )
+    comparisons_path.write_text(
+        json.dumps(comparisons_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
     print(f"Wrote relationship graph JSON to {graph_json_path}")
     print(f"Wrote curation queue JSON to {curation_queue_json_path}")
     print(f"Wrote findings index to {findings_path}")
+    print(f"Wrote comparisons index to {comparisons_path}")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
     n_papers = findings_payload["counts"]["papers"]
+    n_comparisons = comparisons_payload["counts"]["comparisons"]
     print(f"Indexed {n_findings} findings across {n_papers} papers")
+    print(f"Indexed {n_comparisons} curated comparisons")
     return 0
 
 

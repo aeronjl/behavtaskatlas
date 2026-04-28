@@ -411,3 +411,118 @@ def test_validation_flags_finding_protocol_not_declared_by_paper(
     report = validate_repository(tmp_path)
     messages = [issue.message for issue in report.issues]
     assert any("not declared by paper" in m for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# Comparison cross-reference checks
+# ---------------------------------------------------------------------------
+
+
+def _comparison_payload(**overrides: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "object_type": "comparison",
+        "schema_version": "0.1.0",
+        "id": "comparison.demo",
+        "title": "Demo comparison",
+        "question": "Does demo finding A differ from demo finding B?",
+        "framing": "Two demo findings stratified by condition.",
+        "finding_ids": [
+            "finding.demo-2024.psychometric",
+            "finding.demo-2024.psychometric.b",
+        ],
+        "color_by": "paper",
+        "hint": "Compare Δμ.",
+        "display_order": 10,
+        "curation_status": "data-linked",
+        "provenance": {
+            "curators": ["test"],
+            "created": date.today(),
+            "updated": date.today(),
+        },
+    }
+    base.update(overrides)
+    return base
+
+
+def test_validation_accepts_comparison_when_finding_ids_resolve(
+    tmp_path: Path,
+) -> None:
+    _write_minimal_repo(tmp_path)
+    second_finding = _finding_payload(
+        id="finding.demo-2024.psychometric.b",
+        stratification={"condition": "demo-b"},
+    )
+    paper = _paper_payload(
+        finding_ids=[
+            "finding.demo-2024.psychometric",
+            "finding.demo-2024.psychometric.b",
+        ],
+    )
+    (tmp_path / "papers" / "p.yaml").write_text(yaml.safe_dump(paper), encoding="utf-8")
+    (tmp_path / "findings" / "a.yaml").write_text(
+        yaml.safe_dump(_finding_payload()), encoding="utf-8"
+    )
+    (tmp_path / "findings" / "b.yaml").write_text(
+        yaml.safe_dump(second_finding), encoding="utf-8"
+    )
+    (tmp_path / "comparisons").mkdir()
+    (tmp_path / "comparisons" / "demo.yaml").write_text(
+        yaml.safe_dump(_comparison_payload()), encoding="utf-8"
+    )
+    report = validate_repository(tmp_path)
+    assert report.ok, [
+        f"{issue.path}: {issue.message}" for issue in report.issues
+    ]
+
+
+def test_validation_flags_comparison_with_unknown_finding_id(
+    tmp_path: Path,
+) -> None:
+    _write_minimal_repo(tmp_path)
+    (tmp_path / "papers" / "p.yaml").write_text(
+        yaml.safe_dump(_paper_payload()), encoding="utf-8"
+    )
+    (tmp_path / "findings" / "f.yaml").write_text(
+        yaml.safe_dump(_finding_payload()), encoding="utf-8"
+    )
+    (tmp_path / "comparisons").mkdir()
+    (tmp_path / "comparisons" / "broken.yaml").write_text(
+        yaml.safe_dump(
+            _comparison_payload(
+                finding_ids=[
+                    "finding.demo-2024.psychometric",
+                    "finding.does-not-exist",
+                ],
+            )
+        ),
+        encoding="utf-8",
+    )
+    report = validate_repository(tmp_path)
+    messages = [issue.message for issue in report.issues]
+    assert any(
+        "Unknown finding_id 'finding.does-not-exist'" in m for m in messages
+    )
+
+
+def test_validation_flags_comparison_with_too_few_findings(
+    tmp_path: Path,
+) -> None:
+    _write_minimal_repo(tmp_path)
+    (tmp_path / "papers" / "p.yaml").write_text(
+        yaml.safe_dump(_paper_payload()), encoding="utf-8"
+    )
+    (tmp_path / "findings" / "f.yaml").write_text(
+        yaml.safe_dump(_finding_payload()), encoding="utf-8"
+    )
+    (tmp_path / "comparisons").mkdir()
+    (tmp_path / "comparisons" / "lonely.yaml").write_text(
+        yaml.safe_dump(
+            _comparison_payload(
+                finding_ids=["finding.demo-2024.psychometric"],
+            )
+        ),
+        encoding="utf-8",
+    )
+    report = validate_repository(tmp_path)
+    messages = [issue.message for issue in report.issues]
+    assert any("at least two findings" in m for m in messages)

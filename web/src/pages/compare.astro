@@ -1,8 +1,12 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
-import { findings, type FindingsEntry } from "../lib/findings";
-import { COMPARISONS } from "../lib/comparisons";
+import {
+  comparisons as comparisonsIndex,
+  findings,
+  type ComparisonEntry,
+  type FindingsEntry,
+} from "../lib/findings";
 import { slugForId } from "../lib/data";
 
 type FitFields = {
@@ -35,6 +39,8 @@ function fmt(value: number | null | undefined, digits = 2): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "—";
   return value.toFixed(digits);
 }
+
+const COMPARISONS: ComparisonEntry[] = comparisonsIndex.comparisons;
 
 const sections = COMPARISONS.map((spec) => {
   const entries = pickEntries(spec.finding_ids);
@@ -109,16 +115,17 @@ const sections = COMPARISONS.map((spec) => {
             <MiniFindingsChart
               client:visible
               findings={section.entries}
-              colorBy={section.spec.color_by}
+              colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
               height={260}
             />
           ) : (
             <p class="rounded border border-warn bg-warn-soft p-3 text-xs text-warn">
-              None of the referenced findings are present in the index. Edit
+              None of the referenced findings are present in the index.
+              Edit the comparison's
               <code class="ml-1 rounded bg-slate-100 px-1">
-                web/src/lib/comparisons.ts
+                comparisons/*.yaml
               </code>
-              .
+              record or fix its <code class="rounded bg-slate-100 px-1">finding_ids</code>.
             </p>
           )}
 
@@ -194,10 +201,8 @@ const sections = COMPARISONS.map((spec) => {
     <code class="rounded bg-slate-100 px-1">behavtaskatlas site-index</code>
     using the same model as the interactive fitter on{" "}
     <a class="text-accent" href="/findings">/findings</a>, so values agree.
-    Curate new comparisons by editing
-    <code class="ml-1 rounded bg-slate-100 px-1">
-      web/src/lib/comparisons.ts
-    </code>
-    .
+    Curate new comparisons by adding a YAML file under
+    <code class="ml-1 rounded bg-slate-100 px-1">comparisons/</code> in the
+    repository.
   </p>
 </BaseLayout>

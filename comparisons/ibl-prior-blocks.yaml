@@ -1,0 +1,26 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.ibl-prior-blocks
+title: IBL biased prior blocks
+question: How does prior probability shift the IBL psychometric in mice?
+framing: >
+  The IBL trainingChoiceWorld biased variant cycles through three blocks
+  of leftward prior probability (0.2 / 0.5 / 0.8). A bias-shift across
+  blocks is the textbook signature of prior integration; the slope (σ)
+  should remain stable.
+finding_ids:
+  - finding.ibl-2021-standardized.psychometric.p_left-0.2
+  - finding.ibl-2021-standardized.psychometric.p_left-0.5
+  - finding.ibl-2021-standardized.psychometric.p_left-0.8
+color_by: condition
+hint: Δμ across blocks measures the bias shift in % contrast units.
+display_order: 30
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial comparison record curated alongside the schema lift from
+    web/src/lib/comparisons.ts to YAML.

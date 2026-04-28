@@ -663,8 +663,51 @@ class FindingsIndexPayload(StrictModel):
     findings: list[FindingsIndexEntry]
 
 
+class Comparison(StrictModel):
+    object_type: Literal["comparison"]
+    schema_version: str
+    id: str
+    title: str
+    question: str
+    framing: str
+    finding_ids: list[str]
+    color_by: Literal["paper", "condition", "curve_type"] = "paper"
+    hint: str
+    display_order: int = 100
+    curation_status: str
+    provenance: Provenance
+
+
+class ComparisonsIndexEntry(StrictModel):
+    id: str
+    title: str
+    question: str
+    framing: str
+    finding_ids: list[str]
+    color_by: Literal["paper", "condition", "curve_type"]
+    hint: str
+    display_order: int
+
+
+class ComparisonsIndexPayload(StrictModel):
+    comparisons_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    counts: dict[str, int] = Field(default_factory=dict)
+    comparisons: list[ComparisonsIndexEntry]
+
+
 Record = (
-    TaskFamily | Protocol | Dataset | Implementation | VerticalSlice | Paper | Finding
+    TaskFamily
+    | Protocol
+    | Dataset
+    | Implementation
+    | VerticalSlice
+    | Paper
+    | Finding
+    | Comparison
 )
 
 
@@ -676,6 +719,7 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "vertical_slice": VerticalSlice,
     "paper": Paper,
     "finding": Finding,
+    "comparison": Comparison,
 }
 
 
@@ -688,6 +732,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "curation_queue": CurationQueuePayload,
     "release_check": ReleaseCheckPayload,
     "findings_index": FindingsIndexPayload,
+    "comparisons_index": ComparisonsIndexPayload,
 }
 
 

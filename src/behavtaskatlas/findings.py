@@ -24,6 +24,9 @@ from typing import Any
 import yaml
 
 from behavtaskatlas.models import (
+    Comparison,
+    ComparisonsIndexEntry,
+    ComparisonsIndexPayload,
     CurvePoint,
     Finding,
     FindingsIndexCurvePoint,
@@ -639,5 +642,45 @@ def build_findings_index(
         behavtaskatlas_git_dirty=git_dirty,
         counts=counts,
         findings=entries,
+    )
+    return payload.model_dump(mode="json")
+
+
+def build_comparisons_index(
+    *,
+    comparisons: Iterable[Comparison],
+    title: str = "behavtaskatlas Comparisons Index",
+    commit: str | None = None,
+    git_dirty: bool | None = None,
+) -> dict[str, Any]:
+    """Walk every Comparison record into a denormalized
+    ComparisonsIndexPayload sorted by display_order. Astro reads this from
+    derived/comparisons.json and renders one section per entry on /compare.
+    """
+    items = sorted(
+        comparisons,
+        key=lambda c: (c.display_order, c.id),
+    )
+    entries = [
+        ComparisonsIndexEntry(
+            id=c.id,
+            title=c.title,
+            question=c.question,
+            framing=c.framing,
+            finding_ids=list(c.finding_ids),
+            color_by=c.color_by,
+            hint=c.hint,
+            display_order=c.display_order,
+        )
+        for c in items
+    ]
+    payload = ComparisonsIndexPayload(
+        comparisons_schema_version="0.1.0",
+        title=title,
+        generated_at=datetime.now(UTC).isoformat(),
+        behavtaskatlas_commit=commit,
+        behavtaskatlas_git_dirty=git_dirty,
+        counts={"comparisons": len(entries)},
+        comparisons=entries,
     )
     return payload.model_dump(mode="json")

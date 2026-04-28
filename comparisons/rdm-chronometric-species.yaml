@@ -1,0 +1,29 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.rdm-chronometric-species
+title: Macaque vs human RDM chronometric
+question: Do humans and macaques show comparable RT-vs-coherence chronometrics on RDM?
+framing: >
+  Both Roitman & Shadlen 2002 and Palmer-Huk-Shadlen 2005 also report
+  median response time as a function of absolute coherence. The
+  chronometric speed-accuracy tradeoff has been used to argue for shared
+  bounded-accumulation dynamics across species, but the absolute time
+  scales differ.
+finding_ids:
+  - finding.roitman-shadlen-2002.chronometric
+  - finding.palmer-huk-shadlen-2005.chronometric
+color_by: paper
+hint: >
+  RTs are in seconds; lower curves are faster. The 4-parameter logistic
+  fit does not apply to chronometric curves, so the deltas table is
+  visual only.
+display_order: 20
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial comparison record curated alongside the schema lift from
+    web/src/lib/comparisons.ts to YAML.

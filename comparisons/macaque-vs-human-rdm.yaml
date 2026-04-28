@@ -1,0 +1,27 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.macaque-vs-human-rdm
+title: Macaque vs human RDM psychometric
+question: How do macaque and human random-dot motion psychometrics compare?
+framing: >
+  Roitman & Shadlen 2002 (two macaques) and Palmer-Huk-Shadlen 2005 (six
+  human observers) both ran the same signed motion coherence 2AFC at
+  processed-trial level. They use the same canonical axis but different
+  species and different report modalities (saccade vs button-press), so a
+  slope difference is a candidate signature of perceptual sensitivity at the
+  species level.
+finding_ids:
+  - finding.roitman-shadlen-2002.psychometric
+  - finding.palmer-huk-shadlen-2005.psychometric
+color_by: paper
+hint: Larger σ = shallower slope = lower discriminability. Compare Δσ.
+display_order: 10
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial comparison record curated alongside the schema lift from
+    web/src/lib/comparisons.ts to YAML.

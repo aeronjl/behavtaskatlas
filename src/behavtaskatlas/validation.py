@@ -8,6 +8,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from behavtaskatlas.models import (
+    Comparison,
     Dataset,
     Finding,
     Paper,
@@ -61,6 +62,7 @@ def iter_record_paths(root: Path) -> list[Path]:
         "implementations",
         "papers",
         "findings",
+        "comparisons",
     ]
     paths: list[Path] = []
     for directory in record_dirs:
@@ -108,9 +110,11 @@ def validate_repository(root: Path) -> ValidationReport:
     paper_ids = {record.id for record in records if isinstance(record, Paper)}
     paper_by_id = {record.id: record for record in records if isinstance(record, Paper)}
     findings_by_paper: dict[str, list[Finding]] = {}
+    finding_ids = set()
     for record in records:
         if isinstance(record, Finding):
             findings_by_paper.setdefault(record.paper_id, []).append(record)
+            finding_ids.add(record.id)
 
     for record in records:
         path = _path_for_record(root, record.id)
@@ -218,6 +222,28 @@ def validate_repository(root: Path) -> ValidationReport:
                     ValidationIssue(
                         path,
                         f"Paper.finding_ids references unknown {joined!r}",
+                    )
+                )
+
+        if isinstance(record, Comparison):
+            seen_local: set[str] = set()
+            for fid in record.finding_ids:
+                if fid not in finding_ids:
+                    issues.append(
+                        ValidationIssue(path, f"Unknown finding_id {fid!r}")
+                    )
+                if fid in seen_local:
+                    issues.append(
+                        ValidationIssue(
+                            path, f"Duplicate finding_id {fid!r} in comparison"
+                        )
+                    )
+                seen_local.add(fid)
+            if len(record.finding_ids) < 2:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "Comparison must reference at least two findings",
                     )
                 )
 
