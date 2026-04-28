@@ -24,6 +24,7 @@
 
   let status: Status = $state("idle");
   let output: string = $state("");
+  let svgOutput: string | null = $state(null);
   let errorMessage: string = $state("");
   let elapsedMs: number | null = $state(null);
   let currentSnippet: string = $state(pythonSnippet);
@@ -85,6 +86,7 @@
 
   async function run() {
     output = "";
+    svgOutput = null;
     errorMessage = "";
     elapsedMs = null;
     const t0 =
@@ -109,6 +111,24 @@ import pandas as pd
 _buf = io.StringIO()
 _orig = sys.stdout
 sys.stdout = _buf
+_svg = None
+
+# If matplotlib is loaded, capture plt.show() into _svg.
+try:
+    import matplotlib as _mpl
+    _mpl.use("Agg")
+    import matplotlib.pyplot as _plt
+    def _capture_show(*args, **kwargs):
+        global _svg
+        fig = _plt.gcf()
+        buf = io.StringIO()
+        fig.savefig(buf, format="svg", bbox_inches="tight")
+        _svg = buf.getvalue()
+        _plt.close(fig)
+    _plt.show = _capture_show
+except ImportError:
+    pass
+
 try:
     df = pd.read_csv(io.StringIO(_csv_text))
     if "task_variables_json" in df.columns:
@@ -118,10 +138,14 @@ try:
 ${indentSnippet(currentSnippet)}
 finally:
     sys.stdout = _orig
-_buf.getvalue()
+{"stdout": _buf.getvalue(), "svg": _svg}
 `.trim();
-      const result = await py.runPythonAsync(wrapped);
-      output = String(result ?? "");
+      const result: any = await py.runPythonAsync(wrapped);
+      const obj = (result?.toJs?.({ dict_converter: Object.fromEntries }) ??
+        result) as { stdout?: string; svg?: string | null };
+      output = String(obj.stdout ?? "");
+      svgOutput = obj.svg ? String(obj.svg) : null;
+      result?.destroy?.();
       const t1 =
         typeof performance !== "undefined" ? performance.now() : Date.now();
       elapsedMs = Math.round(t1 - t0);
@@ -189,6 +213,13 @@ _buf.getvalue()
   {#if output}
     <pre
       class="mt-3 max-h-96 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800">{output}</pre>
+  {/if}
+  {#if svgOutput}
+    <div
+      class="mt-3 overflow-x-auto rounded border border-slate-200 bg-white p-3"
+    >
+      {@html svgOutput}
+    </div>
   {/if}
   {#if errorMessage}
     <p

@@ -106,14 +106,15 @@ print(summary.pivot(index="signed_contrast", columns="prior_context", values="p_
   },
   "slice.random-dot-motion": {
     trialsUrl: "/random_dot_motion/roitman-shadlen-pyddm/trials.csv",
-    title: "Random-Dot Motion · psychometric and chronometric",
+    title: "Random-Dot Motion · psychometric (with plot)",
     description:
-      "Recompute P(right) by signed coherence and median response time by absolute coherence against the Roitman-Shadlen processed trial table.",
-    snippet: `# Compute psychometric and chronometric summaries for Roitman-Shadlen RDM.
+      "Recompute P(right) by signed coherence and median RT by absolute coherence, then plot the psychometric curve. First run downloads matplotlib (~12 MB) on top of the base Pyodide runtime.",
+    snippet: `# Plot the Roitman-Shadlen RDM psychometric curve in the browser.
 # df["stimulus_value"] is signed motion coherence (right positive).
 # df["response_time"] is in seconds.
+# plt.show() is captured by the wrapper and rendered inline.
 
-import numpy as np
+import matplotlib.pyplot as plt
 
 responded = df[df["choice"].isin(["left", "right"])].copy()
 responded["coh_signed"] = responded["stimulus_value"].astype(float)
@@ -125,6 +126,7 @@ psychometric = (
         "n": len(g),
         "p_right": (g["choice"] == "right").mean(),
     }))
+    .reset_index()
 )
 chronometric = (
     responded.groupby("coh_abs")
@@ -132,12 +134,39 @@ chronometric = (
         "n": len(g),
         "median_rt_s": g["response_time"].astype(float).median(),
     }))
+    .reset_index()
 )
+
 print(f"Responded trials: {len(responded)} (of {len(df)})\\n")
 print("Psychometric (P(right) by signed coherence):")
-print(psychometric.round(3).to_string())
+print(psychometric.round(3).to_string(index=False))
 print("\\nChronometric (median RT by abs coherence):")
-print(chronometric.round(3).to_string())
+print(chronometric.round(3).to_string(index=False))
+
+fig, ax = plt.subplots(figsize=(6.5, 4.2))
+ax.scatter(
+    psychometric["coh_signed"],
+    psychometric["p_right"],
+    s=psychometric["n"].clip(lower=4) * 1.2,
+    color="#2b5ea0",
+    alpha=0.85,
+    edgecolor="white",
+)
+ax.plot(
+    psychometric["coh_signed"],
+    psychometric["p_right"],
+    color="#2b5ea0",
+    alpha=0.5,
+    linewidth=1,
+)
+ax.axhline(0.5, color="#888", linestyle="--", linewidth=0.7)
+ax.axvline(0, color="#888", linestyle="--", linewidth=0.7)
+ax.set_xlabel("Signed motion coherence")
+ax.set_ylabel("P(rightward choice)")
+ax.set_title("Roitman-Shadlen RDM · psychometric")
+ax.set_ylim(-0.02, 1.02)
+ax.grid(True, alpha=0.25)
+plt.show()
 `,
   },
 };
