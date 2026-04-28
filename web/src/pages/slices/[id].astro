@@ -42,6 +42,12 @@ const comparisonRows: [string, string][] = [
 
 const reportAvailable = slice.report_status === "available";
 
+type SliceMetric = { label: string; value: unknown };
+type SliceLink = { href: string; label: string };
+
+const metrics: SliceMetric[] = ((slice.metrics ?? []) as unknown as SliceMetric[]);
+const links: SliceLink[] = ((slice.links ?? []) as unknown as SliceLink[]);
+
 const REPO_SOURCE_BASE = "https://github.com/aeronjl/behavtaskatlas/blob/main";
 
 type AnalysisConfig = {
@@ -424,11 +430,11 @@ function resolveArtifactHref(href: string): string {
   </section>
 
   {
-    slice.metrics && slice.metrics.length > 0 ? (
+    metrics.length > 0 ? (
       <section class="mb-8">
         <h2 class="mb-2 text-sm font-semibold text-slate-700">Metrics</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {slice.metrics.map((metric) => (
+          {metrics.map((metric) => (
             <div class="rounded-md border border-slate-200 bg-white p-3">
               <div class="text-xs uppercase tracking-wide text-slate-500">
                 {metric.label}
@@ -483,9 +489,9 @@ function resolveArtifactHref(href: string): string {
       )
     }
     {
-      slice.links && slice.links.length > 0 ? (
+      links.length > 0 ? (
         <ul class="space-y-1 text-sm">
-          {slice.links
+          {links
             .map((link) => ({
               ...link,
               resolved: resolveArtifactHref(link.href),
