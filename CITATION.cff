@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "behavtaskatlas: a file-first atlas of sensory-guided decision-making tasks"
+message: >
+  If you use behavtaskatlas in your research, please cite the
+  software release using the metadata in this file.
+type: software
+authors:
+  - family-names: Laffere
+    given-names: Aeron
+    affiliation: Independent
+repository-code: https://github.com/aeronjl/behavtaskatlas
+url: https://behavtaskatlas.vercel.app/
+license: CC-BY-4.0
+keywords:
+  - behavioral neuroscience
+  - decision-making
+  - psychophysics
+  - open data
+  - atlas
+  - meta-analysis
+  - reproducible research
+abstract: >
+  behavtaskatlas links task families, protocols, datasets,
+  implementations, and reproducible vertical slices for
+  sensory-guided decision-making tasks in behavioral
+  neuroscience. The atlas pairs curated YAML records with
+  Python harmonization adapters that map open datasets onto a
+  shared canonical trial schema and surface cross-paper
+  meta-analysis curves on a static site.

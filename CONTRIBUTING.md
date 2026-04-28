@@ -110,6 +110,29 @@ rationale.
 The PR template at `.github/pull_request_template.md` will prompt you for
 the same set of items.
 
+## Citable releases (Zenodo DOI)
+
+Each tagged GitHub Release picks up a Zenodo DOI. The release metadata
+that Zenodo reads lives in `.zenodo.json`; `CITATION.cff` mirrors it
+for GitHub's "Cite this repository" widget.
+
+To enable / refresh the integration:
+
+1. Sign in at <https://zenodo.org/account/settings/github/>, find the
+   `aeronjl/behavtaskatlas` repository, and toggle it on.
+2. Cut a GitHub Release as you would for any version. Zenodo creates a
+   deposit, mints a version DOI, and links it to the concept DOI for
+   the project.
+3. After the first release, copy the concept DOI back into the README
+   badge (and update `.zenodo.json#related_identifiers` if you want
+   prior versions linked).
+
+Update `.zenodo.json` and `CITATION.cff` in lock-step when authors,
+license, or affiliation change. If the project gains a code license
+distinct from the content license, declare both in the README and
+keep `.zenodo.json` pointing at the content license (CC-BY-4.0 is
+the current default).
+
 ## Releasing slice artifacts
 
 The Astro site fetches slice analysis artifacts from the latest

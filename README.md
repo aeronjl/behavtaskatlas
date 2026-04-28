@@ -4,6 +4,11 @@
 
 The MVP goal is to make task protocols comparable by linking operational task structure, provenance, open datasets, implementations, and reproducible analysis expectations.
 
+Live atlas: <https://behavtaskatlas.vercel.app/>. Each tagged GitHub
+Release is automatically deposited on Zenodo and gets its own DOI;
+metadata lives in `.zenodo.json` and `CITATION.cff` (see
+[CONTRIBUTING.md](CONTRIBUTING.md#citable-releases-zenodo-doi)).
+
 ## Current Scope
 
 - Human-authored YAML records for task families, protocols, datasets, and related artifacts.
