@@ -127,16 +127,10 @@ from behavtaskatlas.static_site import (
     build_curation_queue_payload,
     build_relationship_graph_payload,
     build_static_index_payload,
-    write_static_catalog_html,
     write_static_catalog_json,
-    write_static_curation_queue_html,
     write_static_curation_queue_json,
-    write_static_dataset_pages,
-    write_static_graph_html,
     write_static_graph_json,
-    write_static_index_html,
     write_static_manifest_json,
-    write_static_protocol_pages,
 )
 from behavtaskatlas.validation import validate_repository
 
@@ -996,7 +990,7 @@ def main(argv: list[str] | None = None) -> int:
 
     site_index_parser = subparsers.add_parser(
         "site-index",
-        help="Render a static index linking generated vertical-slice reports",
+        help="Export static JSON manifests consumed by the Astro web app",
     )
     site_index_parser.add_argument(
         "--derived-dir",
@@ -1004,44 +998,24 @@ def main(argv: list[str] | None = None) -> int:
         help="Derived artifact root containing generated slice reports",
     )
     site_index_parser.add_argument(
-        "--out-file",
-        default=None,
-        help="Optional index HTML output path",
-    )
-    site_index_parser.add_argument(
         "--manifest-file",
         default=None,
-        help="Optional machine-readable manifest JSON output path",
-    )
-    site_index_parser.add_argument(
-        "--catalog-file",
-        default=None,
-        help="Optional catalog HTML output path",
+        help="Optional manifest JSON output path",
     )
     site_index_parser.add_argument(
         "--catalog-json-file",
         default=None,
-        help="Optional machine-readable catalog JSON output path",
-    )
-    site_index_parser.add_argument(
-        "--graph-file",
-        default=None,
-        help="Optional relationship graph HTML output path",
+        help="Optional catalog JSON output path",
     )
     site_index_parser.add_argument(
         "--graph-json-file",
         default=None,
-        help="Optional machine-readable relationship graph JSON output path",
-    )
-    site_index_parser.add_argument(
-        "--curation-queue-file",
-        default=None,
-        help="Optional curation queue HTML output path",
+        help="Optional relationship graph JSON output path",
     )
     site_index_parser.add_argument(
         "--curation-queue-json-file",
         default=None,
-        help="Optional machine-readable curation queue JSON output path",
+        help="Optional curation queue JSON output path",
     )
 
     release_check_parser = subparsers.add_parser(
@@ -1324,17 +1298,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "site-index":
         return _site_index(
             derived_dir=Path(args.derived_dir),
-            out_file=Path(args.out_file) if args.out_file else None,
             manifest_file=Path(args.manifest_file) if args.manifest_file else None,
-            catalog_file=Path(args.catalog_file) if args.catalog_file else None,
             catalog_json_file=Path(args.catalog_json_file)
             if args.catalog_json_file
             else None,
-            graph_file=Path(args.graph_file) if args.graph_file else None,
             graph_json_file=Path(args.graph_json_file) if args.graph_json_file else None,
-            curation_queue_file=Path(args.curation_queue_file)
-            if args.curation_queue_file
-            else None,
             curation_queue_json_file=Path(args.curation_queue_json_file)
             if args.curation_queue_json_file
             else None,
@@ -2753,25 +2721,25 @@ def _rdm_report(
 def _site_index(
     *,
     derived_dir: Path,
-    out_file: Path | None,
     manifest_file: Path | None,
-    catalog_file: Path | None,
     catalog_json_file: Path | None,
-    graph_file: Path | None,
     graph_json_file: Path | None,
-    curation_queue_file: Path | None,
     curation_queue_json_file: Path | None,
 ) -> int:
-    index_path = out_file or derived_dir / "index.html"
-    manifest_path = manifest_file or index_path.with_name("manifest.json")
-    catalog_path = catalog_file or index_path.with_name("catalog.html")
-    catalog_json_path = catalog_json_file or index_path.with_name("catalog.json")
-    graph_path = graph_file or index_path.with_name("graph.html")
-    graph_json_path = graph_json_file or index_path.with_name("graph.json")
-    curation_queue_path = curation_queue_file or index_path.with_name("curation_queue.html")
+    manifest_path = manifest_file or derived_dir / "manifest.json"
+    catalog_json_path = catalog_json_file or derived_dir / "catalog.json"
+    graph_json_path = graph_json_file or derived_dir / "graph.json"
     curation_queue_json_path = (
-        curation_queue_json_file or index_path.with_name("curation_queue.json")
+        curation_queue_json_file or derived_dir / "curation_queue.json"
     )
+    # Synthesize HTML paths internally so build_*_payload can compute the
+    # relative-link fields they emit into the JSON. These files are never
+    # written; they exist only as URL anchors that downstream consumers can
+    # resolve if they want HTML siblings, but the Astro frontend ignores them.
+    index_path = derived_dir / "index.html"
+    catalog_path = derived_dir / "catalog.html"
+    graph_path = derived_dir / "graph.html"
+    curation_queue_path = derived_dir / "curation_queue.html"
     catalog_payload = build_catalog_payload(
         root=Path("."),
         derived_dir=derived_dir,
@@ -2805,27 +2773,15 @@ def _site_index(
         curation_queue_path=curation_queue_path,
         queue_counts=curation_queue_payload["counts"],
     )
-    write_static_index_html(index_path, payload)
     write_static_manifest_json(manifest_path, payload)
-    write_static_catalog_html(catalog_path, catalog_payload)
     write_static_catalog_json(catalog_json_path, catalog_payload)
-    write_static_graph_html(graph_path, graph_payload)
     write_static_graph_json(graph_json_path, graph_payload)
-    write_static_curation_queue_html(curation_queue_path, curation_queue_payload)
     write_static_curation_queue_json(curation_queue_json_path, curation_queue_payload)
-    protocol_pages = write_static_protocol_pages(catalog_path, catalog_payload)
-    dataset_pages = write_static_dataset_pages(catalog_path, catalog_payload)
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
-    print(f"Wrote static index to {index_path}")
     print(f"Wrote report manifest to {manifest_path}")
-    print(f"Wrote catalog to {catalog_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
-    print(f"Wrote relationship graph to {graph_path}")
     print(f"Wrote relationship graph JSON to {graph_json_path}")
-    print(f"Wrote curation queue to {curation_queue_path}")
     print(f"Wrote curation queue JSON to {curation_queue_json_path}")
-    print(f"Wrote {len(protocol_pages)} protocol detail pages")
-    print(f"Wrote {len(dataset_pages)} dataset detail pages")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     return 0
 
