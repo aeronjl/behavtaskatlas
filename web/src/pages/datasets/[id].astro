@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { dataset } = Astro.props;
-const trialMapping = (dataset.expected_trial_table_mapping ?? {}) as Record<
+const trialMapping = (dataset.expected_trial_table_mapping ?? {}) as unknown as Record<
   string,
   string
 >;

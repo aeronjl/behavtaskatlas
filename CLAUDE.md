@@ -23,6 +23,9 @@ uv sync --extra visual               # scipy for Walsh human visual slice
 Validate, test, lint, schema export:
 
 ```bash
+bash scripts/ci.sh                   # canonical full check (lint + validate + pytest +
+                                     # site-index + Astro typecheck + Astro build).
+                                     # GitHub Actions runs this exact script.
 uv run behavtaskatlas validate       # YAML schema + cross-ref + vocabulary checks
 uv run pytest                        # full test suite
 uv run pytest tests/test_clicks.py::test_name   # single test

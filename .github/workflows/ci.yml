@@ -1,0 +1,22 @@
+name: CI
+
+# This workflow is intentionally a thin wrapper around scripts/ci.sh so the
+# same gate can be run locally via `bash scripts/ci.sh`. Keep workflow logic
+# here minimal; everything substantive lives in the script.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+      - name: Run scripts/ci.sh
+        run: bash scripts/ci.sh

@@ -31,6 +31,14 @@ Run tests:
 uv run pytest
 ```
 
+Or run the full CI gate (lint + validate + tests + Astro typecheck + build):
+
+```bash
+bash scripts/ci.sh
+```
+
+The same script runs in GitHub Actions so the local result is the deploy gate.
+
 Export JSON schemas from the Pydantic models:
 
 ```bash
