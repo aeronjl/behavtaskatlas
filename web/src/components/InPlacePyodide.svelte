@@ -1,11 +1,17 @@
 <script lang="ts">
   import { EditorState } from "@codemirror/state";
-  import { EditorView, keymap } from "@codemirror/view";
+  import {
+    EditorView,
+    keymap,
+    hoverTooltip,
+    type Tooltip,
+  } from "@codemirror/view";
   import { python, pythonLanguage } from "@codemirror/lang-python";
   import {
     type Completion,
     type CompletionContext,
   } from "@codemirror/autocomplete";
+  import { linter, type Diagnostic } from "@codemirror/lint";
   import { basicSetup } from "codemirror";
 
   type Status =
@@ -173,45 +179,78 @@ df: pd.DataFrame = pd.DataFrame()
 `;
   const JEDI_PREAMBLE_LINES = JEDI_PREAMBLE.split("\n").length - 1;
 
+  type Position = { line: number; column: number };
+
+  function positionForPos(code: string, pos: number): Position {
+    const before = code.slice(0, pos);
+    const lines = before.split("\n");
+    return {
+      line: lines.length + JEDI_PREAMBLE_LINES,
+      column: lines[lines.length - 1].length,
+    };
+  }
+
+  async function callJedi(kind: string, code: string, position?: Position) {
+    if (!pyodide) return null;
+    const py = pyodide as {
+      globals: { get: (name: string) => unknown };
+    };
+    const queryFn: any = py.globals.get("_lsp_query");
+    if (typeof queryFn !== "function") return null;
+    try {
+      const result = await queryFn(
+        kind,
+        JEDI_PREAMBLE + code,
+        position?.line ?? 0,
+        position?.column ?? 0,
+      );
+      const text = typeof result === "string" ? result : String(result);
+      result?.destroy?.();
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
   async function jediCompletions(
     code: string,
     pos: number,
   ): Promise<Completion[]> {
-    if (!pyodide) return [];
-    const before = code.slice(0, pos);
-    const lines = before.split("\n");
-    const line = lines.length + JEDI_PREAMBLE_LINES;
-    const column = lines[lines.length - 1].length;
-    const py = pyodide as {
-      globals: { set: (name: string, value: unknown) => void };
-      runPythonAsync: (code: string) => Promise<unknown>;
-    };
-    py.globals.set("_lsp_code", JEDI_PREAMBLE + code);
-    py.globals.set("_lsp_line", line);
-    py.globals.set("_lsp_col", column);
-    const result: any = await py.runPythonAsync(`
-import jedi, json as _json
-_script = jedi.Script(_lsp_code)
-_completions = _script.complete(_lsp_line, _lsp_col)
-_json.dumps([
-    {"name": c.name, "type": c.type}
-    for c in _completions[:80]
-])
-`);
-    const json = String(result ?? "[]");
-    result?.destroy?.();
-    let parsed: Array<{ name: string; type?: string }>;
-    try {
-      parsed = JSON.parse(json);
-    } catch {
-      return [];
-    }
-    return parsed.map((entry) => ({
+    const parsed = await callJedi(
+      "complete",
+      code,
+      positionForPos(code, pos),
+    );
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((entry: { name: string; type?: string }) => ({
       label: entry.name,
       type:
         (entry.type && JEDI_TYPE_MAP[entry.type]) ??
         (entry.type ? "variable" : undefined),
     }));
+  }
+
+  async function jediHelp(
+    code: string,
+    pos: number,
+  ): Promise<{ name: string; type?: string; doc?: string } | null> {
+    const parsed = await callJedi("help", code, positionForPos(code, pos));
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    return parsed[0] ?? null;
+  }
+
+  type JediSyntaxError = {
+    line: number;
+    column: number;
+    until_line: number;
+    until_column: number;
+    message: string;
+  };
+
+  async function jediSyntaxErrors(code: string): Promise<JediSyntaxError[]> {
+    const parsed = await callJedi("errors", code);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as JediSyntaxError[];
   }
 
   async function pythonCompletions(
@@ -267,6 +306,69 @@ _json.dumps([
 
   const pythonCompletionExtension = pythonLanguage.data.of({
     autocomplete: pythonCompletions,
+  });
+
+  const pythonHoverExtension = hoverTooltip(
+    async (view, pos): Promise<Tooltip | null> => {
+      if (!jediReady) return null;
+      const code = view.state.doc.toString();
+      const help = await jediHelp(code, pos);
+      if (!help || (!help.doc && !help.type)) return null;
+      return {
+        pos,
+        end: pos,
+        above: true,
+        create() {
+          const dom = document.createElement("div");
+          dom.className = "in-place-hover";
+          const title = document.createElement("div");
+          title.className = "in-place-hover-title";
+          title.textContent = help.type
+            ? `${help.name} (${help.type})`
+            : help.name;
+          dom.appendChild(title);
+          if (help.doc) {
+            const body = document.createElement("pre");
+            body.className = "in-place-hover-body";
+            body.textContent = help.doc;
+            dom.appendChild(body);
+          }
+          return { dom };
+        },
+      };
+    },
+    { hoverTime: 350 },
+  );
+
+  function lineColToPos(state: EditorState, line: number, col: number): number {
+    const totalLines = state.doc.lines;
+    const safeLine = Math.max(1, Math.min(totalLines, line));
+    const lineInfo = state.doc.line(safeLine);
+    return Math.max(lineInfo.from, Math.min(lineInfo.to, lineInfo.from + col));
+  }
+
+  const pythonLinterExtension = linter(async (view) => {
+    if (!jediReady) return [];
+    const code = view.state.doc.toString();
+    const errors = await jediSyntaxErrors(code);
+    const diagnostics: Diagnostic[] = [];
+    for (const err of errors) {
+      const startLine = err.line - JEDI_PREAMBLE_LINES;
+      const endLine = err.until_line - JEDI_PREAMBLE_LINES;
+      if (startLine < 1) continue; // error inside the preamble; not the user's
+      const from = lineColToPos(view.state, startLine, err.column);
+      const to = Math.max(
+        from + 1,
+        lineColToPos(view.state, endLine, err.until_column),
+      );
+      diagnostics.push({
+        from,
+        to,
+        severity: "error",
+        message: err.message,
+      });
+    }
+    return diagnostics;
   });
 
   let pyodide: any = null;
@@ -325,6 +427,8 @@ _json.dumps([
           basicSetup,
           python(),
           pythonCompletionExtension,
+          pythonHoverExtension,
+          pythonLinterExtension,
           keymap.of([
             {
               key: "Mod-Enter",
@@ -493,7 +597,8 @@ finally:
   }
 
   // Load jedi in the background after the first successful Run, when Pyodide
-  // is already up. Type-aware completions kick in once this resolves.
+  // is already up. Type-aware completions, hover docs, and syntax-error
+  // linting all kick in once this resolves.
   function ensureJedi() {
     if (jediReady || jediLoadPromise || !pyodide) return;
     jediLoadPromise = (async () => {
@@ -503,7 +608,39 @@ finally:
           runPythonAsync: (code: string) => Promise<unknown>;
         };
         await py.loadPackage(["jedi"]);
-        await py.runPythonAsync("import jedi");
+        // Define a single _lsp_query function so completion / hover / lint
+        // calls don't fight over shared globals.
+        await py.runPythonAsync(`
+import jedi as _jedi
+import json as _lsp_json
+
+def _lsp_query(kind, code, line, col):
+    script = _jedi.Script(code)
+    if kind == "complete":
+        items = script.complete(line, col)
+        return _lsp_json.dumps([
+            {"name": c.name, "type": c.type} for c in items[:80]
+        ])
+    if kind == "help":
+        defs = script.help(line, col)
+        return _lsp_json.dumps([
+            {"name": d.name, "type": d.type, "doc": d.docstring()}
+            for d in defs[:1]
+        ])
+    if kind == "errors":
+        errors = script.get_syntax_errors()
+        return _lsp_json.dumps([
+            {
+                "line": e.line,
+                "column": e.column,
+                "until_line": e.until_line,
+                "until_column": e.until_column,
+                "message": str(e),
+            }
+            for e in errors
+        ])
+    return "[]"
+`);
         jediReady = true;
       } catch {
         // Soft fail; static completions remain available.
@@ -585,3 +722,30 @@ finally:
     pandas; subsequent runs reuse the cached runtime.
   </p>
 </div>
+
+<style>
+  :global(.in-place-hover) {
+    max-width: 540px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #0f172a;
+  }
+  :global(.in-place-hover-title) {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  :global(.in-place-hover-body) {
+    margin: 0;
+    max-height: 220px;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #334155;
+  }
+</style>
