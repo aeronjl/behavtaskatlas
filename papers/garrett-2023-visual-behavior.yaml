@@ -1,0 +1,41 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.garrett-2023-visual-behavior
+citation: >
+  Garrett ME et al. Stimulus novelty uncovers coding diversity in visual
+  cortical circuits. bioRxiv, 2023.
+authors:
+  - Garrett, Marina E.
+  - Allen Institute MindScope Program
+year: 2023
+venue: bioRxiv
+doi: 10.1101/2023.02.14.528085
+url: https://www.biorxiv.org/content/10.1101/2023.02.14.528085v1
+lab: Allen Institute MindScope
+species:
+  - mouse
+n_subjects: 1
+protocol_ids:
+  - protocol.mouse-visual-change-detection-allen
+dataset_ids:
+  - dataset.allen-brain-observatory-visual-behavior
+finding_ids:
+  - finding.garrett-2023-visual-behavior.hit-rate-by-image-pair
+curation_status: data-linked
+notes: >
+  Anchors the allen_visual_behavior vertical slice to its published reference
+  (Garrett et al. 2023, bioRxiv) for the Allen Brain Observatory Visual
+  Behavior 2P resource. The single curated finding is per-image-pair hit
+  rate from one OPHYS_1 Familiar session (behavior_session_id 899390684,
+  mouse 453911) — n=1 mouse, so this is a single-session illustration of
+  the change-detection task rather than a population estimate.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Paper record introduced to give the Allen Visual Behavior slice a
+    citation anchor and close the last "no paper" gap in the slice graph.
+    Per-image-pair hit-rate finding extracted from the slice's
+    image_pair_summary.csv.

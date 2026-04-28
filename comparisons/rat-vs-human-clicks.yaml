@@ -1,0 +1,39 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.rat-vs-human-clicks
+title: Rat vs human clicks psychometric
+question: How does evidence accumulation in the Poisson clicks task differ between rats and humans?
+framing: >
+  Brunton et al. 2013 trained five rats on the rat auditory clicks task and
+  the London 2018 Mendeley release ran the same Poisson clicks accumulation
+  paradigm in humans (DBS off baseline shown here for like-for-like
+  comparison). Both pin to the same canonical axis — signed click-count
+  difference (right minus left) → p_right — so this is one of the cleanest
+  cross-species comparisons in the atlas. Differences in slope or lapse
+  rate cannot be attributed to differing stimulus families.
+finding_ids:
+  - finding.brunton-2013-rats-humans.psychometric.subject.a080
+  - finding.brunton-2013-rats-humans.psychometric.subject.b075
+  - finding.brunton-2013-rats-humans.psychometric.subject.b127
+  - finding.brunton-2013-rats-humans.psychometric.subject.t014
+  - finding.brunton-2013-rats-humans.psychometric.subject.t074
+  - finding.london-2018-poisson-clicks-dbs.dbs-off
+color_by: paper
+hint: >
+  Compare slope (σ) and lapse. The London DBS-off curve is one human group
+  estimate; the five Brunton rats are individual rats so the curve spread
+  reflects single-subject variability rather than within-species sample
+  uncertainty.
+display_order: 25
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Comparison record introduced after Brunton 2013 + per-rat findings
+    landed; first cross-species comparison anchored on a shared
+    operational axis (signed click-count difference) rather than the
+    cross-paradigm coherence/contrast axes used in the existing macaque-
+    vs-human-rdm and ibl-prior-blocks comparisons.
