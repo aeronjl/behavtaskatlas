@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { manifest } from "../lib/data";
+import { manifest, slugForId } from "../lib/data";
 
 const health = manifest.health as Record<string, any>;
 const counts = (health?.counts ?? {}) as Record<string, number>;
@@ -131,14 +131,12 @@ const summaryCards = [
               <dt class="text-slate-500">Source level</dt>
               <dd>{slice.comparison.source_data_level}</dd>
             </dl>
-            {slice.primary_link ? (
-              <a
-                href={slice.primary_link}
-                class="text-sm font-medium text-accent"
-              >
-                {slice.primary_link_label} →
-              </a>
-            ) : null}
+            <a
+              href={`/slices/${slugForId(slice.id)}`}
+              class="text-sm font-medium text-accent"
+            >
+              View slice →
+            </a>
           </article>
         ))
       }
@@ -165,11 +163,7 @@ const summaryCards = [
             manifest.comparison_rows.map((row) => (
               <tr>
                 <td class="px-3 py-2">
-                  {row.primary_link ? (
-                    <a href={row.primary_link}>{row.title}</a>
-                  ) : (
-                    row.title
-                  )}
+                  <a href={`/slices/${slugForId(row.slice_id)}`}>{row.title}</a>
                 </td>
                 <td class="px-3 py-2">{row.species}</td>
                 <td class="px-3 py-2">{row.modality}</td>

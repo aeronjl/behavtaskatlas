@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { manifest, slugForId } from "../../lib/data";
+---
+
+<BaseLayout title="Vertical slices · behavtaskatlas">
+  <header class="mb-6">
+    <h1 class="text-3xl font-semibold tracking-tight">Vertical slices</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      Each slice binds one protocol and one dataset to a reproducible local
+      analysis pipeline. {manifest.slices.length} slices.
+    </p>
+  </header>
+
+  <ul class="grid grid-cols-1 gap-3 md:grid-cols-2">
+    {
+      manifest.slices.map((slice) => (
+        <li class="rounded-md border border-slate-200 bg-white p-4">
+          <header class="mb-2 flex items-baseline justify-between gap-2">
+            <h2 class="text-base font-semibold">
+              <a href={`/slices/${slugForId(slice.id)}`}>{slice.title}</a>
+            </h2>
+            <span
+              class:list={[
+                "rounded px-2 py-0.5 text-xs",
+                slice.report_status === "available"
+                  ? "bg-ok-soft text-ok"
+                  : "bg-warn-soft text-warn",
+              ]}
+            >
+              {slice.status_label}
+            </span>
+          </header>
+          <p class="mb-3 text-sm text-slate-600">{slice.description}</p>
+          <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-700">
+            <dt class="text-slate-500">Species</dt>
+            <dd>{slice.comparison.species}</dd>
+            <dt class="text-slate-500">Modality</dt>
+            <dd>{slice.comparison.modality}</dd>
+            <dt class="text-slate-500">Choice</dt>
+            <dd>{slice.comparison.choice_type}</dd>
+            <dt class="text-slate-500">Source level</dt>
+            <dd>{slice.comparison.source_data_level}</dd>
+          </dl>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>
