@@ -2,6 +2,58 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-28 13:25:00 BST - Atlas is a real public app with in-browser analysis
+
+The atlas migrated from a CLI + static-HTML generator to a public Astro 5 +
+Tailwind v4 + Bun web app on Vercel at https://behavtaskatlas.vercel.app,
+backed by the GitHub repo `aeronjl/behavtaskatlas`. The Python pipeline
+remains the schema and analysis authority; what changed is the surface that
+researchers actually interact with. Today's arc:
+
+- Astro consumes the existing `derived/manifest.json`, `catalog.json`,
+  `graph.json`, and `curation_queue.json` exports, with dynamic detail
+  pages for protocols, datasets, and slices. The Python `static_site.py`
+  HTML/CSS/filter-script output (~1600 lines) is gone; only the JSON
+  payload builders remain.
+- Slice report HTML/SVG artifacts are bundled as GitHub Releases tagged
+  `slice-artifacts-<date>-<sha>` via `scripts/publish_artifacts.py`. Vercel
+  build pulls the latest release tarball into `web/public/` so per-slice
+  reports resolve in production. Heavy slice analyses still run locally
+  against real data; CI only regenerates the small JSON exports.
+- Each slice page hosts a Svelte-island Pyodide cell that lazy-loads on
+  click, fetches the slice's canonical CSV, and runs user-editable Python
+  with pandas (and matplotlib whose `plt.show()` is captured to inline
+  SVG). The editor is CodeMirror 6 with `lang-python`, autocompletion
+  against a static pandas/numpy/matplotlib API list plus actual column
+  names from the CSV header, and `Cmd/Ctrl-Enter` to run.
+- A `jedi`-in-Pyodide language server activates after the first Run and
+  upgrades the editor: type-aware completion, hover docs from
+  `Script.help()`, and gutter linting from `Script.get_syntax_errors()`.
+  All three share a single `_lsp_query(kind, code, line, col)` Python
+  function so concurrent calls don't fight over globals.
+- `bash scripts/ci.sh` is the canonical gate (ruff + validate + pytest +
+  site-index + bun install + astro check + astro build), and
+  `.github/workflows/ci.yml` is now an active GitHub Actions wrapper
+  around it. CI gates pushes to `main`.
+
+Two non-obvious things worth remembering:
+
+- GitHub's `/releases` listing endpoint is documented as descending by
+  `created_at` but for this repo it returns insertion order. The Vercel
+  build script sorts candidates by `published_at` descending and picks
+  the head, robust to whatever order the API returns. `gh release create
+  --latest` is required for `/releases/latest` to be correct.
+- TypeScript inferred `never[]` from JSON arrays that happened to be
+  empty in CI's freshly-regenerated `manifest.json`, breaking
+  `astro check` on Actions while passing locally where my manifest had
+  populated metrics. The slice page now casts `slice.metrics` and
+  `slice.links` through explicit types so iteration sites are stable.
+
+The remaining items on the original roadmap are: an MCP server (still
+deferred), a custom domain (DNS work), and an OG PNG export for social
+previews that don't render SVG. Everything else from the "proper app"
+vision is in production.
+
 ## 2026-04-27 22:40:00 BST - Allen Visual Behavior slice verified end-to-end
 
 The change-detection slice now runs against a real public NWB file rather than
