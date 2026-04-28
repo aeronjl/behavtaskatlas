@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { manifest, slugForId } from "../../lib/data";
+
+type SliceMetric = { label: string; value: unknown };
 ---
 
 <BaseLayout title="Vertical slices · behavtaskatlas">
@@ -43,9 +45,9 @@ import { manifest, slugForId } from "../../lib/data";
             <dd>{slice.comparison.source_data_level}</dd>
           </dl>
           {
-            slice.metrics && slice.metrics.length > 0 ? (
+            ((slice.metrics ?? []) as unknown as SliceMetric[]).length > 0 ? (
               <ul class="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                {slice.metrics.slice(0, 4).map((m) => (
+                {((slice.metrics ?? []) as unknown as SliceMetric[]).slice(0, 4).map((m) => (
                   <li class="rounded bg-slate-100 px-2 py-0.5">
                     <span class="text-slate-500">{m.label}</span>
                     <span class="ml-1 font-mono font-semibold text-slate-900">
