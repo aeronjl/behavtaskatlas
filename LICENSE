@@ -1,0 +1,32 @@
+behavtaskatlas is released under the Creative Commons Attribution 4.0
+International License (CC-BY-4.0).
+
+You are free to:
+
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material for any
+  purpose, including commercially
+
+Under the following terms:
+
+- Attribution — You must give appropriate credit, provide a link to
+  the license, and indicate if changes were made. You may do so in
+  any reasonable manner, but not in any way that suggests the
+  licensor endorses you or your use.
+- No additional restrictions — You may not apply legal terms or
+  technological measures that legally restrict others from doing
+  anything the license permits.
+
+The full legal text of CC-BY-4.0 is at:
+  https://creativecommons.org/licenses/by/4.0/legalcode
+
+Copyright holder: Aeron Laffere.
+
+Note on third-party data:
+
+- Open datasets harmonised by behavtaskatlas (IBL, Brody Lab,
+  Roitman & Shadlen via PyDDM, Palmer-Huk-Shadlen CoSMo, Khalvati
+  et al., London 2018, Walsh et al. 2024 OSF release, Allen Brain
+  Observatory Visual Behavior) are subject to their own upstream
+  licenses; consult the relevant `datasets/*.yaml` record's
+  `license` field for the canonical terms.
