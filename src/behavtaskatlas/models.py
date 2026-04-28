@@ -537,7 +537,134 @@ class ReleaseCheckPayload(StrictModel):
     items: list[ReleaseCheckItem]
 
 
-Record = TaskFamily | Protocol | Dataset | Implementation | VerticalSlice
+class Paper(StrictModel):
+    object_type: Literal["paper"]
+    schema_version: str
+    id: str
+    citation: str
+    authors: list[str] = Field(default_factory=list)
+    year: int
+    venue: str | None = None
+    doi: str | None = None
+    url: str | None = None
+    lab: str | None = None
+    species: list[str]
+    n_subjects: int | None = None
+    protocol_ids: list[str]
+    dataset_ids: list[str] = Field(default_factory=list)
+    finding_ids: list[str] = Field(default_factory=list)
+    curation_status: str
+    notes: str | None = None
+    provenance: Provenance
+
+
+class CurvePoint(StrictModel):
+    x: float
+    n: int
+    y: float
+    y_lower: float | None = None
+    y_upper: float | None = None
+    se: float | None = None
+
+
+class StratificationKey(StrictModel):
+    species: str | None = None
+    response_modality: str | None = None
+    training_stage: str | None = None
+    condition: str | None = None
+    subject_id: str | None = None
+    age_group: str | None = None
+
+
+class ResultCurve(StrictModel):
+    curve_type: Literal[
+        "psychometric",
+        "chronometric",
+        "accuracy_by_strength",
+        "hit_rate_by_condition",
+        "rt_distribution",
+    ]
+    x_label: str
+    x_units: str
+    y_label: str
+    points: list[CurvePoint]
+    fit: dict[str, float] | None = None
+
+
+class Finding(StrictModel):
+    object_type: Literal["finding"]
+    schema_version: str
+    id: str
+    paper_id: str
+    protocol_id: str
+    dataset_id: str | None = None
+    slice_id: str | None = None
+    source_data_level: str
+    n_trials: int | None = None
+    n_subjects: int | None = None
+    stratification: StratificationKey
+    curve: ResultCurve
+    interpretation_claims: list[InterpretationClaim] = Field(default_factory=list)
+    extraction_method: Literal[
+        "harmonized-pipeline",
+        "supplement-csv",
+        "figure-trace",
+        "table-transcription",
+    ]
+    extraction_notes: str | None = None
+    provenance: Provenance
+
+
+class FindingsIndexCurvePoint(StrictModel):
+    x: float
+    n: int
+    y: float
+    y_lower: float | None = None
+    y_upper: float | None = None
+
+
+class FindingsIndexEntry(StrictModel):
+    finding_id: str
+    paper_id: str
+    paper_citation: str
+    paper_year: int
+    paper_lab: str | None = None
+    paper_doi: str | None = None
+    protocol_id: str
+    protocol_name: str
+    family_id: str
+    family_name: str | None = None
+    dataset_id: str | None = None
+    slice_id: str | None = None
+    species: str | None = None
+    modalities: list[str] = Field(default_factory=list)
+    evidence_type: str | None = None
+    response_modality: str | None = None
+    source_data_level: str
+    extraction_method: str
+    n_trials: int | None = None
+    n_subjects: int | None = None
+    stratification: StratificationKey
+    curve_type: str
+    x_label: str
+    x_units: str
+    y_label: str
+    points: list[FindingsIndexCurvePoint]
+
+
+class FindingsIndexPayload(StrictModel):
+    findings_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    counts: dict[str, int] = Field(default_factory=dict)
+    findings: list[FindingsIndexEntry]
+
+
+Record = (
+    TaskFamily | Protocol | Dataset | Implementation | VerticalSlice | Paper | Finding
+)
 
 
 MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
@@ -546,6 +673,8 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "dataset": Dataset,
     "implementation": Implementation,
     "vertical_slice": VerticalSlice,
+    "paper": Paper,
+    "finding": Finding,
 }
 
 
@@ -557,6 +686,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "relationship_graph": RelationshipGraphPayload,
     "curation_queue": CurationQueuePayload,
     "release_check": ReleaseCheckPayload,
+    "findings_index": FindingsIndexPayload,
 }
 
 

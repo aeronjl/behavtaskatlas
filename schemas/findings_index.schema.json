@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "FindingsIndexCurvePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "y_lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Lower"
+        },
+        "y_upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Upper"
+        }
+      },
+      "required": [
+        "x",
+        "n",
+        "y"
+      ],
+      "title": "FindingsIndexCurvePoint",
+      "type": "object"
+    },
+    "FindingsIndexEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "curve_type": {
+          "title": "Curve Type",
+          "type": "string"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "evidence_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Type"
+        },
+        "extraction_method": {
+          "title": "Extraction Method",
+          "type": "string"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "family_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Name"
+        },
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "modalities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modalities",
+          "type": "array"
+        },
+        "n_subjects": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Subjects"
+        },
+        "n_trials": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Trials"
+        },
+        "paper_citation": {
+          "title": "Paper Citation",
+          "type": "string"
+        },
+        "paper_doi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Paper Doi"
+        },
+        "paper_id": {
+          "title": "Paper Id",
+          "type": "string"
+        },
+        "paper_lab": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Paper Lab"
+        },
+        "paper_year": {
+          "title": "Paper Year",
+          "type": "integer"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/FindingsIndexCurvePoint"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "protocol_id": {
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "protocol_name": {
+          "title": "Protocol Name",
+          "type": "string"
+        },
+        "response_modality": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Modality"
+        },
+        "slice_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slice Id"
+        },
+        "source_data_level": {
+          "title": "Source Data Level",
+          "type": "string"
+        },
+        "species": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Species"
+        },
+        "stratification": {
+          "$ref": "#/$defs/StratificationKey"
+        },
+        "x_label": {
+          "title": "X Label",
+          "type": "string"
+        },
+        "x_units": {
+          "title": "X Units",
+          "type": "string"
+        },
+        "y_label": {
+          "title": "Y Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "paper_id",
+        "paper_citation",
+        "paper_year",
+        "protocol_id",
+        "protocol_name",
+        "family_id",
+        "source_data_level",
+        "extraction_method",
+        "stratification",
+        "curve_type",
+        "x_label",
+        "x_units",
+        "y_label",
+        "points"
+      ],
+      "title": "FindingsIndexEntry",
+      "type": "object"
+    },
+    "StratificationKey": {
+      "additionalProperties": false,
+      "properties": {
+        "age_group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Age Group"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition"
+        },
+        "response_modality": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Modality"
+        },
+        "species": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Species"
+        },
+        "subject_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Id"
+        },
+        "training_stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Stage"
+        }
+      },
+      "title": "StratificationKey",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/FindingsIndexEntry"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "findings_schema_version": {
+      "title": "Findings Schema Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "findings_schema_version",
+    "title",
+    "generated_at",
+    "findings"
+  ],
+  "title": "FindingsIndexPayload",
+  "type": "object"
+}

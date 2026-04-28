@@ -69,3 +69,24 @@ source_data_levels:
   - processed-session
   - figure-source-data
   - aggregate-only
+
+extraction_methods:
+  - harmonized-pipeline
+  - supplement-csv
+  - figure-trace
+  - table-transcription
+
+curve_types:
+  - psychometric
+  - chronometric
+  - accuracy_by_strength
+  - hit_rate_by_condition
+  - rt_distribution
+
+stratification_dimensions:
+  - species
+  - response_modality
+  - training_stage
+  - condition
+  - subject_id
+  - age_group

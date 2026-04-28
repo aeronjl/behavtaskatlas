@@ -9,6 +9,8 @@ from pydantic import BaseModel, ValidationError
 
 from behavtaskatlas.models import (
     Dataset,
+    Finding,
+    Paper,
     Protocol,
     TaskFamily,
     VerticalSlice,
@@ -52,7 +54,14 @@ def load_vocabularies(root: Path) -> dict[str, set[str]]:
 
 
 def iter_record_paths(root: Path) -> list[Path]:
-    record_dirs = ["task_families", "protocols", "datasets", "implementations"]
+    record_dirs = [
+        "task_families",
+        "protocols",
+        "datasets",
+        "implementations",
+        "papers",
+        "findings",
+    ]
     paths: list[Path] = []
     for directory in record_dirs:
         record_dir = root / directory
@@ -93,6 +102,15 @@ def validate_repository(root: Path) -> ValidationReport:
     dataset_ids = {record.id for record in records if isinstance(record, Dataset)}
     protocol_by_id = {record.id: record for record in records if isinstance(record, Protocol)}
     dataset_by_id = {record.id: record for record in records if isinstance(record, Dataset)}
+    slice_by_id = {
+        record.id: record for record in records if isinstance(record, VerticalSlice)
+    }
+    paper_ids = {record.id for record in records if isinstance(record, Paper)}
+    paper_by_id = {record.id: record for record in records if isinstance(record, Paper)}
+    findings_by_paper: dict[str, list[Finding]] = {}
+    for record in records:
+        if isinstance(record, Finding):
+            findings_by_paper.setdefault(record.paper_id, []).append(record)
 
     for record in records:
         path = _path_for_record(root, record.id)
@@ -169,6 +187,117 @@ def validate_repository(root: Path) -> ValidationReport:
                     )
                 )
 
+        if isinstance(record, Paper):
+            for protocol_id in record.protocol_ids:
+                if protocol_id not in protocol_ids:
+                    issues.append(
+                        ValidationIssue(path, f"Unknown protocol_id {protocol_id!r}")
+                    )
+            for dataset_id in record.dataset_ids:
+                if dataset_id not in dataset_ids:
+                    issues.append(
+                        ValidationIssue(path, f"Unknown dataset_id {dataset_id!r}")
+                    )
+            declared_findings = set(record.finding_ids)
+            actual_findings = {
+                finding.id for finding in findings_by_paper.get(record.id, [])
+            }
+            missing_in_paper = actual_findings - declared_findings
+            extra_in_paper = declared_findings - actual_findings
+            if missing_in_paper:
+                joined = ", ".join(sorted(missing_in_paper))
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"Paper.finding_ids missing {joined!r}; findings point at this paper",
+                    )
+                )
+            if extra_in_paper:
+                joined = ", ".join(sorted(extra_in_paper))
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"Paper.finding_ids references unknown {joined!r}",
+                    )
+                )
+
+        if isinstance(record, Finding):
+            if record.paper_id not in paper_ids:
+                issues.append(
+                    ValidationIssue(path, f"Unknown paper_id {record.paper_id!r}")
+                )
+            protocol = protocol_by_id.get(record.protocol_id)
+            if protocol is None:
+                issues.append(
+                    ValidationIssue(path, f"Unknown protocol_id {record.protocol_id!r}")
+                )
+            paper = paper_by_id.get(record.paper_id)
+            if paper is not None and record.protocol_id not in paper.protocol_ids:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"Finding.protocol_id {record.protocol_id!r} not declared by "
+                        f"paper {record.paper_id!r}",
+                    )
+                )
+            if record.dataset_id is not None:
+                dataset = dataset_by_id.get(record.dataset_id)
+                if dataset is None:
+                    issues.append(
+                        ValidationIssue(
+                            path, f"Unknown dataset_id {record.dataset_id!r}"
+                        )
+                    )
+                elif record.source_data_level != dataset.source_data_level:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"Finding.source_data_level {record.source_data_level!r} "
+                            f"does not match dataset {record.dataset_id!r} "
+                            f"({dataset.source_data_level!r})",
+                        )
+                    )
+            if record.slice_id is not None:
+                slice_record = slice_by_id.get(record.slice_id)
+                if slice_record is None:
+                    issues.append(
+                        ValidationIssue(path, f"Unknown slice_id {record.slice_id!r}")
+                    )
+                else:
+                    if slice_record.protocol_id != record.protocol_id:
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"Finding.slice_id {record.slice_id!r} protocol "
+                                f"{slice_record.protocol_id!r} does not match "
+                                f"finding protocol {record.protocol_id!r}",
+                            )
+                        )
+                    if (
+                        record.dataset_id is not None
+                        and slice_record.dataset_id != record.dataset_id
+                    ):
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"Finding.slice_id {record.slice_id!r} dataset "
+                                f"{slice_record.dataset_id!r} does not match "
+                                f"finding dataset {record.dataset_id!r}",
+                            )
+                        )
+                    if (
+                        record.source_data_level
+                        != slice_record.comparison.source_data_level
+                    ):
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"Finding.source_data_level {record.source_data_level!r} "
+                                f"does not match slice {record.slice_id!r} "
+                                f"({slice_record.comparison.source_data_level!r})",
+                            )
+                        )
+
     return ValidationReport(records=records, issues=issues)
 
 
@@ -241,6 +370,19 @@ def _validate_common_vocab(
             "source_data_levels",
             "comparison.source_data_level",
         )
+
+    if isinstance(record, Finding):
+        check(record.source_data_level, "source_data_levels", "source_data_level")
+        check(record.extraction_method, "extraction_methods", "extraction_method")
+        check(record.curve.curve_type, "curve_types", "curve.curve_type")
+        if record.stratification.species is not None:
+            check(record.stratification.species, "species", "stratification.species")
+        if record.stratification.response_modality is not None:
+            check(
+                record.stratification.response_modality,
+                "response_modalities",
+                "stratification.response_modality",
+            )
 
     return issues
 
