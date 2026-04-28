@@ -1,0 +1,203 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
+import { findings, type FindingsEntry } from "../lib/findings";
+import { COMPARISONS } from "../lib/comparisons";
+import { slugForId } from "../lib/data";
+
+type FitFields = {
+  mu: number;
+  sigma: number;
+  gamma: number;
+  lapse: number;
+  threshold: number;
+  threshold_target_y: number;
+};
+
+const findingsById = new Map<string, FindingsEntry>();
+for (const entry of findings.findings as FindingsEntry[]) {
+  findingsById.set(entry.finding_id, entry);
+}
+
+function pickEntries(ids: string[]): FindingsEntry[] {
+  return ids
+    .map((id) => findingsById.get(id))
+    .filter((e): e is FindingsEntry => e !== undefined);
+}
+
+function entryLabel(entry: FindingsEntry): string {
+  const condition = entry.stratification?.condition ?? entry.stratification?.subject_id;
+  if (condition) return `${entry.paper_citation.split(".")[0]} · ${condition}`;
+  return entry.paper_citation;
+}
+
+function fmt(value: number | null | undefined, digits = 2): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return value.toFixed(digits);
+}
+
+const sections = COMPARISONS.map((spec) => {
+  const entries = pickEntries(spec.finding_ids);
+  const fits = entries
+    .map((entry) => {
+      const fit = (entry as FindingsEntry & { fit?: FitFields | null }).fit;
+      return fit ? { entry, fit } : null;
+    })
+    .filter((row): row is { entry: FindingsEntry; fit: FitFields } => row !== null);
+  // Pairwise deltas relative to the first row (when present).
+  const reference = fits[0] ?? null;
+  const deltas = fits.map((row) => ({
+    label: entryLabel(row.entry),
+    finding_id: row.entry.finding_id,
+    paper_id: row.entry.paper_id,
+    mu: row.fit.mu,
+    sigma: row.fit.sigma,
+    threshold: Number.isFinite(row.fit.threshold) ? row.fit.threshold : null,
+    delta_mu: reference ? row.fit.mu - reference.fit.mu : 0,
+    delta_sigma: reference ? row.fit.sigma - reference.fit.sigma : 0,
+    delta_threshold:
+      reference &&
+      Number.isFinite(row.fit.threshold) &&
+      Number.isFinite(reference.fit.threshold)
+        ? row.fit.threshold - reference.fit.threshold
+        : null,
+    is_reference: row === reference,
+  }));
+  return {
+    spec,
+    entries,
+    deltas,
+    has_fits: fits.length > 0,
+    target_y_label:
+      fits[0] && fits[0].fit.threshold_target_y === 0.84 ? "x at 84%" : "x at 75%",
+  };
+});
+---
+
+<BaseLayout
+  title="Compare · behavtaskatlas"
+  description="Pre-baked cross-paper comparisons that answer specific questions: prior-block shifts, species differences, cueing effects, all on shared signed-evidence axes with fitted parameter deltas."
+>
+  <header class="mb-8">
+    <h1 class="text-3xl font-semibold tracking-tight">Compare</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      Curated cross-paper comparisons that answer one question each. Each
+      panel embeds the relevant findings overlaid on shared signed-evidence
+      axes and reports fitted parameter deltas (Δμ bias shift, Δσ slope
+      change, and the threshold crossing) computed at build time from a
+      4-parameter logistic fit to each finding.
+    </p>
+    <p class="mt-2 text-xs text-slate-500">
+      Comparisons are hand-curated; the underlying findings live in{" "}
+      <code class="rounded bg-slate-100 px-1">findings/</code> and the
+      complete catalog is on <a class="text-accent" href="/findings">/findings</a>.
+    </p>
+  </header>
+
+  <div class="space-y-12">
+    {
+      sections.map((section) => (
+        <section
+          class="rounded-md border border-slate-200 bg-white p-5"
+          id={section.spec.id}
+        >
+          <h2 class="mb-2 text-lg font-semibold text-slate-900">
+            {section.spec.question}
+          </h2>
+          <p class="mb-4 text-sm text-slate-700">{section.spec.framing}</p>
+          {section.entries.length > 0 ? (
+            <MiniFindingsChart
+              client:visible
+              findings={section.entries}
+              colorBy={section.spec.color_by}
+              height={260}
+            />
+          ) : (
+            <p class="rounded border border-warn bg-warn-soft p-3 text-xs text-warn">
+              None of the referenced findings are present in the index. Edit
+              <code class="ml-1 rounded bg-slate-100 px-1">
+                web/src/lib/comparisons.ts
+              </code>
+              .
+            </p>
+          )}
+
+          {section.has_fits ? (
+            <div class="mt-4">
+              <h3 class="mb-1 text-xs font-semibold text-slate-700">
+                Fitted parameters
+              </h3>
+              <p class="mb-2 text-[11px] text-slate-500">
+                Deltas relative to the first row.{" "}
+                <span class="text-slate-700">{section.spec.hint}</span>
+              </p>
+              <div class="overflow-x-auto rounded border border-slate-200">
+                <table class="w-full text-xs">
+                  <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th class="px-3 py-2">Finding</th>
+                      <th class="px-3 py-2 text-right">μ (bias)</th>
+                      <th class="px-3 py-2 text-right">σ (slope)</th>
+                      <th class="px-3 py-2 text-right">{section.target_y_label}</th>
+                      <th class="px-3 py-2 text-right">Δμ</th>
+                      <th class="px-3 py-2 text-right">Δσ</th>
+                      <th class="px-3 py-2 text-right">Δ threshold</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    {section.deltas.map((row) => (
+                      <tr class={row.is_reference ? "bg-slate-50" : ""}>
+                        <td class="px-3 py-2">
+                          <a href={`/papers/${slugForId(row.paper_id)}`}>
+                            {row.label}
+                          </a>
+                          {row.is_reference ? (
+                            <span class="ml-2 text-[10px] text-slate-500">
+                              (reference)
+                            </span>
+                          ) : null}
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
+                        <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
+                        <td class="px-3 py-2 text-right font-mono">
+                          {fmt(row.threshold)}
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono">
+                          {row.is_reference ? "—" : fmt(row.delta_mu)}
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono">
+                          {row.is_reference ? "—" : fmt(row.delta_sigma)}
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono">
+                          {row.is_reference ? "—" : fmt(row.delta_threshold)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <p class="mt-3 text-[11px] text-slate-500">
+              No 4-parameter logistic fit applies (curve type does not support
+              it, or fits failed). Visual comparison only.
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+
+  <p class="mt-8 text-xs text-slate-500">
+    These comparisons are pre-baked at build time; the underlying logistic
+    fits are computed by{" "}
+    <code class="rounded bg-slate-100 px-1">behavtaskatlas site-index</code>
+    using the same model as the interactive fitter on{" "}
+    <a class="text-accent" href="/findings">/findings</a>, so values agree.
+    Curate new comparisons by editing
+    <code class="ml-1 rounded bg-slate-100 px-1">
+      web/src/lib/comparisons.ts
+    </code>
+    .
+  </p>
+</BaseLayout>

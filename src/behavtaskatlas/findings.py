@@ -303,6 +303,98 @@ def extract_accuracy_findings_for_slice(
     return findings
 
 
+def _fit_logistic_4p(
+    points: list[CurvePoint],
+    *,
+    force_lower: float | None = None,
+    target_y: float = 0.75,
+) -> dict[str, float] | None:
+    """4-parameter logistic fit (μ, σ, γ, λ) via scipy.curve_fit.
+    Mirrors the JS-side fitter on /findings so build-time fits and
+    interactive bootstrap fits agree. Returns None when the fit fails or
+    has too few points.
+
+    For accuracy_by_strength curves the lower asymptote is pinned at the
+    chance floor (e.g. 0.5) so the fit doesn't slide γ below chance.
+    Returns the threshold (x at target_y) numerically.
+    """
+    if len(points) < 4:
+        return None
+    try:
+        import numpy as np
+        from scipy import optimize
+    except ImportError:
+        return None
+
+    xs = np.array([p.x for p in points], dtype=float)
+    ys = np.array([p.y for p in points], dtype=float)
+    ns = np.array([max(p.n, 1) for p in points], dtype=float)
+    sigma_w = 1.0 / np.sqrt(ns)
+    mu0 = float(np.mean(xs))
+    span = float(np.max(xs) - np.min(xs)) or 1.0
+    sigma0 = max(span / 4.0, 1e-3)
+
+    def _logistic4(x, mu, sigma, gamma, lapse):
+        sig = max(float(sigma), 1e-6)
+        return gamma + (1.0 - gamma - lapse) / (1.0 + np.exp(-(x - mu) / sig))
+
+    try:
+        if force_lower is not None:
+            def _model(x, mu, sigma, lapse):
+                return _logistic4(x, mu, sigma, force_lower, lapse)
+            popt, _ = optimize.curve_fit(
+                _model, xs, ys,
+                p0=[mu0, sigma0, 0.05],
+                sigma=sigma_w, absolute_sigma=False,
+                bounds=([-np.inf, 1e-3, 0.0], [np.inf, np.inf, 0.49]),
+                maxfev=4000,
+            )
+            mu, sigma, lapse = popt
+            gamma = float(force_lower)
+        else:
+            popt, _ = optimize.curve_fit(
+                _logistic4, xs, ys,
+                p0=[mu0, sigma0, 0.05, 0.05],
+                sigma=sigma_w, absolute_sigma=False,
+                bounds=([-np.inf, 1e-3, 0.0, 0.0], [np.inf, np.inf, 0.49, 0.49]),
+                maxfev=4000,
+            )
+            mu, sigma, gamma, lapse = popt
+            gamma = float(gamma)
+    except Exception:
+        return None
+
+    span = 1.0 - gamma - float(lapse)
+    threshold: float | None = None
+    if span > 0:
+        z = (target_y - gamma) / span
+        if 0.0 < z < 1.0:
+            threshold = float(mu - max(float(sigma), 1e-6) * np.log((1.0 - z) / z))
+
+    payload: dict[str, float] = {
+        "mu": float(mu),
+        "sigma": float(sigma),
+        "gamma": gamma,
+        "lapse": float(lapse),
+        "threshold_target_y": float(target_y),
+    }
+    if threshold is not None:
+        payload["threshold"] = threshold
+    return payload
+
+
+def _fit_target_y(curve_type: str) -> float:
+    if curve_type == "accuracy_by_strength":
+        return 0.84
+    return 0.75
+
+
+def _fit_force_lower(curve_type: str) -> float | None:
+    if curve_type == "accuracy_by_strength":
+        return 0.5
+    return None
+
+
 def import_csv_findings(
     *,
     csv_path: Path,
@@ -491,6 +583,13 @@ def build_findings_index(
             )
             for p in finding.curve.points
         ]
+        fit_payload: dict[str, float] | None = None
+        if finding.curve.curve_type in ("psychometric", "accuracy_by_strength"):
+            fit_payload = _fit_logistic_4p(
+                finding.curve.points,
+                force_lower=_fit_force_lower(finding.curve.curve_type),
+                target_y=_fit_target_y(finding.curve.curve_type),
+            )
         entries.append(
             FindingsIndexEntry(
                 finding_id=finding.id,
@@ -521,6 +620,7 @@ def build_findings_index(
                 x_units=finding.curve.x_units,
                 y_label=finding.curve.y_label,
                 points=index_points,
+                fit=fit_payload,
             )
         )
 

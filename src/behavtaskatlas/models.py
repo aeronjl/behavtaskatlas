@@ -650,6 +650,7 @@ class FindingsIndexEntry(StrictModel):
     x_units: str
     y_label: str
     points: list[FindingsIndexCurvePoint]
+    fit: dict[str, float] | None = None
 
 
 class FindingsIndexPayload(StrictModel):

@@ -24,8 +24,10 @@ name = "behavtaskatlas"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "numpy" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "scipy" },
 ]
 
 [package.optional-dependencies]
@@ -54,9 +56,11 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "h5py", marker = "extra == 'allen'", specifier = ">=3.10" },
+    { name = "numpy", specifier = ">=1.26" },
     { name = "one-api", marker = "extra == 'ibl'", specifier = ">=3.5.0" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "scipy", specifier = ">=1.13" },
     { name = "scipy", marker = "extra == 'clicks'", specifier = ">=1.13" },
     { name = "scipy", marker = "extra == 'rdm'", specifier = ">=1.13" },
     { name = "scipy", marker = "extra == 'visual'", specifier = ">=1.13" },
