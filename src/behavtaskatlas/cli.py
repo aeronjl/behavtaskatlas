@@ -3397,6 +3397,30 @@ def _model_fit_id(variant_id: str, finding_id: str) -> str:
     return f"model_fit.{variant_slug}.{finding_slug}"
 
 
+def _find_paired_chronometric(finding: Any, records: list[Any]) -> Any | None:
+    """Find a chronometric Finding with the same paper_id and matching
+    stratification (condition + subject_id) as the given psychometric
+    finding. Returns None if not found."""
+    from behavtaskatlas.models import Finding
+
+    if finding.curve.curve_type != "psychometric":
+        return None
+    target_condition = finding.stratification.condition or ""
+    target_subject = finding.stratification.subject_id or ""
+    for r in records:
+        if not isinstance(r, Finding):
+            continue
+        if r.curve.curve_type != "chronometric":
+            continue
+        if r.paper_id != finding.paper_id:
+            continue
+        cond = r.stratification.condition or ""
+        subj = r.stratification.subject_id or ""
+        if cond == target_condition and subj == target_subject:
+            return r
+    return None
+
+
 def _model_fit_yaml_path(out_dir: Path, fit_id: str) -> Path:
     return out_dir / f"{fit_id.removeprefix('model_fit.')}.yaml"
 
@@ -3411,6 +3435,7 @@ def _do_fit_one(
     import time
 
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+    from behavtaskatlas.model_fits import ddm as ddm_module
     from behavtaskatlas.model_fits import logistic as logistic_module
     from behavtaskatlas.model_fits import sdt as sdt_module
     from behavtaskatlas.models import (
@@ -3439,15 +3464,21 @@ def _do_fit_one(
     if finding is None:
         raise ValueError(f"Unknown Finding id: {finding_id!r}")
 
+    paired_chronometric: Finding | None = None
+    if variant_id == ddm_module.VARIANT_ID:
+        paired_chronometric = _find_paired_chronometric(finding, records)
+
     fitter_by_variant = {
-        logistic_module.VARIANT_ID: logistic_module.fit,
-        sdt_module.VARIANT_ID: sdt_module.fit,
+        logistic_module.VARIANT_ID: lambda f: logistic_module.fit(f),
+        sdt_module.VARIANT_ID: lambda f: sdt_module.fit(f),
+        ddm_module.VARIANT_ID: lambda f: ddm_module.fit(
+            f, chronometric=paired_chronometric
+        ),
     }
     fitter = fitter_by_variant.get(variant_id)
     if fitter is None:
         raise ValueError(
-            f"No registered fitter for variant {variant_id!r}; "
-            "step 4 covers logistic-4param + sdt-2afc only."
+            f"No registered fitter for variant {variant_id!r}."
         )
 
     started = time.time()
@@ -3469,12 +3500,15 @@ def _do_fit_one(
         **result["fit_method"],
         "duration_seconds": float(elapsed),
     }
+    finding_ids_for_record = [finding_id]
+    if paired_chronometric is not None:
+        finding_ids_for_record.append(paired_chronometric.id)
     fit_record = ModelFit(
         object_type="model_fit",
         schema_version="0.1.0",
         id=fit_id,
         variant_id=variant_id,
-        finding_ids=[finding_id],
+        finding_ids=finding_ids_for_record,
         parameters={k: float(v) for k, v in result["parameters"].items()},
         quality={k: float(v) for k, v in result["quality"].items()},
         predictions=predictions_curve,
@@ -3522,6 +3556,7 @@ def _fit_stale_models(
     curve_types: tuple[str, ...],
     out_dir: Path,
 ) -> int:
+    from behavtaskatlas.model_fits import ddm as ddm_module
     from behavtaskatlas.model_fits import logistic as logistic_module
     from behavtaskatlas.model_fits import sdt as sdt_module
     from behavtaskatlas.models import Finding, ModelFit, ModelVariant
@@ -3536,7 +3571,11 @@ def _fit_stale_models(
         for fid in r.finding_ids
     }
 
-    fitter_variants = {logistic_module.VARIANT_ID, sdt_module.VARIANT_ID}
+    fitter_variants = {
+        logistic_module.VARIANT_ID,
+        sdt_module.VARIANT_ID,
+        ddm_module.VARIANT_ID,
+    }
     if variant_filter is not None:
         fitter_variants = {variant_filter}
     eligible = [v for v in variants if v.id in fitter_variants]
@@ -3550,6 +3589,17 @@ def _fit_stale_models(
                 continue
             if (variant.id, finding.id) in existing_fits:
                 n_skipped += 1
+                continue
+            # DDM anchors on psychometric findings only; chronometric is
+            # picked up as the paired finding inside _do_fit_one.
+            if (
+                variant.id == ddm_module.VARIANT_ID
+                and finding.curve.curve_type != "psychometric"
+            ):
+                continue
+            if variant.id == ddm_module.VARIANT_ID and (
+                _find_paired_chronometric(finding, records) is None
+            ):
                 continue
             try:
                 path = _do_fit_one(

@@ -334,16 +334,22 @@ def audit_model_fits(
             # produce the curve that was committed? It only fires if the
             # variant's forward implementation, the parameters, or the
             # finding's x grid have changed since the fit was recorded.
-            recorded = {
-                p.x: p.y for p in (fit.predictions.points if fit.predictions else [])
-            }
+            # ModelFit.predictions holds at most one curve, so only the
+            # finding whose curve_type matches that curve participates in
+            # the consistency check; secondary findings (e.g. the
+            # chronometric paired with a DDM fit) report GoF only.
             consistency_diffs: list[float] = []
-            for pred in predicted:
-                if pred.x in recorded:
-                    diff = abs(pred.y - recorded[pred.x])
-                    consistency_diffs.append(diff)
-                    if diff > max_diff_for_fit:
-                        max_diff_for_fit = diff
+            if (
+                fit.predictions is not None
+                and fit.predictions.curve_type == finding.curve.curve_type
+            ):
+                recorded = {p.x: p.y for p in fit.predictions.points}
+                for pred in predicted:
+                    if pred.x in recorded:
+                        diff = abs(pred.y - recorded[pred.x])
+                        consistency_diffs.append(diff)
+                        if diff > max_diff_for_fit:
+                            max_diff_for_fit = diff
 
             # Goodness-of-fit (informational only): forward(params) vs
             # the observed finding points.
