@@ -26,6 +26,9 @@ finding_ids:
   - finding.walsh-2024-prior-cue.psychometric.cue-invalid
   - finding.walsh-2024-prior-cue.psychometric.cue-neutral
   - finding.walsh-2024-prior-cue.psychometric.cue-valid
+  - finding.walsh-2024-prior-cue.chronometric.cue-invalid
+  - finding.walsh-2024-prior-cue.chronometric.cue-neutral
+  - finding.walsh-2024-prior-cue.chronometric.cue-valid
   - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-a
   - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-b
   - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-c

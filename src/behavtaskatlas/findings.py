@@ -893,6 +893,7 @@ def build_comparisons_index(
             question=c.question,
             framing=c.framing,
             finding_ids=list(c.finding_ids),
+            model_fit_ids=list(c.model_fit_ids),
             color_by=c.color_by,
             hint=c.hint,
             display_order=c.display_order,

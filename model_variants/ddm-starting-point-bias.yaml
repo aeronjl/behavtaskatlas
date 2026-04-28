@@ -1,0 +1,37 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.ddm-starting-point-bias
+family_id: model_family.drift-diffusion
+name: DDM with starting-point bias (k, a, t0, z)
+description: >
+  Four-parameter DDM with the starting point z free in (0, 1). z = 0.5
+  is unbiased; z > 0.5 nudges the accumulator toward the upper bound
+  (right) before evidence arrives. This is one of the two canonical
+  ways a prior cue could enter a DDM in the Walsh prior-cue paradigm;
+  the alternative is drift-bias (separate variant). Drift bias and
+  lapse stay fixed.
+free_parameters:
+  - drift_per_unit_evidence
+  - boundary
+  - non_decision_time
+  - starting_point
+fixed_parameters:
+  drift_bias: 0.0
+  lapse: 0.0
+requires:
+  - stimulus_value
+  - choice_lr
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Companion to model_variant.ddm-drift-bias; both four-parameter
+    DDMs share the same data requirements and free k, a, t0. The two
+    differ only in whether the prior cue acts as a starting-point
+    shift or a drift offset. AIC/BIC comparison between the fits
+    arbitrates the bias-locus question.

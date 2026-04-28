@@ -3468,13 +3468,24 @@ def _do_fit_one(
         raise ValueError(f"Unknown Finding id: {finding_id!r}")
 
     paired_chronometric: Finding | None = None
-    if variant_id == ddm_module.VARIANT_ID:
+    ddm_variants = (
+        ddm_module.VARIANT_VANILLA,
+        ddm_module.VARIANT_Z_BIAS,
+        ddm_module.VARIANT_V_BIAS,
+    )
+    if variant_id in ddm_variants:
         paired_chronometric = _find_paired_chronometric(finding, records)
 
     fitter_by_variant = {
         logistic_module.VARIANT_ID: lambda f: logistic_module.fit(f),
         sdt_module.VARIANT_ID: lambda f: sdt_module.fit(f),
-        ddm_module.VARIANT_ID: lambda f: ddm_module.fit(
+        ddm_module.VARIANT_VANILLA: lambda f: ddm_module.fit(
+            f, chronometric=paired_chronometric
+        ),
+        ddm_module.VARIANT_Z_BIAS: lambda f: ddm_module.fit_z_bias(
+            f, chronometric=paired_chronometric
+        ),
+        ddm_module.VARIANT_V_BIAS: lambda f: ddm_module.fit_v_bias(
             f, chronometric=paired_chronometric
         ),
     }
@@ -3574,10 +3585,15 @@ def _fit_stale_models(
         for fid in r.finding_ids
     }
 
+    ddm_variants_set = {
+        ddm_module.VARIANT_VANILLA,
+        ddm_module.VARIANT_Z_BIAS,
+        ddm_module.VARIANT_V_BIAS,
+    }
     fitter_variants = {
         logistic_module.VARIANT_ID,
         sdt_module.VARIANT_ID,
-        ddm_module.VARIANT_ID,
+        *ddm_variants_set,
     }
     if variant_filter is not None:
         fitter_variants = {variant_filter}
@@ -3596,11 +3612,11 @@ def _fit_stale_models(
             # DDM anchors on psychometric findings only; chronometric is
             # picked up as the paired finding inside _do_fit_one.
             if (
-                variant.id == ddm_module.VARIANT_ID
+                variant.id in ddm_variants_set
                 and finding.curve.curve_type != "psychometric"
             ):
                 continue
-            if variant.id == ddm_module.VARIANT_ID and (
+            if variant.id in ddm_variants_set and (
                 _find_paired_chronometric(finding, records) is None
             ):
                 continue

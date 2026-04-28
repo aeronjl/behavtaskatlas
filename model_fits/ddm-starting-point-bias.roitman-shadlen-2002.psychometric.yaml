@@ -1,22 +1,23 @@
 object_type: model_fit
 schema_version: 0.1.0
-id: model_fit.ddm-vanilla.roitman-shadlen-2002.psychometric
-variant_id: model_variant.ddm-vanilla
+id: model_fit.ddm-starting-point-bias.roitman-shadlen-2002.psychometric
+variant_id: model_variant.ddm-starting-point-bias
 finding_ids:
 - finding.roitman-shadlen-2002.psychometric
 - finding.roitman-shadlen-2002.chronometric
 parameters:
-  drift_per_unit_evidence: 0.19392001031941364
-  boundary: 1.0573886803355972
+  drift_per_unit_evidence: 0.1939693334290996
+  boundary: 1.0574642479553775
   non_decision_time: 0.41
+  starting_point: 0.5089320916878161
 parameter_uncertainty: {}
 quality:
-  log_likelihood: -2183.6898591159943
-  aic: 4373.379718231989
-  bic: 4393.551852469849
+  log_likelihood: -2183.107819544182
+  aic: 4374.215639088364
+  bic: 4401.111818072178
   n_trials: 6149.0
-  n_free_params: 3.0
-  chronometric_max_residual_s: 0.13148229467453598
+  n_free_params: 4.0
+  chronometric_max_residual_s: 0.13144234107404196
   rt_sigma_assumed_s: 0.15035469637567767
 predictions:
   curve_type: psychometric
@@ -26,44 +27,44 @@ predictions:
   points:
   - x: -51.2
     n: 516
-    y: 2.757703060774596e-05
+    y: 3.3154401493794714e-05
   - x: -25.6
     n: 511
-    y: 0.005224022371221397
+    y: 0.005730725362987756
   - x: -12.8
     n: 509
-    y: 0.06757031750721547
+    y: 0.07101162105510037
   - x: -6.4
     n: 512
-    y: 0.21210014110176237
+    y: 0.21891188721819194
   - x: -3.2
     n: 516
-    y: 0.3416035876027535
+    y: 0.34992605168331287
   - x: 0.0
     n: 1019
-    y: 0.5
+    y: 0.5089320916878161
   - x: 3.2
     n: 512
-    y: 0.6583964123972466
+    y: 0.6667174677446736
   - x: 6.4
     n: 513
-    y: 0.7878998588982377
+    y: 0.7946949609059918
   - x: 12.8
     n: 514
-    y: 0.9324296824927845
+    y: 0.9358185621293466
   - x: 25.6
     n: 515
-    y: 0.9947759776287786
+    y: 0.9952542774846294
   - x: 51.2
     n: 512
-    y: 0.9999724229693923
+    y: 0.999977218503681
 fit_method:
   type: scipy.optimize.minimize
   options:
     method: L-BFGS-B
     bounds: see code
     loss: binomial NLL + Gaussian RT chi-squared
-  duration_seconds: 0.0031049251556396484
+  duration_seconds: 0.004299163818359375
 curation_status: data-linked
 provenance:
   curators:
@@ -72,5 +73,5 @@ provenance:
   updated: '2026-04-28'
   fit_commit: 10e1c18
   fit_dirty: true
-  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-vanilla;
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-starting-point-bias;
     success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

@@ -148,9 +148,10 @@ const aggregateStats = {
 };
 
 const featuredComparison = comparisons.comparisons[0] ?? null;
+const featuredFindingIds = ((featuredComparison?.finding_ids ?? []) as string[]);
 const featuredFindings = featuredComparison
   ? (findings.findings as FindingsEntry[]).filter((f) =>
-      featuredComparison.finding_ids.includes(f.finding_id),
+      featuredFindingIds.includes(f.finding_id),
     )
   : [];
 

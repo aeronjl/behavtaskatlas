@@ -118,6 +118,7 @@ def validate_repository(root: Path) -> ValidationReport:
     model_family_ids = {r.id for r in records if isinstance(r, ModelFamily)}
     model_family_by_id = {r.id: r for r in records if isinstance(r, ModelFamily)}
     model_variant_by_id = {r.id: r for r in records if isinstance(r, ModelVariant)}
+    model_fit_ids = {r.id for r in records if isinstance(r, ModelFit)}
     findings_by_paper: dict[str, list[Finding]] = {}
     finding_ids = set()
     for record in records:
@@ -248,11 +249,29 @@ def validate_repository(root: Path) -> ValidationReport:
                         )
                     )
                 seen_local.add(fid)
-            if len(record.finding_ids) < 2:
+            seen_fits: set[str] = set()
+            for mid in record.model_fit_ids:
+                if mid not in model_fit_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path, f"Unknown model_fit_id {mid!r} in comparison"
+                        )
+                    )
+                if mid in seen_fits:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"Duplicate model_fit_id {mid!r} in comparison",
+                        )
+                    )
+                seen_fits.add(mid)
+            total_refs = len(record.finding_ids) + len(record.model_fit_ids)
+            if total_refs < 2:
                 issues.append(
                     ValidationIssue(
                         path,
-                        "Comparison must reference at least two findings",
+                        "Comparison must reference at least two findings or "
+                        "model fits",
                     )
                 )
 

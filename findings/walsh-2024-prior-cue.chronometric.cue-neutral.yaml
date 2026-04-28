@@ -1,0 +1,82 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.walsh-2024-prior-cue.chronometric.cue-neutral
+paper_id: paper.walsh-2024-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+slice_id: slice.human-visual-contrast-prior-cue
+source_data_level: processed-trial
+n_trials: 10960
+stratification:
+  condition: cue=neutral
+curve:
+  curve_type: chronometric
+  x_label: Absolute target-distractor contrast
+  x_units: percentage points
+  y_label: median_rt_s
+  points:
+  - x: 3.0000000000000027
+    n: 240
+    y: 0.704932111139442
+  - x: 4.0000000000000036
+    n: 225
+    y: 0.8499141681058973
+  - x: 6.000000000000005
+    n: 604
+    y: 0.91991951971454
+  - x: 7.000000000000006
+    n: 1075
+    y: 0.9098935636175156
+  - x: 8.000000000000007
+    n: 691
+    y: 0.7093401885722415
+  - x: 10.000000000000009
+    n: 1829
+    y: 0.8799269024220848
+  - x: 11.00000000000001
+    n: 147
+    y: 0.779930639802842
+  - x: 12.00000000000001
+    n: 1249
+    y: 0.7699075509262912
+  - x: 12.99999999999999
+    n: 200
+    y: 0.8599261900390047
+  - x: 13.99999999999999
+    n: 1592
+    y: 0.9799388557539714
+  - x: 14.999999999999991
+    n: 673
+    y: 0.8299251512016781
+  - x: 15.999999999999993
+    n: 472
+    y: 0.8899050998679741
+  - x: 16.999999999999993
+    n: 281
+    y: 0.8399082109090159
+  - x: 17.999999999999993
+    n: 382
+    y: 1.079915866961528
+  - x: 19.999999999999996
+    n: 380
+    y: 1.1399031530595494
+  - x: 21.999999999999996
+    n: 526
+    y: 0.8499243021651637
+  - x: 25.0
+    n: 127
+    y: 1.1599069919629983
+  - x: 26.0
+    n: 129
+    y: 1.0799698867012921
+  - x: 28.000000000000004
+    n: 138
+    y: 0.7449043442979928
+extraction_method: harmonized-pipeline
+extraction_notes: Median response time per |stimulus_value| from harmonized trials,
+  restricted to cue=neutral; bins with <5 trials dropped.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28

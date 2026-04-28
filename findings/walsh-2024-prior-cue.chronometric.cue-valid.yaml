@@ -1,0 +1,82 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.walsh-2024-prior-cue.chronometric.cue-valid
+paper_id: paper.walsh-2024-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+slice_id: slice.human-visual-contrast-prior-cue
+source_data_level: processed-trial
+n_trials: 44255
+stratification:
+  condition: cue=valid
+curve:
+  curve_type: chronometric
+  x_label: Absolute target-distractor contrast
+  x_units: percentage points
+  y_label: median_rt_s
+  points:
+  - x: 3.0000000000000027
+    n: 886
+    y: 0.8099220578351378
+  - x: 4.0000000000000036
+    n: 832
+    y: 0.879907639024168
+  - x: 6.000000000000005
+    n: 2351
+    y: 0.8899006025303606
+  - x: 7.000000000000006
+    n: 4274
+    y: 0.8498780963018362
+  - x: 8.000000000000007
+    n: 2764
+    y: 0.7299306548957247
+  - x: 10.000000000000009
+    n: 7554
+    y: 0.849886850409348
+  - x: 11.00000000000001
+    n: 568
+    y: 0.7799173581911418
+  - x: 12.00000000000001
+    n: 5189
+    y: 0.6796664315370435
+  - x: 12.99999999999999
+    n: 801
+    y: 0.8398940845781908
+  - x: 13.99999999999999
+    n: 6489
+    y: 0.9399276337653646
+  - x: 14.999999999999991
+    n: 2723
+    y: 0.8199251874229958
+  - x: 15.999999999999993
+    n: 1892
+    y: 0.8198966990930785
+  - x: 16.999999999999993
+    n: 1114
+    y: 0.7799241248826547
+  - x: 17.999999999999993
+    n: 1545
+    y: 1.059940860272036
+  - x: 19.999999999999996
+    n: 1522
+    y: 1.089913598363637
+  - x: 21.999999999999996
+    n: 2190
+    y: 0.8297508087034657
+  - x: 25.0
+    n: 501
+    y: 1.0199324928034912
+  - x: 26.0
+    n: 515
+    y: 0.9899529766462365
+  - x: 28.000000000000004
+    n: 545
+    y: 0.7998965247970773
+extraction_method: harmonized-pipeline
+extraction_notes: Median response time per |stimulus_value| from harmonized trials,
+  restricted to cue=valid; bins with <5 trials dropped.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28

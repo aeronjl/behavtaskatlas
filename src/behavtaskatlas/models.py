@@ -681,8 +681,9 @@ class Comparison(StrictModel):
     title: str
     question: str
     framing: str
-    finding_ids: list[str]
-    color_by: Literal["paper", "condition", "curve_type"] = "paper"
+    finding_ids: list[str] = Field(default_factory=list)
+    model_fit_ids: list[str] = Field(default_factory=list)
+    color_by: Literal["paper", "condition", "curve_type", "variant"] = "paper"
     hint: str
     display_order: int = 100
     curation_status: str
@@ -694,8 +695,9 @@ class ComparisonsIndexEntry(StrictModel):
     title: str
     question: str
     framing: str
-    finding_ids: list[str]
-    color_by: Literal["paper", "condition", "curve_type"]
+    finding_ids: list[str] = Field(default_factory=list)
+    model_fit_ids: list[str] = Field(default_factory=list)
+    color_by: Literal["paper", "condition", "curve_type", "variant"]
     hint: str
     display_order: int
 

@@ -1,0 +1,36 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.ddm-drift-bias
+family_id: model_family.drift-diffusion
+name: DDM with drift bias (k, a, t0, v0)
+description: >
+  Four-parameter DDM with the drift bias v0 free. Drift on a trial of
+  signed evidence x is v(x) = k·x + v0; v0 = 0 is unbiased. v0 > 0
+  nudges decisions toward the upper bound (right) by adding a constant
+  drift offset. The other canonical locus for a prior cue's effect in
+  the DDM (alternative: starting-point bias). Starting point and lapse
+  stay fixed.
+free_parameters:
+  - drift_per_unit_evidence
+  - boundary
+  - non_decision_time
+  - drift_bias
+fixed_parameters:
+  starting_point: 0.5
+  lapse: 0.0
+requires:
+  - stimulus_value
+  - choice_lr
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Companion to model_variant.ddm-starting-point-bias. Together the
+    pair lets the atlas curate the cue-locus question (does a prior
+    cue shift z or v0?) as a model comparison rather than a
+    parameter-naming dispute.

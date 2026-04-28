@@ -1,0 +1,43 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.walsh-bias-locus
+title: Walsh prior cue — starting-point bias vs drift bias
+question: Does the Walsh prior cue act on the DDM starting point or on the drift?
+framing: >
+  Walsh et al. 2024 manipulate prior probability via cues that either
+  match the upcoming target side (cue=valid), give no information
+  (cue=neutral), or actively mislead (cue=invalid). Two canonical
+  ways the cue could enter a DDM are (a) shifting the starting point
+  z toward the favored boundary, or (b) adding a constant drift
+  offset v0 in the favored direction. We fit both four-parameter
+  variants to each pooled per-cue psychometric and compare AICs.
+  Lower AIC = better-supported variant for that cue.
+finding_ids: []
+model_fit_ids:
+  - model_fit.ddm-starting-point-bias.walsh-2024-prior-cue.psychometric.cue-valid
+  - model_fit.ddm-drift-bias.walsh-2024-prior-cue.psychometric.cue-valid
+  - model_fit.ddm-starting-point-bias.walsh-2024-prior-cue.psychometric.cue-neutral
+  - model_fit.ddm-drift-bias.walsh-2024-prior-cue.psychometric.cue-neutral
+  - model_fit.ddm-starting-point-bias.walsh-2024-prior-cue.psychometric.cue-invalid
+  - model_fit.ddm-drift-bias.walsh-2024-prior-cue.psychometric.cue-invalid
+color_by: variant
+hint: >
+  Current Δ AIC: cue-valid favours starting-point bias (Δ ≈ 84),
+  cue-neutral favours drift bias (Δ ≈ 46), cue-invalid is essentially
+  a tie (Δ ≈ 0). The cue-dependent bias-locus is itself the curated
+  result; it suggests the prior-cue effect isn't a single mechanism
+  in this paradigm. Caveats: marginal mean-RT prediction uses the
+  unbiased EZ-DDM closed form and so under-uses RT for distinguishing
+  z-bias vs v-bias.
+display_order: 30
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    First comparison built on model_fit_ids rather than finding_ids;
+    introduced alongside the ddm-starting-point-bias and ddm-drift-bias
+    variants. The AIC verdict per cue is computed live in the audit at
+    site-index time and reflected on /compare.

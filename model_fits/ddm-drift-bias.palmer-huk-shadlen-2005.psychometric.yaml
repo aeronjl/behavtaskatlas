@@ -1,22 +1,23 @@
 object_type: model_fit
 schema_version: 0.1.0
-id: model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric
-variant_id: model_variant.ddm-vanilla
+id: model_fit.ddm-drift-bias.palmer-huk-shadlen-2005.psychometric
+variant_id: model_variant.ddm-drift-bias
 finding_ids:
 - finding.palmer-huk-shadlen-2005.psychometric
 - finding.palmer-huk-shadlen-2005.chronometric
 parameters:
-  drift_per_unit_evidence: 0.23939003145755727
-  boundary: 0.998185637458163
-  non_decision_time: 0.40909902761279054
+  drift_per_unit_evidence: 0.2600512530383422
+  boundary: 0.916986661701755
+  non_decision_time: 0.40676301596715103
+  drift_bias: 0.007867492902884207
 parameter_uncertainty: {}
 quality:
-  log_likelihood: -1116.121799105577
-  aic: 2238.243598211154
-  bic: 2256.6142717163393
+  log_likelihood: -1115.5868033556467
+  aic: 2239.1736067112934
+  bic: 2263.66783805154
   n_trials: 3373.0
-  n_free_params: 3.0
-  chronometric_max_residual_s: 0.13980733068026963
+  n_free_params: 4.0
+  chronometric_max_residual_s: 0.044423927864668755
   rt_sigma_assumed_s: 0.1454861581808463
 predictions:
   curve_type: psychometric
@@ -26,44 +27,44 @@ predictions:
   points:
   - x: -51.2
     n: 283
-    y: 4.859688354668971e-06
+    y: 5.0197853207379265e-06
   - x: -25.6
     n: 285
-    y: 0.0021996264188930523
+    y: 0.0022435450385646055
   - x: -12.8
     n: 278
-    y: 0.0448462286928803
+    y: 0.045428677114542
   - x: -6.4
     n: 284
-    y: 0.17809372322066644
+    y: 0.1796158638583703
   - x: -3.2
     n: 279
-    y: 0.31763577351255795
+    y: 0.3195438414753004
   - x: -0.0
     n: 560
-    y: 0.5
+    y: 0.501803588690586
   - x: 3.2
     n: 285
-    y: 0.682364226487442
+    y: 0.6835852850974686
   - x: 6.4
     n: 279
-    y: 0.8219062767793336
+    y: 0.8225004535812267
   - x: 12.8
     n: 276
-    y: 0.9551537713071196
+    y: 0.9551929374282209
   - x: 25.6
     n: 282
-    y: 0.9978003735811071
+    y: 0.9977885230644328
   - x: 51.2
     n: 282
-    y: 0.9999951403116453
+    y: 0.9999950521236328
 fit_method:
   type: scipy.optimize.minimize
   options:
     method: L-BFGS-B
     bounds: see code
     loss: binomial NLL + Gaussian RT chi-squared
-  duration_seconds: 0.0057299137115478516
+  duration_seconds: 0.007789134979248047
 curation_status: data-linked
 provenance:
   curators:
@@ -72,5 +73,5 @@ provenance:
   updated: '2026-04-28'
   fit_commit: 10e1c18
   fit_dirty: true
-  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-vanilla;
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-drift-bias;
     success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

@@ -1,0 +1,158 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.ddm-drift-bias.walsh-2024-prior-cue.psychometric.cue-invalid
+variant_id: model_variant.ddm-drift-bias
+finding_ids:
+- finding.walsh-2024-prior-cue.psychometric.cue-invalid
+- finding.walsh-2024-prior-cue.chronometric.cue-invalid
+parameters:
+  drift_per_unit_evidence: 0.005005591739334137
+  boundary: 0.7034783532356087
+  non_decision_time: 0.744627589875563
+  drift_bias: 1.2440068193320761
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -6664.298125993829
+  aic: 13336.596251987658
+  bic: 13365.813395926933
+  n_trials: 10985.0
+  n_free_params: 4.0
+  chronometric_max_residual_s: 0.31370163589764877
+  rt_sigma_assumed_s: 0.123401843671206
+predictions:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -28.000000000000004
+    n: 68
+    y: 0.684932794535721
+  - x: -26.0
+    n: 63
+    y: 0.6864506145093471
+  - x: -25.0
+    n: 65
+    y: 0.6872080330349446
+  - x: -21.999999999999996
+    n: 269
+    y: 0.6894742900780589
+  - x: -19.999999999999996
+    n: 188
+    y: 0.6909801024791115
+  - x: -17.999999999999993
+    n: 192
+    y: 0.6924818696837143
+  - x: -16.999999999999993
+    n: 148
+    y: 0.6932312298207419
+  - x: -15.999999999999993
+    n: 243
+    y: 0.6939795708779328
+  - x: -14.999999999999991
+    n: 337
+    y: 0.6947268903025582
+  - x: -13.99999999999999
+    n: 806
+    y: 0.6954731855615056
+  - x: -12.99999999999999
+    n: 102
+    y: 0.6962184541412823
+  - x: -12.00000000000001
+    n: 661
+    y: 0.696962693548019
+  - x: -11.00000000000001
+    n: 71
+    y: 0.697705901307474
+  - x: -10.000000000000009
+    n: 954
+    y: 0.6984480749650345
+  - x: -8.000000000000007
+    n: 340
+    y: 0.6999293102541733
+  - x: -7.000000000000006
+    n: 546
+    y: 0.7006683670746819
+  - x: -6.000000000000005
+    n: 308
+    y: 0.7014063801711558
+  - x: -4.0000000000000036
+    n: 111
+    y: 0.702879265785795
+  - x: -3.0000000000000027
+    n: 124
+    y: 0.7036141336499268
+  - x: 3.0000000000000027
+    n: 103
+    y: 0.7080011481180952
+  - x: 4.0000000000000036
+    n: 101
+    y: 0.7087285976065277
+  - x: 6.000000000000005
+    n: 283
+    y: 0.7101802887440956
+  - x: 7.000000000000006
+    n: 533
+    y: 0.710904526131196
+  - x: 8.000000000000007
+    n: 342
+    y: 0.7116276885884135
+  - x: 10.000000000000009
+    n: 895
+    y: 0.7130707804041756
+  - x: 11.00000000000001
+    n: 69
+    y: 0.7137907056570261
+  - x: 12.00000000000001
+    n: 609
+    y: 0.7145095477685818
+  - x: 12.99999999999999
+    n: 96
+    y: 0.7152273047347585
+  - x: 13.99999999999999
+    n: 793
+    y: 0.7159439745709532
+  - x: 14.999999999999991
+    n: 336
+    y: 0.7166595553120296
+  - x: 15.999999999999993
+    n: 232
+    y: 0.7173740450123043
+  - x: 16.999999999999993
+    n: 137
+    y: 0.7180874417455293
+  - x: 17.999999999999993
+    n: 191
+    y: 0.7187997436048776
+  - x: 19.999999999999996
+    n: 190
+    y: 0.7202210551716379
+  - x: 21.999999999999996
+    n: 276
+    y: 0.721637964845726
+  - x: 25.0
+    n: 63
+    y: 0.7237550440485816
+  - x: 26.0
+    n: 64
+    y: 0.724458520595795
+  - x: 28.000000000000004
+    n: 76
+    y: 0.7258621384834998
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: binomial NLL + Gaussian RT chi-squared
+  duration_seconds: 0.0054569244384765625
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 10e1c18
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-drift-bias;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'
