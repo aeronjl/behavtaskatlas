@@ -1,0 +1,113 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { findings } from "../../lib/findings";
+import { catalog, slugForId } from "../../lib/data";
+
+type Entry = (typeof findings.findings)[number];
+
+const findingsByPaper = new Map<string, Entry[]>();
+for (const entry of findings.findings as Entry[]) {
+  if (!findingsByPaper.has(entry.paper_id)) findingsByPaper.set(entry.paper_id, []);
+  findingsByPaper.get(entry.paper_id)!.push(entry);
+}
+
+const paperIds = Array.from(findingsByPaper.keys());
+
+export function getStaticPaths() {
+  const ids = new Set<string>();
+  for (const entry of (findings.findings as Entry[])) ids.add(entry.paper_id);
+  return Array.from(ids).map((id) => ({
+    params: { id: id.replace(/^paper\./, "") },
+    props: { paperId: id },
+  }));
+}
+
+interface Props {
+  paperId: string;
+}
+
+const { paperId } = Astro.props as Props;
+const paperEntries = findingsByPaper.get(paperId) ?? [];
+const first = paperEntries[0];
+const protocolEntries = Array.from(
+  new Set(paperEntries.map((e) => e.protocol_id)),
+).map((id) => ({
+  protocol_id: id,
+  protocol_name:
+    paperEntries.find((e) => e.protocol_id === id)?.protocol_name ?? id,
+}));
+---
+
+<BaseLayout
+  title={first ? `${first.paper_citation} · Paper` : "Paper · behavtaskatlas"}
+  description={first
+    ? `${paperEntries.length} curated findings from ${first.paper_citation}.`
+    : "Paper detail page"}
+>
+  <header class="mb-6">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Paper</p>
+    <h1 class="text-2xl font-semibold tracking-tight">
+      {first?.paper_citation ?? paperId}
+    </h1>
+    {
+      first?.paper_doi ? (
+        <p class="mt-2 text-sm">
+          DOI: <a class="text-accent" href={`https://doi.org/${first.paper_doi}`}>
+            {first.paper_doi}
+          </a>
+        </p>
+      ) : null
+    }
+    <p class="mt-3 text-sm text-slate-600 font-mono">{paperId}</p>
+  </header>
+
+  <section class="mb-8">
+    <h2 class="mb-2 text-sm font-semibold text-slate-700">Linked protocols</h2>
+    <ul class="space-y-1 text-sm">
+      {
+        protocolEntries.map((p) => (
+          <li>
+            <a href={`/protocols/${slugForId(p.protocol_id)}`}>{p.protocol_name}</a>
+            <span class="ml-2 text-xs text-slate-500 font-mono">
+              {p.protocol_id}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="mb-2 text-sm font-semibold text-slate-700">Findings</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Finding</th>
+            <th class="px-3 py-2">Curve</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">Source level</th>
+            <th class="px-3 py-2">Stratification</th>
+            <th class="px-3 py-2 text-right">Points</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {
+            paperEntries.map((e) => (
+              <tr>
+                <td class="px-3 py-2 font-mono text-xs">{e.finding_id}</td>
+                <td class="px-3 py-2">{e.curve_type}</td>
+                <td class="px-3 py-2">{e.species ?? "—"}</td>
+                <td class="px-3 py-2">{e.source_data_level}</td>
+                <td class="px-3 py-2 text-xs text-slate-600">
+                  {e.stratification.condition ?? "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{e.points.length}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
