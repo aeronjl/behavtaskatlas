@@ -1,7 +1,11 @@
 <script lang="ts">
   import { EditorState } from "@codemirror/state";
   import { EditorView, keymap } from "@codemirror/view";
-  import { python } from "@codemirror/lang-python";
+  import { python, pythonLanguage } from "@codemirror/lang-python";
+  import {
+    type Completion,
+    type CompletionContext,
+  } from "@codemirror/autocomplete";
   import { basicSetup } from "codemirror";
 
   type Status =
@@ -37,6 +41,143 @@
 
   let editorContainer: HTMLDivElement | undefined = $state();
   let editorView: EditorView | null = null;
+
+  // Column names from the CSV header, populated after the first successful
+  // fetch. Drives the df["…"] column autocomplete.
+  let csvColumns: string[] = $state([]);
+
+  const PANDAS_API: Completion[] = [
+    { label: "DataFrame", type: "class" },
+    { label: "Series", type: "class" },
+    { label: "read_csv", type: "function" },
+    { label: "to_numeric", type: "function" },
+    { label: "to_datetime", type: "function" },
+    { label: "concat", type: "function" },
+    { label: "merge", type: "function" },
+  ].map((c) => ({ ...c, label: `pd.${c.label}` }));
+
+  const NUMPY_API: Completion[] = [
+    "array",
+    "asarray",
+    "arange",
+    "linspace",
+    "where",
+    "mean",
+    "median",
+    "std",
+    "var",
+    "min",
+    "max",
+    "isnan",
+    "nan",
+    "log",
+    "log2",
+    "log10",
+    "exp",
+    "sqrt",
+    "abs",
+  ].map((name) => ({ label: `np.${name}`, type: "function" }));
+
+  const PLT_API: Completion[] = [
+    "subplots",
+    "plot",
+    "scatter",
+    "hist",
+    "bar",
+    "errorbar",
+    "axhline",
+    "axvline",
+    "xlabel",
+    "ylabel",
+    "title",
+    "legend",
+    "grid",
+    "figure",
+    "show",
+    "savefig",
+  ].map((name) => ({ label: `plt.${name}`, type: "function" }));
+
+  const DATAFRAME_METHODS: Completion[] = [
+    "head",
+    "tail",
+    "shape",
+    "columns",
+    "index",
+    "dtypes",
+    "describe",
+    "info",
+    "groupby",
+    "pivot",
+    "pivot_table",
+    "merge",
+    "apply",
+    "map",
+    "mean",
+    "median",
+    "sum",
+    "count",
+    "min",
+    "max",
+    "std",
+    "var",
+    "value_counts",
+    "unique",
+    "nunique",
+    "dropna",
+    "fillna",
+    "astype",
+    "loc",
+    "iloc",
+    "to_string",
+    "to_dict",
+    "query",
+    "sort_values",
+    "reset_index",
+    "set_index",
+    "isin",
+    "round",
+  ].map((name) => ({ label: name, type: "method" }));
+
+  const STATIC_API_COMPLETIONS: Completion[] = [
+    ...PANDAS_API,
+    ...NUMPY_API,
+    ...PLT_API,
+    ...DATAFRAME_METHODS,
+  ];
+
+  function pythonCompletions(context: CompletionContext) {
+    const line = context.state.doc.lineAt(context.pos);
+    const before = line.text.slice(0, context.pos - line.from);
+
+    // df["..." | df['...' — column name autocomplete from the CSV header.
+    const colMatch = before.match(/df\[\s*["']([^"']*)$/);
+    if (colMatch && csvColumns.length > 0) {
+      const partial = colMatch[1];
+      return {
+        from: context.pos - partial.length,
+        options: csvColumns.map((col) => ({
+          label: col,
+          type: "property",
+          boost: 1,
+        })),
+        validFor: /^[\w\- ]*$/,
+      };
+    }
+
+    // Otherwise, identifier completion using the static pandas/numpy/matplotlib
+    // API list.
+    const word = context.matchBefore(/[\w.]+/);
+    if (!word || (word.from === word.to && !context.explicit)) return null;
+    return {
+      from: word.from,
+      options: STATIC_API_COMPLETIONS,
+      validFor: /^[\w.]*$/,
+    };
+  }
+
+  const pythonCompletionExtension = pythonLanguage.data.of({
+    autocomplete: pythonCompletions,
+  });
 
   let pyodide: any = null;
   let pyodidePromise: Promise<any> | null = null;
@@ -93,6 +234,7 @@
         extensions: [
           basicSetup,
           python(),
+          pythonCompletionExtension,
           keymap.of([
             {
               key: "Mod-Enter",
@@ -167,6 +309,13 @@
       }
       const csvText = await response.text();
       py.globals.set("_csv_text", csvText);
+
+      // First line of the CSV is the column header; expose it for the
+      // df["…"] autocomplete.
+      const headerLine = csvText.split(/\r?\n/, 1)[0] ?? "";
+      if (headerLine) {
+        csvColumns = headerLine.split(",").map((col) => col.trim());
+      }
       status = "loading-packages";
       await py.loadPackagesFromImports(currentSnippet);
       status = "running";
