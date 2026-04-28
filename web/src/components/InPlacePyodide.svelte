@@ -284,6 +284,37 @@
     }
   }
 
+  // Persist user edits to sessionStorage so an accidental reload does not
+  // throw away in-progress work. We use sessionStorage rather than
+  // localStorage so a fresh visit on another day picks up the latest default
+  // snippet from the page rather than a possibly stale saved version.
+  const sessionKey = `behavtaskatlas:snippet:${trialsUrl}`;
+
+  $effect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    const saved = sessionStorage.getItem(sessionKey);
+    if (saved === null || saved === currentSnippet) return;
+    currentSnippet = saved;
+    if (editorView) {
+      editorView.dispatch({
+        changes: {
+          from: 0,
+          to: editorView.state.doc.length,
+          insert: saved,
+        },
+      });
+    }
+  });
+
+  $effect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    if (currentSnippet === pythonSnippet) {
+      sessionStorage.removeItem(sessionKey);
+    } else {
+      sessionStorage.setItem(sessionKey, currentSnippet);
+    }
+  });
+
   function indentSnippet(snippet: string): string {
     return snippet
       .split("\n")
