@@ -104,6 +104,149 @@ print("P(right) by prior block × signed contrast:")
 print(summary.pivot(index="signed_contrast", columns="prior_context", values="p_right").round(3).to_string())
 `,
   },
+  "slice.auditory-clicks": {
+    trialsUrl: "/auditory_clicks/batch_summary.csv",
+    title: "Auditory Clicks · per-rat batch summary",
+    description:
+      "Inspect the cross-rat aggregate batch summary. This slice is an aggregate across multiple Brody Lab rats, so the CSV is one row per rat (not per trial). Trial-level data lives in per-rat subdirectories that are not bundled into the public deploy.",
+    snippet: `# The auditory_clicks slice aggregates over multiple Brody Lab rats.
+# The CSV here is the per-rat batch summary; each row is one harmonized rat
+# session, not one trial. Trial-level rows are kept under per-rat
+# subdirectories and are not bundled into the public deploy.
+
+print("Per-rat batch summary:")
+print(
+    df[
+        [
+            "subject_id",
+            "task_type",
+            "n_trials",
+            "psychometric_summary_rows",
+            "evidence_kernel_analyzed_trials",
+        ]
+    ].to_string(index=False)
+)
+
+n_rats = len(df)
+total_trials = int(df["n_trials"].sum())
+print(f"\\nRats: {n_rats}")
+print(f"Total trials across all rats: {total_trials:,}")
+print(f"Mean trials per rat: {df['n_trials'].mean():.0f}")
+print(f"Task types: {sorted(df['task_type'].unique())}")
+`,
+  },
+  "slice.human-auditory-clicks-dbs": {
+    trialsUrl: "/human_auditory_clicks/london-dbs-poisson-clicks-mendeley/trials.csv",
+    title: "Human DBS Poisson Clicks · psychometric by DBS state",
+    description:
+      "Group London Mendeley trials by DBS condition (on/off) and signed click-count difference, then compute P(right).",
+    snippet: `# Group London DBS Poisson Clicks by DBS state and signed click difference.
+# df["prior_context"] is "dbs=off" or "dbs=on".
+# df["stimulus_value"] is the signed click-count difference (right positive).
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["click_diff"] = responded["stimulus_value"].astype(float)
+
+summary = (
+    responded.groupby(["prior_context", "click_diff"])
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+    }))
+    .reset_index()
+)
+print(f"Responded trials: {len(responded)} (of {len(df)})")
+print("\\nP(right) by DBS state × signed click difference:")
+print(
+    summary.pivot(index="click_diff", columns="prior_context", values="p_right")
+    .round(3)
+    .to_string()
+)
+`,
+  },
+  "slice.human-random-dot-motion": {
+    trialsUrl: "/human_random_dot_motion/palmer-huk-shadlen-cosmo2017/trials.csv",
+    title: "Human RDM · psychometric across observers",
+    description:
+      "Compute P(right) by signed motion coherence pooled across observers in the Palmer-Huk-Shadlen CoSMo2017 dataset.",
+    snippet: `# Palmer-Huk-Shadlen human RDM, signed coherence in df["stimulus_value"].
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["coh"] = responded["stimulus_value"].astype(float)
+
+summary = (
+    responded.groupby("coh")
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+        "median_rt_s": g["response_time"].astype(float).median(),
+    }))
+    .reset_index()
+)
+print(f"Responded trials: {len(responded)} (of {len(df)})")
+if "subject_id" in df.columns:
+    print(f"Observers: {sorted(df['subject_id'].dropna().unique())}")
+print("\\nPsychometric + chronometric pooled across observers:")
+print(summary.round(3).to_string(index=False))
+`,
+  },
+  "slice.human-visual-contrast-prior-cue": {
+    trialsUrl: "/human_visual_contrast/walsh-prior-cue-human-contrast-osf/trials.csv",
+    title: "Walsh Human Visual Contrast · psychometric by cue",
+    description:
+      "Group Walsh prior-cue trials by cue context and signed target-distractor contrast difference, then compute P(right). Note: the trials CSV for this slice is ~87 MB; the first fetch will be noticeably slow.",
+    snippet: `# Walsh prior-cue trials, df["prior_context"] is e.g. "cue=valid".
+# df["stimulus_value"] is signed target-distractor contrast difference.
+#
+# Heads up: this slice's trials.csv is ~87 MB. First run will be slow.
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["contrast"] = responded["stimulus_value"].astype(float)
+
+summary = (
+    responded.groupby(["prior_context", "contrast"])
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+    }))
+    .reset_index()
+)
+print(f"Responded trials: {len(responded)} (of {len(df)})")
+print("\\nP(right) by cue × signed contrast difference:")
+print(
+    summary.pivot(index="contrast", columns="prior_context", values="p_right")
+    .round(3)
+    .to_string()
+)
+`,
+  },
+  "slice.mouse-visual-contrast-unbiased": {
+    trialsUrl:
+      "/mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/trials.csv",
+    title: "Mouse trainingChoiceWorld · psychometric + chronometric",
+    description:
+      "One unbiased trainingChoiceWorld session: compute P(right) and median response time per signed contrast level.",
+    snippet: `# IBL trainingChoiceWorld session, df["stimulus_value"] is signed contrast %.
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["contrast"] = responded["stimulus_value"].astype(float)
+
+summary = (
+    responded.groupby("contrast")
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+        "median_rt_s": g["response_time"].astype(float).median(),
+    }))
+    .reset_index()
+)
+print(f"Subject: {df['subject_id'].iloc[0]}")
+print(f"Session: {df['session_id'].iloc[0]}")
+print(f"Responded trials: {len(responded)} (of {len(df)})")
+print("\\nPsychometric + chronometric:")
+print(summary.round(3).to_string(index=False))
+`,
+  },
   "slice.random-dot-motion": {
     trialsUrl: "/random_dot_motion/roitman-shadlen-pyddm/trials.csv",
     title: "Random-Dot Motion · psychometric (with plot)",
