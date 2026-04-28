@@ -1,0 +1,44 @@
+object_type: comparison
+schema_version: 0.1.0
+id: comparison.drift-across-species
+title: DDM drift rate across species (macaque vs human RDM)
+question: How does the per-unit-coherence drift rate k differ between macaque and human random-dot motion?
+framing: >
+  Roitman and Palmer fit the same canonical psychometric + chronometric
+  curves on the random-dot motion task, on the same x-axis (signed
+  motion coherence in percent), in different species. Vanilla DDM fits
+  recover three parameters per (paper, subject) — drift per unit
+  evidence (k), boundary separation (a), and non-decision time (t0).
+  This comparison aggregates all 10 fits (Roitman: 1 pooled + 2
+  macaques; Palmer: 1 pooled + 6 humans) so the spread of k across
+  species is directly visible.
+finding_ids: []
+model_fit_ids:
+  - model_fit.ddm-vanilla.roitman-shadlen-2002.psychometric
+  - model_fit.ddm-vanilla.roitman-shadlen-2002.psychometric.subject.monkey-1
+  - model_fit.ddm-vanilla.roitman-shadlen-2002.psychometric.subject.monkey-2
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-ah
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-eh
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-jd
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-jp
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-mk
+  - model_fit.ddm-vanilla.palmer-huk-shadlen-2005.psychometric.subject.phs-mm
+color_by: paper
+hint: >
+  All ten fits use the same vanilla DDM (z fixed at 0.5, v0 fixed at 0,
+  lapse fixed at 0). Compare k (drift per unit coherence) across the
+  two species; differences in t0 are partly task-driven (saccade vs
+  button press). The view below renders one strip plot per parameter
+  when all model fits in a comparison share the same variant.
+display_order: 40
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Curated alongside the cross-paper /models/ddm scatter; this
+    comparison subsets the same fits to the canonical 2AFC RDM
+    paradigm so that the species axis is the only variable.

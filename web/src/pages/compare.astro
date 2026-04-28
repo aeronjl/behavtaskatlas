@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
+import DdmParamScatter from "../components/DdmParamScatter.svelte";
 import {
   comparisons as comparisonsIndex,
   findings,
@@ -164,6 +165,35 @@ const sections = COMPARISONS.map((spec) => {
   const variants = uniqueVariants(modelFitRows);
   const winners = bestVariantPerGroup(modelFitRows);
   const groups = Array.from(new Set(modelFitRows.map((r) => r.group))).sort();
+  const isHomogeneous = modelFitRows.length > 0 && variants.length === 1;
+  // Detect DDM family for the strip-plot view.
+  const isDdmHomogeneous =
+    isHomogeneous &&
+    (variants[0]?.startsWith("ddm-") ?? false);
+  const ddmRows = isDdmHomogeneous
+    ? modelFitRows.map((r) => {
+        const psyId = r.fit.finding_ids.find((fid) => {
+          const e = findingsById.get(fid);
+          return e?.curve_type === "psychometric";
+        }) ?? r.fit.finding_ids[0];
+        const psyEntry = psyId ? findingsById.get(psyId) ?? null : null;
+        return {
+          fit_id: r.fit.id,
+          variant: r.variant,
+          paper_id: psyEntry?.paper_id ?? "",
+          paper_label: psyEntry?.paper_citation.split(".")[0] ?? r.fit.id,
+          species: psyEntry?.species ?? "unknown",
+          subject_id: psyEntry?.stratification?.subject_id ?? null,
+          condition: psyEntry?.stratification?.condition ?? null,
+          drift_per_unit_evidence: r.fit.parameters.drift_per_unit_evidence ?? NaN,
+          boundary: r.fit.parameters.boundary ?? NaN,
+          non_decision_time: r.fit.parameters.non_decision_time ?? NaN,
+          starting_point: r.fit.parameters.starting_point ?? null,
+          drift_bias: r.fit.parameters.drift_bias ?? null,
+          aic: r.fit.quality?.aic ?? null,
+        };
+      })
+    : [];
   return {
     spec,
     entries,
@@ -175,6 +205,9 @@ const sections = COMPARISONS.map((spec) => {
     variants,
     winners,
     groups,
+    isHomogeneous,
+    isDdmHomogeneous,
+    ddmRows,
   };
 });
 ---
@@ -229,6 +262,20 @@ const sections = COMPARISONS.map((spec) => {
               /
               <code class="rounded bg-slate-100 px-1">model_fit_ids</code>.
             </p>
+          ) : null}
+
+          {section.isDdmHomogeneous && section.ddmRows.length > 0 ? (
+            <div class="mt-4">
+              <h3 class="mb-1 text-xs font-semibold text-slate-700">
+                Parameter strip plot · {section.variants[0]}
+              </h3>
+              <p class="mb-2 text-[11px] text-slate-500">
+                {section.ddmRows.length} fits, all sharing variant{" "}
+                <code class="font-mono">{section.variants[0]}</code>. Hover a
+                point for fit id, paper, and stratification.
+              </p>
+              <DdmParamScatter client:visible fits={section.ddmRows} height={240} />
+            </div>
           ) : null}
 
           {section.modelFitRows.length > 0 ? (
