@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from behavtaskatlas.allen import (
     DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR,
     DEFAULT_ALLEN_VISUAL_BEHAVIOR_RAW_DIR,
@@ -53,7 +55,11 @@ from behavtaskatlas.clicks import (
 )
 from behavtaskatlas.findings import (
     build_findings_index,
+    extract_accuracy_findings_for_slice,
+    extract_chronometric_findings_for_slice,
     extract_psychometric_findings_for_slice,
+    import_csv_findings,
+    load_import_mapping,
     write_finding_yaml,
 )
 from behavtaskatlas.human_visual import (
@@ -996,7 +1002,7 @@ def main(argv: list[str] | None = None) -> int:
 
     extract_finding_parser = subparsers.add_parser(
         "extract-finding",
-        help="Extract a Finding YAML from a slice's psychometric_summary.csv",
+        help="Extract a Finding YAML from a slice's per-curve summary CSV",
     )
     extract_finding_parser.add_argument(
         "--slice",
@@ -1015,19 +1021,45 @@ def main(argv: list[str] | None = None) -> int:
         help="Finding id prefix; per-condition findings append a slug",
     )
     extract_finding_parser.add_argument(
+        "--curve-type",
+        default="psychometric",
+        choices=["psychometric", "chronometric", "accuracy_by_strength"],
+        help="Which summary CSV to read and what curve to produce",
+    )
+    extract_finding_parser.add_argument(
         "--x-label",
-        default="Signed evidence",
-        help="X-axis label written into the curve",
+        default=None,
+        help="X-axis label written into the curve (curve-type default if omitted)",
     )
     extract_finding_parser.add_argument(
         "--x-units",
-        default="",
+        default=None,
         help="X-axis units written into the curve",
     )
     extract_finding_parser.add_argument(
         "--derived-dir",
         default="derived",
         help="Derived artifact root containing the slice's summary CSV",
+    )
+
+    import_supplement_parser = subparsers.add_parser(
+        "import-supplement",
+        help=(
+            "Import findings from an external CSV using a YAML mapping spec. "
+            "Used for supplement-csv, figure-trace, and table-transcription "
+            "extraction methods."
+        ),
+    )
+    import_supplement_parser.add_argument(
+        "--csv",
+        dest="csv_path",
+        required=True,
+        help="Path to the supplement / figure-trace CSV",
+    )
+    import_supplement_parser.add_argument(
+        "--mapping",
+        required=True,
+        help="Path to the YAML mapping spec (paper_id, columns, groupby, etc.)",
     )
 
     site_index_parser = subparsers.add_parser(
@@ -1342,9 +1374,15 @@ def main(argv: list[str] | None = None) -> int:
             slice_id=args.slice_id,
             paper_id=args.paper_id,
             finding_id_prefix=args.finding_id_prefix,
+            curve_type=args.curve_type,
             x_label=args.x_label,
             x_units=args.x_units,
             derived_dir=Path(args.derived_dir),
+        )
+    if args.command == "import-supplement":
+        return _import_supplement(
+            csv_path=Path(args.csv_path),
+            mapping_path=Path(args.mapping),
         )
     if args.command == "site-index":
         return _site_index(
@@ -2774,8 +2812,9 @@ def _extract_finding(
     slice_id: str,
     paper_id: str,
     finding_id_prefix: str,
-    x_label: str,
-    x_units: str,
+    curve_type: str,
+    x_label: str | None,
+    x_units: str | None,
     derived_dir: Path,
 ) -> int:
     from behavtaskatlas.models import VerticalSlice
@@ -2793,25 +2832,113 @@ def _extract_finding(
         print(f"Unknown slice id: {slice_id!r}", file=sys.stderr)
         return 2
 
+    extractor_kwargs: dict[str, Any] = {
+        "paper_id": paper_id,
+        "derived_dir": derived_dir,
+        "finding_id_prefix": finding_id_prefix,
+    }
+    if x_label is not None:
+        extractor_kwargs["x_label"] = x_label
+    if x_units is not None:
+        extractor_kwargs["x_units"] = x_units
+
     try:
-        findings = extract_psychometric_findings_for_slice(
-            slice_record,
-            paper_id=paper_id,
-            derived_dir=derived_dir,
-            finding_id_prefix=finding_id_prefix,
-            x_label=x_label,
-            x_units=x_units,
-        )
+        if curve_type == "psychometric":
+            extractor_kwargs.setdefault("x_label", "Signed evidence")
+            extractor_kwargs.setdefault("x_units", "")
+            findings = extract_psychometric_findings_for_slice(
+                slice_record, **extractor_kwargs
+            )
+        elif curve_type == "chronometric":
+            findings = extract_chronometric_findings_for_slice(
+                slice_record, **extractor_kwargs
+            )
+        elif curve_type == "accuracy_by_strength":
+            findings = extract_accuracy_findings_for_slice(
+                slice_record, **extractor_kwargs
+            )
+        else:
+            print(f"Unsupported curve_type: {curve_type!r}", file=sys.stderr)
+            return 2
     except FileNotFoundError as exc:
         print(str(exc), file=sys.stderr)
         return 2
 
     if not findings:
         print(
-            f"No psychometric points extracted from {slice_id!r}; "
+            f"No points extracted from {slice_id!r} ({curve_type}); "
             "summary CSV may be empty.",
             file=sys.stderr,
         )
+        return 2
+
+    for finding in findings:
+        path = write_finding_yaml(finding)
+        print(f"Wrote {path} ({len(finding.curve.points)} points)")
+    return 0
+
+
+def _import_supplement(
+    *,
+    csv_path: Path,
+    mapping_path: Path,
+) -> int:
+    try:
+        mapping = load_import_mapping(mapping_path)
+    except (OSError, yaml.YAMLError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not isinstance(mapping, dict):
+        print(f"Mapping {mapping_path} must be a YAML mapping", file=sys.stderr)
+        return 2
+
+    required = {
+        "paper_id",
+        "protocol_id",
+        "source_data_level",
+        "extraction_method",
+        "curve_type",
+        "x_label",
+        "x_units",
+        "y_label",
+        "x_column",
+        "y_column",
+        "n_column",
+        "finding_id_prefix",
+    }
+    missing = required - set(mapping.keys())
+    if missing:
+        joined = ", ".join(sorted(missing))
+        print(f"Mapping is missing required keys: {joined}", file=sys.stderr)
+        return 2
+
+    groupby_columns = tuple(mapping.get("groupby_columns") or ())
+
+    try:
+        findings = import_csv_findings(
+            csv_path=csv_path,
+            paper_id=str(mapping["paper_id"]),
+            protocol_id=str(mapping["protocol_id"]),
+            dataset_id=str(mapping["dataset_id"]) if mapping.get("dataset_id") else None,
+            source_data_level=str(mapping["source_data_level"]),
+            extraction_method=str(mapping["extraction_method"]),
+            curve_type=str(mapping["curve_type"]),
+            x_label=str(mapping["x_label"]),
+            x_units=str(mapping["x_units"]),
+            y_label=str(mapping["y_label"]),
+            x_column=str(mapping["x_column"]),
+            y_column=str(mapping["y_column"]),
+            n_column=str(mapping["n_column"]),
+            groupby_columns=groupby_columns,
+            finding_id_prefix=str(mapping["finding_id_prefix"]),
+            extraction_notes=mapping.get("extraction_notes"),
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    if not findings:
+        print(f"No points extracted from {csv_path!s}", file=sys.stderr)
         return 2
 
     for finding in findings:

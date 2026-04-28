@@ -1,0 +1,46 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m1
+paper_id: paper.khalvati-kiani-rao-2021
+protocol_id: protocol.macaque-rdm-confidence-wager
+dataset_id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+slice_id: slice.macaque-rdm-confidence-wager
+source_data_level: figure-source-data
+n_trials: 37209
+stratification:
+  condition: accuracy_no_sure_target
+  subject_id: M1
+curve:
+  curve_type: accuracy_by_strength
+  x_label: Motion strength
+  x_units: percent
+  y_label: p_correct
+  points:
+  - x: 1.6
+    n: 6225
+    y: 0.5322088353413654
+  - x: 3.2
+    n: 6063
+    y: 0.5733135411512452
+  - x: 6.4
+    n: 6250
+    y: 0.63712
+  - x: 12.8
+    n: 6227
+    y: 0.7502810342058777
+  - x: 25.6
+    n: 6158
+    y: 0.9181552452094836
+  - x: 51.2
+    n: 6286
+    y: 0.9906140629971365
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from accuracy_summary.csv for groupby=(('source_measure',
+  'accuracy_no_sure_target'), ('monkey', 'M1')).
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

@@ -162,6 +162,268 @@ def extract_psychometric_findings_for_slice(
     return findings
 
 
+def extract_chronometric_findings_for_slice(
+    slice_record: VerticalSlice,
+    *,
+    paper_id: str,
+    derived_dir: Path,
+    finding_id_prefix: str,
+    x_label: str = "Absolute evidence strength",
+    x_units: str = "",
+    summary_filename: str = "chronometric_summary.csv",
+) -> list[Finding]:
+    """Build a chronometric Finding from the slice's chronometric_summary.csv.
+    The CSV is expected to have one row per absolute-evidence level with
+    n_trials, n_correct, and median_response_time columns; the resulting
+    curve plots median RT (in seconds) against absolute evidence."""
+    summary_path = _slice_derived_dir(slice_record, derived_dir) / summary_filename
+    if not summary_path.exists():
+        raise FileNotFoundError(f"summary CSV not found at {summary_path}")
+
+    rows = _read_csv_rows(summary_path)
+    points: list[CurvePoint] = []
+    for row in rows:
+        x = _to_float(row.get("evidence_strength", ""))
+        y = _to_float(row.get("median_response_time", ""))
+        n = _to_int(row.get("n_response", "")) or _to_int(row.get("n_trials", ""))
+        if x is None or y is None or n is None:
+            continue
+        points.append(CurvePoint(x=x, n=n, y=y))
+    if not points:
+        return []
+    points.sort(key=lambda p: p.x)
+    n_trials_total = sum(int(p.n) for p in points)
+    finding = Finding(
+        object_type="finding",
+        schema_version="0.1.0",
+        id=finding_id_prefix,
+        paper_id=paper_id,
+        protocol_id=slice_record.protocol_id,
+        dataset_id=slice_record.dataset_id,
+        slice_id=slice_record.id,
+        source_data_level=slice_record.comparison.source_data_level,
+        n_trials=n_trials_total,
+        stratification=StratificationKey(),
+        curve=ResultCurve(
+            curve_type="chronometric",
+            x_label=x_label,
+            x_units=x_units,
+            y_label="median_rt_s",
+            points=points,
+        ),
+        extraction_method="harmonized-pipeline",
+        extraction_notes=(
+            f"Aggregated from {summary_path.name}; median response time per "
+            "absolute evidence level."
+        ),
+        provenance=_today_provenance(),
+    )
+    return [finding]
+
+
+def extract_accuracy_findings_for_slice(
+    slice_record: VerticalSlice,
+    *,
+    paper_id: str,
+    derived_dir: Path,
+    finding_id_prefix: str,
+    x_label: str = "Absolute evidence strength",
+    x_units: str = "",
+    summary_filename: str = "accuracy_summary.csv",
+    x_column: str = "motion_strength_percent",
+    y_column: str = "p_correct",
+    n_column: str = "n_source_rows",
+    groupby_columns: tuple[str, ...] = ("source_measure", "monkey"),
+) -> list[Finding]:
+    """Build accuracy_by_strength Findings from a slice's accuracy summary.
+    Groups rows by groupby_columns; emits one Finding per group with curve
+    points sorted by x. Defaults are tuned for the macaque RDM confidence
+    slice (one row per source_measure × monkey × motion_strength_percent).
+    """
+    summary_path = _slice_derived_dir(slice_record, derived_dir) / summary_filename
+    if not summary_path.exists():
+        raise FileNotFoundError(f"summary CSV not found at {summary_path}")
+
+    rows = _read_csv_rows(summary_path)
+    grouped: dict[tuple[str, ...], list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        key = tuple(row.get(col, "") or "" for col in groupby_columns)
+        grouped[key].append(row)
+
+    findings: list[Finding] = []
+    for key, group_rows in sorted(grouped.items(), key=lambda item: item[0]):
+        points: list[CurvePoint] = []
+        for row in group_rows:
+            x = _to_float(row.get(x_column, ""))
+            y = _to_float(row.get(y_column, ""))
+            n = _to_int(row.get(n_column, ""))
+            if x is None or y is None or n is None:
+                continue
+            points.append(CurvePoint(x=x, n=n, y=y))
+        if not points:
+            continue
+        points.sort(key=lambda p: p.x)
+        n_trials_total = sum(int(p.n) for p in points)
+        slug_parts = [str(part).replace("_", "-").lower() for part in key if part]
+        slug = ".".join(slug_parts) if slug_parts else "all"
+        finding_id = f"{finding_id_prefix}.{slug}"
+        # Map first groupby column into stratification.condition,
+        # remaining into subject_id (best-effort fit for source_measure/monkey).
+        condition = key[0] if len(key) >= 1 and key[0] else None
+        subject_id = key[1] if len(key) >= 2 and key[1] else None
+        finding = Finding(
+            object_type="finding",
+            schema_version="0.1.0",
+            id=finding_id,
+            paper_id=paper_id,
+            protocol_id=slice_record.protocol_id,
+            dataset_id=slice_record.dataset_id,
+            slice_id=slice_record.id,
+            source_data_level=slice_record.comparison.source_data_level,
+            n_trials=n_trials_total,
+            stratification=StratificationKey(
+                condition=condition,
+                subject_id=subject_id,
+            ),
+            curve=ResultCurve(
+                curve_type="accuracy_by_strength",
+                x_label=x_label,
+                x_units=x_units,
+                y_label="p_correct",
+                points=points,
+            ),
+            extraction_method="harmonized-pipeline",
+            extraction_notes=(
+                f"Aggregated from {summary_path.name} for groupby="
+                f"{tuple(zip(groupby_columns, key, strict=False))}."
+            ),
+            provenance=_today_provenance(),
+        )
+        findings.append(finding)
+    return findings
+
+
+def import_csv_findings(
+    *,
+    csv_path: Path,
+    paper_id: str,
+    protocol_id: str,
+    finding_id_prefix: str,
+    source_data_level: str,
+    extraction_method: str,
+    curve_type: str,
+    x_label: str,
+    x_units: str,
+    y_label: str,
+    x_column: str,
+    y_column: str,
+    n_column: str,
+    groupby_columns: tuple[str, ...] = (),
+    dataset_id: str | None = None,
+    extraction_notes: str | None = None,
+) -> list[Finding]:
+    """Generic CSV → Finding importer for the supplement-csv,
+    figure-trace, and table-transcription paths. Group rows by
+    groupby_columns, emit one Finding per group with curve points
+    sorted by x.
+
+    Unlike the slice extractors, this does not assume a slice
+    record exists; the caller supplies paper_id, protocol_id,
+    optional dataset_id, source_data_level, and extraction_method
+    directly. The CSV's column names for x, y, n (and the groupby
+    columns) are configurable per paper.
+    """
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV not found: {csv_path}")
+    if extraction_method not in {"supplement-csv", "figure-trace", "table-transcription"}:
+        raise ValueError(
+            f"extraction_method must be supplement-csv, figure-trace, or "
+            f"table-transcription; got {extraction_method!r}"
+        )
+
+    rows = _read_csv_rows(csv_path)
+    if groupby_columns:
+        grouped: dict[tuple[str, ...], list[dict[str, str]]] = defaultdict(list)
+        for row in rows:
+            key = tuple(row.get(col, "") or "" for col in groupby_columns)
+            grouped[key].append(row)
+    else:
+        grouped = {(): rows}
+
+    findings: list[Finding] = []
+    for key, group_rows in sorted(grouped.items(), key=lambda item: item[0]):
+        points: list[CurvePoint] = []
+        for row in group_rows:
+            x = _to_float(row.get(x_column, ""))
+            y = _to_float(row.get(y_column, ""))
+            n = _to_int(row.get(n_column, ""))
+            if x is None or y is None or n is None:
+                continue
+            points.append(CurvePoint(x=x, n=n, y=y))
+        if not points:
+            continue
+        points.sort(key=lambda p: p.x)
+        n_trials_total = sum(int(p.n) for p in points)
+        slug_parts = [str(part).replace("_", "-").lower() for part in key if part]
+        slug = ".".join(slug_parts) if slug_parts else "all"
+        finding_id = f"{finding_id_prefix}.{slug}" if slug != "all" else finding_id_prefix
+        condition = key[0] if len(key) >= 1 and key[0] else None
+        subject_id = key[1] if len(key) >= 2 and key[1] else None
+        finding = Finding(
+            object_type="finding",
+            schema_version="0.1.0",
+            id=finding_id,
+            paper_id=paper_id,
+            protocol_id=protocol_id,
+            dataset_id=dataset_id,
+            source_data_level=source_data_level,
+            n_trials=n_trials_total,
+            stratification=StratificationKey(
+                condition=condition,
+                subject_id=subject_id,
+            ),
+            curve=ResultCurve(
+                curve_type=curve_type,  # type: ignore[arg-type]
+                x_label=x_label,
+                x_units=x_units,
+                y_label=y_label,
+                points=points,
+            ),
+            extraction_method=extraction_method,  # type: ignore[arg-type]
+            extraction_notes=extraction_notes
+            or (
+                f"Imported from {csv_path.name} via "
+                f"behavtaskatlas.findings.import_csv_findings."
+            ),
+            provenance=_today_provenance(),
+        )
+        findings.append(finding)
+    return findings
+
+
+def load_import_mapping(mapping_path: Path) -> dict[str, Any]:
+    """Load a YAML import-mapping file describing how a CSV maps to
+    Finding fields. Schema:
+
+        paper_id: paper.foo
+        protocol_id: protocol.bar
+        dataset_id: dataset.baz             # optional
+        source_data_level: figure-source-data
+        extraction_method: supplement-csv   # or figure-trace / table-transcription
+        curve_type: psychometric
+        x_label: Signed coherence
+        x_units: percent
+        y_label: p_right
+        x_column: coherence
+        y_column: p_right
+        n_column: n
+        groupby_columns: [monkey]            # optional
+        finding_id_prefix: finding.foo.psychometric
+        extraction_notes: ...                 # optional
+    """
+    return yaml.safe_load(mapping_path.read_text(encoding="utf-8"))
+
+
 def write_finding_yaml(finding: Finding, papers_root: Path | None = None) -> Path:
     """Serialize a Finding to findings/<slug>.yaml. Returns the written
     path. The slug derives from the finding id: drop the "finding."

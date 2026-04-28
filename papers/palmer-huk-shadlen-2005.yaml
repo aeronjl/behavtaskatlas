@@ -23,6 +23,7 @@ dataset_ids:
   - dataset.palmer-huk-shadlen-human-rdm-cosmo2017
 finding_ids:
   - finding.palmer-huk-shadlen-2005.psychometric
+  - finding.palmer-huk-shadlen-2005.chronometric
 curation_status: data-linked
 notes: >
   Original paper for the human random-dot motion reaction-time experiment;

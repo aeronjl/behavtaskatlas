@@ -1,0 +1,44 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.roitman-shadlen-2002.chronometric
+paper_id: paper.roitman-shadlen-2002
+protocol_id: protocol.random-dot-motion-classic-macaque
+dataset_id: dataset.roitman-shadlen-rdm-pyddm
+slice_id: slice.random-dot-motion
+source_data_level: processed-trial
+n_trials: 6149
+stratification: {}
+curve:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 1019
+    y: 0.821
+  - x: 3.2
+    n: 1028
+    y: 0.8145
+  - x: 6.4
+    n: 1025
+    y: 0.762
+  - x: 12.8
+    n: 1023
+    y: 0.675
+  - x: 25.6
+    n: 1026
+    y: 0.544
+  - x: 51.2
+    n: 1028
+    y: 0.41
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from chronometric_summary.csv; median response time per
+  absolute evidence level.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

@@ -22,6 +22,7 @@ dataset_ids:
   - dataset.roitman-shadlen-rdm-pyddm
 finding_ids:
   - finding.roitman-shadlen-2002.psychometric
+  - finding.roitman-shadlen-2002.chronometric
 curation_status: data-linked
 notes: >
   Pinned source for the Roitman-Shadlen processed PyDDM CSV used by the

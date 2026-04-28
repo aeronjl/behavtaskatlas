@@ -1,0 +1,45 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.khalvati-kiani-rao-2021
+citation: >
+  Khalvati K, Kiani R, Rao RPN. Bayesian inference with incomplete
+  knowledge explains perceptual confidence and its deviations from
+  accuracy. Nature Communications, 2021.
+authors:
+  - Khalvati, Koosha
+  - Kiani, Roozbeh
+  - Rao, Rajesh P. N.
+year: 2021
+venue: Nature Communications
+doi: 10.1038/s41467-021-25419-4
+url: https://www.nature.com/articles/s41467-021-25419-4
+lab: Rao
+species:
+  - non-human-primate
+n_subjects: 2
+protocol_ids:
+  - protocol.macaque-rdm-confidence-wager
+dataset_ids:
+  - dataset.khalvati-kiani-rao-rdm-confidence-source-data
+finding_ids:
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m1
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m2
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m1
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m2
+curation_status: data-linked
+notes: >
+  Source paper for the macaque_rdm_confidence vertical slice's accuracy
+  summary. Underlying behavioral data is from the Kiani-Shadlen 2009
+  random-dot motion confidence/wagering task with two monkeys (M1, M2).
+  Each accuracy curve is reported separately for trials with no sure-target
+  option ("accuracy_no_sure_target") and trials where the sure-target option
+  was offered but the direction was chosen instead.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Paper record introduced alongside Phase 3 of the meta-analysis extension;
+    findings extracted from the slice's accuracy_summary.csv stratified by
+    source_measure × monkey.
