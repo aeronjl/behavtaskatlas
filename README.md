@@ -1,5 +1,7 @@
 # behavtaskatlas
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19869192.svg)](https://doi.org/10.5281/zenodo.19869192)
+
 `behavtaskatlas` is a file-first atlas for sensory-guided decision-making tasks in behavioral neuroscience.
 
 The MVP goal is to make task protocols comparable by linking operational task structure, provenance, open datasets, implementations, and reproducible analysis expectations.

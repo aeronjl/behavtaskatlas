@@ -10,6 +10,7 @@ authors:
     affiliation: Independent
 repository-code: https://github.com/aeronjl/behavtaskatlas
 url: https://behavtaskatlas.vercel.app/
+doi: 10.5281/zenodo.19869192
 license: CC-BY-4.0
 keywords:
   - behavioral neuroscience
