@@ -39,6 +39,9 @@ uv run behavtaskatlas validate
 step "Running Python tests (pytest)"
 uv run pytest
 
+step "Auditing findings (pooled vs by-subject reconciliation)"
+uv run behavtaskatlas audit-findings
+
 step "Exporting static JSON (behavtaskatlas site-index)"
 uv run behavtaskatlas site-index
 

@@ -1126,6 +1126,25 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional curation queue JSON output path",
     )
 
+    audit_findings_parser = subparsers.add_parser(
+        "audit-findings",
+        help=(
+            "Reproducibility audit: confirm pooled findings reconcile with "
+            "n-weighted aggregates of their per-subject findings"
+        ),
+    )
+    audit_findings_parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.01,
+        help="Maximum tolerated |pooled_y - aggregated_y| at any matching x",
+    )
+    audit_findings_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional JSON output path for the audit report",
+    )
+
     release_check_parser = subparsers.add_parser(
         "release-check",
         help="Run static release-readiness checks and render status artifacts",
@@ -1443,6 +1462,11 @@ def main(argv: list[str] | None = None) -> int:
             derived_dir=Path(args.derived_dir),
             out_file=Path(args.out_file) if args.out_file else None,
             html_file=Path(args.html_file) if args.html_file else None,
+        )
+    if args.command == "audit-findings":
+        return _audit_findings(
+            tolerance=float(args.tolerance),
+            out_file=Path(args.out_file) if args.out_file else None,
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -3205,6 +3229,26 @@ def _release_check(
         f"{counts.get('warnings', 0)} warning(s)"
     )
     return 1 if payload["overall_status"] == "error" else 0
+
+
+def _audit_findings(*, tolerance: float, out_file: Path | None) -> int:
+    from behavtaskatlas.audit import audit_pooled_vs_by_subject, format_audit_report
+    from behavtaskatlas.models import Finding
+
+    records = load_repository_records(Path("."))
+    finding_records = [r for r in records if isinstance(r, Finding)]
+    report = audit_pooled_vs_by_subject(finding_records, tolerance=tolerance)
+    print(format_audit_report(report))
+    if out_file is not None:
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote audit report to {out_file}")
+    if report["overall_status"] == "drift":
+        return 1
+    return 0
 
 
 def _write_clicks_harmonization_outputs(
