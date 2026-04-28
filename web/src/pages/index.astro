@@ -1,48 +1,213 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
 import { manifest, slugForId } from "../lib/data";
+import {
+  comparisons,
+  findings,
+  type FindingsEntry,
+} from "../lib/findings";
 
-const health = manifest.health as Record<string, any>;
-const counts = (health?.counts ?? {}) as Record<string, number>;
-const sourceDataLevelCounts = (health?.source_data_level_counts ?? {}) as Record<
-  string,
-  number
->;
-const provenanceClean = (health?.provenance_clean ?? {}) as Record<string, number>;
-const reports = (health?.reports ?? {}) as Record<string, number>;
+const counts = (manifest.health?.counts ?? {}) as Record<string, number>;
+const findingsCounts = (findings.counts ?? {}) as Record<string, number>;
+const comparisonsCounts = (comparisons.counts ?? {}) as Record<string, number>;
 
 const summaryCards = [
-  { label: "Task families", value: counts.task_families },
-  { label: "Protocols", value: counts.protocols },
-  { label: "Datasets", value: counts.datasets },
-  { label: "Vertical slices", value: counts.vertical_slices },
+  { label: "Papers", value: findingsCounts.papers ?? 0 },
+  { label: "Findings", value: findingsCounts.findings ?? 0 },
+  { label: "Comparisons", value: comparisonsCounts.comparisons ?? 0 },
+  { label: "Vertical slices", value: counts.vertical_slices ?? 0 },
+  { label: "Protocols", value: counts.protocols ?? 0 },
+  { label: "Task families", value: counts.task_families ?? 0 },
 ];
+
+const entryPoints = [
+  {
+    href: "/findings",
+    title: "Findings",
+    description:
+      "Cross-paper psychometric, chronometric, and accuracy curves overlaid on shared axes with interactive fit + bootstrap CI.",
+    accent: "border-l-4 border-accent",
+  },
+  {
+    href: "/compare",
+    title: "Compare",
+    description:
+      "Hand-curated cross-paper questions with embedded charts and quantitative parameter deltas (Δμ, Δσ, Δthreshold).",
+    accent: "border-l-4 border-accent",
+  },
+  {
+    href: "/papers",
+    title: "Papers",
+    description:
+      "Per-paper detail with citation, lab, species, source-data level, and per-finding tables.",
+    accent: "border-l-4 border-slate-300",
+  },
+  {
+    href: "/slices",
+    title: "Slices",
+    description:
+      "Reproducible local analyses against pinned data sources, each with an in-browser Pyodide cell for live exploration.",
+    accent: "border-l-4 border-slate-300",
+  },
+  {
+    href: "/catalog",
+    title: "Catalog",
+    description:
+      "Browse task families, protocols, and datasets; the file-first record store under controlled vocabularies.",
+    accent: "border-l-4 border-slate-300",
+  },
+  {
+    href: "/graph",
+    title: "Graph",
+    description:
+      "Relationship view across families, protocols, datasets, and slices.",
+    accent: "border-l-4 border-slate-300",
+  },
+];
+
+type FitFields = {
+  mu: number;
+  sigma: number;
+  gamma: number;
+  lapse: number;
+  threshold?: number;
+  threshold_target_y: number;
+};
+
+function median(values: number[]): number | null {
+  const finite = values.filter((v) => Number.isFinite(v));
+  if (finite.length === 0) return null;
+  const sorted = [...finite].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+const psychometricFits = (findings.findings as FindingsEntry[]).filter(
+  (f) =>
+    f.curve_type === "psychometric" &&
+    (f as FindingsEntry & { fit?: FitFields | null }).fit?.threshold !== undefined,
+);
+
+const allSigma = psychometricFits.map(
+  (f) => (f as FindingsEntry & { fit: FitFields }).fit.sigma,
+);
+const allThreshold = psychometricFits.map(
+  (f) => (f as FindingsEntry & { fit: FitFields }).fit.threshold!,
+);
+const allBias = psychometricFits.map(
+  (f) => (f as FindingsEntry & { fit: FitFields }).fit.mu,
+);
+
+type SpeciesRow = {
+  species: string;
+  count: number;
+  median_sigma: number | null;
+  median_threshold: number | null;
+  total_trials: number;
+};
+
+const speciesGroups = new Map<string, FindingsEntry[]>();
+for (const f of findings.findings as FindingsEntry[]) {
+  if (f.curve_type !== "psychometric") continue;
+  const fit = (f as FindingsEntry & { fit?: FitFields | null }).fit;
+  if (!fit || fit.threshold === undefined) continue;
+  const sp = f.species ?? "unknown";
+  if (!speciesGroups.has(sp)) speciesGroups.set(sp, []);
+  speciesGroups.get(sp)!.push(f);
+}
+
+const speciesRows: SpeciesRow[] = Array.from(speciesGroups.entries())
+  .map(([species, fs]) => ({
+    species,
+    count: fs.length,
+    median_sigma: median(
+      fs.map((f) => (f as FindingsEntry & { fit: FitFields }).fit.sigma),
+    ),
+    median_threshold: median(
+      fs.map((f) => (f as FindingsEntry & { fit: FitFields }).fit.threshold!),
+    ),
+    total_trials: fs.reduce(
+      (sum, f) => sum + (typeof f.n_trials === "number" ? f.n_trials : 0),
+      0,
+    ),
+  }))
+  .sort((a, b) => b.count - a.count);
+
+const aggregateStats = {
+  n_psychometric_findings: psychometricFits.length,
+  median_sigma: median(allSigma),
+  median_threshold: median(allThreshold),
+  median_bias: median(allBias),
+  total_trials_psychometric: psychometricFits.reduce(
+    (sum, f) => sum + (typeof f.n_trials === "number" ? f.n_trials : 0),
+    0,
+  ),
+};
+
+const featuredComparison = comparisons.comparisons[0] ?? null;
+const featuredFindings = featuredComparison
+  ? (findings.findings as FindingsEntry[]).filter((f) =>
+      featuredComparison.finding_ids.includes(f.finding_id),
+    )
+  : [];
+
+function fmt(value: number | null, digits = 2): string {
+  if (value === null || !Number.isFinite(value)) return "—";
+  return value.toFixed(digits);
+}
+
+const generated = manifest.generated_at?.slice(0, 10) ?? "";
+
+type StringNumberMap = Record<string, number>;
+const sourceLevelCounts: StringNumberMap =
+  (manifest.health?.source_data_level_counts ?? {}) as StringNumberMap;
+const reportCounts: StringNumberMap =
+  (manifest.health?.reports ?? {}) as StringNumberMap;
+const provenanceClean = Boolean(manifest.health?.provenance_clean);
 ---
 
 <BaseLayout
   title={manifest.title}
-  description="A file-first atlas of sensory-guided decision-making tasks."
+  description="A file-first atlas of sensory-guided decision-making tasks in behavioral neuroscience. Browse curated task families, protocols, datasets, vertical slices, and cross-paper findings on shared axes."
 >
-  <header class="mb-8">
-    <h1 class="text-3xl font-semibold tracking-tight">{manifest.title}</h1>
-    <p class="mt-2 text-sm text-slate-600">
-      Generated {manifest.generated_at} from commit
-      <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">
-        {manifest.behavtaskatlas_commit ?? "unknown"}
-      </code>
-      {manifest.behavtaskatlas_git_dirty ? "(working tree dirty)" : null}
+  <header class="mb-10">
+    <h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+      A file-first atlas of behavioral neuroscience tasks
+    </h1>
+    <p class="mt-3 max-w-3xl text-base text-slate-700">
+      Curated task families, protocols, datasets, and reproducible analyses,
+      paired with a meta-analysis layer of cross-paper findings on shared
+      signed-evidence axes. Every record is YAML in git, validated by
+      Pydantic, and rebuilt on every commit.
+    </p>
+    <p class="mt-2 text-xs text-slate-500">
+      Generated {generated}
+      {
+        manifest.behavtaskatlas_commit ? (
+          <>
+            {" · commit "}
+            <code class="rounded bg-slate-100 px-1 py-0.5 text-[11px]">
+              {manifest.behavtaskatlas_commit}
+            </code>
+          </>
+        ) : null
+      }
+      {manifest.behavtaskatlas_git_dirty ? " (working tree dirty)" : null}
     </p>
   </header>
 
-  <section class="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <section class="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
     {
       summaryCards.map((card) => (
-        <div class="rounded-md border border-slate-200 bg-white p-4">
-          <div class="text-xs uppercase tracking-wide text-slate-500">
+        <div class="rounded-md border border-slate-200 bg-white p-3">
+          <div class="text-[11px] uppercase tracking-wide text-slate-500">
             {card.label}
           </div>
           <div class="mt-1 text-2xl font-semibold text-slate-900">
-            {card.value ?? "—"}
+            {card.value.toLocaleString()}
           </div>
         </div>
       ))
@@ -50,15 +215,138 @@ const summaryCards = [
   </section>
 
   <section class="mb-10">
-    <h2 class="mb-3 text-lg font-semibold">Health dashboard</h2>
+    <div class="mb-3 flex items-baseline justify-between">
+      <h2 class="text-lg font-semibold">Where to start</h2>
+    </div>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {
+        entryPoints.map((card) => (
+          <a
+            href={card.href}
+            class:list={[
+              "rounded-md border border-slate-200 bg-white p-4 no-underline hover:shadow-sm",
+              card.accent,
+            ]}
+          >
+            <div class="text-base font-semibold text-slate-900">
+              {card.title}
+            </div>
+            <p class="mt-1 text-sm text-slate-600">{card.description}</p>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <header class="mb-2 flex items-baseline justify-between">
+        <h2 class="text-base font-semibold">Across the literature</h2>
+        <a class="text-xs text-accent" href="/findings">/findings →</a>
+      </header>
+      <p class="mb-3 text-sm text-slate-600">
+        Aggregate stats over the {aggregateStats.n_psychometric_findings}{" "}
+        psychometric findings currently in the index, computed from build-time
+        4-parameter logistic fits.
+      </p>
+      <dl class="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <dt class="text-slate-500">Median bias (μ)</dt>
+        <dd class="text-right font-mono">{fmt(aggregateStats.median_bias)}</dd>
+        <dt class="text-slate-500">Median slope (σ)</dt>
+        <dd class="text-right font-mono">{fmt(aggregateStats.median_sigma)}</dd>
+        <dt class="text-slate-500">Median 75% threshold</dt>
+        <dd class="text-right font-mono">
+          {fmt(aggregateStats.median_threshold)}
+        </dd>
+        <dt class="text-slate-500">Total trials</dt>
+        <dd class="text-right font-mono">
+          {aggregateStats.total_trials_psychometric.toLocaleString()}
+        </dd>
+      </dl>
+      <h3 class="mb-1 text-xs font-semibold text-slate-700">By species</h3>
+      <div class="overflow-x-auto rounded border border-slate-200">
+        <table class="w-full text-xs">
+          <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-2 py-1.5">Species</th>
+              <th class="px-2 py-1.5 text-right">Findings</th>
+              <th class="px-2 py-1.5 text-right">Median σ</th>
+              <th class="px-2 py-1.5 text-right">Median 75% threshold</th>
+              <th class="px-2 py-1.5 text-right">Σ trials</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {
+              speciesRows.map((row) => (
+                <tr>
+                  <td class="px-2 py-1.5">{row.species}</td>
+                  <td class="px-2 py-1.5 text-right font-mono">{row.count}</td>
+                  <td class="px-2 py-1.5 text-right font-mono">
+                    {fmt(row.median_sigma)}
+                  </td>
+                  <td class="px-2 py-1.5 text-right font-mono">
+                    {fmt(row.median_threshold)}
+                  </td>
+                  <td class="px-2 py-1.5 text-right font-mono">
+                    {row.total_trials.toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {
+      featuredComparison && featuredFindings.length > 0 ? (
+        <div class="rounded-md border border-slate-200 bg-white p-4">
+          <header class="mb-2 flex items-baseline justify-between">
+            <h2 class="text-base font-semibold">Featured comparison</h2>
+            <a class="text-xs text-accent" href="/compare">
+              /compare →
+            </a>
+          </header>
+          <h3 class="mb-1 text-sm font-semibold text-slate-900">
+            {featuredComparison.question}
+          </h3>
+          <p class="mb-3 text-sm text-slate-600">
+            {featuredComparison.framing}
+          </p>
+          <MiniFindingsChart
+            client:visible
+            findings={featuredFindings}
+            colorBy={
+              featuredComparison.color_by as
+                | "paper"
+                | "condition"
+                | "curve_type"
+            }
+            height={220}
+          />
+          <p class="mt-2 text-xs text-slate-500">
+            <a class="text-accent" href={`/compare#${featuredComparison.id}`}>
+              See parameter deltas →
+            </a>
+          </p>
+        </div>
+      ) : null
+    }
+  </section>
+
+  <section class="mb-10">
+    <div class="mb-3 flex items-baseline justify-between">
+      <h2 class="text-lg font-semibold">Health</h2>
+      <a class="text-sm text-accent" href="/curation-queue">/curation-queue →</a>
+    </div>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-      <div class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="mb-2 text-sm font-semibold text-slate-700">
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <h3 class="mb-1 text-xs font-semibold text-slate-700">
           Source data level
         </h3>
-        <ul class="space-y-1 text-sm">
+        <ul class="space-y-0.5 text-xs">
           {
-            Object.entries(sourceDataLevelCounts).map(([level, n]) => (
+            Object.entries(sourceLevelCounts).map(([level, n]) => (
               <li class="flex justify-between">
                 <span class="text-slate-700">{level}</span>
                 <span class="font-mono text-slate-900">{n}</span>
@@ -67,100 +355,42 @@ const summaryCards = [
           }
         </ul>
       </div>
-      <div class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="mb-2 text-sm font-semibold text-slate-700">Reports</h3>
-        <ul class="space-y-1 text-sm">
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <h3 class="mb-1 text-xs font-semibold text-slate-700">Reports</h3>
+        <ul class="space-y-0.5 text-xs">
           {
-            Object.entries(reports).map(([key, n]) => (
+            Object.entries(reportCounts).map(([k, n]) => (
               <li class="flex justify-between">
-                <span class="text-slate-700">{key}</span>
+                <span class="text-slate-700">{k}</span>
                 <span class="font-mono text-slate-900">{n}</span>
               </li>
             ))
           }
         </ul>
       </div>
-      <div class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="mb-2 text-sm font-semibold text-slate-700">Provenance</h3>
-        <ul class="space-y-1 text-sm">
-          {
-            Object.entries(provenanceClean).map(([key, n]) => (
-              <li class="flex justify-between">
-                <span class="text-slate-700">{key}</span>
-                <span class="font-mono text-slate-900">{n}</span>
-              </li>
-            ))
-          }
-        </ul>
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <h3 class="mb-1 text-xs font-semibold text-slate-700">Provenance</h3>
+        <p class="text-xs">
+          <span
+            class:list={[
+              "rounded px-2 py-0.5",
+              provenanceClean
+                ? "bg-ok-soft text-ok"
+                : "bg-warn-soft text-warn",
+            ]}
+          >
+            {provenanceClean ? "All slice provenance clean" : "Provenance has stale entries"}
+          </span>
+        </p>
       </div>
-    </div>
-  </section>
-
-  <section class="mb-10">
-    <div class="mb-3 flex items-baseline justify-between">
-      <h2 class="text-lg font-semibold">Vertical slices</h2>
-      <a class="text-sm" href="/catalog">Browse full catalog →</a>
-    </div>
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {
-        manifest.slices.map((slice) => (
-          <article class="flex flex-col rounded-md border border-slate-200 bg-white p-4">
-            <header class="mb-2 flex items-baseline justify-between gap-3">
-              <h3 class="text-base font-semibold text-slate-900">
-                {slice.title}
-              </h3>
-              <span
-                class:list={[
-                  "rounded px-2 py-0.5 text-xs",
-                  slice.report_status === "available"
-                    ? "bg-ok-soft text-ok"
-                    : "bg-warn-soft text-warn",
-                ]}
-              >
-                {slice.status_label}
-              </span>
-            </header>
-            <p class="mb-3 flex-1 text-sm text-slate-600">{slice.description}</p>
-            <dl class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-700">
-              <dt class="text-slate-500">Species</dt>
-              <dd>{slice.comparison.species}</dd>
-              <dt class="text-slate-500">Modality</dt>
-              <dd>{slice.comparison.modality}</dd>
-              <dt class="text-slate-500">Choice type</dt>
-              <dd>{slice.comparison.choice_type}</dd>
-              <dt class="text-slate-500">Source level</dt>
-              <dd>{slice.comparison.source_data_level}</dd>
-            </dl>
-            {
-              slice.metrics && slice.metrics.length > 0 ? (
-                <ul class="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                  {slice.metrics.slice(0, 4).map((m) => (
-                    <li class="rounded bg-slate-100 px-2 py-0.5">
-                      <span class="text-slate-500">{m.label}</span>
-                      <span class="ml-1 font-mono font-semibold text-slate-900">
-                        {typeof m.value === "number"
-                          ? m.value.toLocaleString()
-                          : (m.value ?? "—")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null
-            }
-            <a
-              href={`/slices/${slugForId(slice.id)}`}
-              class="text-sm font-medium text-accent"
-            >
-              View slice →
-            </a>
-          </article>
-        ))
-      }
     </div>
   </section>
 
   <section>
-    <h2 class="mb-3 text-lg font-semibold">Comparison table</h2>
+    <div class="mb-3 flex items-baseline justify-between">
+      <h2 class="text-lg font-semibold">Slice comparison table</h2>
+      <a class="text-sm text-accent" href="/slices">/slices →</a>
+    </div>
     <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -171,7 +401,7 @@ const summaryCards = [
             <th class="px-3 py-2">Evidence</th>
             <th class="px-3 py-2">Choice</th>
             <th class="px-3 py-2">Source level</th>
-            <th class="px-3 py-2">Trials</th>
+            <th class="px-3 py-2 text-right">Trials</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200">
