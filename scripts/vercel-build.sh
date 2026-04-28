@@ -2,14 +2,22 @@
 set -euo pipefail
 
 # Vercel build entry point.
-# Runs the Python static-site exporter (which produces derived/*.json from
-# the YAML records) and then the Astro build, which inlines those JSONs.
 #
-# Slice report HTML/SVG artifacts are NOT regenerated here — those require
-# downloading raw NWB/MAT files and minutes-to-hours of compute, which
-# belongs in CI (Phase 4), not in a Vercel build. The Astro app currently
-# links to slice reports by relative path; until Phase 4 ships, those links
-# 404 in production, while catalog/protocols/datasets pages work normally.
+# Order of operations:
+#   1. Install uv + bun.
+#   2. Sync the Python project + uv run validate.
+#   3. Fetch the latest slice-artifacts release tarball and extract it into
+#      both derived/ (so behavtaskatlas site-index can see the slice reports
+#      and stamp them "Report available" in manifest.json) and web/public/
+#      (so Astro's static pipeline bundles them at the URL paths that slice
+#      manifests reference).
+#   4. uv run site-index against the populated derived/.
+#   5. bun install + bun run build.
+#
+# Heavy slice analyses are not regenerated in the Vercel build; they live in
+# the release tarball, produced locally or by the manual slice-artifacts
+# workflow. The build is fast (sub-2-min) because it only stitches existing
+# artifacts together with freshly-validated YAML.
 
 echo "▶ Installing uv"
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -19,14 +27,15 @@ echo "▶ Installing bun"
 curl -fsSL https://bun.sh/install | bash
 export PATH="$HOME/.bun/bin:$PATH"
 
-echo "▶ Validating records and exporting static JSON"
+echo "▶ Syncing Python project"
 uv sync
-uv run behavtaskatlas validate
-uv run behavtaskatlas site-index
 
-echo "▶ Fetching latest slice-artifacts release into web/public/"
+echo "▶ Validating records"
+uv run behavtaskatlas validate
+
+echo "▶ Fetching latest slice-artifacts release"
 PUBLIC_DIR="web/public"
-mkdir -p "$PUBLIC_DIR"
+mkdir -p "$PUBLIC_DIR" derived
 # Pull the list and sort by published_at descending; pick the newest non-draft
 # non-prerelease tag prefixed slice-artifacts-. /releases ordering is not
 # documented as deterministic for this repo (we have observed oldest-first
@@ -55,11 +64,15 @@ for asset in candidates[0].get("assets", []):
 if [ -n "${ASSET_URL:-}" ]; then
   echo "Downloading $ASSET_URL"
   curl -sSL -o /tmp/slice-artifacts.tar.gz "$ASSET_URL"
+  tar -xzf /tmp/slice-artifacts.tar.gz -C derived
   tar -xzf /tmp/slice-artifacts.tar.gz -C "$PUBLIC_DIR"
-  echo "Extracted slice artifacts into $PUBLIC_DIR"
+  echo "Extracted slice artifacts into derived/ and $PUBLIC_DIR"
 else
   echo "No slice-artifacts release found; slice report URLs will 404 in this deploy."
 fi
+
+echo "▶ Exporting static JSON (now sees extracted slice artifacts)"
+uv run behavtaskatlas site-index
 
 echo "▶ Building Astro app"
 cd web
