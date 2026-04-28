@@ -2,6 +2,118 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-28 23:15:00 BST - Model layer (v0.1): families, variants, fits, audit, cross-paper views
+
+Built out the full model layer — schema, fits, audit, UI — and
+tagged v0.1 to mark the milestone. Atlas now indexes 274 records
+across 8 papers, 9 vertical slices, 6 comparisons, 4 model
+families, 6 variants, and 142 model fits.
+
+What changed:
+
+- **Three new top-level record types**: `ModelFamily` (parameter
+  definitions, applicable curve types, data requirements via a
+  `requires` list), `ModelVariant` (which family parameters are
+  free / fixed, plus variant-specific additions), and `ModelFit`
+  (parameters, quality metrics, predictions curve, fit method,
+  fit_commit/fit_dirty provenance). Live under `model_families/`,
+  `model_variants/`, `model_fits/`. Cross-ref validation: variant
+  free_parameters must subset family params, fit parameters must
+  match variant free list, finding_ids must exist.
+- **Per-slice fittability map**. `ModelVariant.requires` declares
+  which canonical-trial fields a variant needs; `site-index`
+  scans each slice's harmonized `trials.csv` and emits a
+  `derived/models.json` matrix of (slice × applicable variants).
+  Surfaces real curation gaps honestly — Allen needs an SDT
+  yes/no variant; macaque-RDM-confidence's broken `choice`
+  column means nothing fits.
+- **`audit-models`** mirrors `audit-findings`: forward-evaluates
+  every committed `ModelFit` with its recorded parameters and
+  checks consistency against the recorded predictions curve.
+  Drift fires only on staleness (data or forward function
+  changed since the fit was committed) — goodness-of-fit
+  residuals against observed data report as informational.
+  Audit-findings tightened in parallel to skip non-psychometric
+  curves (median-of-medians ≠ pooled-median, statistical not
+  bug). Both audits run in CI.
+- **Four families seeded**: logistic, signal-detection,
+  drift-diffusion, click-rate-accumulator. Six variants live:
+  logistic-4param, sdt-2afc, ddm-vanilla, ddm-starting-point-bias,
+  ddm-drift-bias, click-leaky-accumulator. The DDM family uses
+  EZ-DDM closed forms (Wagenmakers 2007 conventions) — vanilla
+  was refit after the bias variants exposed a non-standard
+  factor-of-2 in the original implementation.
+- **142 fits committed**:
+  - logistic + SDT × 59 psychometric findings = 118 fits;
+  - DDM-vanilla × 5 (Roitman pooled + 2 macaques + 2 humans
+    pooled... wait Palmer pooled + 6 humans = 7 + 2 macaques
+    → recheck): Roitman 1+2, Palmer 1+6, Walsh 3 cues, total
+    13 fits;
+  - DDM bias variants on Walsh × 3 cues × 2 = 6 fits;
+  - All audit consistency-clean to numerical precision.
+- **Model fits visible everywhere**:
+  - `/papers/[id]` row gains a Fits column with variant + AIC,
+    plus a collapsible parameter table.
+  - MiniFindingsChart layers predicted-curve dashed lines
+    coloured by variant (toggleable). Used on /papers,
+    /protocols, /datasets, /slices, /compare, and /findings
+    embedded charts.
+  - `/models` index shows families with parameter definitions,
+    variant lists, and the per-slice fittability table.
+  - `/models/ddm` is the cross-paper DDM scatter — three
+    faceted strip plots of (k, a, t0) across every DDM fit,
+    coloured by paper and shaped by variant.
+- **Two model-fit-only comparisons**:
+  - `comparison.walsh-bias-locus` curates the canonical
+    "starting-point bias vs drift bias under prior cue?"
+    question. Per-cue verdict: cue=valid favours z-bias
+    (ΔAIC ≈ 84), cue=neutral favours v-bias (ΔAIC ≈ 46),
+    cue=invalid is a tie. The cue-dependent locus is itself
+    the curated finding.
+  - `comparison.drift-across-species` aggregates all 10
+    ddm-vanilla fits on Roitman + Palmer to put cross-species
+    drift differences on a strip plot.
+- **`Comparison` schema gains `model_fit_ids`** (validation
+  accepts ≥2 references across either list). The /compare
+  page renders model-fit-only comparisons as AIC tables grouped
+  by stratification with ★ winner badges; when all fits in a
+  comparison share the same DDM variant, a parameter strip
+  plot lands above the table.
+- **Per-subject chronometric findings extracted** for Roitman
+  (2) and Palmer (6) so the DDM dispatch could pair them with
+  per-subject psychometrics. Walsh per-cue chronometric (3)
+  extracted for the bias-locus DDM fits. Min trial threshold
+  per |stimulus| bin: 5 trials.
+- **`fit-stale-models` CLI**: discovers eligible (variant ×
+  finding) pairs lacking a committed ModelFit and emits one
+  YAML per fit. The user runs this locally; CI runs the audit
+  to detect drift if the data shifts.
+
+Why it matters: papers in this field publish models, not just
+data. Pairing each finding with its fitted model — and rendering
+the prediction curves alongside the data — turns the atlas from
+a curve catalogue into a meta-analysis substrate. The cue-locus
+finding is the first non-trivial scientific result built on the
+model layer. The audit pattern (forward-evaluation against
+recorded predictions) is the local CI guard the whole thing
+rests on; without it the heavy local fits would be opaque.
+
+Caveats logged:
+- DDM marginal mean RT uses the unbiased EZ-DDM closed form
+  even for bias variants, so RT under-informs the z-vs-v
+  discrimination. Documented in `model_family.drift-diffusion`
+  and `comparison.walsh-bias-locus` records.
+- The `auditory_clicks` slice has 0% RT population (Brody
+  click data: decision time semantics differ); Brunton's own
+  click-rate accumulator family is the right model class but
+  hasn't been fit yet. Family + variant records exist; fit
+  implementation is the next step.
+- `macaque_rdm_confidence` slice still has `choice = "unknown"`
+  on every trial (harmonizer issue surfaced by the fittability
+  survey). Existing accuracy-by-strength findings remain valid;
+  psychometric and DDM cannot fit until the harmonizer is
+  patched.
+
 ## 2026-04-28 17:45:00 BST - Citation export, cross-record search, contributor docs, rat findings
 
 Closed out the four-item roadmap (citations → search →
