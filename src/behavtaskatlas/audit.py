@@ -9,13 +9,16 @@ from typing import Any
 from behavtaskatlas.models import Finding
 
 
-def _group_key(finding: Finding) -> tuple[str, str, str, str]:
-    """Group findings that should sit on the same x-axis."""
+def _group_key(finding: Finding) -> tuple[str, str, str, str, str]:
+    """Group findings that should sit on the same x-axis. The condition
+    field is included so per-cue pooled curves don't get matched against
+    aggregates spanning different conditions."""
     return (
         finding.paper_id,
         finding.curve.curve_type,
         finding.curve.x_label,
         finding.curve.x_units,
+        finding.stratification.condition or "",
     )
 
 
@@ -57,6 +60,7 @@ def audit_pooled_vs_by_subject(
                     "curve_type": key[1],
                     "x_label": key[2],
                     "x_units": key[3],
+                    "condition": key[4],
                     "status": "ambiguous",
                     "reason": (
                         f"Found {len(pooled_findings)} pooled curves with the same "
@@ -109,6 +113,7 @@ def audit_pooled_vs_by_subject(
                 "curve_type": key[1],
                 "x_label": key[2],
                 "x_units": key[3],
+                "condition": key[4],
                 "status": status,
                 "tolerance": tolerance,
                 "max_abs_diff": max_diff,
@@ -140,14 +145,14 @@ def format_audit_report(report: dict[str, Any]) -> str:
         f"(tolerance {report['tolerance']:.4f})."
     )
     for r in report["reports"]:
+        condition_suffix = f" [{r['condition']}]" if r.get("condition") else ""
+        label = f"{r['paper_id']} / {r['curve_type']}{condition_suffix}"
         if r["status"] == "ambiguous":
-            lines.append(
-                f"  ✗ {r['paper_id']} / {r['curve_type']}: ambiguous — {r['reason']}"
-            )
+            lines.append(f"  ✗ {label}: ambiguous — {r['reason']}")
             continue
         flag = "✓" if r["status"] == "ok" else "✗"
         lines.append(
-            f"  {flag} {r['paper_id']} / {r['curve_type']}: "
+            f"  {flag} {label}: "
             f"n_subjects={r['n_subjects']}, n_x_overlap={r['n_x_overlap']}, "
             f"max |diff|={r['max_abs_diff']:.6f}"
         )

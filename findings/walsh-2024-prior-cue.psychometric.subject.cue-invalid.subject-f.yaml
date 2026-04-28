@@ -1,0 +1,65 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-f
+paper_id: paper.walsh-2024-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+slice_id: slice.human-visual-contrast-prior-cue
+source_data_level: processed-trial
+n_trials: 955
+n_subjects: 1
+stratification:
+  condition: cue=invalid
+  subject_id: subject-F
+curve:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -26.0
+    n: 63
+    y: 0.36507936507936506
+  - x: -25.0
+    n: 65
+    y: 0.3230769230769231
+  - x: -19.999999999999996
+    n: 63
+    y: 0.4126984126984127
+  - x: -10.000000000000009
+    n: 94
+    y: 0.46808510638297873
+  - x: -7.000000000000006
+    n: 96
+    y: 0.8125
+  - x: -6.000000000000005
+    n: 94
+    y: 0.6914893617021277
+  - x: 6.000000000000005
+    n: 95
+    y: 0.5894736842105263
+  - x: 7.000000000000006
+    n: 95
+    y: 0.43157894736842106
+  - x: 10.000000000000009
+    n: 98
+    y: 0.6428571428571429
+  - x: 19.999999999999996
+    n: 65
+    y: 0.9538461538461539
+  - x: 25.0
+    n: 63
+    y: 0.7936507936507936
+  - x: 26.0
+    n: 64
+    y: 0.578125
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: "Aggregated per trial from trials.csv for subject_id='subject-F',\
+  \ prior_context='cue=invalid'; per-subject \xD7 per-condition psychometric."
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

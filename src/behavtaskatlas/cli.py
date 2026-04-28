@@ -60,6 +60,7 @@ from behavtaskatlas.findings import (
     extract_accuracy_findings_for_slice,
     extract_chronometric_findings_for_slice,
     extract_psychometric_findings_for_slice,
+    extract_subject_condition_psychometric_findings_for_slice,
     extract_subject_psychometric_findings_for_slice,
     import_csv_findings,
     load_import_mapping,
@@ -1061,6 +1062,15 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     extract_finding_parser.add_argument(
+        "--by-subject-condition",
+        default=None,
+        help=(
+            "For psychometric only: read trials.csv and emit one finding "
+            "per (subject_id × <column>) cell. Pass the trials column to "
+            "stratify on, typically `prior_context`. Implies --by-subject."
+        ),
+    )
+    extract_finding_parser.add_argument(
         "--x-label",
         default=None,
         help="X-axis label written into the curve (curve-type default if omitted)",
@@ -1435,6 +1445,7 @@ def main(argv: list[str] | None = None) -> int:
             finding_id_prefix=args.finding_id_prefix,
             curve_type=args.curve_type,
             by_subject=bool(args.by_subject),
+            by_subject_condition=args.by_subject_condition,
             x_label=args.x_label,
             x_units=args.x_units,
             derived_dir=Path(args.derived_dir),
@@ -2925,6 +2936,7 @@ def _extract_finding(
     finding_id_prefix: str,
     curve_type: str,
     by_subject: bool = False,
+    by_subject_condition: str | None = None,
     x_label: str | None,
     x_units: str | None,
     derived_dir: Path,
@@ -2944,10 +2956,11 @@ def _extract_finding(
         print(f"Unknown slice id: {slice_id!r}", file=sys.stderr)
         return 2
 
-    if by_subject and curve_type != "psychometric":
+    by_subject_active = by_subject or by_subject_condition is not None
+    if by_subject_active and curve_type != "psychometric":
         print(
-            f"--by-subject is only supported for curve_type=psychometric; "
-            f"got {curve_type!r}.",
+            f"--by-subject / --by-subject-condition is only supported for "
+            f"curve_type=psychometric; got {curve_type!r}.",
             file=sys.stderr,
         )
         return 2
@@ -2966,7 +2979,13 @@ def _extract_finding(
         if curve_type == "psychometric":
             extractor_kwargs.setdefault("x_label", "Signed evidence")
             extractor_kwargs.setdefault("x_units", "")
-            if by_subject:
+            if by_subject_condition is not None:
+                findings = extract_subject_condition_psychometric_findings_for_slice(
+                    slice_record,
+                    condition_column=by_subject_condition,
+                    **extractor_kwargs,
+                )
+            elif by_subject:
                 findings = extract_subject_psychometric_findings_for_slice(
                     slice_record, **extractor_kwargs
                 )

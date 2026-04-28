@@ -26,13 +26,54 @@ finding_ids:
   - finding.walsh-2024-prior-cue.psychometric.cue-invalid
   - finding.walsh-2024-prior-cue.psychometric.cue-neutral
   - finding.walsh-2024-prior-cue.psychometric.cue-valid
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-a
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-b
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-c
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-d
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-e
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-f
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-g
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-h
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-i
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-j
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-k
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-l
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-a
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-b
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-c
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-d
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-e
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-f
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-g
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-h
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-i
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-j
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-k
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-l
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-a
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-b
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-c
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-d
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-e
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-f
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-g
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-h
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-i
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-j
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-k
+  - finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-l
 curation_status: data-linked
 notes: >
   Source paper for the human visual contrast prior-cue slice. Stratification
-  is by cue context (invalid / neutral / valid); each gets its own finding.
-  The OSF "1. Behavioural Analysis.mat" file carries 66,200 processed
-  behavioural rows that the slice harmonizes; psychometric_summary.csv is
-  the per-cue-context aggregate.
+  is by cue context (invalid / neutral / valid); each gets its own pooled
+  finding. The OSF "1. Behavioural Analysis.mat" file carries 66,200
+  processed behavioural rows that the slice harmonizes;
+  psychometric_summary.csv is the per-cue-context aggregate. Per-observer
+  × per-cue findings (12 observers × 3 cues = 36) are extracted from the
+  harmonized trials with min_points=2 so subject J's sparse two-level
+  coverage stays included; the audit-findings command verifies that the
+  n-weighted aggregate of these subject curves recovers each pooled
+  cue curve to numerical precision.
 provenance:
   curators:
     - behavtaskatlas

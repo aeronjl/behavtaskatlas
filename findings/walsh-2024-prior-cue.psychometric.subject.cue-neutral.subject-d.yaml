@@ -1,0 +1,53 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.walsh-2024-prior-cue.psychometric.subject.cue-neutral.subject-d
+paper_id: paper.walsh-2024-prior-cue
+protocol_id: protocol.human-visual-contrast-2afc-keyboard
+dataset_id: dataset.walsh-prior-cue-human-contrast-osf
+slice_id: slice.human-visual-contrast-prior-cue
+source_data_level: processed-trial
+n_trials: 940
+n_subjects: 1
+stratification:
+  condition: cue=neutral
+  subject_id: subject-D
+curve:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -19.999999999999996
+    n: 62
+    y: 0.5
+  - x: -17.999999999999993
+    n: 94
+    y: 0.5319148936170213
+  - x: -15.999999999999993
+    n: 64
+    y: 0.796875
+  - x: -13.99999999999999
+    n: 249
+    y: 0.6586345381526104
+  - x: 13.99999999999999
+    n: 253
+    y: 0.8616600790513834
+  - x: 15.999999999999993
+    n: 64
+    y: 0.96875
+  - x: 17.999999999999993
+    n: 92
+    y: 0.9565217391304348
+  - x: 19.999999999999996
+    n: 62
+    y: 0.8548387096774194
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: "Aggregated per trial from trials.csv for subject_id='subject-D',\
+  \ prior_context='cue=neutral'; per-subject \xD7 per-condition psychometric."
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.
