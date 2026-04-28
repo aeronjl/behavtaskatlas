@@ -131,6 +131,22 @@ const summaryCards = [
               <dt class="text-slate-500">Source level</dt>
               <dd>{slice.comparison.source_data_level}</dd>
             </dl>
+            {
+              slice.metrics && slice.metrics.length > 0 ? (
+                <ul class="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  {slice.metrics.slice(0, 4).map((m) => (
+                    <li class="rounded bg-slate-100 px-2 py-0.5">
+                      <span class="text-slate-500">{m.label}</span>
+                      <span class="ml-1 font-mono font-semibold text-slate-900">
+                        {typeof m.value === "number"
+                          ? m.value.toLocaleString()
+                          : (m.value ?? "—")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null
+            }
             <a
               href={`/slices/${slugForId(slice.id)}`}
               class="text-sm font-medium text-accent"
