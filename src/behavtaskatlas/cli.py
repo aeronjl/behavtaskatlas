@@ -3058,6 +3058,8 @@ def _site_index(
     )
 
     from behavtaskatlas.citations import build_papers_index, write_citation_files
+    from behavtaskatlas.models import Dataset, VerticalSlice
+    from behavtaskatlas.search import build_search_index
 
     citations_dir = derived_dir / "citations"
     paper_records = [r for r in records if isinstance(r, Paper)]
@@ -3065,6 +3067,20 @@ def _site_index(
     papers_index_path = derived_dir / "papers.json"
     papers_index_path.write_text(
         json.dumps(build_papers_index(paper_records), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    search_payload = build_search_index(
+        papers=paper_records,
+        families=[r for r in records if isinstance(r, TaskFamily)],
+        protocols=[r for r in records if isinstance(r, Protocol)],
+        datasets=[r for r in records if isinstance(r, Dataset)],
+        slices=[r for r in records if isinstance(r, VerticalSlice)],
+        findings=[r for r in records if isinstance(r, Finding)],
+        comparisons=[r for r in records if isinstance(r, Comparison)],
+    )
+    search_path = derived_dir / "search.json"
+    search_path.write_text(
+        json.dumps(search_payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -3077,6 +3093,10 @@ def _site_index(
     print(f"Wrote comparisons index to {comparisons_path}")
     print(f"Wrote {citation_counts['files']} citation files to {citations_dir}")
     print(f"Wrote papers index to {papers_index_path}")
+    print(
+        f"Wrote search index ({search_payload['counts']['total']} entries) "
+        f"to {search_path}"
+    )
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
     n_papers = findings_payload["counts"]["papers"]

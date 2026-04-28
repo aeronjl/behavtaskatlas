@@ -13,11 +13,11 @@ const items = [
 ---
 
 <nav class="border-b border-slate-200 bg-white">
-  <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
     <a href="/" class="font-semibold tracking-tight text-slate-900 no-underline">
       behavtaskatlas
     </a>
-    <ul class="flex gap-5 text-sm">
+    <ul class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
       {
         items.map((item) => (
           <li>
@@ -27,6 +27,18 @@ const items = [
           </li>
         ))
       }
+      <li>
+        <form action="/search" method="get" class="flex items-center">
+          <input
+            type="search"
+            name="q"
+            placeholder="Search…"
+            aria-label="Search the atlas"
+            class="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            autocomplete="off"
+          />
+        </form>
+      </li>
     </ul>
   </div>
 </nav>
