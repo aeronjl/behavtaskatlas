@@ -40,6 +40,22 @@ const comparisonRows: [string, string][] = [
 ];
 
 const reportAvailable = slice.report_status === "available";
+
+const REPO_SOURCE_BASE = "https://github.com/aeronjl/behavtaskatlas/blob/main";
+
+function resolveArtifactHref(href: string): string {
+  if (/^https?:\/\//.test(href) || href.startsWith("#")) {
+    return href;
+  }
+  if (href.startsWith("../")) {
+    // Repository-typed path emitted by the JSON manifest as a sibling-relative
+    // link from derived/. Translate into a stable GitHub source URL.
+    return `${REPO_SOURCE_BASE}/${href.replace(/^\.\.\//, "")}`;
+  }
+  // Derived-typed path: the slice-artifacts bundle extracts to web/public/,
+  // so the deployed asset lives at the absolute root path.
+  return `/${href.replace(/^\/+/, "")}`;
+}
 ---
 
 <BaseLayout title={`${slice.title} · Slice`}>
@@ -147,14 +163,21 @@ const reportAvailable = slice.report_status === "available";
     {
       slice.links && slice.links.length > 0 ? (
         <ul class="space-y-1 text-sm">
-          {slice.links.map((link) => (
-            <li>
-              <a href={link.href}>{link.label}</a>
-              <span class="ml-2 text-xs font-mono text-slate-500">
-                {link.href}
-              </span>
-            </li>
-          ))}
+          {slice.links
+            .map((link) => ({
+              ...link,
+              resolved: resolveArtifactHref(link.href),
+            }))
+            .map((link) => (
+              <li>
+                <a href={link.resolved} class="break-all">
+                  {link.label}
+                </a>
+                <span class="ml-2 text-xs font-mono text-slate-500 break-all">
+                  {link.href}
+                </span>
+              </li>
+            ))}
         </ul>
       ) : null
     }

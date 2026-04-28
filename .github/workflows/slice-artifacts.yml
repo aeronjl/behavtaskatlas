@@ -1,0 +1,91 @@
+name: Slice artifacts
+
+# Manual workflow that regenerates slice analyses against public open data and
+# publishes the bundled report HTML/SVG/JSON files as a GitHub Release asset.
+# Vercel builds pick up the latest release of this kind during their build.
+#
+# Heavy slices (Allen Visual Behavior, Brody Lab clicks 8 GB archive) are
+# excluded from the default automated run because their downloads exceed
+# typical CI patience; rebuild them locally with the per-slice CLI subcommands
+# and run scripts/publish_artifacts.py to refresh the release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slices:
+        description: "Comma-separated list of slice families to rebuild (default: all CI-friendly)"
+        required: false
+        default: "rdm,human-rdm,human-visual,human-clicks,macaque-rdm-confidence"
+
+jobs:
+  rebuild-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Validate records
+        run: |
+          uv sync
+          uv run behavtaskatlas validate
+
+      - name: Run selected slice pipelines
+        env:
+          SELECTED: ${{ github.event.inputs.slices }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra slices <<< "$SELECTED"
+          for slice in "${slices[@]}"; do
+            slice="$(echo "$slice" | tr -d ' ')"
+            echo "▶ Rebuilding $slice"
+            case "$slice" in
+              rdm)
+                uv run behavtaskatlas rdm-download
+                uv run behavtaskatlas rdm-harmonize
+                uv run behavtaskatlas rdm-analyze
+                uv run behavtaskatlas rdm-report
+                ;;
+              human-rdm)
+                uv sync --extra rdm
+                uv run --extra rdm behavtaskatlas human-rdm-download
+                uv run --extra rdm behavtaskatlas human-rdm-harmonize
+                uv run behavtaskatlas human-rdm-analyze
+                uv run behavtaskatlas human-rdm-report
+                ;;
+              human-visual)
+                uv sync --extra visual
+                uv run --extra visual behavtaskatlas human-visual-download
+                uv run --extra visual behavtaskatlas human-visual-harmonize
+                uv run behavtaskatlas human-visual-analyze
+                uv run behavtaskatlas human-visual-report
+                ;;
+              human-clicks)
+                uv sync --extra clicks
+                uv run --extra clicks behavtaskatlas human-clicks-download
+                uv run --extra clicks behavtaskatlas human-clicks-harmonize
+                uv run behavtaskatlas human-clicks-analyze
+                uv run behavtaskatlas human-clicks-report
+                ;;
+              macaque-rdm-confidence)
+                uv run behavtaskatlas macaque-rdm-confidence-download
+                uv run behavtaskatlas macaque-rdm-confidence-harmonize
+                uv run behavtaskatlas macaque-rdm-confidence-analyze
+                uv run behavtaskatlas macaque-rdm-confidence-report
+                ;;
+              *)
+                echo "Unknown slice family '$slice'; skipping."
+                ;;
+            esac
+          done
+          uv run behavtaskatlas site-index
+
+      - name: Publish slice-artifacts release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run python scripts/publish_artifacts.py
