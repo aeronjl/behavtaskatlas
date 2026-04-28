@@ -26,6 +26,8 @@
   let output: string = $state("");
   let errorMessage: string = $state("");
   let elapsedMs: number | null = $state(null);
+  let currentSnippet: string = $state(pythonSnippet);
+  let edited = $derived(currentSnippet !== pythonSnippet);
 
   let pyodide: any = null;
   let pyodidePromise: Promise<any> | null = null;
@@ -99,7 +101,7 @@
       const csvText = await response.text();
       py.globals.set("_csv_text", csvText);
       status = "loading-packages";
-      await py.loadPackagesFromImports(pythonSnippet);
+      await py.loadPackagesFromImports(currentSnippet);
       status = "running";
       const wrapped = `
 import sys, io, json
@@ -113,7 +115,7 @@ try:
         df["task_variables"] = (
             df["task_variables_json"].fillna("{}").apply(json.loads)
         )
-${indentSnippet(pythonSnippet)}
+${indentSnippet(currentSnippet)}
 finally:
     sys.stdout = _orig
 _buf.getvalue()
@@ -146,16 +148,20 @@ _buf.getvalue()
   {#if description}
     <p class="mb-3 text-sm text-slate-700">{description}</p>
   {/if}
-  <details class="mb-3">
-    <summary class="cursor-pointer text-xs text-slate-500"
-      >Show Python source</summary
+  <label class="mb-3 block">
+    <span class="mb-1 block text-xs font-medium text-slate-600"
+      >Python (df is a pandas DataFrame loaded from the trials CSV)</span
     >
-    <pre
-      class="mt-2 overflow-x-auto rounded border border-slate-200 bg-slate-50 p-2 text-xs"><code
-        >{pythonSnippet}</code
-      ></pre>
-  </details>
-  <div class="flex items-center gap-3">
+    <textarea
+      class="block w-full rounded border border-slate-200 bg-slate-50 p-2 font-mono text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-accent"
+      spellcheck="false"
+      autocomplete="off"
+      autocorrect="off"
+      rows={Math.max(6, currentSnippet.split('\n').length + 1)}
+      bind:value={currentSnippet}
+    ></textarea>
+  </label>
+  <div class="flex flex-wrap items-center gap-3">
     <button
       type="button"
       class="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"
@@ -164,10 +170,20 @@ _buf.getvalue()
     >
       Run analysis
     </button>
+    {#if edited}
+      <button
+        type="button"
+        class="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
+        onclick={() => (currentSnippet = pythonSnippet)}
+        disabled={inFlight}
+      >
+        Reset
+      </button>
+    {/if}
     <span class="text-xs text-slate-500">
       {STATUS_LABELS[status]}{elapsedMs !== null
         ? ` · ${elapsedMs} ms`
-        : ""}
+        : ""}{edited ? " · edited" : ""}
     </span>
   </div>
   {#if output}

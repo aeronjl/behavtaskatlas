@@ -44,7 +44,20 @@ const reportAvailable = slice.report_status === "available";
 
 const REPO_SOURCE_BASE = "https://github.com/aeronjl/behavtaskatlas/blob/main";
 
-const allenSnippet = `# Recompute the Allen Visual Behavior outcome breakdown in your browser.
+type AnalysisConfig = {
+  trialsUrl: string;
+  title: string;
+  description: string;
+  snippet: string;
+};
+
+const ANALYSIS_CONFIGS: Record<string, AnalysisConfig> = {
+  "slice.allen-visual-behavior": {
+    trialsUrl: "/allen_visual_behavior/trials.csv",
+    title: "Allen Visual Behavior · outcome breakdown",
+    description:
+      "Recompute hit, miss, false-alarm, correct-reject counts and the corresponding rates against the slice's canonical trials.csv. Output should match the Python adapter's analysis_result.json exactly.",
+    snippet: `# Recompute the Allen Visual Behavior outcome breakdown in your browser.
 # df is a pandas DataFrame loaded from the slice's canonical trials.csv.
 # task_variables_json is parsed for you into df["task_variables"].
 
@@ -64,7 +77,72 @@ hit_rate = hit / (hit + miss) if (hit + miss) else float("nan")
 fa_rate = fa / (fa + cr) if (fa + cr) else float("nan")
 print(f"\\nHit rate:        {hit_rate:.3f} ({hit}/{hit + miss})")
 print(f"False-alarm rate: {fa_rate:.3f} ({fa}/{fa + cr})")
-`;
+`,
+  },
+  "slice.ibl-visual-decision": {
+    trialsUrl:
+      "/ibl_visual_decision/ebce500b-c530-47de-8cb1-963c552703ea/trials.csv",
+    title: "IBL Visual Decision · psychometric by prior block",
+    description:
+      "Group canonical trials by prior block (probabilityLeft) and signed contrast, then compute P(right) and trial counts per cell. Useful as a starting point for fitting prior-conditioned psychometrics.",
+    snippet: `# Group IBL trials by prior block and signed contrast, compute P(right).
+# df["choice"] is "left", "right", or "no-response".
+# df["stimulus_value"] is signed contrast (right positive).
+# df["prior_context"] is e.g. "p_left=0.5", "p_left=0.8", "p_left=0.2".
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["signed_contrast"] = responded["stimulus_value"].astype(float)
+grouped = responded.groupby(["prior_context", "signed_contrast"], dropna=False)
+summary = grouped.apply(
+    lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+    })
+).reset_index()
+print(f"Responded trials: {len(responded)} (of {len(df)})\\n")
+print("P(right) by prior block × signed contrast:")
+print(summary.pivot(index="signed_contrast", columns="prior_context", values="p_right").round(3).to_string())
+`,
+  },
+  "slice.random-dot-motion": {
+    trialsUrl: "/random_dot_motion/roitman-shadlen-pyddm/trials.csv",
+    title: "Random-Dot Motion · psychometric and chronometric",
+    description:
+      "Recompute P(right) by signed coherence and median response time by absolute coherence against the Roitman-Shadlen processed trial table.",
+    snippet: `# Compute psychometric and chronometric summaries for Roitman-Shadlen RDM.
+# df["stimulus_value"] is signed motion coherence (right positive).
+# df["response_time"] is in seconds.
+
+import numpy as np
+
+responded = df[df["choice"].isin(["left", "right"])].copy()
+responded["coh_signed"] = responded["stimulus_value"].astype(float)
+responded["coh_abs"] = responded["coh_signed"].abs()
+
+psychometric = (
+    responded.groupby("coh_signed")
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "p_right": (g["choice"] == "right").mean(),
+    }))
+)
+chronometric = (
+    responded.groupby("coh_abs")
+    .apply(lambda g: pd.Series({
+        "n": len(g),
+        "median_rt_s": g["response_time"].astype(float).median(),
+    }))
+)
+print(f"Responded trials: {len(responded)} (of {len(df)})\\n")
+print("Psychometric (P(right) by signed coherence):")
+print(psychometric.round(3).to_string())
+print("\\nChronometric (median RT by abs coherence):")
+print(chronometric.round(3).to_string())
+`,
+  },
+};
+
+const analysisConfig = ANALYSIS_CONFIGS[slice.id];
 
 function resolveArtifactHref(href: string): string {
   if (/^https?:\/\//.test(href) || href.startsWith("#")) {
@@ -167,23 +245,22 @@ function resolveArtifactHref(href: string): string {
   }
 
   {
-    slice.id === "slice.allen-visual-behavior" ? (
+    analysisConfig ? (
       <section class="mb-8">
         <h2 class="mb-2 text-sm font-semibold text-slate-700">
           In-place analysis
         </h2>
         <p class="mb-3 text-sm text-slate-700">
-          Reproduce the slice's outcome breakdown directly in your browser.
-          The Python runs against the same canonical trials CSV linked in the
-          artifacts list, so the printed numbers should match the Python
-          adapter's analysis_result.json exactly.
+          Edit the Python below and click Run to compute against the slice's
+          canonical trials CSV directly in your browser. Pyodide caches the
+          runtime after the first run, so subsequent runs are instant.
         </p>
         <InPlacePyodide
           client:visible
-          title="Allen Visual Behavior · outcome breakdown"
-          description="Loads /allen_visual_behavior/trials.csv, parses task_variables, prints outcome counts plus hit and false-alarm rates."
-          trialsUrl="/allen_visual_behavior/trials.csv"
-          pythonSnippet={allenSnippet}
+          title={analysisConfig.title}
+          description={analysisConfig.description}
+          trialsUrl={analysisConfig.trialsUrl}
+          pythonSnippet={analysisConfig.snippet}
         />
       </section>
     ) : null
