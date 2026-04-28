@@ -1,7 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import { findings } from "../../lib/findings";
-import { catalog, slugForId } from "../../lib/data";
+import { slugForId } from "../../lib/data";
 
 type Entry = (typeof findings.findings)[number];
 
@@ -76,6 +77,26 @@ const protocolEntries = Array.from(
       }
     </ul>
   </section>
+
+  {
+    paperEntries.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Curves on shared axes
+        </h2>
+        <MiniFindingsChart
+          client:visible
+          findings={paperEntries}
+          colorBy="condition"
+          height={280}
+        />
+        <p class="mt-2 text-[11px] text-slate-500">
+          Compare to the rest of the literature on{" "}
+          <a class="text-accent" href="/findings">/findings</a>.
+        </p>
+      </section>
+    ) : null
+  }
 
   <section>
     <h2 class="mb-2 text-sm font-semibold text-slate-700">Findings</h2>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import { catalog, slugForId } from "../../lib/data";
 import type { CatalogProtocolDetail } from "../../lib/data";
 import { findings as findingsIndex } from "../../lib/findings";
@@ -262,11 +263,17 @@ const protocolPapers = Array.from(
 
   {
     protocolFindings.length > 0 ? (
-      <section>
+      <section class="mb-8">
         <h2 class="mb-2 text-sm font-semibold text-slate-700">
           Findings <span class="font-normal text-slate-500">on this protocol</span>
         </h2>
-        <ul class="space-y-1 text-sm">
+        <MiniFindingsChart
+          client:visible
+          findings={protocolFindings}
+          colorBy="paper"
+          height={280}
+        />
+        <ul class="mt-3 space-y-1 text-sm">
           {protocolFindings.map((entry) => (
             <li class="flex items-baseline justify-between gap-3">
               <span>

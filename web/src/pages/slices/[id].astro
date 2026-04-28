@@ -1,12 +1,14 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import InPlacePyodide from "../../components/InPlacePyodide.svelte";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import {
   catalog,
   manifest,
   slugForId,
 } from "../../lib/data";
 import type { ManifestSlice } from "../../lib/data";
+import { findings as findingsIndex } from "../../lib/findings";
 
 export function getStaticPaths() {
   return manifest.slices.map((slice) => ({
@@ -47,6 +49,10 @@ type SliceLink = { href: string; label: string };
 
 const metrics: SliceMetric[] = ((slice.metrics ?? []) as unknown as SliceMetric[]);
 const links: SliceLink[] = ((slice.links ?? []) as unknown as SliceLink[]);
+
+const sliceFindings = findingsIndex.findings.filter(
+  (entry) => entry.slice_id === slice.id,
+);
 
 const REPO_SOURCE_BASE = "https://github.com/aeronjl/behavtaskatlas/blob/main";
 
@@ -445,6 +451,22 @@ function resolveArtifactHref(href: string): string {
             </div>
           ))}
         </div>
+      </section>
+    ) : null
+  }
+
+  {
+    sliceFindings.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Findings extracted from this slice
+        </h2>
+        <MiniFindingsChart
+          client:visible
+          findings={sliceFindings}
+          colorBy="condition"
+          height={260}
+        />
       </section>
     ) : null
   }
