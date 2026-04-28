@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import InPlacePyodide from "../../components/InPlacePyodide.svelte";
 import {
   catalog,
   manifest,
@@ -42,6 +43,28 @@ const comparisonRows: [string, string][] = [
 const reportAvailable = slice.report_status === "available";
 
 const REPO_SOURCE_BASE = "https://github.com/aeronjl/behavtaskatlas/blob/main";
+
+const allenSnippet = `# Recompute the Allen Visual Behavior outcome breakdown in your browser.
+# df is a pandas DataFrame loaded from the slice's canonical trials.csv.
+# task_variables_json is parsed for you into df["task_variables"].
+
+outcome_counts = (
+    df["task_variables"]
+    .apply(lambda v: v.get("outcome", "unknown"))
+    .value_counts()
+)
+print("Outcome counts:")
+print(outcome_counts.to_string())
+
+hit = int(outcome_counts.get("hit", 0))
+miss = int(outcome_counts.get("miss", 0))
+fa = int(outcome_counts.get("false_alarm", 0))
+cr = int(outcome_counts.get("correct_reject", 0))
+hit_rate = hit / (hit + miss) if (hit + miss) else float("nan")
+fa_rate = fa / (fa + cr) if (fa + cr) else float("nan")
+print(f"\\nHit rate:        {hit_rate:.3f} ({hit}/{hit + miss})")
+print(f"False-alarm rate: {fa_rate:.3f} ({fa}/{fa + cr})")
+`;
 
 function resolveArtifactHref(href: string): string {
   if (/^https?:\/\//.test(href) || href.startsWith("#")) {
@@ -139,6 +162,29 @@ function resolveArtifactHref(href: string): string {
             </div>
           ))}
         </div>
+      </section>
+    ) : null
+  }
+
+  {
+    slice.id === "slice.allen-visual-behavior" ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          In-place analysis
+        </h2>
+        <p class="mb-3 text-sm text-slate-700">
+          Reproduce the slice's outcome breakdown directly in your browser.
+          The Python runs against the same canonical trials CSV linked in the
+          artifacts list, so the printed numbers should match the Python
+          adapter's analysis_result.json exactly.
+        </p>
+        <InPlacePyodide
+          client:visible
+          title="Allen Visual Behavior · outcome breakdown"
+          description="Loads /allen_visual_behavior/trials.csv, parses task_variables, prints outcome counts plus hit and false-alarm rates."
+          trialsUrl="/allen_visual_behavior/trials.csv"
+          pythonSnippet={allenSnippet}
+        />
       </section>
     ) : null
   }
