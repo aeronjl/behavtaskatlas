@@ -239,11 +239,28 @@ def register_forward(variant_id: str, fn: Any) -> None:
 
 
 def has_forward(variant_id: str) -> bool:
+    _ensure_forwards_registered()
     return variant_id in _FORWARD_REGISTRY
 
 
 def get_forward(variant_id: str) -> Any | None:
+    _ensure_forwards_registered()
     return _FORWARD_REGISTRY.get(variant_id)
+
+
+_FORWARDS_REGISTERED = False
+
+
+def _ensure_forwards_registered() -> None:
+    """Lazy import of the model_fits subpackage so each variant's
+    `register_forward` call runs exactly once. Avoids a hard import
+    cycle at module load: model_fits modules import model_layer, so
+    we defer the back-import until the first registry lookup."""
+    global _FORWARDS_REGISTERED
+    if _FORWARDS_REGISTERED:
+        return
+    _FORWARDS_REGISTERED = True
+    from behavtaskatlas import model_fits  # noqa: F401
 
 
 def audit_model_fits(
@@ -290,6 +307,7 @@ def audit_model_fits(
         forward = get_forward(variant.id)
         per_finding: list[dict[str, Any]] = []
         max_diff_for_fit = 0.0
+        max_observed_residual = 0.0
         for fid in fit.finding_ids:
             finding = findings_by_id.get(fid)
             if finding is None:
@@ -309,20 +327,46 @@ def audit_model_fits(
                 )
                 overall_status = "warning"
                 continue
-            observed = {p.x: p.y for p in finding.curve.points}
-            diffs: list[float] = []
+
+            # Drift = forward(recorded_params) vs the recorded predictions
+            # curve (if any). This is the staleness check: does running
+            # the forward function with the recorded parameters still
+            # produce the curve that was committed? It only fires if the
+            # variant's forward implementation, the parameters, or the
+            # finding's x grid have changed since the fit was recorded.
+            recorded = {
+                p.x: p.y for p in (fit.predictions.points if fit.predictions else [])
+            }
+            consistency_diffs: list[float] = []
             for pred in predicted:
-                if pred.x in observed:
-                    diff = abs(pred.y - observed[pred.x])
-                    diffs.append(diff)
+                if pred.x in recorded:
+                    diff = abs(pred.y - recorded[pred.x])
+                    consistency_diffs.append(diff)
                     if diff > max_diff_for_fit:
                         max_diff_for_fit = diff
+
+            # Goodness-of-fit (informational only): forward(params) vs
+            # the observed finding points.
+            observed = {p.x: p.y for p in finding.curve.points}
+            observed_diffs: list[float] = []
+            for pred in predicted:
+                if pred.x in observed:
+                    obs_diff = abs(pred.y - observed[pred.x])
+                    observed_diffs.append(obs_diff)
+                    if obs_diff > max_observed_residual:
+                        max_observed_residual = obs_diff
+
             per_finding.append(
                 {
                     "finding_id": fid,
                     "status": "ok",
-                    "n_points": len(diffs),
-                    "max_abs_diff": max(diffs) if diffs else 0.0,
+                    "n_points": len(consistency_diffs),
+                    "max_consistency_diff": (
+                        max(consistency_diffs) if consistency_diffs else 0.0
+                    ),
+                    "max_observed_residual": (
+                        max(observed_diffs) if observed_diffs else 0.0
+                    ),
                 }
             )
         n_evaluated += 1
@@ -336,7 +380,8 @@ def audit_model_fits(
                 "fit_id": fit.id,
                 "variant_id": fit.variant_id,
                 "status": status,
-                "max_abs_diff": max_diff_for_fit,
+                "max_consistency_diff": max_diff_for_fit,
+                "max_observed_residual": max_observed_residual,
                 "per_finding": per_finding,
             }
         )
@@ -357,7 +402,7 @@ def format_model_audit_report(report: dict[str, Any]) -> str:
         f"Model audit: {report['overall_status'].upper()} — "
         f"{report['n_fits']} fit(s), {report['n_evaluated']} evaluated, "
         f"{report['n_unimplemented']} forward unimplemented; "
-        f"max |diff|={report['overall_max_abs_diff']:.6f} "
+        f"max consistency |diff|={report['overall_max_abs_diff']:.6f} "
         f"(tolerance {report['tolerance']:.4f})."
     ]
     for r in report["reports"]:
@@ -372,8 +417,11 @@ def format_model_audit_report(report: dict[str, Any]) -> str:
         else:
             flag = "?"
         line = f"  {flag} {r['fit_id']} [{r.get('variant_id','')}]: {r['status']}"
-        if "max_abs_diff" in r and r["status"] != "forward_unimplemented":
-            line += f" max |diff|={r['max_abs_diff']:.6f}"
+        if "max_consistency_diff" in r and r["status"] != "forward_unimplemented":
+            line += (
+                f" consistency |diff|={r['max_consistency_diff']:.6f},"
+                f" GoF |residual|={r.get('max_observed_residual', 0.0):.4f}"
+            )
         lines.append(line)
     return "\n".join(lines)
 

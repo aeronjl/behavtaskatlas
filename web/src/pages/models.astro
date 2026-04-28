@@ -169,17 +169,20 @@ function capabilityRow(s: (typeof slice_coverage)[number]): string[] {
                   </ul>
                 </td>
                 <td class="px-3 py-2">
-                  {s.fittable_variant_ids.length === 0 ? (
-                    <span class="text-xs text-slate-500">—</span>
-                  ) : (
-                    <ul class="flex flex-wrap gap-1">
-                      {s.fittable_variant_ids.map((vid) => (
-                        <li class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono">
-                          {vid.replace("model_variant.", "")}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {(() => {
+                    const ids = (s.fittable_variant_ids ?? []) as string[];
+                    return ids.length === 0 ? (
+                      <span class="text-xs text-slate-500">—</span>
+                    ) : (
+                      <ul class="flex flex-wrap gap-1">
+                        {ids.map((vid) => (
+                          <li class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono">
+                            {vid.replace("model_variant.", "")}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                 </td>
               </tr>
             ))

@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -1155,6 +1156,55 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional JSON output path for the audit report",
     )
 
+    fit_model_parser = subparsers.add_parser(
+        "fit-model",
+        help="Fit a registered ModelVariant to one Finding and emit a ModelFit YAML",
+    )
+    fit_model_parser.add_argument(
+        "--variant",
+        dest="variant_id",
+        required=True,
+        help="ModelVariant id (e.g. model_variant.logistic-4param)",
+    )
+    fit_model_parser.add_argument(
+        "--finding",
+        dest="finding_id",
+        required=True,
+        help="Finding id to fit",
+    )
+    fit_model_parser.add_argument(
+        "--out-dir",
+        default="model_fits",
+        help="Output directory for the ModelFit YAML (default: model_fits)",
+    )
+
+    fit_stale_parser = subparsers.add_parser(
+        "fit-stale-models",
+        help=(
+            "Fit every (registered variant × eligible finding) pair that "
+            "doesn't already have a committed ModelFit"
+        ),
+    )
+    fit_stale_parser.add_argument(
+        "--variant",
+        dest="variant_filter",
+        default=None,
+        help="Restrict to a single variant id",
+    )
+    fit_stale_parser.add_argument(
+        "--out-dir",
+        default="model_fits",
+        help="Output directory for emitted ModelFit YAMLs",
+    )
+    fit_stale_parser.add_argument(
+        "--curve-types",
+        default="psychometric",
+        help=(
+            "Comma-separated curve types to fit (default: psychometric). "
+            "Variants are still gated by their declared requires."
+        ),
+    )
+
     audit_models_parser = subparsers.add_parser(
         "audit-models",
         help=(
@@ -1502,6 +1552,18 @@ def main(argv: list[str] | None = None) -> int:
         return _audit_models(
             tolerance=float(args.tolerance),
             out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "fit-model":
+        return _fit_model(
+            variant_id=args.variant_id,
+            finding_id=args.finding_id,
+            out_dir=Path(args.out_dir),
+        )
+    if args.command == "fit-stale-models":
+        return _fit_stale_models(
+            variant_filter=args.variant_filter,
+            curve_types=tuple(t.strip() for t in args.curve_types.split(",") if t.strip()),
+            out_dir=Path(args.out_dir),
         )
     parser.error(f"Unknown command {args.command!r}")
     return 2
@@ -3327,6 +3389,190 @@ def _audit_findings(*, tolerance: float, out_file: Path | None) -> int:
     if report["overall_status"] == "drift":
         return 1
     return 0
+
+
+def _model_fit_id(variant_id: str, finding_id: str) -> str:
+    variant_slug = variant_id.removeprefix("model_variant.")
+    finding_slug = finding_id.removeprefix("finding.")
+    return f"model_fit.{variant_slug}.{finding_slug}"
+
+
+def _model_fit_yaml_path(out_dir: Path, fit_id: str) -> Path:
+    return out_dir / f"{fit_id.removeprefix('model_fit.')}.yaml"
+
+
+def _do_fit_one(
+    *,
+    variant_id: str,
+    finding_id: str,
+    out_dir: Path,
+    records: list[Any] | None = None,
+) -> Path:
+    import time
+
+    from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+    from behavtaskatlas.model_fits import logistic as logistic_module
+    from behavtaskatlas.model_fits import sdt as sdt_module
+    from behavtaskatlas.models import (
+        Finding,
+        ModelFit,
+        ModelVariant,
+        ResultCurve,
+    )
+
+    if records is None:
+        records = load_repository_records(Path("."))
+    variant = next(
+        (
+            r
+            for r in records
+            if isinstance(r, ModelVariant) and r.id == variant_id
+        ),
+        None,
+    )
+    if variant is None:
+        raise ValueError(f"Unknown ModelVariant id: {variant_id!r}")
+    finding = next(
+        (r for r in records if isinstance(r, Finding) and r.id == finding_id),
+        None,
+    )
+    if finding is None:
+        raise ValueError(f"Unknown Finding id: {finding_id!r}")
+
+    fitter_by_variant = {
+        logistic_module.VARIANT_ID: logistic_module.fit,
+        sdt_module.VARIANT_ID: sdt_module.fit,
+    }
+    fitter = fitter_by_variant.get(variant_id)
+    if fitter is None:
+        raise ValueError(
+            f"No registered fitter for variant {variant_id!r}; "
+            "step 4 covers logistic-4param + sdt-2afc only."
+        )
+
+    started = time.time()
+    result = fitter(finding)
+    elapsed = time.time() - started
+
+    fit_id = _model_fit_id(variant_id, finding_id)
+    predictions_curve = ResultCurve(
+        curve_type=finding.curve.curve_type,
+        x_label=finding.curve.x_label,
+        x_units=finding.curve.x_units,
+        y_label=finding.curve.y_label,
+        points=[
+            {"x": p["x"], "n": p["n"], "y": p["y"]}
+            for p in result["predictions"]
+        ],
+    )
+    fit_method = {
+        **result["fit_method"],
+        "duration_seconds": float(elapsed),
+    }
+    fit_record = ModelFit(
+        object_type="model_fit",
+        schema_version="0.1.0",
+        id=fit_id,
+        variant_id=variant_id,
+        finding_ids=[finding_id],
+        parameters={k: float(v) for k, v in result["parameters"].items()},
+        quality={k: float(v) for k, v in result["quality"].items()},
+        predictions=predictions_curve,
+        fit_method=fit_method,
+        caveats=None,
+        curation_status="data-linked",
+        provenance={
+            "curators": ["behavtaskatlas"],
+            "created": date.today(),
+            "updated": date.today(),
+            "fit_commit": current_git_commit(),
+            "fit_dirty": current_git_dirty(),
+            "source_notes": (
+                f"Fitted with {fit_method['type']} via "
+                f"behavtaskatlas.model_fits.{variant_id.split('.', 1)[-1]}; "
+                f"success={result['success']}; {result['message']}"
+            ),
+        },
+    )
+
+    out_path = _model_fit_yaml_path(out_dir, fit_id)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = fit_record.model_dump(mode="json", exclude_none=True)
+    out_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    return out_path
+
+
+def _fit_model(*, variant_id: str, finding_id: str, out_dir: Path) -> int:
+    try:
+        path = _do_fit_one(
+            variant_id=variant_id,
+            finding_id=finding_id,
+            out_dir=out_dir,
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Wrote {path}")
+    return 0
+
+
+def _fit_stale_models(
+    *,
+    variant_filter: str | None,
+    curve_types: tuple[str, ...],
+    out_dir: Path,
+) -> int:
+    from behavtaskatlas.model_fits import logistic as logistic_module
+    from behavtaskatlas.model_fits import sdt as sdt_module
+    from behavtaskatlas.models import Finding, ModelFit, ModelVariant
+
+    records = load_repository_records(Path("."))
+    variants = [r for r in records if isinstance(r, ModelVariant)]
+    findings = [r for r in records if isinstance(r, Finding)]
+    existing_fits = {
+        (r.variant_id, fid)
+        for r in records
+        if isinstance(r, ModelFit)
+        for fid in r.finding_ids
+    }
+
+    fitter_variants = {logistic_module.VARIANT_ID, sdt_module.VARIANT_ID}
+    if variant_filter is not None:
+        fitter_variants = {variant_filter}
+    eligible = [v for v in variants if v.id in fitter_variants]
+
+    n_fitted = 0
+    n_skipped = 0
+    n_failed = 0
+    for variant in eligible:
+        for finding in findings:
+            if finding.curve.curve_type not in curve_types:
+                continue
+            if (variant.id, finding.id) in existing_fits:
+                n_skipped += 1
+                continue
+            try:
+                path = _do_fit_one(
+                    variant_id=variant.id,
+                    finding_id=finding.id,
+                    out_dir=out_dir,
+                    records=records,
+                )
+            except (ValueError, ZeroDivisionError) as exc:
+                print(
+                    f"  ✗ {variant.id} × {finding.id}: {exc}",
+                    file=sys.stderr,
+                )
+                n_failed += 1
+                continue
+            print(f"  ✓ {path}")
+            n_fitted += 1
+
+    print(
+        f"fit-stale-models: {n_fitted} fitted, {n_skipped} skipped (already "
+        f"had fit), {n_failed} failed"
+    )
+    return 1 if n_failed else 0
 
 
 def _audit_models(*, tolerance: float, out_file: Path | None) -> int:

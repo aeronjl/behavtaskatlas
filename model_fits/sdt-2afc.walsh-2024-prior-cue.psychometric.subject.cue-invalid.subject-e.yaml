@@ -1,0 +1,68 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-e
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-e
+parameters:
+  d_prime: 1.0e-06
+  criterion: -0.33848168686216806
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -526.092157613039
+  aic: 1056.184315226078
+  bic: 1065.553538681414
+  n_trials: 800.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -14.999999999999991
+    n: 69
+    y: 0.6324942363653141
+  - x: -13.99999999999999
+    n: 76
+    y: 0.6324946130983192
+  - x: -12.00000000000001
+    n: 114
+    y: 0.632495366563947
+  - x: -11.00000000000001
+    n: 71
+    y: 0.6324957432965697
+  - x: -10.000000000000009
+    n: 76
+    y: 0.6324961200290649
+  - x: 10.000000000000009
+    n: 79
+    y: 0.6325036546521893
+  - x: 11.00000000000001
+    n: 69
+    y: 0.6325040313820065
+  - x: 12.00000000000001
+    n: 114
+    y: 0.6325044081116964
+  - x: 13.99999999999999
+    n: 64
+    y: 0.6325051615706933
+  - x: 14.999999999999991
+    n: 68
+    y: 0.6325055383000004
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0015587806701660156
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'

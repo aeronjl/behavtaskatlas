@@ -1,0 +1,65 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.ibl-2021-standardized.psychometric.p_left-0.2
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.ibl-2021-standardized.psychometric.p_left-0.2
+parameters:
+  d_prime: 0.010165925436470555
+  criterion: -0.6096188637893611
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -98.91674695367772
+  aic: 201.83349390735543
+  bic: 208.4201035568044
+  n_trials: 199.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 5
+    y: 0.3420136597325377
+  - x: -25.0
+    n: 8
+    y: 0.6388815146904703
+  - x: -12.5
+    n: 12
+    y: 0.6852905078486041
+  - x: -6.25
+    n: 8
+    y: 0.7074951553798435
+  - x: 0.0
+    n: 27
+    y: 0.7289428436360772
+  - x: 6.25
+    n: 35
+    y: 0.7495759423451043
+  - x: 12.5
+    n: 42
+    y: 0.7693454469074279
+  - x: 25.0
+    n: 29
+    y: 0.8061420501940768
+  - x: 100.0
+    n: 33
+    y: 0.9480476548559224
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.001811981201171875
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

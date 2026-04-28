@@ -1,0 +1,71 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.palmer-huk-shadlen-2005.psychometric.subject.phs-mm
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.palmer-huk-shadlen-2005.psychometric.subject.phs-mm
+parameters:
+  d_prime: 0.08773147123645268
+  criterion: 0.15900617882783027
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -224.17889717947233
+  aic: 452.35779435894466
+  bic: 461.0279028619408
+  n_trials: 564.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 47
+    y: 1.6527883761832516e-06
+  - x: -25.6
+    n: 47
+    y: 0.008087741145676735
+  - x: -12.8
+    n: 46
+    y: 0.09992675867465495
+  - x: -6.4
+    n: 48
+    y: 0.23561241747529754
+  - x: -3.2
+    n: 47
+    y: 0.33006021988848555
+  - x: -0.0
+    n: 94
+    y: 0.43683200288383706
+  - x: 3.2
+    n: 46
+    y: 0.548445366847204
+  - x: 6.4
+    n: 47
+    y: 0.656332845474441
+  - x: 12.8
+    n: 47
+    y: 0.8324661707027674
+  - x: 25.6
+    n: 48
+    y: 0.9815522933710498
+  - x: 51.2
+    n: 47
+    y: 0.9999926402677702
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0019178390502929688
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

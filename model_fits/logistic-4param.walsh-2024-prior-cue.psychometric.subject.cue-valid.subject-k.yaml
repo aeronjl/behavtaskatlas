@@ -1,0 +1,58 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-k
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.walsh-2024-prior-cue.psychometric.subject.cue-valid.subject-k
+parameters:
+  bias: -7.497312982797985
+  slope: 0.2777306053505406
+  lower_lapse: 0.27730298180344115
+  upper_lapse: 0.10483032740004047
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -1369.04521630569
+  aic: 2746.09043261138
+  bic: 2769.9177410997404
+  n_trials: 2855.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -21.999999999999996
+    n: 234
+    y: 0.27730298180344115
+  - x: -12.00000000000001
+    n: 361
+    y: 0.27730303802817263
+  - x: -8.000000000000007
+    n: 810
+    y: 0.3642000412993877
+  - x: 8.000000000000007
+    n: 835
+    y: 0.8951696725999595
+  - x: 12.00000000000001
+    n: 358
+    y: 0.8951696725999595
+  - x: 21.999999999999996
+    n: 257
+    y: 0.8951696725999595
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0056650638580322266
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

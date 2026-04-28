@@ -1,0 +1,64 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-i
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.walsh-2024-prior-cue.psychometric.subject.cue-invalid.subject-i
+parameters:
+  bias: -12.940469887775654
+  slope: 5.531402292738442
+  lower_lapse: 0.13808129318329512
+  upper_lapse: 0.1907219840192283
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -452.7110435026822
+  aic: 913.4220870053643
+  bic: 932.1354554639817
+  n_trials: 795.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed target-distractor contrast
+  x_units: percentage points
+  y_label: p_right
+  points:
+  - x: -28.000000000000004
+    n: 68
+    y: 0.17946436993662576
+  - x: -15.999999999999993
+    n: 70
+    y: 0.3831626094411483
+  - x: -13.99999999999999
+    n: 154
+    y: 0.44163594047514754
+  - x: -12.99999999999999
+    n: 102
+    y: 0.47187378201756347
+  - x: 12.99999999999999
+    n: 96
+    y: 0.8031660944748746
+  - x: 13.99999999999999
+    n: 165
+    y: 0.8041692270934447
+  - x: 15.999999999999993
+    n: 64
+    y: 0.805711095762442
+  - x: 28.000000000000004
+    n: 76
+    y: 0.8088685948475638
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.005079984664916992
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

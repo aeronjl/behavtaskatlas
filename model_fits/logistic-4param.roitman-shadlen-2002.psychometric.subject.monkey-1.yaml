@@ -1,0 +1,73 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.roitman-shadlen-2002.psychometric.subject.monkey-1
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.roitman-shadlen-2002.psychometric.subject.monkey-1
+parameters:
+  bias: 0.3989960939679565
+  slope: 5.30734084976208
+  lower_lapse: 0.0
+  upper_lapse: 0.0
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -962.7652712508864
+  aic: 1933.5305425017727
+  bic: 1957.0066200077688
+  n_trials: 2615.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 219
+    y: 5.993477340523709e-05
+  - x: -25.6
+    n: 217
+    y: 0.00740118859237207
+  - x: -12.8
+    n: 217
+    y: 0.07677938424269133
+  - x: -6.4
+    n: 218
+    y: 0.21737067474646393
+  - x: -3.2
+    n: 219
+    y: 0.33668178069683163
+  - x: 0.0
+    n: 432
+    y: 0.481214308050436
+  - x: 3.2
+    n: 218
+    y: 0.6289605908878333
+  - x: 6.4
+    n: 218
+    y: 0.7559678362689285
+  - x: 12.8
+    n: 219
+    y: 0.911861264717734
+  - x: 25.6
+    n: 219
+    y: 0.9914082983888614
+  - x: 51.2
+    n: 219
+    y: 0.9999303415894752
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.002596139907836914
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

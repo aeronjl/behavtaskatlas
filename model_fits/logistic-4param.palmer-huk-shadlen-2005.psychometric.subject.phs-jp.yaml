@@ -1,0 +1,73 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.palmer-huk-shadlen-2005.psychometric.subject.phs-jp
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.palmer-huk-shadlen-2005.psychometric.subject.phs-jp
+parameters:
+  bias: 0.7934316743791445
+  slope: 2.7133814636533238
+  lower_lapse: 0.0
+  upper_lapse: 0.0
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -145.31985913022498
+  aic: 298.63971826044997
+  bic: 315.9155907154357
+  n_trials: 555.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 47
+    y: 4.7655231823518995e-09
+  - x: -25.6
+    n: 47
+    y: 5.963928434809725e-05
+  - x: -12.8
+    n: 45
+    y: 0.006628175987017396
+  - x: -6.4
+    n: 47
+    y: 0.06592155992451108
+  - x: -3.2
+    n: 46
+    y: 0.18667606856565133
+  - x: 0.0
+    n: 92
+    y: 0.427412897462243
+  - x: 3.2
+    n: 47
+    y: 0.7082553813105051
+  - x: 6.4
+    n: 45
+    y: 0.8875809349314676
+  - x: 12.8
+    n: 45
+    y: 0.9881668505200764
+  - x: 25.6
+    n: 48
+    y: 0.999892971431395
+  - x: 51.2
+    n: 46
+    y: 0.9999999914473942
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.003196239471435547
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  fit_commit: 24fd416
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'
