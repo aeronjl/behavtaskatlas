@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { EditorState } from "@codemirror/state";
+  import { EditorView, keymap } from "@codemirror/view";
+  import { python } from "@codemirror/lang-python";
+  import { basicSetup } from "codemirror";
+
   type Status =
     | "idle"
     | "loading-runtime"
@@ -29,6 +34,9 @@
   let elapsedMs: number | null = $state(null);
   let currentSnippet: string = $state(pythonSnippet);
   let edited = $derived(currentSnippet !== pythonSnippet);
+
+  let editorContainer: HTMLDivElement | undefined = $state();
+  let editorView: EditorView | null = null;
 
   let pyodide: any = null;
   let pyodidePromise: Promise<any> | null = null;
@@ -75,6 +83,63 @@
       return py;
     })();
     return pyodidePromise;
+  }
+
+  $effect(() => {
+    if (!editorContainer || editorView) return;
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: currentSnippet,
+        extensions: [
+          basicSetup,
+          python(),
+          keymap.of([
+            {
+              key: "Mod-Enter",
+              preventDefault: true,
+              run: () => {
+                run();
+                return true;
+              },
+            },
+          ]),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              currentSnippet = update.state.doc.toString();
+            }
+          }),
+          EditorView.theme({
+            "&": { fontSize: "12px" },
+            ".cm-content": {
+              fontFamily:
+                "ui-monospace, SFMono-Regular, 'Menlo', 'Monaco', monospace",
+              padding: "8px 0",
+            },
+            ".cm-gutters": { backgroundColor: "#f8fafc" },
+            ".cm-focused": { outline: "none" },
+          }),
+        ],
+      }),
+      parent: editorContainer,
+    });
+    editorView = view;
+    return () => {
+      view.destroy();
+      editorView = null;
+    };
+  });
+
+  function resetSnippet() {
+    currentSnippet = pythonSnippet;
+    if (editorView) {
+      editorView.dispatch({
+        changes: {
+          from: 0,
+          to: editorView.state.doc.length,
+          insert: pythonSnippet,
+        },
+      });
+    }
   }
 
   function indentSnippet(snippet: string): string {
@@ -172,19 +237,16 @@ finally:
   {#if description}
     <p class="mb-3 text-sm text-slate-700">{description}</p>
   {/if}
-  <label class="mb-3 block">
+  <div class="mb-3">
     <span class="mb-1 block text-xs font-medium text-slate-600"
-      >Python (df is a pandas DataFrame loaded from the trials CSV)</span
+      >Python (df is a pandas DataFrame loaded from the trials CSV;
+      ⌘/Ctrl-Enter to run)</span
     >
-    <textarea
-      class="block w-full rounded border border-slate-200 bg-slate-50 p-2 font-mono text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-accent"
-      spellcheck="false"
-      autocomplete="off"
-      autocorrect="off"
-      rows={Math.max(6, currentSnippet.split('\n').length + 1)}
-      bind:value={currentSnippet}
-    ></textarea>
-  </label>
+    <div
+      bind:this={editorContainer}
+      class="overflow-hidden rounded border border-slate-200 bg-white"
+    ></div>
+  </div>
   <div class="flex flex-wrap items-center gap-3">
     <button
       type="button"
@@ -198,7 +260,7 @@ finally:
       <button
         type="button"
         class="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
-        onclick={() => (currentSnippet = pythonSnippet)}
+        onclick={resetSnippet}
         disabled={inFlight}
       >
         Reset
