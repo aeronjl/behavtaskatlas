@@ -98,8 +98,17 @@ both a baseline psychometric summary and a descriptive click-time evidence kerne
 Batch runs also write `derived/auditory_clicks/batch_summary.csv`. Aggregate runs
 read those existing batch outputs and write a per-rat/gamma psychometric bias table,
 a cross-rat evidence-kernel summary, a JSON result, an aggregate provenance JSON,
-and an SVG plot. Report runs render those aggregate artifacts as a
-dependency-free static HTML page.
+an SVG plot, and a slice-level concatenated `trials.csv` (used by
+`extract-finding --by-subject` for cross-rat psychometric findings). Report
+runs render those aggregate artifacts as a dependency-free static HTML page.
+
+If you only need the slice-level trials concatenation without rerunning the
+full aggregate (e.g. to re-extract per-rat findings from existing batch
+outputs):
+
+```bash
+uv run --extra clicks behavtaskatlas clicks-aggregate-trials
+```
 
 Download and run the Mendeley Data human Poisson clicks DBS OFF/ON slice:
 

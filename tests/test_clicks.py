@@ -12,6 +12,7 @@ from behavtaskatlas.clicks import (
     brody_clicks_aggregate_provenance_payload,
     clicks_aggregate_report_html,
     clicks_session_report_html,
+    concatenate_brody_clicks_trials,
     evidence_kernel_svg,
     harmonize_brody_clicks_trial,
     harmonize_brody_clicks_trials,
@@ -449,6 +450,171 @@ def test_aggregate_brody_clicks_batch_reads_batch_artifacts(tmp_path) -> None:
     assert provenance["source"]["n_ok"] == 2
     assert provenance["outputs"]["provenance"].endswith("provenance.json")
     assert len(provenance["inputs"]["rat_artifacts"]) == 2
+
+
+def test_concatenate_brody_clicks_trials_skips_failed_rows_and_records_subjects(
+    tmp_path,
+) -> None:
+    derived_dir = tmp_path / "auditory_clicks"
+    rat_a_dir = derived_dir / "A080-parsed"
+    rat_b_dir = derived_dir / "B075-parsed"
+    rat_c_dir = derived_dir / "C999-parsed"
+    rat_a_dir.mkdir(parents=True)
+    rat_b_dir.mkdir(parents=True)
+    rat_c_dir.mkdir(parents=True)
+
+    trial_header = "subject_id,session_id,stimulus_value,choice\n"
+    (rat_a_dir / "trials.csv").write_text(
+        trial_header
+        + "A080,A080-parsed,-3.0,left\n"
+        + "A080,A080-parsed,2.0,right\n",
+        encoding="utf-8",
+    )
+    (rat_b_dir / "trials.csv").write_text(
+        trial_header + "B075,B075-parsed,1.0,right\n",
+        encoding="utf-8",
+    )
+    # rat_c has no trials.csv on disk; concatenator should skip it.
+
+    batch_summary_path = derived_dir / "batch_summary.csv"
+    write_clicks_batch_summary_csv(
+        batch_summary_path,
+        [
+            {
+                "mat_file": "A080.mat",
+                "session_id": "A080-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "A080",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 2,
+                "harmonization_summary_rows": 0,
+                "psychometric_summary_rows": 0,
+                "psychometric_prior_contexts": "",
+                "evidence_kernel_rows": 0,
+                "evidence_kernel_analyzed_trials": 0,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash-a",
+                "output_dir": str(rat_a_dir),
+            },
+            {
+                "mat_file": "B075.mat",
+                "session_id": "B075-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "B075",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 1,
+                "harmonization_summary_rows": 0,
+                "psychometric_summary_rows": 0,
+                "psychometric_prior_contexts": "",
+                "evidence_kernel_rows": 0,
+                "evidence_kernel_analyzed_trials": 0,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash-b",
+                "output_dir": str(rat_b_dir),
+            },
+            {
+                "mat_file": "C999.mat",
+                "session_id": "C999-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "C999",
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 0,
+                "harmonization_summary_rows": 0,
+                "psychometric_summary_rows": 0,
+                "psychometric_prior_contexts": "",
+                "evidence_kernel_rows": 0,
+                "evidence_kernel_analyzed_trials": 0,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "hash-c",
+                "output_dir": str(rat_c_dir),
+            },
+            {
+                "mat_file": "D000.mat",
+                "session_id": "D000-parsed",
+                "parsed_field": "parsed",
+                "subject_id": "D000",
+                "task_type": "location",
+                "status": "load_error",
+                "error": "could not parse",
+                "n_trials": 0,
+                "harmonization_summary_rows": 0,
+                "psychometric_summary_rows": 0,
+                "psychometric_prior_contexts": "",
+                "evidence_kernel_rows": 0,
+                "evidence_kernel_analyzed_trials": 0,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": "",
+                "output_dir": str(derived_dir / "D000-parsed"),
+            },
+        ],
+    )
+
+    out_path = derived_dir / "trials.csv"
+    summary = concatenate_brody_clicks_trials(batch_summary_path, out_path)
+
+    assert summary["n_rows"] == 3
+    assert summary["n_subjects"] == 2
+    assert summary["subjects"] == ["A080", "B075"]
+    # Failed batch row (D000) should not appear in missing_paths because we
+    # only check trials.csv for ok rows; the C999 ok row with no trials.csv
+    # should appear once.
+    assert len(summary["missing_paths"]) == 1
+    assert summary["missing_paths"][0].endswith("C999-parsed/trials.csv")
+
+    written = out_path.read_text(encoding="utf-8").splitlines()
+    assert written[0] == "subject_id,session_id,stimulus_value,choice"
+    assert written[1].startswith("A080,")
+    assert written[3].startswith("B075,")
+
+
+def test_concatenate_brody_clicks_trials_rejects_schema_mismatch(tmp_path) -> None:
+    derived_dir = tmp_path / "auditory_clicks"
+    rat_a_dir = derived_dir / "A080-parsed"
+    rat_b_dir = derived_dir / "B075-parsed"
+    rat_a_dir.mkdir(parents=True)
+    rat_b_dir.mkdir(parents=True)
+    (rat_a_dir / "trials.csv").write_text(
+        "subject_id,session_id\nA080,A080-parsed\n", encoding="utf-8"
+    )
+    (rat_b_dir / "trials.csv").write_text(
+        "subject_id,extra\nB075,nope\n", encoding="utf-8"
+    )
+
+    batch_summary_path = derived_dir / "batch_summary.csv"
+    rows = []
+    for subject, output_dir in (("A080", rat_a_dir), ("B075", rat_b_dir)):
+        rows.append(
+            {
+                "mat_file": f"{subject}.mat",
+                "session_id": f"{subject}-parsed",
+                "parsed_field": "parsed",
+                "subject_id": subject,
+                "task_type": "location",
+                "status": "ok",
+                "error": None,
+                "n_trials": 1,
+                "harmonization_summary_rows": 0,
+                "psychometric_summary_rows": 0,
+                "psychometric_prior_contexts": "",
+                "evidence_kernel_rows": 0,
+                "evidence_kernel_analyzed_trials": 0,
+                "evidence_kernel_excluded_trials": 0,
+                "source_file_sha256": f"hash-{subject}",
+                "output_dir": str(output_dir),
+            }
+        )
+    write_clicks_batch_summary_csv(batch_summary_path, rows)
+
+    with pytest.raises(ValueError, match="schema mismatch"):
+        concatenate_brody_clicks_trials(
+            batch_summary_path, derived_dir / "trials.csv"
+        )
 
 
 def test_aggregate_kernel_svg_contains_title() -> None:

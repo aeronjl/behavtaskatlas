@@ -40,6 +40,7 @@ from behavtaskatlas.clicks import (
     analyze_human_clicks_evidence_kernel,
     brody_clicks_aggregate_provenance_payload,
     brody_clicks_provenance_payload,
+    concatenate_brody_clicks_trials,
     download_human_clicks_mendeley_mat,
     human_clicks_provenance_payload,
     load_brody_clicks_mat,
@@ -510,6 +511,29 @@ def main(argv: list[str] | None = None) -> int:
         "--batch-summary",
         default=None,
         help="Optional explicit path to a clicks batch_summary.csv",
+    )
+
+    clicks_aggregate_trials_parser = subparsers.add_parser(
+        "clicks-aggregate-trials",
+        help=(
+            "Concatenate per-rat canonical trials into a slice-level "
+            "trials.csv for downstream cross-rat extraction"
+        ),
+    )
+    clicks_aggregate_trials_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_CLICKS_DERIVED_DIR),
+        help="Directory containing generated auditory-clicks batch artifacts",
+    )
+    clicks_aggregate_trials_parser.add_argument(
+        "--batch-summary",
+        default=None,
+        help="Optional explicit path to a clicks batch_summary.csv",
+    )
+    clicks_aggregate_trials_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional explicit output path (default: <derived-dir>/trials.csv)",
     )
 
     clicks_report_parser = subparsers.add_parser(
@@ -1236,6 +1260,12 @@ def main(argv: list[str] | None = None) -> int:
         return _clicks_aggregate(
             derived_dir=Path(args.derived_dir),
             batch_summary=Path(args.batch_summary) if args.batch_summary else None,
+        )
+    if args.command == "clicks-aggregate-trials":
+        return _clicks_aggregate_trials(
+            derived_dir=Path(args.derived_dir),
+            batch_summary=Path(args.batch_summary) if args.batch_summary else None,
+            out_file=Path(args.out_file) if args.out_file else None,
         )
     if args.command == "clicks-report":
         return _clicks_report(
@@ -2091,6 +2121,7 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     kernel_summary_path = output_dir / "aggregate_kernel_summary.csv"
     result_path = output_dir / "aggregate_result.json"
     kernel_plot_path = output_dir / "aggregate_kernel.svg"
+    trials_path = output_dir / "trials.csv"
     provenance_path = output_dir / "provenance.json"
 
     write_aggregate_psychometric_bias_csv(
@@ -2100,6 +2131,7 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     write_aggregate_kernel_summary_csv(kernel_summary_path, result["kernel_summary_rows"])
     write_analysis_json(result_path, result)
     write_aggregate_kernel_svg(kernel_plot_path, result["kernel_summary_rows"])
+    trials_summary = concatenate_brody_clicks_trials(batch_summary_path, trials_path)
     write_provenance_json(
         provenance_path,
         brody_clicks_aggregate_provenance_payload(
@@ -2110,8 +2142,10 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
                 "aggregate_kernel_summary": str(kernel_summary_path),
                 "aggregate_result": str(result_path),
                 "aggregate_kernel": str(kernel_plot_path),
+                "trials": str(trials_path),
                 "provenance": str(provenance_path),
             },
+            trials_summary=trials_summary,
         ),
     )
 
@@ -2120,10 +2154,52 @@ def _clicks_aggregate(*, derived_dir: Path, batch_summary: Path | None) -> int:
     print(f"Wrote aggregate kernel summary to {kernel_summary_path}")
     print(f"Wrote aggregate result to {result_path}")
     print(f"Wrote aggregate kernel plot to {kernel_plot_path}")
+    print(
+        f"Wrote concatenated trials ({trials_summary['n_rows']} rows from "
+        f"{trials_summary['n_subjects']} subjects) to {trials_path}"
+    )
+    if trials_summary["missing_paths"]:
+        print(
+            f"Note: {len(trials_summary['missing_paths'])} per-rat trials.csv "
+            "were missing from output dirs; concatenation skipped them."
+        )
     print(f"Wrote aggregate provenance to {provenance_path}")
     if result["n_artifact_errors"]:
         print(f"Encountered {result['n_artifact_errors']} aggregate artifact errors")
         return 1
+    return 0
+
+
+def _clicks_aggregate_trials(
+    *,
+    derived_dir: Path,
+    batch_summary: Path | None,
+    out_file: Path | None,
+) -> int:
+    batch_summary_path = batch_summary or derived_dir / "batch_summary.csv"
+    if not batch_summary_path.exists():
+        print(
+            f"Clicks batch summary not found: {batch_summary_path}. "
+            "Run `uv run behavtaskatlas clicks-batch` first.",
+            file=sys.stderr,
+        )
+        return 2
+    out_path = out_file or derived_dir / "trials.csv"
+    try:
+        summary = concatenate_brody_clicks_trials(batch_summary_path, out_path)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(
+        f"Wrote {summary['n_rows']} trials from {summary['n_subjects']} "
+        f"subjects to {out_path}"
+    )
+    if summary["missing_paths"]:
+        print(
+            f"Note: {len(summary['missing_paths'])} per-rat trials.csv were "
+            "missing from output dirs; concatenation skipped them.",
+            file=sys.stderr,
+        )
     return 0
 
 

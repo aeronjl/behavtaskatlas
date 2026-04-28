@@ -637,11 +637,69 @@ def aggregate_brody_clicks_batch(batch_summary_path: Path) -> dict[str, Any]:
     }
 
 
+def concatenate_brody_clicks_trials(
+    batch_summary_path: Path,
+    out_path: Path,
+) -> dict[str, Any]:
+    """Concatenate per-rat canonical trials CSVs into a slice-level
+    trials.csv for downstream cross-rat extraction (e.g. extract-finding
+    --by-subject). Reads each ok batch row's output_dir/trials.csv and
+    writes them in-order to `out_path`.
+
+    Returns a small summary dict (n_rows, n_subjects, missing_paths)
+    suitable for embedding in aggregate provenance.
+    """
+    batch_rows = _read_csv_dicts(batch_summary_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames: list[str] | None = None
+    n_rows = 0
+    subjects: list[str] = []
+    missing: list[str] = []
+
+    with out_path.open("w", encoding="utf-8", newline="") as fout:
+        writer: csv.DictWriter[str] | None = None
+        for batch_row in batch_rows:
+            if batch_row.get("status") != "ok":
+                continue
+            output_dir = _batch_output_dir(batch_row, batch_summary_path=batch_summary_path)
+            trials_path = output_dir / "trials.csv"
+            if not trials_path.exists():
+                missing.append(str(trials_path))
+                continue
+            with trials_path.open(newline="", encoding="utf-8") as fin:
+                reader = csv.DictReader(fin)
+                if writer is None:
+                    fieldnames = list(reader.fieldnames or [])
+                    writer = csv.DictWriter(fout, fieldnames=fieldnames)
+                    writer.writeheader()
+                elif list(reader.fieldnames or []) != fieldnames:
+                    raise ValueError(
+                        f"trials.csv schema mismatch in {trials_path}: "
+                        f"got {reader.fieldnames!r}, expected {fieldnames!r}"
+                    )
+                for row in reader:
+                    writer.writerow(row)
+                    n_rows += 1
+            subject = (batch_row.get("subject_id") or "").strip()
+            if subject and subject not in subjects:
+                subjects.append(subject)
+
+    return {
+        "out_path": str(out_path),
+        "n_rows": n_rows,
+        "n_subjects": len(subjects),
+        "subjects": subjects,
+        "missing_paths": missing,
+    }
+
+
 def brody_clicks_aggregate_provenance_payload(
     *,
     result: dict[str, Any],
     batch_summary_path: Path,
     output_files: dict[str, str],
+    trials_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
 
@@ -673,6 +731,7 @@ def brody_clicks_aggregate_provenance_payload(
             ],
         },
         "outputs": output_files,
+        "trials_summary": trials_summary,
         "caveats": [
             (
                 "This is aggregate provenance over already generated per-rat artifacts; "
