@@ -3,6 +3,7 @@ import catalogJson from "../../../derived/catalog.json";
 import graphJson from "../../../derived/graph.json";
 import curationQueueJson from "../../../derived/curation_queue.json";
 import papersJson from "../../../derived/papers.json";
+import auditJson from "../../../derived/audit.json";
 
 export type Manifest = typeof manifestJson;
 export type Catalog = typeof catalogJson;
@@ -30,6 +31,9 @@ export const curationQueue = curationQueueJson;
 export type PapersIndex = typeof papersJson;
 export type PaperEntry = PapersIndex["papers"][number];
 export const papers = papersJson;
+
+export type AuditReport = typeof auditJson;
+export const audit = auditJson;
 
 export function getPaper(id: string): PaperEntry | undefined {
   return papers.papers.find((p) => p.id === id || p.slug === id);

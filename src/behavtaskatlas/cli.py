@@ -3203,6 +3203,16 @@ def _site_index(
         encoding="utf-8",
     )
 
+    from behavtaskatlas.audit import audit_pooled_vs_by_subject
+
+    finding_records = [r for r in records if isinstance(r, Finding)]
+    audit_payload = audit_pooled_vs_by_subject(finding_records)
+    audit_path = derived_dir / "audit.json"
+    audit_path.write_text(
+        json.dumps(audit_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
@@ -3215,6 +3225,10 @@ def _site_index(
     print(
         f"Wrote search index ({search_payload['counts']['total']} entries) "
         f"to {search_path}"
+    )
+    print(
+        f"Wrote audit report ({audit_payload['n_groups_audited']} groups, "
+        f"{audit_payload['overall_status']}) to {audit_path}"
     )
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
