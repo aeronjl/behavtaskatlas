@@ -220,6 +220,33 @@ print(
 )
 `,
   },
+  "slice.macaque-rdm-confidence-wager": {
+    trialsUrl:
+      "/macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/accuracy_summary.csv",
+    title: "Macaque RDM Confidence · accuracy by motion strength",
+    description:
+      "Per-monkey accuracy across motion strengths from the Khalvati-Kiani-Rao source-data summary. The full source-row CSV is ~242 MB so the cell uses the slice's pre-aggregated accuracy summary (a few dozen rows, one per measure × monkey × motion strength).",
+    snippet: `# Per-monkey accuracy by motion strength.
+# df is the slice's accuracy_summary.csv: one row per
+# (source_measure, monkey, motion_strength_percent).
+# source_measure is "accuracy_no_sure_target" (regular trials) or
+# "accuracy_with_sure_target" (trials where the sure-target option was offered).
+
+print("Rows:", len(df))
+print("Monkeys:", sorted(df["monkey"].unique()))
+print("Source measures:", sorted(df["source_measure"].unique()))
+
+# Compare regular-trial accuracy by monkey × motion strength.
+regular = df[df["source_measure"] == "accuracy_no_sure_target"]
+pivot = regular.pivot(
+    index="motion_strength_percent",
+    columns="monkey",
+    values="p_correct",
+).round(3)
+print("\\nP(correct) on no-sure-target trials by monkey × motion strength:")
+print(pivot.to_string())
+`,
+  },
   "slice.mouse-visual-contrast-unbiased": {
     trialsUrl:
       "/mouse_visual_contrast_unbiased/6a6442d1-dd7d-4717-b7b1-5874aefbd6fc/trials.csv",

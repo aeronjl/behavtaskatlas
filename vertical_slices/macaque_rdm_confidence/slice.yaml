@@ -24,6 +24,10 @@ artifact_links:
     path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/confidence.svg
   - label: Accuracy SVG
     path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/accuracy.svg
+  - label: Accuracy summary CSV
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/accuracy_summary.csv
+  - label: Sure-target choice summary CSV
+    path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/confidence_summary.csv
   - label: Canonical source-row CSV
     path: macaque_rdm_confidence/khalvati-kiani-rao-natcomm2021-source-data/trials.csv
   - label: Slice notes
