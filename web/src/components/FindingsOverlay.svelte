@@ -15,6 +15,10 @@
   }
 
   const allEntries: FindingsEntry[] = data.findings;
+  const allCurveTypes = uniqueOf(allEntries, (e) => e.curve_type);
+  const allYears = allEntries.map((e) => e.paper_year).filter((y): y is number => y != null);
+  const minYear = allYears.length > 0 ? Math.min(...allYears) : 1990;
+  const maxYear = allYears.length > 0 ? Math.max(...allYears) : new Date().getFullYear();
 
   const filterOptions = {
     species: uniqueOf(allEntries, (e) => e.species),
@@ -30,27 +34,46 @@
     response_modality: "Response modality",
   };
 
+  let currentCurveType = $state(
+    allCurveTypes.includes("psychometric") ? "psychometric" : allCurveTypes[0] ?? "psychometric",
+  );
   let active = $state<Record<FilterKey, Set<string>>>({
     species: new Set(filterOptions.species),
     source_data_level: new Set(filterOptions.source_data_level),
     evidence_type: new Set(filterOptions.evidence_type),
     response_modality: new Set(filterOptions.response_modality),
   });
+  let yearStart = $state(minYear);
+  let yearEnd = $state(maxYear);
+  let searchText = $state("");
 
-  const filteredEntries = $derived.by(() =>
-    allEntries.filter((entry) => {
+  const filteredEntries = $derived.by(() => {
+    const needle = searchText.trim().toLowerCase();
+    return allEntries.filter((entry) => {
+      if (entry.curve_type !== currentCurveType) return false;
       const matches = (key: FilterKey, value: string | null | undefined): boolean => {
         if (value === null || value === undefined || value === "") return true;
         return active[key].has(value);
       };
-      return (
-        matches("species", entry.species) &&
-        matches("source_data_level", entry.source_data_level) &&
-        matches("evidence_type", entry.evidence_type) &&
-        matches("response_modality", entry.response_modality)
-      );
-    })
-  );
+      if (!matches("species", entry.species)) return false;
+      if (!matches("source_data_level", entry.source_data_level)) return false;
+      if (!matches("evidence_type", entry.evidence_type)) return false;
+      if (!matches("response_modality", entry.response_modality)) return false;
+      if (entry.paper_year < yearStart || entry.paper_year > yearEnd) return false;
+      if (needle) {
+        const haystack = [
+          entry.paper_citation,
+          entry.protocol_name,
+          entry.family_name ?? "",
+          entry.finding_id,
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
+      return true;
+    });
+  });
 
   const flatPoints = $derived.by(() =>
     filteredEntries.flatMap((entry) =>
@@ -70,6 +93,17 @@
     )
   );
 
+  const yLabel = $derived.by(() => {
+    if (filteredEntries.length === 0) return "Y";
+    return filteredEntries[0].y_label;
+  });
+
+  const yScale = $derived.by(() => {
+    if (currentCurveType === "psychometric") return [0, 1] as [number, number];
+    if (currentCurveType === "accuracy_by_strength") return [0, 1] as [number, number];
+    return undefined;
+  });
+
   function toggle(key: FilterKey, value: string) {
     const next = new Set(active[key]);
     if (next.has(value)) next.delete(value);
@@ -83,6 +117,18 @@
 
   function selectNone(key: FilterKey) {
     active = { ...active, [key]: new Set() };
+  }
+
+  function resetFilters() {
+    active = {
+      species: new Set(filterOptions.species),
+      source_data_level: new Set(filterOptions.source_data_level),
+      evidence_type: new Set(filterOptions.evidence_type),
+      response_modality: new Set(filterOptions.response_modality),
+    };
+    yearStart = minYear;
+    yearEnd = maxYear;
+    searchText = "";
   }
 
   let chartContainer: HTMLDivElement | undefined = $state();
@@ -102,6 +148,14 @@
   $effect(() => {
     if (!chartContainer || !chartReady || !vegaEmbed) return;
     const points = flatPoints;
+    const ySpec: Record<string, unknown> = {
+      field: "y",
+      type: "quantitative",
+      title: yLabel,
+    };
+    if (yScale) {
+      ySpec.scale = { domain: yScale };
+    }
     const spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container" as const,
@@ -113,14 +167,9 @@
         x: {
           field: "x",
           type: "quantitative" as const,
-          title: "Signed evidence",
+          title: filteredEntries[0]?.x_label ?? "x",
         },
-        y: {
-          field: "y",
-          type: "quantitative" as const,
-          title: "P(rightward choice)",
-          scale: { domain: [0, 1] },
-        },
+        y: ySpec,
         color: {
           field: "paper_citation",
           type: "nominal" as const,
@@ -139,8 +188,8 @@
           { field: "species", title: "Species" },
           { field: "protocol_name", title: "Protocol" },
           { field: "source_data_level", title: "Source level" },
-          { field: "x", title: "Signed evidence", format: ".3f" },
-          { field: "y", title: "P(right)", format: ".3f" },
+          { field: "x", title: "x", format: ".3f" },
+          { field: "y", title: yLabel, format: ".3f" },
           { field: "n", title: "n" },
         ],
       },
@@ -166,6 +215,31 @@
 </script>
 
 <div class="rounded-md border border-slate-200 bg-white p-4">
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <span class="text-xs font-semibold text-slate-700">Curve type:</span>
+    {#each allCurveTypes as type (type)}
+      <button
+        type="button"
+        class:list={[
+          "rounded-md border px-2.5 py-1 text-xs",
+          type === currentCurveType
+            ? "border-accent bg-accent text-white"
+            : "border-slate-300 text-slate-700 hover:bg-slate-50",
+        ]}
+        onclick={() => (currentCurveType = type)}
+      >
+        {type.replace(/_/g, " ")}
+      </button>
+    {/each}
+    <button
+      type="button"
+      class="ml-auto rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
+      onclick={resetFilters}
+    >
+      Reset filters
+    </button>
+  </div>
+
   <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
     {#each Object.entries(filterOptions) as [key, values] (key)}
       <fieldset class="rounded border border-slate-200 p-3">
@@ -202,6 +276,41 @@
         </div>
       </fieldset>
     {/each}
+  </div>
+
+  <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+    <fieldset class="rounded border border-slate-200 p-3">
+      <legend class="px-1 text-xs font-semibold text-slate-700">Year range</legend>
+      <div class="mt-1 flex items-center gap-2 text-xs text-slate-700">
+        <input
+          type="number"
+          min={minYear}
+          max={maxYear}
+          bind:value={yearStart}
+          class="w-20 rounded border border-slate-200 px-1 py-0.5"
+        />
+        <span>–</span>
+        <input
+          type="number"
+          min={minYear}
+          max={maxYear}
+          bind:value={yearEnd}
+          class="w-20 rounded border border-slate-200 px-1 py-0.5"
+        />
+        <span class="ml-2 text-[11px] text-slate-500">
+          (atlas: {minYear}–{maxYear})
+        </span>
+      </div>
+    </fieldset>
+    <fieldset class="rounded border border-slate-200 p-3">
+      <legend class="px-1 text-xs font-semibold text-slate-700">Search</legend>
+      <input
+        type="search"
+        placeholder="paper / protocol / finding id…"
+        bind:value={searchText}
+        class="mt-1 w-full rounded border border-slate-200 px-2 py-1 text-xs"
+      />
+    </fieldset>
   </div>
 
   <p class="mb-2 text-xs text-slate-600">

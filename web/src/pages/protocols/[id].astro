@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { catalog, slugForId } from "../../lib/data";
 import type { CatalogProtocolDetail } from "../../lib/data";
+import { findings as findingsIndex } from "../../lib/findings";
 
 export function getStaticPaths() {
   return catalog.protocol_details.map((protocol) => ({
@@ -42,6 +43,22 @@ function renderValue(value: unknown): string {
   if (Array.isArray(value)) return value.join(", ");
   return String(value);
 }
+
+const protocolFindings = findingsIndex.findings.filter(
+  (entry) => entry.protocol_id === protocol.protocol_id,
+);
+const protocolPapers = Array.from(
+  new Map(
+    protocolFindings.map((entry) => [
+      entry.paper_id,
+      {
+        paper_id: entry.paper_id,
+        paper_citation: entry.paper_citation,
+        paper_year: entry.paper_year,
+      },
+    ]),
+  ).values(),
+).sort((a, b) => b.paper_year - a.paper_year);
 ---
 
 <BaseLayout title={`${protocol.name} · Protocol`}>
@@ -216,13 +233,60 @@ function renderValue(value: unknown): string {
 
   {
     protocol.open_questions.length > 0 ? (
-      <section>
+      <section class="mb-8">
         <h2 class="mb-2 text-sm font-semibold text-slate-700">Open questions</h2>
         <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
           {protocol.open_questions.map((q) => (
             <li>{q}</li>
           ))}
         </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    protocolPapers.length > 0 ? (
+      <section class="mb-8">
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">Papers</h2>
+        <ul class="space-y-1 text-sm">
+          {protocolPapers.map((p) => (
+            <li>
+              <a href={`/papers/${slugForId(p.paper_id)}`}>{p.paper_citation}</a>
+              <span class="ml-2 text-xs text-slate-500">({p.paper_year})</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    protocolFindings.length > 0 ? (
+      <section>
+        <h2 class="mb-2 text-sm font-semibold text-slate-700">
+          Findings <span class="font-normal text-slate-500">on this protocol</span>
+        </h2>
+        <ul class="space-y-1 text-sm">
+          {protocolFindings.map((entry) => (
+            <li class="flex items-baseline justify-between gap-3">
+              <span>
+                <a href={`/papers/${slugForId(entry.paper_id)}`}>
+                  {entry.paper_citation}
+                </a>
+                <span class="ml-2 text-xs text-slate-500">
+                  · {entry.curve_type}
+                  {entry.stratification.condition
+                    ? ` · ${entry.stratification.condition}`
+                    : ""}
+                </span>
+              </span>
+              <span class="text-xs text-slate-500">{entry.source_data_level}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-2 text-xs text-slate-500">
+          See all <a href="/findings">findings overlaid on shared axes</a>.
+        </p>
       </section>
     ) : null
   }

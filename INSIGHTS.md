@@ -2,6 +2,54 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-28 14:30:00 BST - Meta-analysis Phases 3+4: more curves, importer, mature UI
+
+Continued the meta-analysis arc to substantively cover the agent's
+phased plan. The atlas now indexes 10 findings across 4 papers spanning
+psychometric, chronometric, and accuracy-by-strength curve types, with a
+filter-rich /findings UI and a generic CSV importer for the supplement-
+csv / figure-trace / table-transcription extraction methods.
+
+What changed:
+
+- Two new slice extractors:
+  `extract_chronometric_findings_for_slice` reads a slice's
+  `chronometric_summary.csv` (median RT by absolute evidence) and
+  `extract_accuracy_findings_for_slice` reads `accuracy_summary.csv`
+  with configurable groupby columns (defaults tuned for macaque
+  RDM confidence's `source_measure × monkey` stratification).
+- `behavtaskatlas extract-finding --curve-type {psychometric,
+  chronometric, accuracy_by_strength}` dispatches to the right
+  extractor; defaults for x_label/x_units sit on the curve-type
+  branch so callers can omit them.
+- Six new findings: chronometric for Roitman-Shadlen 2002 and
+  Palmer-Huk-Shadlen 2005; four accuracy-by-strength findings for
+  Khalvati-Kiani-Rao 2021 (no-sure-target × M1, no-sure-target × M2,
+  sure-available-direction-chosen × M1, sure-available-direction-
+  chosen × M2). New paper record paper.khalvati-kiani-rao-2021.
+- `behavtaskatlas import-supplement --csv <path> --mapping <yaml>`:
+  generic importer for non-slice findings (supplement-csv,
+  figure-trace, table-transcription). The mapping YAML names
+  paper_id / protocol_id / source_data_level / extraction_method /
+  curve_type / x,y,n columns / optional groupby columns. Same
+  column-mapping spec works for any of the three manual extraction
+  paths; only `extraction_method` distinguishes them.
+- Findings UI maturity: curve-type tabs (psychometric / chronometric
+  / accuracy_by_strength), year range numeric inputs, search box
+  matching paper citation / protocol name / family / finding id.
+  The Vega-Lite chart's y-axis label and scale follow the active
+  curve type.
+- Linked papers + findings sections on every protocol and dataset
+  detail page, joined from the findings index. Closes the "see all
+  papers for a given task" navigation arc.
+
+The Britten et al. 1992 figure-trace example is still deferred —
+the import-supplement tool now exists for whoever wants to drop in
+a CSV transcribed from the published table. The honesty constraint
+remains: figure-traced findings are tagged `extraction_method:
+figure-trace`, kept separate from harmonized-pipeline findings, and
+their `source_data_level` is independently validated.
+
 ## 2026-04-28 14:05:00 BST - Meta-analysis MVP shipped: /findings overlay live
 
 The atlas now has a cross-paper findings layer, not just per-slice
