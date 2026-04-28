@@ -31,6 +31,7 @@ from behavtaskatlas.models import (
     Finding,
     FindingsIndexCurvePoint,
     FindingsIndexEntry,
+    FindingsIndexFitSummary,
     FindingsIndexPayload,
     Paper,
     Protocol,
@@ -745,16 +746,30 @@ def build_findings_index(
     title: str = "behavtaskatlas Findings Index",
     commit: str | None = None,
     git_dirty: bool | None = None,
+    fits: Iterable[Any] | None = None,
+    variants: Iterable[Any] | None = None,
 ) -> dict[str, Any]:
     """Walk every Paper + Finding into a denormalized FindingsIndexPayload
     suitable for the Astro overlay route to consume statically.
 
     Each entry inlines paper citation, protocol/family names, and the
     curve points so the front-end never has to follow id references.
+    Optional `fits` + `variants` populate per-finding model_fits with
+    {variant_id, family_id, parameters, quality} so the Astro detail
+    pages can show fit summaries without fetching extra data.
     """
     paper_by_id = {p.id: p for p in papers}
     protocol_by_id = {p.id: p for p in protocols}
     family_by_id = {f.id: f for f in families}
+    variant_family_by_id: dict[str, str] = {}
+    if variants is not None:
+        for v in variants:
+            variant_family_by_id[v.id] = v.family_id
+    fits_by_finding: dict[str, list[Any]] = {}
+    if fits is not None:
+        for fit in fits:
+            for fid in fit.finding_ids:
+                fits_by_finding.setdefault(fid, []).append(fit)
 
     entries: list[FindingsIndexEntry] = []
     for finding in findings:
@@ -791,6 +806,17 @@ def build_findings_index(
                 force_lower=_fit_force_lower(finding.curve.curve_type),
                 target_y=_fit_target_y(finding.curve.curve_type),
             )
+        model_fits_for_entry: list[FindingsIndexFitSummary] = []
+        for fit in fits_by_finding.get(finding.id, []):
+            model_fits_for_entry.append(
+                FindingsIndexFitSummary(
+                    fit_id=fit.id,
+                    variant_id=fit.variant_id,
+                    family_id=variant_family_by_id.get(fit.variant_id, ""),
+                    parameters={k: float(v) for k, v in fit.parameters.items()},
+                    quality={k: float(v) for k, v in fit.quality.items()},
+                )
+            )
         entries.append(
             FindingsIndexEntry(
                 finding_id=finding.id,
@@ -822,6 +848,7 @@ def build_findings_index(
                 y_label=finding.curve.y_label,
                 points=index_points,
                 fit=fit_payload,
+                model_fits=model_fits_for_entry,
             )
         )
 

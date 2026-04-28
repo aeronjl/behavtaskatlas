@@ -651,6 +651,17 @@ class FindingsIndexEntry(StrictModel):
     y_label: str
     points: list[FindingsIndexCurvePoint]
     fit: dict[str, float] | None = None
+    model_fits: list[FindingsIndexFitSummary] = Field(default_factory=list)
+
+
+class FindingsIndexFitSummary(StrictModel):
+    """Compact per-fit summary for embedding in FindingsIndexEntry."""
+
+    fit_id: str
+    variant_id: str
+    family_id: str
+    parameters: dict[str, float]
+    quality: dict[str, float]
 
 
 class FindingsIndexPayload(StrictModel):

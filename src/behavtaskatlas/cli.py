@@ -3241,12 +3241,15 @@ def _site_index(
     comparisons_path = derived_dir / "comparisons.json"
     records = load_repository_records(Path("."))
     from behavtaskatlas.models import Comparison, Finding, Paper, Protocol, TaskFamily
-
+    from behavtaskatlas.models import ModelFit as _ModelFit
+    from behavtaskatlas.models import ModelVariant as _ModelVariant
     findings_payload = build_findings_index(
         papers=[r for r in records if isinstance(r, Paper)],
         findings=[r for r in records if isinstance(r, Finding)],
         protocols=[r for r in records if isinstance(r, Protocol)],
         families=[r for r in records if isinstance(r, TaskFamily)],
+        fits=[r for r in records if isinstance(r, _ModelFit)],
+        variants=[r for r in records if isinstance(r, _ModelVariant)],
     )
     findings_path.parent.mkdir(parents=True, exist_ok=True)
     findings_path.write_text(
