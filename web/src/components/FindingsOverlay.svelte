@@ -46,11 +46,19 @@
   let yearStart = $state(minYear);
   let yearEnd = $state(maxYear);
   let searchText = $state("");
+  let showOnlyPooled = $state(false);
+
+  function isSubjectLevel(entry: FindingsEntry): boolean {
+    return Boolean(entry.stratification?.subject_id);
+  }
+
+  const subjectLevelCount = allEntries.filter(isSubjectLevel).length;
 
   const filteredEntries = $derived.by(() => {
     const needle = searchText.trim().toLowerCase();
     return allEntries.filter((entry) => {
       if (entry.curve_type !== currentCurveType) return false;
+      if (showOnlyPooled && isSubjectLevel(entry)) return false;
       const matches = (key: FilterKey, value: string | null | undefined): boolean => {
         if (value === null || value === undefined || value === "") return true;
         return active[key].has(value);
@@ -129,6 +137,7 @@
     yearStart = minYear;
     yearEnd = maxYear;
     searchText = "";
+    showOnlyPooled = false;
   }
 
   let chartContainer: HTMLDivElement | undefined = $state();
@@ -874,6 +883,17 @@ def fit_curves(payload_json):
       Showing {filteredEntries.length} of {allEntries.length} findings,
       {flatPoints.length} points.
     </p>
+    {#if subjectLevelCount > 0}
+      <label class="flex items-center gap-2 text-xs text-slate-700">
+        <input type="checkbox" bind:checked={showOnlyPooled} />
+        <span>
+          Show only pooled
+          <span class="text-[11px] text-slate-500">
+            (hide {subjectLevelCount} per-subject curves)
+          </span>
+        </span>
+      </label>
+    {/if}
     <label class="ml-auto flex items-center gap-2 text-xs text-slate-700">
       <input type="checkbox" bind:checked={fitEnabled} />
       <span>
