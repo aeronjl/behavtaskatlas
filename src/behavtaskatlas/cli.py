@@ -59,6 +59,7 @@ from behavtaskatlas.findings import (
     extract_accuracy_findings_for_slice,
     extract_chronometric_findings_for_slice,
     extract_psychometric_findings_for_slice,
+    extract_subject_psychometric_findings_for_slice,
     import_csv_findings,
     load_import_mapping,
     write_finding_yaml,
@@ -1028,6 +1029,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Which summary CSV to read and what curve to produce",
     )
     extract_finding_parser.add_argument(
+        "--by-subject",
+        action="store_true",
+        help=(
+            "For psychometric only: read trials.csv and emit one finding "
+            "per subject_id rather than the pooled summary."
+        ),
+    )
+    extract_finding_parser.add_argument(
         "--x-label",
         default=None,
         help="X-axis label written into the curve (curve-type default if omitted)",
@@ -1376,6 +1385,7 @@ def main(argv: list[str] | None = None) -> int:
             paper_id=args.paper_id,
             finding_id_prefix=args.finding_id_prefix,
             curve_type=args.curve_type,
+            by_subject=bool(args.by_subject),
             x_label=args.x_label,
             x_units=args.x_units,
             derived_dir=Path(args.derived_dir),
@@ -2814,6 +2824,7 @@ def _extract_finding(
     paper_id: str,
     finding_id_prefix: str,
     curve_type: str,
+    by_subject: bool = False,
     x_label: str | None,
     x_units: str | None,
     derived_dir: Path,
@@ -2833,6 +2844,14 @@ def _extract_finding(
         print(f"Unknown slice id: {slice_id!r}", file=sys.stderr)
         return 2
 
+    if by_subject and curve_type != "psychometric":
+        print(
+            f"--by-subject is only supported for curve_type=psychometric; "
+            f"got {curve_type!r}.",
+            file=sys.stderr,
+        )
+        return 2
+
     extractor_kwargs: dict[str, Any] = {
         "paper_id": paper_id,
         "derived_dir": derived_dir,
@@ -2847,9 +2866,14 @@ def _extract_finding(
         if curve_type == "psychometric":
             extractor_kwargs.setdefault("x_label", "Signed evidence")
             extractor_kwargs.setdefault("x_units", "")
-            findings = extract_psychometric_findings_for_slice(
-                slice_record, **extractor_kwargs
-            )
+            if by_subject:
+                findings = extract_subject_psychometric_findings_for_slice(
+                    slice_record, **extractor_kwargs
+                )
+            else:
+                findings = extract_psychometric_findings_for_slice(
+                    slice_record, **extractor_kwargs
+                )
         elif curve_type == "chronometric":
             findings = extract_chronometric_findings_for_slice(
                 slice_record, **extractor_kwargs

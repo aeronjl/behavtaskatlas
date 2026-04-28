@@ -24,6 +24,12 @@ dataset_ids:
 finding_ids:
   - finding.palmer-huk-shadlen-2005.psychometric
   - finding.palmer-huk-shadlen-2005.chronometric
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-ah
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-eh
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-jd
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-jp
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-mk
+  - finding.palmer-huk-shadlen-2005.psychometric.subject.phs-mm
 curation_status: data-linked
 notes: >
   Original paper for the human random-dot motion reaction-time experiment;

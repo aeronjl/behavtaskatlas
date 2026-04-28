@@ -519,6 +519,97 @@ def load_import_mapping(mapping_path: Path) -> dict[str, Any]:
     return yaml.safe_load(mapping_path.read_text(encoding="utf-8"))
 
 
+def extract_subject_psychometric_findings_for_slice(
+    slice_record: VerticalSlice,
+    *,
+    paper_id: str,
+    derived_dir: Path,
+    finding_id_prefix: str,
+    x_label: str = "Signed evidence",
+    x_units: str = "",
+    trials_filename: str = "trials.csv",
+    min_points: int = 4,
+) -> list[Finding]:
+    """Build one psychometric Finding per subject_id from the slice's
+    canonical trials.csv. Used for slices whose summary CSV is pooled
+    across subjects but whose trial-level data carries subject_id —
+    e.g. Roitman (2 macaques), Palmer-Huk-Shadlen (6 observers).
+
+    Subjects with fewer than `min_points` distinct stimulus values are
+    skipped; that filter prevents the index from filling up with sparse
+    near-no-response curves from training-stage subjects.
+    """
+    trials_path = _slice_derived_dir(slice_record, derived_dir) / trials_filename
+    if not trials_path.exists():
+        raise FileNotFoundError(f"trials CSV not found at {trials_path}")
+
+    rows = _read_csv_rows(trials_path)
+    by_subject: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        subject = (row.get("subject_id") or "").strip()
+        if not subject:
+            continue
+        choice = (row.get("choice") or "").strip()
+        if choice not in {"left", "right"}:
+            continue
+        by_subject[subject].append(row)
+
+    findings: list[Finding] = []
+    for subject in sorted(by_subject.keys()):
+        subject_rows = by_subject[subject]
+        agg: dict[float, list[int]] = defaultdict(lambda: [0, 0])  # [n, n_right]
+        for row in subject_rows:
+            x = _to_float(row.get("stimulus_value", ""))
+            if x is None:
+                continue
+            agg[x][0] += 1
+            if row.get("choice") == "right":
+                agg[x][1] += 1
+        points: list[CurvePoint] = []
+        for x in sorted(agg.keys()):
+            n, n_right = agg[x]
+            if n == 0:
+                continue
+            points.append(CurvePoint(x=x, n=n, y=n_right / n))
+        if len(points) < min_points:
+            continue
+        slug = (
+            subject.replace("/", "-")
+            .replace(".", "-")
+            .replace("_", "-")
+            .lower()
+        )
+        n_trials_total = sum(int(p.n) for p in points)
+        finding = Finding(
+            object_type="finding",
+            schema_version="0.1.0",
+            id=f"{finding_id_prefix}.{slug}",
+            paper_id=paper_id,
+            protocol_id=slice_record.protocol_id,
+            dataset_id=slice_record.dataset_id,
+            slice_id=slice_record.id,
+            source_data_level=slice_record.comparison.source_data_level,
+            n_trials=n_trials_total,
+            n_subjects=1,
+            stratification=StratificationKey(subject_id=subject),
+            curve=ResultCurve(
+                curve_type="psychometric",
+                x_label=x_label,
+                x_units=x_units,
+                y_label="p_right",
+                points=points,
+            ),
+            extraction_method="harmonized-pipeline",
+            extraction_notes=(
+                f"Aggregated per trial from {trials_path.name} for "
+                f"subject_id={subject!r}; per-subject psychometric."
+            ),
+            provenance=_today_provenance(),
+        )
+        findings.append(finding)
+    return findings
+
+
 def write_finding_yaml(finding: Finding, papers_root: Path | None = None) -> Path:
     """Serialize a Finding to findings/<slug>.yaml. Returns the written
     path. The slug derives from the finding id: drop the "finding."
