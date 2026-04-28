@@ -1155,6 +1155,25 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional JSON output path for the audit report",
     )
 
+    audit_models_parser = subparsers.add_parser(
+        "audit-models",
+        help=(
+            "Model audit: forward-evaluate each ModelFit and report drift "
+            "against its referenced findings"
+        ),
+    )
+    audit_models_parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.01,
+        help="Maximum tolerated |predicted_y - observed_y| at any matching x",
+    )
+    audit_models_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional JSON output path for the model audit report",
+    )
+
     release_check_parser = subparsers.add_parser(
         "release-check",
         help="Run static release-readiness checks and render status artifacts",
@@ -1476,6 +1495,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "audit-findings":
         return _audit_findings(
+            tolerance=float(args.tolerance),
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "audit-models":
+        return _audit_models(
             tolerance=float(args.tolerance),
             out_file=Path(args.out_file) if args.out_file else None,
         )
@@ -3213,6 +3237,22 @@ def _site_index(
         encoding="utf-8",
     )
 
+    from behavtaskatlas.model_layer import build_models_index
+    from behavtaskatlas.models import ModelFamily, ModelFit, ModelVariant
+
+    models_payload = build_models_index(
+        families=[r for r in records if isinstance(r, ModelFamily)],
+        variants=[r for r in records if isinstance(r, ModelVariant)],
+        fits=[r for r in records if isinstance(r, ModelFit)],
+        slices=[r for r in records if isinstance(r, VerticalSlice)],
+        derived_dir=derived_dir,
+    )
+    models_path = derived_dir / "models.json"
+    models_path.write_text(
+        json.dumps(models_payload, indent=2, sort_keys=True, default=str) + "\n",
+        encoding="utf-8",
+    )
+
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
@@ -3229,6 +3269,11 @@ def _site_index(
     print(
         f"Wrote audit report ({audit_payload['n_groups_audited']} groups, "
         f"{audit_payload['overall_status']}) to {audit_path}"
+    )
+    print(
+        f"Wrote models index ({models_payload['counts']['families']} families, "
+        f"{models_payload['counts']['variants']} variants, "
+        f"{models_payload['counts']['fits']} fits) to {models_path}"
     )
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
@@ -3279,6 +3324,36 @@ def _audit_findings(*, tolerance: float, out_file: Path | None) -> int:
             encoding="utf-8",
         )
         print(f"Wrote audit report to {out_file}")
+    if report["overall_status"] == "drift":
+        return 1
+    return 0
+
+
+def _audit_models(*, tolerance: float, out_file: Path | None) -> int:
+    from behavtaskatlas.model_layer import (
+        audit_model_fits,
+        format_model_audit_report,
+    )
+    from behavtaskatlas.models import Finding, ModelFit, ModelVariant
+
+    records = load_repository_records(Path("."))
+    fits = [r for r in records if isinstance(r, ModelFit)]
+    variants = [r for r in records if isinstance(r, ModelVariant)]
+    findings_by_id = {r.id: r for r in records if isinstance(r, Finding)}
+    report = audit_model_fits(
+        fits=fits,
+        variants=variants,
+        findings_by_id=findings_by_id,
+        tolerance=tolerance,
+    )
+    print(format_model_audit_report(report))
+    if out_file is not None:
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(
+            json.dumps(report, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote model audit report to {out_file}")
     if report["overall_status"] == "drift":
         return 1
     return 0

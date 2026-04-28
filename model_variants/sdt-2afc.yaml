@@ -1,0 +1,31 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.sdt-2afc
+family_id: model_family.signal-detection
+name: 2AFC equal-variance Gaussian
+description: >
+  Equal-variance Gaussian SDT for 2AFC psychometrics. d′ scales linearly
+  with stimulus_value (d′ = k × stimulus_value); the standard "neutral"
+  variant fixes criterion at 0 and frees the per-unit-evidence slope k
+  plus a single sensitivity parameter d_prime that captures the fit at
+  a reference stimulus level. For the v1 fit machinery we'll use the
+  closed-form mapping to the cumulative normal directly.
+free_parameters:
+  - d_prime
+  - criterion
+fixed_parameters: {}
+requires:
+  - stimulus_value
+  - choice_lr
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Conservative first SDT variant — same data requirements as logistic
+    so every pooled psychometric finding is fittable. A yes/no SDT
+    variant for Allen change-detection (go vs. withhold) is the natural
+    follow-up.

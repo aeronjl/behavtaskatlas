@@ -1,0 +1,67 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.click-rate-accumulator
+name: Click-rate accumulator
+description: >
+  Brunton-style continuous-time evidence accumulator for the Poisson
+  clicks task. Each click contributes an impulse to a hidden integrator
+  that may leak (λ) and is bounded; the observer reports the sign of
+  the integrator at the end of the click train (or, for free-response
+  variants, when a bound is hit). Distinct from DDM because the
+  evidence is a stream of discrete events whose rate is the stimulus,
+  not a continuous signed value. Supports leaky vs. linear (perfect)
+  integration as competing variants.
+parameter_definitions:
+  - name: input_gain
+    symbol: B
+    units: integrator units per click
+    description: Per-click impulse contribution
+  - name: leak
+    symbol: λ
+    units: 1 / seconds
+    description: Leak rate (0 = perfect integrator)
+  - name: noise_input
+    symbol: σ_a
+    units: integrator units per √second
+    description: Per-click noise (e.g. independent click amplitude variability)
+  - name: noise_accumulator
+    symbol: σ_s
+    units: integrator units per √second
+    description: Diffusion noise on the integrator
+  - name: bias
+    symbol: b
+    units: integrator units
+    description: Decision criterion offset
+  - name: lapse
+    symbol: λ_lapse
+    units: probability
+    description: Trial-level lapse rate
+applicable_curve_types:
+  - psychometric
+requires:
+  - choice_lr
+  - click_times
+references:
+  - id: ref.brunton-2013
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013,
+      340(6128):95-98.
+    doi: 10.1126/science.1233912
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Distinct family from DDM because the evidence is a click stream;
+    needs left_click_times / right_click_times from the trial's
+    task_variables, not a continuous stimulus_value. Applies to the
+    auditory_clicks slice (Brunton rats); a parallel London 2018
+    human-clicks fit is the natural cross-species comparison once
+    the family is implemented.
+notes: >
+  click_times in the requires list refers to left_click_times and
+  right_click_times inside CanonicalTrial.task_variables; the clicks
+  adapter already populates these for both rat and human slices.

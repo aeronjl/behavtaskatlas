@@ -42,6 +42,9 @@ uv run pytest
 step "Auditing findings (pooled vs by-subject reconciliation)"
 uv run behavtaskatlas audit-findings
 
+step "Auditing model fits (forward-eval drift detection)"
+uv run behavtaskatlas audit-models
+
 step "Exporting static JSON (behavtaskatlas site-index)"
 uv run behavtaskatlas site-index
 

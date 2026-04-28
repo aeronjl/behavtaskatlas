@@ -4,6 +4,7 @@ import graphJson from "../../../derived/graph.json";
 import curationQueueJson from "../../../derived/curation_queue.json";
 import papersJson from "../../../derived/papers.json";
 import auditJson from "../../../derived/audit.json";
+import modelsJson from "../../../derived/models.json";
 
 export type Manifest = typeof manifestJson;
 export type Catalog = typeof catalogJson;
@@ -34,6 +35,13 @@ export const papers = papersJson;
 
 export type AuditReport = typeof auditJson;
 export const audit = auditJson;
+
+export type ModelsIndex = typeof modelsJson;
+export type ModelFamilyEntry = ModelsIndex["families"][number];
+export type ModelVariantEntry = ModelsIndex["variants"][number];
+export type ModelFitEntry = ModelsIndex["fits"][number];
+export type SliceCoverageEntry = ModelsIndex["slice_coverage"][number];
+export const models = modelsJson;
 
 export function getPaper(id: string): PaperEntry | undefined {
   return papers.papers.find((p) => p.id === id || p.slug === id);

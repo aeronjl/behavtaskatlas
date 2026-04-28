@@ -11,6 +11,9 @@ from behavtaskatlas.models import (
     Comparison,
     Dataset,
     Finding,
+    ModelFamily,
+    ModelFit,
+    ModelVariant,
     Paper,
     Protocol,
     TaskFamily,
@@ -63,6 +66,9 @@ def iter_record_paths(root: Path) -> list[Path]:
         "papers",
         "findings",
         "comparisons",
+        "model_families",
+        "model_variants",
+        "model_fits",
     ]
     paths: list[Path] = []
     for directory in record_dirs:
@@ -109,6 +115,9 @@ def validate_repository(root: Path) -> ValidationReport:
     }
     paper_ids = {record.id for record in records if isinstance(record, Paper)}
     paper_by_id = {record.id: record for record in records if isinstance(record, Paper)}
+    model_family_ids = {r.id for r in records if isinstance(r, ModelFamily)}
+    model_family_by_id = {r.id: r for r in records if isinstance(r, ModelFamily)}
+    model_variant_by_id = {r.id: r for r in records if isinstance(r, ModelVariant)}
     findings_by_paper: dict[str, list[Finding]] = {}
     finding_ids = set()
     for record in records:
@@ -246,6 +255,102 @@ def validate_repository(root: Path) -> ValidationReport:
                         "Comparison must reference at least two findings",
                     )
                 )
+
+        if isinstance(record, ModelVariant):
+            if record.family_id not in model_family_ids:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"ModelVariant.family_id references unknown "
+                        f"{record.family_id!r}",
+                    )
+                )
+            else:
+                family = model_family_by_id[record.family_id]
+                family_param_names = {
+                    p.name for p in family.parameter_definitions
+                }
+                additional_param_names = {
+                    p.name for p in record.additional_parameters
+                }
+                allowed = family_param_names | additional_param_names
+                for fp in record.free_parameters:
+                    if fp not in allowed:
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"ModelVariant.free_parameters {fp!r} not in "
+                                f"family {record.family_id!r} parameters",
+                            )
+                        )
+                for fp in record.fixed_parameters:
+                    if fp not in allowed:
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"ModelVariant.fixed_parameters {fp!r} not in "
+                                f"family {record.family_id!r} parameters",
+                            )
+                        )
+                overlap = set(record.free_parameters) & set(
+                    record.fixed_parameters.keys()
+                )
+                if overlap:
+                    joined = ", ".join(sorted(overlap))
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"ModelVariant has parameters in both free and "
+                            f"fixed: {joined}",
+                        )
+                    )
+
+        if isinstance(record, ModelFit):
+            variant = model_variant_by_id.get(record.variant_id)
+            if variant is None:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        f"ModelFit.variant_id references unknown "
+                        f"{record.variant_id!r}",
+                    )
+                )
+            else:
+                got = set(record.parameters.keys())
+                expected = set(variant.free_parameters)
+                missing = expected - got
+                extra = got - expected
+                if missing:
+                    joined = ", ".join(sorted(missing))
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"ModelFit missing variant free parameters: {joined}",
+                        )
+                    )
+                if extra:
+                    joined = ", ".join(sorted(extra))
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"ModelFit has parameters not declared free in "
+                            f"variant {record.variant_id!r}: {joined}",
+                        )
+                    )
+            if not record.finding_ids:
+                issues.append(
+                    ValidationIssue(
+                        path, "ModelFit must reference at least one finding_id"
+                    )
+                )
+            for fid in record.finding_ids:
+                if fid not in finding_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"ModelFit.finding_ids references unknown {fid!r}",
+                        )
+                    )
 
         if isinstance(record, Finding):
             if record.paper_id not in paper_ids:

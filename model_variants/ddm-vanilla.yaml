@@ -1,0 +1,36 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.ddm-vanilla
+family_id: model_family.drift-diffusion
+name: Vanilla DDM (k, a, t0)
+description: >
+  Three-parameter DDM with drift_per_unit_evidence (k) scaling drift
+  with signed stimulus_value, total bound separation (a), and
+  non-decision time (t0). Starting point fixed at 0.5, drift bias
+  fixed at 0, lapse fixed at 0. Predicts choice and RT distribution
+  via the Wiener first-passage time density (Navarro & Fuss 2009).
+  This is the canonical baseline that should fit Roitman 2 macaques
+  and Palmer 6 humans cleanly.
+free_parameters:
+  - drift_per_unit_evidence
+  - boundary
+  - non_decision_time
+fixed_parameters:
+  starting_point: 0.5
+  drift_bias: 0.0
+  lapse: 0.0
+requires:
+  - stimulus_value
+  - choice_lr
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    First DDM variant to land. Bias variants (starting-point bias,
+    drift bias) follow once vanilla is shown to fit Roitman / Palmer.
+    Hierarchical / per-trial-variability extensions stay paper-reported.

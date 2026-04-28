@@ -1,0 +1,47 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.signal-detection
+name: Signal detection theory
+description: >
+  Equal-variance Gaussian signal detection theory. Each stimulus value
+  produces an internal evidence sample drawn from a normal distribution
+  centered on a strength-dependent mean; the observer compares the sample
+  to a fixed criterion. d′ = separation between signal and noise
+  distributions in noise units. The standard summary for psychometric
+  tasks where you don't care about response time and don't want to commit
+  to an accumulator.
+parameter_definitions:
+  - name: d_prime
+    symbol: d′
+    units: noise standard deviations
+    description: Sensitivity (separation between distributions)
+  - name: criterion
+    symbol: c
+    units: noise standard deviations
+    description: Decision threshold relative to the equibias point
+applicable_curve_types:
+  - psychometric
+  - hit_rate_by_condition
+requires:
+  - stimulus_value
+  - choice_lr
+references:
+  - id: ref.green-swets-1966
+    citation: >
+      Green DM, Swets JA. Signal Detection Theory and Psychophysics.
+      Wiley, 1966.
+  - id: ref.macmillan-creelman-2005
+    citation: >
+      Macmillan NA, Creelman CD. Detection Theory: A User's Guide
+      (2nd ed.). Lawrence Erlbaum Associates, 2005.
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Standard SDT family included alongside logistic as the second
+    "no accumulator dynamics" baseline. A yes/no SDT variant for the
+    Allen Visual Behavior change-detection slice (go vs. withhold) is
+    the natural first variant that goes beyond the 2AFC default.

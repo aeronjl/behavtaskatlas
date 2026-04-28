@@ -699,6 +699,103 @@ class ComparisonsIndexPayload(StrictModel):
     comparisons: list[ComparisonsIndexEntry]
 
 
+class ParameterDefinition(StrictModel):
+    name: str
+    symbol: str | None = None
+    units: str | None = None
+    description: str | None = None
+    range: tuple[float, float] | None = None
+
+
+class ModelFamily(StrictModel):
+    object_type: Literal["model_family"]
+    schema_version: str
+    id: str
+    name: str
+    description: str
+    parameter_definitions: list[ParameterDefinition]
+    applicable_curve_types: list[
+        Literal[
+            "psychometric",
+            "chronometric",
+            "accuracy_by_strength",
+            "hit_rate_by_condition",
+            "rt_distribution",
+        ]
+    ]
+    requires: list[str] = Field(default_factory=list)
+    references: list[Reference] = Field(default_factory=list)
+    curation_status: str
+    provenance: Provenance
+    notes: str | None = None
+
+
+class ModelVariant(StrictModel):
+    object_type: Literal["model_variant"]
+    schema_version: str
+    id: str
+    family_id: str
+    name: str
+    description: str
+    free_parameters: list[str]
+    fixed_parameters: dict[str, float] = Field(default_factory=dict)
+    additional_parameters: list[ParameterDefinition] = Field(default_factory=list)
+    requires: list[str] = Field(default_factory=list)
+    references: list[Reference] = Field(default_factory=list)
+    curation_status: str
+    provenance: Provenance
+    notes: str | None = None
+
+
+class ParameterUncertainty(StrictModel):
+    se: float | None = None
+    ci_lower: float | None = None
+    ci_upper: float | None = None
+    posterior_mean: float | None = None
+    posterior_sd: float | None = None
+
+
+class FitMethod(StrictModel):
+    type: Literal[
+        "scipy.optimize.differential_evolution",
+        "scipy.optimize.minimize",
+        "scipy.optimize.curve_fit",
+        "mcmc.pymc",
+        "paper-reported",
+        "manual",
+    ]
+    options: dict[str, Any] = Field(default_factory=dict)
+    duration_seconds: float | None = None
+
+
+class FitProvenance(StrictModel):
+    curators: list[str] = Field(default_factory=list)
+    created: date
+    updated: date
+    fit_commit: str | None = None
+    fit_dirty: bool | None = None
+    fit_environment_hash: str | None = None
+    source_notes: str | None = None
+
+
+class ModelFit(StrictModel):
+    object_type: Literal["model_fit"]
+    schema_version: str
+    id: str
+    variant_id: str
+    finding_ids: list[str]
+    parameters: dict[str, float]
+    parameter_uncertainty: dict[str, ParameterUncertainty] = Field(
+        default_factory=dict
+    )
+    quality: dict[str, float] = Field(default_factory=dict)
+    predictions: ResultCurve | None = None
+    fit_method: FitMethod
+    caveats: str | None = None
+    curation_status: str
+    provenance: FitProvenance
+
+
 Record = (
     TaskFamily
     | Protocol
@@ -708,6 +805,9 @@ Record = (
     | Paper
     | Finding
     | Comparison
+    | ModelFamily
+    | ModelVariant
+    | ModelFit
 )
 
 
@@ -720,6 +820,9 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "paper": Paper,
     "finding": Finding,
     "comparison": Comparison,
+    "model_family": ModelFamily,
+    "model_variant": ModelVariant,
+    "model_fit": ModelFit,
 }
 
 
@@ -733,6 +836,9 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "release_check": ReleaseCheckPayload,
     "findings_index": FindingsIndexPayload,
     "comparisons_index": ComparisonsIndexPayload,
+    "model_family": ModelFamily,
+    "model_variant": ModelVariant,
+    "model_fit": ModelFit,
 }
 
 

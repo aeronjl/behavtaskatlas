@@ -1,0 +1,85 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.drift-diffusion
+name: Drift-diffusion model
+description: >
+  Single-accumulator DDM for two-alternative forced choice. Evidence
+  accumulates as a Wiener process with drift v toward two absorbing
+  bounds at ±a/2 (or 0 / a depending on parameterization); the observer
+  reports the bound that gets hit first. Non-decision time t0 captures
+  pre/post-decision latency. Predicts both choice probability and the
+  full RT distribution from the closed-form first-passage time density
+  (Navarro & Fuss, 2009). Variants extend with lapse, starting-point
+  bias, drift bias, across-trial variability, and collapsing bounds.
+parameter_definitions:
+  - name: drift_rate
+    symbol: v
+    units: arbitrary per second
+    description: Mean drift toward the upper bound (positive = right-favoring)
+  - name: boundary
+    symbol: a
+    units: arbitrary
+    description: Total bound separation (decision threshold)
+  - name: non_decision_time
+    symbol: t0
+    units: seconds
+    description: Pre+post decision latency (encoding + motor)
+  - name: starting_point
+    symbol: z
+    units: fraction of boundary
+    description: Initial accumulator position; 0.5 = unbiased
+  - name: drift_bias
+    symbol: v0
+    units: arbitrary per second
+    description: Drift offset; 0 = no bias
+  - name: lapse
+    symbol: λ
+    units: probability
+    description: Trial-level lapse rate (mixture with uniform guess)
+  - name: drift_per_unit_evidence
+    symbol: k
+    units: drift per unit stimulus_value
+    description: Slope mapping signed stimulus to drift
+applicable_curve_types:
+  - psychometric
+  - chronometric
+  - rt_distribution
+requires:
+  - stimulus_value
+  - choice_lr
+  - response_time
+references:
+  - id: ref.ratcliff-1978
+    citation: >
+      Ratcliff R. A theory of memory retrieval. Psychological Review,
+      1978, 85(2):59-108.
+    doi: 10.1037/0033-295X.85.2.59
+  - id: ref.navarro-fuss-2009
+    citation: >
+      Navarro DJ, Fuss IG. Fast and accurate calculations for
+      first-passage times in Wiener diffusion models. Journal of
+      Mathematical Psychology, 2009, 53(4):222-230.
+    doi: 10.1016/j.jmp.2009.02.003
+  - id: ref.ratcliff-mckoon-2008
+    citation: >
+      Ratcliff R, McKoon G. The diffusion decision model: theory and
+      data for two-choice decision tasks. Neural Computation, 2008,
+      20(4):873-922.
+    doi: 10.1162/neco.2008.12-06-420
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Canonical accumulator family; first heavy-fit family to land. Vanilla
+    variant fixes z=0.5, v0=0, λ=0 and frees k, a, t0; bias variants
+    free either z (starting-point bias) or v0 (drift bias) for
+    prior-cue paradigms. Hierarchical fits (HDDM-style) are imported
+    as paper-reported ModelFit records, not recomputed in the build.
+notes: >
+  k (drift_per_unit_evidence) and v (drift_rate) are not both free in
+  the same fit: typical practice fits k from the psychometric/chronometric
+  family and recovers v at each stimulus level as v = k * stimulus_value.
+  Variants declare which of the two is free.

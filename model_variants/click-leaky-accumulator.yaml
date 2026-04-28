@@ -1,0 +1,32 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.click-leaky-accumulator
+family_id: model_family.click-rate-accumulator
+name: Leaky click accumulator (Brunton)
+description: >
+  Brunton 2013 leaky integrator. Six free parameters (input gain,
+  leak, per-click and accumulator noise, decision bias, lapse). The
+  "perfect-integration" null is the same variant with leak fixed at
+  zero (separate variant record).
+free_parameters:
+  - input_gain
+  - leak
+  - noise_input
+  - noise_accumulator
+  - bias
+  - lapse
+fixed_parameters: {}
+requires:
+  - choice_lr
+  - click_times
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Direct lift of the Brunton 2013 model. The competing "linear
+    integrator" variant fixes leak at 0 and is the canonical comparison;
+    will be added once the leaky variant has at least one fit.

@@ -1,0 +1,30 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.logistic-4param
+family_id: model_family.logistic
+name: 4-parameter logistic
+description: >
+  Standard 4-parameter logistic with bias μ, slope σ, and asymmetric
+  lapse (γ on the lower asymptote, λ on the upper). Matches the
+  in-browser fit used by /findings.
+free_parameters:
+  - bias
+  - slope
+  - lower_lapse
+  - upper_lapse
+fixed_parameters: {}
+requires:
+  - stimulus_value
+  - choice_lr
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Mirrors the 4-param logistic implemented in the FindingsOverlay
+    Pyodide fit. Build-time fits will land in step 4 using the same
+    parameterization; that's how we'll validate the audit's forward
+    evaluator end-to-end.

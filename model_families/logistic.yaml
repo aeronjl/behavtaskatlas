@@ -1,0 +1,54 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.logistic
+name: Logistic psychometric
+description: >
+  Standard 4-parameter logistic psychometric. Probability of choosing the
+  positive alternative as a function of signed evidence. Treats lapse as
+  symmetric (γ on the lower asymptote, λ on the upper). Used as a
+  task-agnostic baseline that doesn't take a stand on accumulator
+  dynamics; gives a slope, threshold, and lapse readout that's directly
+  comparable across paradigms.
+parameter_definitions:
+  - name: bias
+    symbol: μ
+    units: same as stimulus_value
+    description: Stimulus value at which p(right) = 0.5 + (λ - γ) / 2
+  - name: slope
+    symbol: σ
+    units: same as stimulus_value
+    description: Inverse slope at the inflection (smaller σ = steeper)
+  - name: lower_lapse
+    symbol: γ
+    units: probability
+    description: Lower asymptote (lapse to "left") in [0, 0.5]
+  - name: upper_lapse
+    symbol: λ
+    units: probability
+    description: Upper asymptote (1 - lapse to "right") in [0.5, 1]
+applicable_curve_types:
+  - psychometric
+requires:
+  - stimulus_value
+  - choice_lr
+references:
+  - id: ref.wichmann-hill-2001
+    citation: >
+      Wichmann FA, Hill NJ. The psychometric function: I. Fitting,
+      sampling, and goodness of fit. Perception & Psychophysics, 2001,
+      63(8):1293-1313.
+    doi: 10.3758/BF03194544
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial logistic family record introduced as the baseline alongside
+    the model layer schema lift. Already implemented in the in-browser
+    /findings overlay; build-time fits will land in step 4.
+notes: >
+  Variants of this family include the standard 4-parameter form and a
+  no-lapse 2-parameter form for cleaner fits when the data has no
+  ceiling effects.
