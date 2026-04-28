@@ -46,6 +46,11 @@
   // fetch. Drives the df["…"] column autocomplete.
   let csvColumns: string[] = $state([]);
 
+  // jedi-driven completion. Loaded lazily after Pyodide is up; until then,
+  // the static API list + CSV columns are the completion source.
+  let jediReady = $state(false);
+  let jediLoadPromise: Promise<void> | null = null;
+
   const PANDAS_API: Completion[] = [
     { label: "DataFrame", type: "class" },
     { label: "Series", type: "class" },
@@ -145,7 +150,77 @@
     ...DATAFRAME_METHODS,
   ];
 
-  function pythonCompletions(context: CompletionContext) {
+  // Match jedi's completion `type` strings to CodeMirror's icon palette so
+  // results render with sensible icons in the autocomplete popup.
+  const JEDI_TYPE_MAP: Record<string, string> = {
+    function: "function",
+    method: "method",
+    class: "class",
+    module: "namespace",
+    param: "variable",
+    instance: "variable",
+    statement: "variable",
+    property: "property",
+    keyword: "keyword",
+  };
+
+  // Preamble we prepend before sending the snippet to jedi so it knows
+  // pd, np, plt, and df without the user having to import them first.
+  const JEDI_PREAMBLE = `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+df: pd.DataFrame = pd.DataFrame()
+`;
+  const JEDI_PREAMBLE_LINES = JEDI_PREAMBLE.split("\n").length - 1;
+
+  async function jediCompletions(
+    code: string,
+    pos: number,
+  ): Promise<Completion[]> {
+    if (!pyodide) return [];
+    const before = code.slice(0, pos);
+    const lines = before.split("\n");
+    const line = lines.length + JEDI_PREAMBLE_LINES;
+    const column = lines[lines.length - 1].length;
+    const py = pyodide as {
+      globals: { set: (name: string, value: unknown) => void };
+      runPythonAsync: (code: string) => Promise<unknown>;
+    };
+    py.globals.set("_lsp_code", JEDI_PREAMBLE + code);
+    py.globals.set("_lsp_line", line);
+    py.globals.set("_lsp_col", column);
+    const result: any = await py.runPythonAsync(`
+import jedi, json as _json
+_script = jedi.Script(_lsp_code)
+_completions = _script.complete(_lsp_line, _lsp_col)
+_json.dumps([
+    {"name": c.name, "type": c.type}
+    for c in _completions[:80]
+])
+`);
+    const json = String(result ?? "[]");
+    result?.destroy?.();
+    let parsed: Array<{ name: string; type?: string }>;
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      return [];
+    }
+    return parsed.map((entry) => ({
+      label: entry.name,
+      type:
+        (entry.type && JEDI_TYPE_MAP[entry.type]) ??
+        (entry.type ? "variable" : undefined),
+    }));
+  }
+
+  async function pythonCompletions(
+    context: CompletionContext,
+  ): Promise<{
+    from: number;
+    options: Completion[];
+    validFor?: RegExp;
+  } | null> {
     const line = context.state.doc.lineAt(context.pos);
     const before = line.text.slice(0, context.pos - line.from);
 
@@ -164,10 +239,25 @@
       };
     }
 
-    // Otherwise, identifier completion using the static pandas/numpy/matplotlib
-    // API list.
     const word = context.matchBefore(/[\w.]+/);
     if (!word || (word.from === word.to && !context.explicit)) return null;
+
+    if (jediReady) {
+      try {
+        const fullCode = context.state.doc.toString();
+        const jediResults = await jediCompletions(fullCode, context.pos);
+        if (jediResults.length > 0) {
+          return {
+            from: word.from,
+            options: jediResults,
+            validFor: /^[\w.]*$/,
+          };
+        }
+      } catch {
+        // Fall through to static completions on jedi failure.
+      }
+    }
+
     return {
       from: word.from,
       options: STATIC_API_COMPLETIONS,
@@ -395,10 +485,30 @@ finally:
         typeof performance !== "undefined" ? performance.now() : Date.now();
       elapsedMs = Math.round(t1 - t0);
       status = "done";
+      ensureJedi();
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : String(err);
       status = "error";
     }
+  }
+
+  // Load jedi in the background after the first successful Run, when Pyodide
+  // is already up. Type-aware completions kick in once this resolves.
+  function ensureJedi() {
+    if (jediReady || jediLoadPromise || !pyodide) return;
+    jediLoadPromise = (async () => {
+      try {
+        const py = pyodide as {
+          loadPackage: (pkgs: string[]) => Promise<void>;
+          runPythonAsync: (code: string) => Promise<unknown>;
+        };
+        await py.loadPackage(["jedi"]);
+        await py.runPythonAsync("import jedi");
+        jediReady = true;
+      } catch {
+        // Soft fail; static completions remain available.
+      }
+    })();
   }
 
   let inFlight = $derived(
