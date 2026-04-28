@@ -1,0 +1,58 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.roitman-shadlen-2002.psychometric
+paper_id: paper.roitman-shadlen-2002
+protocol_id: protocol.random-dot-motion-classic-macaque
+dataset_id: dataset.roitman-shadlen-rdm-pyddm
+slice_id: slice.random-dot-motion
+source_data_level: processed-trial
+n_trials: 6149
+stratification: {}
+curve:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 516
+    y: 0.0
+  - x: -25.6
+    n: 511
+    y: 0.0019569471624266144
+  - x: -12.8
+    n: 509
+    y: 0.06286836935166994
+  - x: -6.4
+    n: 512
+    y: 0.244140625
+  - x: -3.2
+    n: 516
+    y: 0.374031007751938
+  - x: 0.0
+    n: 1019
+    y: 0.492639842983317
+  - x: 3.2
+    n: 512
+    y: 0.658203125
+  - x: 6.4
+    n: 513
+    y: 0.797270955165692
+  - x: 12.8
+    n: 514
+    y: 0.9455252918287937
+  - x: 25.6
+    n: 515
+    y: 0.9922330097087378
+  - x: 51.2
+    n: 512
+    y: 1.0
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='all'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

@@ -1,0 +1,38 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.palmer-huk-shadlen-2005
+citation: >
+  Palmer J, Huk AC, Shadlen MN. The effect of stimulus strength on the
+  speed and accuracy of a perceptual decision. Journal of Vision, 2005,
+  5(5):376-404.
+authors:
+  - Palmer, John
+  - Huk, Alexander C.
+  - Shadlen, Michael N.
+year: 2005
+venue: Journal of Vision
+doi: 10.1167/5.5.1
+url: https://jov.arvojournals.org/article.aspx?articleid=2192854
+lab: Shadlen
+species:
+  - human
+n_subjects: 6
+protocol_ids:
+  - protocol.human-rdm-button-reaction-time
+dataset_ids:
+  - dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+finding_ids:
+  - finding.palmer-huk-shadlen-2005.psychometric
+curation_status: data-linked
+notes: >
+  Original paper for the human random-dot motion reaction-time experiment;
+  the data made publicly available at the 2017 CoSMo summer school is the
+  source for the human_random_dot_motion vertical slice.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial paper record introduced alongside the Phase 1 cross-paper findings
+    extension; finding extracted from the slice's psychometric_summary.csv.

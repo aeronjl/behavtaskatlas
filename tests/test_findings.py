@@ -12,12 +12,15 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from behavtaskatlas.findings import build_findings_index
 from behavtaskatlas.models import (
     CurvePoint,
     Finding,
     Paper,
+    Protocol,
     ResultCurve,
     StratificationKey,
+    TaskFamily,
     model_from_record,
 )
 from behavtaskatlas.validation import validate_repository
@@ -317,6 +320,81 @@ def test_validation_flags_paper_finding_id_reciprocity(tmp_path: Path) -> None:
         "finding_ids missing" in m and "finding.demo-2024.psychometric" in m
         for m in messages
     )
+
+
+def test_build_findings_index_denormalizes_paper_and_protocol() -> None:
+    paper = model_from_record(_paper_payload())
+    finding = model_from_record(_finding_payload())
+    protocol = Protocol(
+        object_type="protocol",
+        schema_version="0.1.0",
+        id="protocol.demo",
+        family_id="family.demo",
+        name="Demo protocol",
+        description="Demo for index test.",
+        species=["mouse"],
+        curation_status="data-linked",
+        stimulus={
+            "modalities": ["visual"],
+            "variables": ["contrast"],
+            "evidence_type": "static",
+            "evidence_schedule": "single contrast value per trial",
+        },
+        choice={
+            "choice_type": "2afc",
+            "alternatives": ["left", "right"],
+            "response_modalities": ["wheel"],
+            "action_mapping": "wheel turn",
+        },
+        feedback={"feedback_type": "reward"},
+        timing=[],
+        references=[],
+        provenance={
+            "curators": ["test"],
+            "created": date.today(),
+            "updated": date.today(),
+        },
+    )
+    family = TaskFamily(
+        object_type="task_family",
+        schema_version="0.1.0",
+        id="family.demo",
+        name="Demo family",
+        description="Test family.",
+        modalities=["visual"],
+        canonical_variables=["contrast"],
+        common_choice_types=["2afc"],
+        curation_status="literature-curated",
+        references=[],
+        provenance={
+            "curators": ["test"],
+            "created": date.today(),
+            "updated": date.today(),
+        },
+    )
+
+    payload = build_findings_index(
+        papers=[paper],
+        findings=[finding],
+        protocols=[protocol],
+        families=[family],
+    )
+
+    assert payload["counts"]["papers"] == 1
+    assert payload["counts"]["findings"] == 1
+    assert payload["counts"]["psychometric"] == 1
+    entry = payload["findings"][0]
+    assert entry["finding_id"] == "finding.demo-2024.psychometric"
+    assert entry["paper_citation"] == "Demo et al. 2024"
+    assert entry["paper_year"] == 2024
+    assert entry["protocol_name"] == "Demo protocol"
+    assert entry["family_name"] == "Demo family"
+    assert entry["modalities"] == ["visual"]
+    assert entry["evidence_type"] == "static"
+    assert entry["response_modality"] == "wheel"
+    assert entry["source_data_level"] == "processed-trial"
+    assert len(entry["points"]) == 5
+    assert entry["points"][0]["x"] == -50.0
 
 
 def test_validation_flags_finding_protocol_not_declared_by_paper(

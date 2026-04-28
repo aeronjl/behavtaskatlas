@@ -1,0 +1,37 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.roitman-shadlen-2002
+citation: >
+  Roitman JD, Shadlen MN. Response of neurons in the lateral intraparietal
+  area during a combined visual discrimination reaction time task. Journal
+  of Neuroscience, 2002, 22(21):9475-9489.
+authors:
+  - Roitman, Jamie D.
+  - Shadlen, Michael N.
+year: 2002
+venue: Journal of Neuroscience
+doi: 10.1523/JNEUROSCI.22-21-09475.2002
+url: https://www.jneurosci.org/content/22/21/9475
+lab: Shadlen
+species:
+  - non-human-primate
+n_subjects: 2
+protocol_ids:
+  - protocol.random-dot-motion-classic-macaque
+dataset_ids:
+  - dataset.roitman-shadlen-rdm-pyddm
+finding_ids:
+  - finding.roitman-shadlen-2002.psychometric
+curation_status: data-linked
+notes: >
+  Pinned source for the Roitman-Shadlen processed PyDDM CSV used by the
+  random_dot_motion vertical slice. Two macaque subjects, free-response
+  reaction-time variant of the classic random-dot motion 2AFC task.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial paper record introduced alongside the Phase 1 cross-paper findings
+    extension; finding extracted from the slice's psychometric_summary.csv.

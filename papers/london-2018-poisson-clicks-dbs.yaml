@@ -1,0 +1,35 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.london-2018-poisson-clicks-dbs
+citation: >
+  London D. Poisson Clicks Task, DBS OFF/ON. Mendeley Data, V1, 2018.
+authors:
+  - London, Dennis
+year: 2018
+venue: Mendeley Data
+doi: 10.17632/3j86m7mjx2.1
+url: https://data.mendeley.com/datasets/3j86m7mjx2/1
+species:
+  - human
+protocol_ids:
+  - protocol.human-auditory-clicks-button
+dataset_ids:
+  - dataset.london-human-poisson-clicks-dbs-mendeley
+finding_ids:
+  - finding.london-2018-poisson-clicks-dbs.dbs-off
+  - finding.london-2018-poisson-clicks-dbs.dbs-on
+curation_status: data-linked
+notes: >
+  Mendeley Data release of the human Poisson clicks task with deep brain
+  stimulation OFF and ON conditions. Treated as a paper here because it is
+  the cited unit for the human_auditory_clicks vertical slice; per-condition
+  findings are emitted for DBS OFF and DBS ON to keep stratification visible.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-28
+  updated: 2026-04-28
+  source_notes: >
+    Initial paper record introduced alongside the Phase 1 cross-paper findings
+    extension; findings extracted from the slice's psychometric_summary.csv,
+    one per DBS state.

@@ -1,0 +1,58 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.palmer-huk-shadlen-2005.psychometric
+paper_id: paper.palmer-huk-shadlen-2005
+protocol_id: protocol.human-rdm-button-reaction-time
+dataset_id: dataset.palmer-huk-shadlen-human-rdm-cosmo2017
+slice_id: slice.human-random-dot-motion
+source_data_level: processed-trial
+n_trials: 3373
+stratification: {}
+curve:
+  curve_type: psychometric
+  x_label: Signed motion coherence
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -51.2
+    n: 283
+    y: 0.0
+  - x: -25.6
+    n: 285
+    y: 0.007017543859649123
+  - x: -12.8
+    n: 278
+    y: 0.04316546762589928
+  - x: -6.4
+    n: 284
+    y: 0.15845070422535212
+  - x: -3.2
+    n: 279
+    y: 0.33691756272401435
+  - x: -0.0
+    n: 560
+    y: 0.4982142857142857
+  - x: 3.2
+    n: 285
+    y: 0.6982456140350877
+  - x: 6.4
+    n: 279
+    y: 0.8136200716845878
+  - x: 12.8
+    n: 276
+    y: 0.9601449275362319
+  - x: 25.6
+    n: 282
+    y: 0.9964539007092199
+  - x: 51.2
+    n: 282
+    y: 1.0
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='all'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-28'
+  updated: '2026-04-28'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

@@ -51,6 +51,11 @@ from behavtaskatlas.clicks import (
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
 )
+from behavtaskatlas.findings import (
+    build_findings_index,
+    extract_psychometric_findings_for_slice,
+    write_finding_yaml,
+)
 from behavtaskatlas.human_visual import (
     DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR,
     DEFAULT_HUMAN_VISUAL_CONTRAST_RAW_DIR,
@@ -127,6 +132,7 @@ from behavtaskatlas.static_site import (
     build_curation_queue_payload,
     build_relationship_graph_payload,
     build_static_index_payload,
+    load_repository_records,
     write_static_catalog_json,
     write_static_curation_queue_json,
     write_static_graph_json,
@@ -988,6 +994,42 @@ def main(argv: list[str] | None = None) -> int:
         "--out-file", default=None, help="Optional report HTML output path"
     )
 
+    extract_finding_parser = subparsers.add_parser(
+        "extract-finding",
+        help="Extract a Finding YAML from a slice's psychometric_summary.csv",
+    )
+    extract_finding_parser.add_argument(
+        "--slice",
+        dest="slice_id",
+        required=True,
+        help="Vertical slice id (e.g. slice.random-dot-motion)",
+    )
+    extract_finding_parser.add_argument(
+        "--paper-id",
+        required=True,
+        help="Paper id to attribute the extracted finding to",
+    )
+    extract_finding_parser.add_argument(
+        "--finding-id-prefix",
+        required=True,
+        help="Finding id prefix; per-condition findings append a slug",
+    )
+    extract_finding_parser.add_argument(
+        "--x-label",
+        default="Signed evidence",
+        help="X-axis label written into the curve",
+    )
+    extract_finding_parser.add_argument(
+        "--x-units",
+        default="",
+        help="X-axis units written into the curve",
+    )
+    extract_finding_parser.add_argument(
+        "--derived-dir",
+        default="derived",
+        help="Derived artifact root containing the slice's summary CSV",
+    )
+
     site_index_parser = subparsers.add_parser(
         "site-index",
         help="Export static JSON manifests consumed by the Astro web app",
@@ -1294,6 +1336,15 @@ def main(argv: list[str] | None = None) -> int:
             provenance=Path(args.provenance) if args.provenance else None,
             lick_latency_svg=Path(args.lick_latency_svg) if args.lick_latency_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "extract-finding":
+        return _extract_finding(
+            slice_id=args.slice_id,
+            paper_id=args.paper_id,
+            finding_id_prefix=args.finding_id_prefix,
+            x_label=args.x_label,
+            x_units=args.x_units,
+            derived_dir=Path(args.derived_dir),
         )
     if args.command == "site-index":
         return _site_index(
@@ -2718,6 +2769,57 @@ def _rdm_report(
     return 0
 
 
+def _extract_finding(
+    *,
+    slice_id: str,
+    paper_id: str,
+    finding_id_prefix: str,
+    x_label: str,
+    x_units: str,
+    derived_dir: Path,
+) -> int:
+    from behavtaskatlas.models import VerticalSlice
+
+    records = load_repository_records(Path("."))
+    slice_record = next(
+        (
+            r
+            for r in records
+            if isinstance(r, VerticalSlice) and r.id == slice_id
+        ),
+        None,
+    )
+    if slice_record is None:
+        print(f"Unknown slice id: {slice_id!r}", file=sys.stderr)
+        return 2
+
+    try:
+        findings = extract_psychometric_findings_for_slice(
+            slice_record,
+            paper_id=paper_id,
+            derived_dir=derived_dir,
+            finding_id_prefix=finding_id_prefix,
+            x_label=x_label,
+            x_units=x_units,
+        )
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    if not findings:
+        print(
+            f"No psychometric points extracted from {slice_id!r}; "
+            "summary CSV may be empty.",
+            file=sys.stderr,
+        )
+        return 2
+
+    for finding in findings:
+        path = write_finding_yaml(finding)
+        print(f"Wrote {path} ({len(finding.curve.points)} points)")
+    return 0
+
+
 def _site_index(
     *,
     derived_dir: Path,
@@ -2777,12 +2879,33 @@ def _site_index(
     write_static_catalog_json(catalog_json_path, catalog_payload)
     write_static_graph_json(graph_json_path, graph_payload)
     write_static_curation_queue_json(curation_queue_json_path, curation_queue_payload)
+
+    findings_path = derived_dir / "findings.json"
+    records = load_repository_records(Path("."))
+    from behavtaskatlas.models import Finding, Paper, Protocol, TaskFamily
+
+    findings_payload = build_findings_index(
+        papers=[r for r in records if isinstance(r, Paper)],
+        findings=[r for r in records if isinstance(r, Finding)],
+        protocols=[r for r in records if isinstance(r, Protocol)],
+        families=[r for r in records if isinstance(r, TaskFamily)],
+    )
+    findings_path.parent.mkdir(parents=True, exist_ok=True)
+    findings_path.write_text(
+        json.dumps(findings_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
     print(f"Wrote relationship graph JSON to {graph_json_path}")
     print(f"Wrote curation queue JSON to {curation_queue_json_path}")
+    print(f"Wrote findings index to {findings_path}")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
+    n_findings = findings_payload["counts"]["findings"]
+    n_papers = findings_payload["counts"]["papers"]
+    print(f"Indexed {n_findings} findings across {n_papers} papers")
     return 0
 
 
