@@ -27,24 +27,26 @@ uv run behavtaskatlas site-index
 echo "▶ Fetching latest slice-artifacts release into web/public/"
 PUBLIC_DIR="web/public"
 mkdir -p "$PUBLIC_DIR"
+# Pull the list and sort by published_at descending; pick the newest non-draft
+# non-prerelease tag prefixed slice-artifacts-. /releases ordering is not
+# documented as deterministic for this repo (we have observed oldest-first
+# results), so sort explicitly rather than trusting input order.
 RELEASES_URL="https://api.github.com/repos/aeronjl/behavtaskatlas/releases?per_page=20"
 ASSET_URL="$(
   curl -sSL -H "Accept: application/vnd.github+json" "$RELEASES_URL" \
     | python3 -c '
 import json, sys
 data = json.load(sys.stdin)
-candidate = next(
-    (
-        rel for rel in data
-        if rel.get("tag_name", "").startswith("slice-artifacts-")
-        and not rel.get("draft")
-        and not rel.get("prerelease")
-    ),
-    None,
-)
-if candidate is None:
+candidates = [
+    rel for rel in data
+    if rel.get("tag_name", "").startswith("slice-artifacts-")
+    and not rel.get("draft")
+    and not rel.get("prerelease")
+]
+candidates.sort(key=lambda rel: rel.get("published_at") or "", reverse=True)
+if not candidates:
     sys.exit(0)
-for asset in candidate.get("assets", []):
+for asset in candidates[0].get("assets", []):
     if asset.get("name", "").endswith(".tar.gz"):
         print(asset["browser_download_url"])
         break
