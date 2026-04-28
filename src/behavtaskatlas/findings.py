@@ -808,6 +808,21 @@ def build_findings_index(
             )
         model_fits_for_entry: list[FindingsIndexFitSummary] = []
         for fit in fits_by_finding.get(finding.id, []):
+            predicted: list[FindingsIndexCurvePoint] = []
+            if (
+                fit.predictions is not None
+                and fit.predictions.curve_type == finding.curve.curve_type
+            ):
+                predicted = [
+                    FindingsIndexCurvePoint(
+                        x=p.x,
+                        n=p.n,
+                        y=p.y,
+                        y_lower=p.y_lower,
+                        y_upper=p.y_upper,
+                    )
+                    for p in fit.predictions.points
+                ]
             model_fits_for_entry.append(
                 FindingsIndexFitSummary(
                     fit_id=fit.id,
@@ -815,6 +830,7 @@ def build_findings_index(
                     family_id=variant_family_by_id.get(fit.variant_id, ""),
                     parameters={k: float(v) for k, v in fit.parameters.items()},
                     quality={k: float(v) for k, v in fit.quality.items()},
+                    predicted_points=predicted,
                 )
             )
         entries.append(

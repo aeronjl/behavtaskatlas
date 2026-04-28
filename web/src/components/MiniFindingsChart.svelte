@@ -8,12 +8,26 @@
     title,
     colorBy = "paper",
     height = 240,
+    showFits = true,
   }: {
     findings: FindingsEntry[];
     title?: string;
     colorBy?: ColorBy;
     height?: number;
+    showFits?: boolean;
   } = $props();
+
+  type FitSummary = {
+    fit_id: string;
+    variant_id: string;
+    family_id: string;
+    parameters: Record<string, number>;
+    quality: Record<string, number>;
+    predicted_points: Array<{ x: number; y: number; n: number }>;
+  };
+  let fitsEnabled = $state(showFits);
+  // Reset whenever the prop changes (cheap; few re-renders).
+  $effect(() => { fitsEnabled = showFits; });
 
   const allCurveTypes = Array.from(
     new Set(findings.map((f) => f.curve_type)),
@@ -49,6 +63,24 @@
       })),
     ),
   );
+
+  const flatFitPoints = $derived.by(() =>
+    visibleFindings.flatMap((entry) => {
+      const fits = ((entry as unknown as { model_fits?: FitSummary[] }).model_fits ?? []) as FitSummary[];
+      return fits.flatMap((fit) =>
+        (fit.predicted_points ?? []).map((p) => ({
+          fit_key: `${entry.finding_id}__${fit.fit_id}`,
+          finding_id: entry.finding_id,
+          variant: fit.variant_id.replace("model_variant.", ""),
+          paper_citation: entry.paper_citation,
+          x: p.x,
+          y: p.y,
+        })),
+      );
+    }),
+  );
+
+  const anyFitsAvailable = $derived(flatFitPoints.length > 0);
 
   const colorFieldFor: Record<ColorBy, string> = {
     paper: "paper_citation",
@@ -97,10 +129,7 @@
     };
     if (yScale) ySpec.scale = yScale;
 
-    const spec = {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-      width: "container" as const,
-      height,
+    const dataLayer: Record<string, unknown> = {
       data: { values: flatPoints },
       transform: [{ filter: "isValid(datum.x) && isValid(datum.y)" }],
       mark: { type: "line", point: true, interpolate: "linear" as const },
@@ -130,6 +159,46 @@
           { field: "n", title: "n" },
         ],
       },
+    };
+
+    const layers: Array<Record<string, unknown>> = [dataLayer];
+
+    if (fitsEnabled && flatFitPoints.length > 0) {
+      layers.push({
+        data: { values: flatFitPoints },
+        transform: [{ filter: "isValid(datum.x) && isValid(datum.y)" }],
+        mark: {
+          type: "line",
+          interpolate: "linear" as const,
+          strokeDash: [4, 4],
+          opacity: 0.85,
+        },
+        encoding: {
+          x: { field: "x", type: "quantitative" },
+          y: { field: "y", type: "quantitative" },
+          detail: { field: "fit_key", type: "nominal" },
+          color: {
+            field: "variant",
+            type: "nominal",
+            title: "Fit variant",
+            scale: { scheme: "tableau20" },
+          },
+          tooltip: [
+            { field: "paper_citation", title: "Paper" },
+            { field: "variant", title: "Variant" },
+            { field: "x", title: xLabel, format: ".3f" },
+            { field: "y", title: "Predicted y", format: ".3f" },
+          ],
+        },
+      });
+    }
+
+    const spec = {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      width: "container" as const,
+      height,
+      resolve: { scale: { color: "independent" } },
+      layer: layers,
       config: {
         view: { stroke: "#cbd5e1" },
         axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
@@ -161,13 +230,19 @@
   </p>
 {:else}
   <div class="rounded-md border border-slate-200 bg-white p-3">
-    {#if title || allCurveTypes.length > 1}
+    {#if title || allCurveTypes.length > 1 || anyFitsAvailable}
       <header class="mb-2 flex flex-wrap items-baseline gap-2">
         {#if title}
           <h3 class="text-sm font-semibold text-slate-700">{title}</h3>
         {/if}
+        {#if anyFitsAvailable}
+          <label class="flex items-center gap-1 text-[11px] text-slate-700 ml-auto">
+            <input type="checkbox" bind:checked={fitsEnabled} />
+            <span>show fits</span>
+          </label>
+        {/if}
         {#if allCurveTypes.length > 1}
-          <div class="flex flex-wrap gap-1 ml-auto">
+          <div class="flex flex-wrap gap-1 {anyFitsAvailable ? '' : 'ml-auto'}">
             {#each allCurveTypes as type (type)}
               <button
                 type="button"

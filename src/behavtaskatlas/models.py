@@ -662,6 +662,7 @@ class FindingsIndexFitSummary(StrictModel):
     family_id: str
     parameters: dict[str, float]
     quality: dict[str, float]
+    predicted_points: list[FindingsIndexCurvePoint] = Field(default_factory=list)
 
 
 class FindingsIndexPayload(StrictModel):

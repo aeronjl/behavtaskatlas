@@ -41,8 +41,13 @@ def audit_pooled_vs_by_subject(
     [0, 1] axis); set tighter for harmonized-pipeline curves that
     should match exactly.
     """
+    # Only psychometric curves admit the n-weighted aggregation check
+    # (proportions reconcile linearly across subgroups). Curve types
+    # whose y is a non-linear summary (e.g. median RT) are excluded.
     by_group: dict[tuple[str, str, str, str], list[Finding]] = defaultdict(list)
     for f in findings:
+        if f.curve.curve_type != "psychometric":
+            continue
         by_group[_group_key(f)].append(f)
 
     reports: list[dict[str, Any]] = []
