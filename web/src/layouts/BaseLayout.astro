@@ -8,6 +8,14 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+const SITE_NAME = "behavtaskatlas";
+const DEFAULT_DESCRIPTION =
+  "A file-first atlas of sensory-guided decision-making tasks in behavioral neuroscience. Browse curated task families, protocols, datasets, and reproducible vertical slices.";
+const resolvedDescription = description ?? DEFAULT_DESCRIPTION;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const ogImage = new URL("/og.svg", Astro.site ?? Astro.url).toString();
 ---
 
 <!doctype html>
@@ -16,7 +24,21 @@ const { title, description } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    {description && <meta name="description" content={description} />}
+    <meta name="description" content={resolvedDescription} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={resolvedDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={resolvedDescription} />
+    <meta name="twitter:image" content={ogImage} />
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-900">
     <Nav />
@@ -27,7 +49,9 @@ const { title, description } = Astro.props;
       <div class="mx-auto max-w-5xl px-4 py-6 text-xs text-slate-500">
         behavtaskatlas — a file-first atlas of behavioral neuroscience tasks.
         Source on
-        <a href="https://github.com/" class="underline">GitHub</a>.
+        <a
+          href="https://github.com/aeronjl/behavtaskatlas"
+          class="underline">GitHub</a>.
       </div>
     </footer>
   </body>

@@ -1,0 +1,102 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="About · behavtaskatlas"
+  description="What behavtaskatlas is, how the curation model works, and how to contribute or cite the atlas."
+>
+  <header class="mb-8">
+    <h1 class="text-3xl font-semibold tracking-tight">About behavtaskatlas</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      A file-first atlas of sensory-guided decision-making tasks in behavioral
+      neuroscience.
+    </p>
+  </header>
+
+  <section class="prose prose-slate mb-10 max-w-none text-slate-800">
+    <h2 class="text-lg font-semibold text-slate-900">What this is</h2>
+    <p>
+      Task descriptions across behavioral neuroscience are usually written for
+      a specific paper or lab, which makes them hard to compare. The atlas
+      separates the operational variables of a task (stimulus, evidence
+      schedule, choice geometry, response modality, feedback, training stage)
+      from cognitive interpretations (perceptual decision-making, evidence
+      accumulation, etc.), keeps both as YAML records, and links them to
+      reproducible analyses against open public data.
+    </p>
+    <p>
+      Every record is a small file under version control. Every analysis is a
+      script with pinned source data, recorded in provenance JSON. The catalog
+      site you are reading is generated from those records.
+    </p>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">Object model</h2>
+    <ul class="space-y-2 text-sm text-slate-800">
+      <li>
+        <strong>Task family</strong> — the reusable operational idea (e.g.
+        random-dot motion, visual change detection).
+      </li>
+      <li>
+        <strong>Protocol</strong> — one concrete variant of a family, with
+        species, stimulus, choice, and timing fully specified.
+      </li>
+      <li>
+        <strong>Dataset</strong> — a pointer to public or private behavioral
+        data, tagged with a <code>source_data_level</code> so reports
+        rest-on-raw vs rest-on-figure-source-data is visible up front.
+      </li>
+      <li>
+        <strong>Vertical slice</strong> — one protocol bound to one dataset
+        through a reproducible local pipeline (download → harmonize → analyze
+        → report). Each slice produces canonical-trial CSVs, summary plots,
+        and provenance.
+      </li>
+      <li>
+        <strong>Implementation</strong> — task-control code or reference
+        implementation, distinct from the dataset that contains the resulting
+        behavior.
+      </li>
+    </ul>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">How records are validated</h2>
+    <p class="text-sm text-slate-800">
+      Every record is a Pydantic-validated YAML file. Cross-references between
+      families, protocols, datasets, and slices are checked, and controlled
+      vocabularies (modality, evidence type, choice type, response modality,
+      source data level, curation status) are enforced. The
+      <code>release-check</code> command produces a release-readiness
+      artifact that gates publishable JSON exports.
+    </p>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-lg font-semibold">How to contribute</h2>
+    <p class="text-sm text-slate-800">
+      Contributions go through GitHub pull requests against the YAML records.
+      Add or edit a record, run <code>bash scripts/ci.sh</code> locally, open
+      a PR; Vercel will build a preview deploy automatically. The repository
+      includes a CLAUDE.md to make Claude Code sessions productive without
+      needing to read the full source.
+    </p>
+    <p class="mt-3 text-sm">
+      <a
+        href="https://github.com/aeronjl/behavtaskatlas"
+        class="text-accent">github.com/aeronjl/behavtaskatlas</a>
+    </p>
+  </section>
+
+  <section>
+    <h2 class="mb-3 text-lg font-semibold">Citation</h2>
+    <p class="text-sm text-slate-800">
+      Slice analysis artifacts are versioned as GitHub Releases tagged
+      <code>slice-artifacts-&lt;date&gt;-&lt;sha&gt;</code>. Cite a specific
+      release tag rather than the live URL when reproducibility matters.
+      A persistent DOI via Zenodo is planned for a future release.
+    </p>
+  </section>
+</BaseLayout>

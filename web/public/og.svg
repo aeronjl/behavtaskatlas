@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1d2d"/>
+      <stop offset="1" stop-color="#1a3a5c"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0 L0 0 0 40" fill="none" stroke="#22456a" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+
+  <g transform="translate(80,80)">
+    <rect width="84" height="84" rx="20" fill="#2b5ea0"/>
+    <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,0) scale(1.31)">
+      <path d="M20 14 L20 50"/>
+      <path d="M20 14 L36 14 Q44 14 44 22 Q44 30 36 30 L20 30"/>
+      <path d="M20 30 L38 30 Q46 30 46 39 Q46 50 38 50 L20 50"/>
+    </g>
+  </g>
+
+  <text x="80" y="320"
+        font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+        font-size="96" font-weight="700" fill="#ffffff" letter-spacing="-2">
+    behavtaskatlas
+  </text>
+  <text x="80" y="380"
+        font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+        font-size="36" font-weight="400" fill="#a8c0db">
+    A file-first atlas of sensory-guided decision-making tasks
+  </text>
+
+  <g transform="translate(80,470)" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#7e9bb8">
+    <text x="0" y="0">4 task families</text>
+    <text x="180" y="0">·</text>
+    <text x="200" y="0">10 protocols</text>
+    <text x="370" y="0">·</text>
+    <text x="390" y="0">8 datasets</text>
+    <text x="540" y="0">·</text>
+    <text x="560" y="0">9 vertical slices</text>
+  </g>
+
+  <text x="80" y="560"
+        font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+        font-size="20" fill="#5d7ea0">
+    behavtaskatlas.vercel.app
+  </text>
+</svg>
