@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import CitationDownloads from "../../components/CitationDownloads.astro";
 import { findings } from "../../lib/findings";
-import { slugForId } from "../../lib/data";
+import { slugForId, getPaper } from "../../lib/data";
 
 type Entry = (typeof findings.findings)[number];
 
@@ -30,6 +31,7 @@ interface Props {
 const { paperId } = Astro.props as Props;
 const paperEntries = findingsByPaper.get(paperId) ?? [];
 const first = paperEntries[0];
+const paperRecord = getPaper(paperId);
 const protocolEntries = Array.from(
   new Set(paperEntries.map((e) => e.protocol_id)),
 ).map((id) => ({
@@ -60,6 +62,18 @@ const protocolEntries = Array.from(
       ) : null
     }
     <p class="mt-3 text-sm text-slate-600 font-mono">{paperId}</p>
+    {
+      paperRecord ? (
+        <div class="mt-3">
+          <CitationDownloads
+            bibtex={paperRecord.bibtex}
+            ris={paperRecord.ris}
+            filenameStem={paperRecord.slug}
+            label="Cite"
+          />
+        </div>
+      ) : null
+    }
   </header>
 
   <section class="mb-8">

@@ -2,6 +2,7 @@ import manifestJson from "../../../derived/manifest.json";
 import catalogJson from "../../../derived/catalog.json";
 import graphJson from "../../../derived/graph.json";
 import curationQueueJson from "../../../derived/curation_queue.json";
+import papersJson from "../../../derived/papers.json";
 
 export type Manifest = typeof manifestJson;
 export type Catalog = typeof catalogJson;
@@ -25,6 +26,22 @@ export const manifest = manifestJson;
 export const catalog = catalogJson;
 export const graph = graphJson;
 export const curationQueue = curationQueueJson;
+
+export type PapersIndex = typeof papersJson;
+export type PaperEntry = PapersIndex["papers"][number];
+export const papers = papersJson;
+
+export function getPaper(id: string): PaperEntry | undefined {
+  return papers.papers.find((p) => p.id === id || p.slug === id);
+}
+
+export function bibtexHref(text: string): string {
+  return `data:application/x-bibtex;charset=utf-8,${encodeURIComponent(text)}`;
+}
+
+export function risHref(text: string): string {
+  return `data:application/x-research-info-systems;charset=utf-8,${encodeURIComponent(text)}`;
+}
 
 export function getProtocolDetail(
   id: string,

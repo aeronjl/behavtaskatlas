@@ -1,0 +1,30 @@
+---
+import { bibtexHref, risHref } from "../lib/data";
+
+interface Props {
+  bibtex: string;
+  ris: string;
+  filenameStem: string;
+  label?: string;
+}
+
+const { bibtex, ris, filenameStem, label } = Astro.props as Props;
+---
+
+<div class="flex flex-wrap items-center gap-2 text-xs">
+  {label ? <span class="text-slate-500">{label}</span> : null}
+  <a
+    class="rounded border border-slate-300 bg-white px-2 py-0.5 font-mono hover:border-accent hover:text-accent"
+    href={bibtexHref(bibtex)}
+    download={`${filenameStem}.bib`}
+  >
+    BibTeX
+  </a>
+  <a
+    class="rounded border border-slate-300 bg-white px-2 py-0.5 font-mono hover:border-accent hover:text-accent"
+    href={risHref(ris)}
+    download={`${filenameStem}.ris`}
+  >
+    RIS
+  </a>
+</div>

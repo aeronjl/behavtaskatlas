@@ -3057,6 +3057,17 @@ def _site_index(
         encoding="utf-8",
     )
 
+    from behavtaskatlas.citations import build_papers_index, write_citation_files
+
+    citations_dir = derived_dir / "citations"
+    paper_records = [r for r in records if isinstance(r, Paper)]
+    citation_counts = write_citation_files(paper_records, citations_dir)
+    papers_index_path = derived_dir / "papers.json"
+    papers_index_path.write_text(
+        json.dumps(build_papers_index(paper_records), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     available = sum(1 for item in payload["slices"] if item.get("report_status") == "available")
     print(f"Wrote report manifest to {manifest_path}")
     print(f"Wrote catalog JSON to {catalog_json_path}")
@@ -3064,6 +3075,8 @@ def _site_index(
     print(f"Wrote curation queue JSON to {curation_queue_json_path}")
     print(f"Wrote findings index to {findings_path}")
     print(f"Wrote comparisons index to {comparisons_path}")
+    print(f"Wrote {citation_counts['files']} citation files to {citations_dir}")
+    print(f"Wrote papers index to {papers_index_path}")
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
     n_papers = findings_payload["counts"]["papers"]
