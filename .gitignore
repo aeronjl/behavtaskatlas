@@ -29,11 +29,18 @@ build/
 data/raw/
 derived/
 
-# Web (Astro / Bun)
-web/node_modules/
-web/dist/
-web/.astro/
+# JS deps and build artifacts (any depth)
+node_modules/
+dist/
+.astro/
 *.tsbuildinfo
+
+# Stray top-level JS — web/ has its own package.json + bun.lock and those
+# should be tracked; the repo root is Python-only.
+/package.json
+/bun.lock
+/package-lock.json
+/yarn.lock
 
 # Vercel CLI local state
 .vercel/

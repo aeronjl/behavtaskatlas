@@ -329,8 +329,9 @@
     }
   }
 
-  // Mobile filter collapse: filters stay visible on md+, toggle on smaller.
-  let filtersExpandedMobile = $state(false);
+  // Filters start collapsed on every screen size — progressive disclosure.
+  // Presets cover the common combos; Refine opens the full checkbox panel.
+  let filtersExpanded = $state(false);
 
   // Copy-link affordance — relies on the URL-sync effect to keep the URL
   // up to date with current filter state.
@@ -364,6 +365,19 @@
       }, 1500);
     }
   }
+
+  const filteredSummary = $derived.by(() => {
+    const papers = new Set<string>();
+    const species = new Set<string>();
+    for (const entry of filteredEntries) {
+      papers.add(entry.paper_id);
+      if (entry.species) species.add(entry.species);
+    }
+    return {
+      papers: papers.size,
+      species: species.size,
+    };
+  });
 
   const activeFilterCount = $derived.by(() => {
     let n = 0;
@@ -1114,27 +1128,26 @@ def fit_curves(payload_json):
 
   <button
     type="button"
-    class="mb-3 flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 md:hidden"
-    onclick={() => (filtersExpandedMobile = !filtersExpandedMobile)}
-    aria-expanded={filtersExpandedMobile}
+    class="mb-3 flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:border-accent"
+    onclick={() => (filtersExpanded = !filtersExpanded)}
+    aria-expanded={filtersExpanded}
   >
     <span class="font-semibold">
-      Filters
+      Refine
       {#if activeFilterCount > 0}
         <span class="ml-1 rounded bg-accent-soft px-1.5 py-0.5 text-[10px] text-accent">
           {activeFilterCount} active
         </span>
+      {:else}
+        <span class="ml-1 text-[11px] text-slate-500">
+          species · source · evidence · response · year · search
+        </span>
       {/if}
     </span>
-    <span aria-hidden="true">{filtersExpandedMobile ? "−" : "+"}</span>
+    <span aria-hidden="true">{filtersExpanded ? "−" : "+"}</span>
   </button>
 
-  <div
-    class={[
-      filtersExpandedMobile ? "block" : "hidden",
-      "md:block",
-    ]}
-  >
+  <div class={[filtersExpanded ? "block" : "hidden"]}>
     <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
       {#each Object.entries(filterOptions) as [key, values] (key)}
         <fieldset class="rounded border border-slate-200 p-3">
@@ -1209,31 +1222,41 @@ def fit_curves(payload_json):
     </div>
   </div>
 
-  <div class="mb-2 flex flex-wrap items-center gap-3">
-    <p class="text-xs text-slate-600">
-      Showing {filteredEntries.length} of {allEntries.length} findings,
-      {flatPoints.length} points.
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
+    <p class="text-sm text-slate-700">
+      <span class="font-semibold text-slate-900">
+        {filteredEntries.length}
+        {currentCurveType.replace(/_/g, " ")}
+        finding{filteredEntries.length === 1 ? "" : "s"}
+      </span>
+      <span class="text-slate-500">
+        · {filteredSummary.papers} paper{filteredSummary.papers === 1 ? "" : "s"}
+        · {filteredSummary.species} species
+        · {flatPoints.length.toLocaleString()} points
+      </span>
     </p>
-    {#if subjectLevelCount > 0}
+    <div class="flex flex-wrap items-center gap-3">
+      {#if subjectLevelCount > 0}
+        <label class="flex items-center gap-2 text-xs text-slate-700">
+          <input type="checkbox" bind:checked={showOnlyPooled} />
+          <span>
+            Pooled only
+            <span class="text-[11px] text-slate-500">
+              (hide {subjectLevelCount} per-subject)
+            </span>
+          </span>
+        </label>
+      {/if}
       <label class="flex items-center gap-2 text-xs text-slate-700">
-        <input type="checkbox" bind:checked={showOnlyPooled} />
+        <input type="checkbox" bind:checked={fitEnabled} />
         <span>
-          Show only pooled
+          Fit + aggregate
           <span class="text-[11px] text-slate-500">
-            (hide {subjectLevelCount} per-subject curves)
+            (logistic + bootstrap CI)
           </span>
         </span>
       </label>
-    {/if}
-    <label class="ml-auto flex items-center gap-2 text-xs text-slate-700">
-      <input type="checkbox" bind:checked={fitEnabled} />
-      <span>
-        Fit + aggregate
-        <span class="text-[11px] text-slate-500">
-          (per-curve logistic + pooled fit + bootstrap CI)
-        </span>
-      </span>
-    </label>
+    </div>
   </div>
 
   {#if fitEnabled && fitStatus !== "idle" && fitStatus !== "done"}
@@ -1288,6 +1311,26 @@ def fit_curves(payload_json):
     bind:this={chartContainer}
     class={["w-full", filteredEntries.length === 0 ? "hidden" : ""]}
   ></div>
+
+  {#if filteredEntries.length > 0}
+    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+      <span>
+        <span class="font-semibold text-slate-700">color</span> = paper
+      </span>
+      <span>
+        <span class="font-semibold text-slate-700">shape</span> = source-data level
+      </span>
+      <span>
+        <span class="font-semibold text-slate-700">trace</span> = one finding (paper × stratification)
+      </span>
+      {#if fitEnabled}
+        <span>
+          <span class="font-semibold text-slate-700">fit line</span> = 4-parameter logistic;
+          dark line = pooled fit
+        </span>
+      {/if}
+    </div>
+  {/if}
 
   {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
     <div class="mt-4">
