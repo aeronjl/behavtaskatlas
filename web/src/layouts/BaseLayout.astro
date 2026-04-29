@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
+import SearchPalette from "../components/SearchPalette.svelte";
 
 interface Props {
   title: string;
@@ -42,6 +43,7 @@ const ogImage = new URL("/og.svg", Astro.site ?? Astro.url).toString();
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-900">
     <Nav />
+    <SearchPalette client:idle />
     <main class="mx-auto max-w-5xl px-4 py-8">
       <slot />
     </main>

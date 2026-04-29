@@ -1,9 +1,24 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import RelationshipGraph from "../components/RelationshipGraph.svelte";
 import { graph, hrefForNode } from "../lib/data";
 import type { GraphNode, GraphEdge } from "../lib/data";
 
 const counts = graph.counts as Record<string, number>;
+
+const visualNodes = graph.nodes.map((n) => ({
+  node_id: n.node_id,
+  label: n.label,
+  node_type: n.node_type,
+  status: n.status ?? undefined,
+  href: hrefForNode(n),
+}));
+
+const visualEdges = graph.edges.map((e) => ({
+  source: e.source,
+  target: e.target,
+  label: e.label,
+}));
 
 const nodeTypeOrder = ["task_family", "protocol", "dataset", "vertical_slice"];
 const nodeTypeLabels: Record<string, string> = {
@@ -43,29 +58,44 @@ function targetHref(targetId: string): string | null {
 }
 ---
 
-<BaseLayout title="Relationship graph · behavtaskatlas">
+<BaseLayout
+  title="Relationship graph · behavtaskatlas"
+  description="Force-layout visualization of how task families, protocols, datasets, and vertical slices reference each other across the atlas."
+>
   <header class="mb-6">
-    <h1 class="text-3xl font-semibold tracking-tight">Relationship graph</h1>
-    <p class="mt-2 text-sm text-slate-600">
-      {counts.nodes} nodes ·
-      {counts.edges} edges ·
-      {counts.qa_issues} QA issues ·
-      {counts.task_families} families ·
-      {counts.protocols} protocols ·
-      {counts.datasets} datasets ·
-      {counts.vertical_slices} slices
+    <h1 class="text-3xl">Relationship graph</h1>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">
+      How task families, protocols, datasets, and vertical slices reference
+      each other. Force-layout view first; full text index below for
+      Cmd-F-style searching.
+    </p>
+    <p class="mt-2 text-xs text-slate-500">
+      {counts.nodes} nodes · {counts.edges} edges · {counts.qa_issues} QA issues
     </p>
   </header>
 
-  {
-    nodesByType.map((group) => (
-      <section class="mb-10">
-        <h2 class="mb-3 text-lg font-semibold">
+  <RelationshipGraph
+    client:visible
+    nodes={visualNodes}
+    edges={visualEdges}
+    height={620}
+  />
+
+  <section class="mt-12">
+    <header class="mb-3">
+      <h2 class="text-xl">Index</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Same nodes grouped by type, with each node's outgoing edges listed.
+      </p>
+    </header>
+    {nodesByType.map((group) => (
+      <section class="mb-8">
+        <h3 class="mb-3 text-base font-semibold text-slate-800">
           {group.label}{" "}
           <span class="text-sm font-normal text-slate-500">
             ({group.nodes.length})
           </span>
-        </h2>
+        </h3>
         <ul class="space-y-3">
           {group.nodes.map((node) => {
             const href = hrefForNode(node);
@@ -78,7 +108,7 @@ function targetHref(targetId: string): string | null {
                   </span>
                   <span class="text-xs text-slate-500">{node.status}</span>
                 </header>
-                <div class="text-xs font-mono text-slate-500">
+                <div class="font-mono text-xs text-slate-500">
                   {node.node_id}
                 </div>
                 {outgoing.length > 0 ? (
@@ -100,6 +130,6 @@ function targetHref(targetId: string): string | null {
           })}
         </ul>
       </section>
-    ))
-  }
+    ))}
+  </section>
 </BaseLayout>

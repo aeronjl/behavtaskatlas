@@ -1,0 +1,31 @@
+---
+interface Props {
+  href: string;
+  label: string;
+  format?: string;
+  download?: string | boolean;
+}
+
+const { href, label, format, download } = Astro.props as Props;
+
+const downloadAttr =
+  download === true
+    ? ""
+    : typeof download === "string"
+    ? download
+    : undefined;
+---
+
+<a
+  href={href}
+  download={downloadAttr}
+  class="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-3 py-1.5 text-xs no-underline text-slate-700 transition-colors hover:border-accent hover:text-accent"
+>
+  <span class="text-slate-400" aria-hidden="true">↓</span>
+  <span>{label}</span>
+  {format ? (
+    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+      {format}
+    </span>
+  ) : null}
+</a>

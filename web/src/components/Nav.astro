@@ -8,7 +8,7 @@ const primary = [
 ];
 
 const secondary = [
-  { href: "/stories/rdm", label: "Stories" },
+  { href: "/stories", label: "Stories" },
   { href: "/catalog", label: "Catalog" },
   { href: "/graph", label: "References" },
   { href: "/atlas-health", label: "Atlas health" },
@@ -75,16 +75,20 @@ function isActive(href: string): boolean {
         }
       </ul>
 
-      <form action="/search" method="get" class="flex items-center">
+      <form action="/search" method="get" class="relative flex items-center">
         <label class="sr-only" for="nav-search">Search the atlas</label>
         <input
           id="nav-search"
           type="search"
           name="q"
           placeholder="Search…"
-          class="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          class="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 pr-9 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           autocomplete="off"
         />
+        <kbd
+          class="pointer-events-none absolute right-1.5 top-1/2 hidden -translate-y-1/2 rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500 sm:inline-block"
+          aria-hidden="true"
+        >⌘K</kbd>
       </form>
     </div>
   </div>

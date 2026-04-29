@@ -1,0 +1,350 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import {
+  comparisons,
+  findings as findingsIndex,
+  type ComparisonEntry,
+  type FindingsEntry,
+} from "../../lib/findings";
+import { hrefForFinding } from "../../lib/data";
+
+type FitFields = {
+  mu: number;
+  sigma: number;
+  gamma: number;
+  lapse: number;
+  threshold?: number;
+  threshold_target_y: number;
+};
+
+const allFindings = findingsIndex.findings as FindingsEntry[];
+const findingById = new Map(allFindings.map((f) => [f.finding_id, f]));
+
+function findComparison(id: string): ComparisonEntry | undefined {
+  return comparisons.comparisons.find((c) => c.id === id);
+}
+
+const mouse = findComparison("comparison.ibl-prior-blocks");
+const human = findComparison("comparison.walsh-prior-cue");
+
+function entriesFor(spec: ComparisonEntry | undefined): FindingsEntry[] {
+  if (!spec) return [];
+  return spec.finding_ids
+    .map((id) => findingById.get(id))
+    .filter((e): e is FindingsEntry => e !== undefined);
+}
+
+const mouseEntries = entriesFor(mouse);
+const humanEntries = entriesFor(human);
+
+function fitOf(entry: FindingsEntry): FitFields | null {
+  return (entry as FindingsEntry & { fit?: FitFields | null }).fit ?? null;
+}
+
+type DeltaRow = {
+  finding_id: string;
+  paper_id: string;
+  label: string;
+  reference: boolean;
+  mu: number | null;
+  sigma: number | null;
+  delta_mu: number | null;
+  delta_sigma: number | null;
+};
+
+function deltasFor(entries: FindingsEntry[], referenceLabel: string | null): DeltaRow[] {
+  if (entries.length === 0) return [];
+  const refIdx =
+    referenceLabel !== null
+      ? entries.findIndex(
+          (e) =>
+            (e.stratification?.condition ?? "")
+              .toLowerCase()
+              .includes(referenceLabel.toLowerCase()),
+        )
+      : 0;
+  const reference = refIdx >= 0 ? entries[refIdx] : entries[0];
+  const refFit = fitOf(reference);
+  return entries.map((entry) => {
+    const fit = fitOf(entry);
+    const isRef = entry.finding_id === reference.finding_id;
+    return {
+      finding_id: entry.finding_id,
+      paper_id: entry.paper_id,
+      label:
+        entry.stratification?.condition ??
+        entry.stratification?.subject_id ??
+        "pooled",
+      reference: isRef,
+      mu: fit?.mu ?? null,
+      sigma: fit?.sigma ?? null,
+      delta_mu:
+        !isRef && fit && refFit && Number.isFinite(fit.mu) && Number.isFinite(refFit.mu)
+          ? fit.mu - refFit.mu
+          : isRef
+          ? 0
+          : null,
+      delta_sigma:
+        !isRef && fit && refFit && Number.isFinite(fit.sigma) && Number.isFinite(refFit.sigma)
+          ? fit.sigma - refFit.sigma
+          : isRef
+          ? 0
+          : null,
+    };
+  });
+}
+
+const mouseDeltas = deltasFor(mouseEntries, "0.5");
+const humanDeltas = deltasFor(humanEntries, "neutral");
+
+function fmt(value: number | null | undefined, digits = 2): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return value.toFixed(digits);
+}
+
+function absMax(values: (number | null | undefined)[]): number | null {
+  let max: number | null = null;
+  for (const v of values) {
+    if (v === null || v === undefined || !Number.isFinite(v)) continue;
+    const abs = Math.abs(v);
+    if (max === null || abs > max) max = abs;
+  }
+  return max;
+}
+
+const mouseMaxDeltaMu = absMax(mouseDeltas.filter((r) => !r.reference).map((r) => r.delta_mu));
+const mouseMaxDeltaSigma = absMax(mouseDeltas.filter((r) => !r.reference).map((r) => r.delta_sigma));
+const humanMaxDeltaMu = absMax(humanDeltas.filter((r) => !r.reference).map((r) => r.delta_mu));
+const humanMaxDeltaSigma = absMax(humanDeltas.filter((r) => !r.reference).map((r) => r.delta_sigma));
+
+function ratio(a: number | null, b: number | null): string {
+  if (a === null || b === null) return "—";
+  if (b === 0) return "∞";
+  return (a / b).toFixed(2);
+}
+
+const cases = [
+  {
+    id: "mouse",
+    species: "Mouse",
+    paper: "IBL 2021",
+    paperId: "paper.ibl-2021-standardized",
+    description:
+      "trainingChoiceWorld biased blocks, p(left) ∈ {0.2, 0.5, 0.8}, the prior is set per block (~90 trials each).",
+    referenceLabel: "the unbiased 0.5 block",
+    entries: mouseEntries,
+    deltas: mouseDeltas,
+    maxDeltaMu: mouseMaxDeltaMu,
+    maxDeltaSigma: mouseMaxDeltaSigma,
+    comparisonId: mouse?.id,
+  },
+  {
+    id: "human",
+    species: "Human",
+    paper: "Walsh 2024",
+    paperId: "paper.walsh-2024-prior-cue",
+    description:
+      "Trial-by-trial cue (valid / neutral / invalid) of the upcoming target side. Cue is delivered at trial onset, ~75% predictive when valid.",
+    referenceLabel: "the neutral cue",
+    entries: humanEntries,
+    deltas: humanDeltas,
+    maxDeltaMu: humanMaxDeltaMu,
+    maxDeltaSigma: humanMaxDeltaSigma,
+    comparisonId: human?.id,
+  },
+];
+
+const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
+---
+
+<BaseLayout
+  title="Prior conditioning shifts the psychometric · behavtaskatlas"
+  description="Cross-species story: do prior probabilities shift only the bias (μ) of the psychometric, or do they also change the slope (σ)? Mouse blocks (IBL) and human trial-cues (Walsh) tested side by side."
+>
+  <Breadcrumbs
+    crumbs={[
+      { label: "Stories", href: "/stories" },
+      { label: "Prior conditioning" },
+    ]}
+  />
+
+  <header class="mb-10 max-w-3xl">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Story</p>
+    <h1 class="mt-1 text-3xl">
+      Prior conditioning shifts the psychometric, not the slope
+    </h1>
+    <p class="mt-3 text-base text-slate-700">
+      A textbook prediction in perceptual decision-making: telling a subject
+      that one option is more likely should bias them toward it (μ moves)
+      without changing their underlying sensitivity to the stimulus (σ stays
+      put). Two papers in the atlas test exactly this — once in mice via
+      block-level prior schedules, once in humans via trial-by-trial cues.
+      They use different mechanics, but they make the same prediction.
+      The atlas's canonical psychometric axis lets us read both off side by
+      side.
+    </p>
+  </header>
+
+  {!haveData ? (
+    <p class="rounded-md border border-warn bg-warn-soft p-4 text-sm text-warn">
+      One or both source comparisons (<code>comparison.ibl-prior-blocks</code>,
+      {" "}<code>comparison.walsh-prior-cue</code>) are not present in the
+      current build. Re-run <code>behavtaskatlas site-index</code> after
+      adding the IBL and Walsh slices.
+    </p>
+  ) : null}
+
+  {cases.map((c) => (
+    <section id={c.id} class="mb-12 scroll-mt-20">
+      <header class="mb-4">
+        <p class="text-xs uppercase tracking-wide text-accent">{c.species}</p>
+        <h2 class="mt-1 text-xl">{c.paper}</h2>
+        <p class="mt-2 max-w-3xl text-sm text-slate-700">
+          {c.description} The reference here is {c.referenceLabel}; deltas
+          report the bias and slope change relative to it.
+        </p>
+      </header>
+
+      {c.entries.length > 0 ? (
+        <article class="rounded-md border border-slate-200 bg-white p-4">
+          <MiniFindingsChart
+            client:visible
+            findings={c.entries}
+            colorBy="condition"
+            height={260}
+          />
+        </article>
+      ) : null}
+
+      {c.deltas.length > 0 ? (
+        <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
+          <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+            <table class="w-full text-xs">
+              <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">Condition</th>
+                  <th class="px-3 py-2 text-right">μ (bias)</th>
+                  <th class="px-3 py-2 text-right">σ (slope)</th>
+                  <th class="px-3 py-2 text-right">Δμ</th>
+                  <th class="px-3 py-2 text-right">Δσ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                {c.deltas.map((row) => (
+                  <tr class={row.reference ? "bg-slate-50" : ""}>
+                    <td class="px-3 py-2">
+                      <a
+                        class="font-mono text-[11px]"
+                        href={hrefForFinding(row.finding_id)}
+                      >
+                        {row.label}
+                      </a>
+                      {row.reference ? (
+                        <span class="ml-2 text-[10px] text-slate-500">(reference)</span>
+                      ) : null}
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
+                    <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
+                    <td class="px-3 py-2 text-right font-mono">
+                      {row.reference ? "—" : fmt(row.delta_mu)}
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono">
+                      {row.reference ? "—" : fmt(row.delta_sigma)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <aside class="rounded-md border border-slate-200 bg-white p-4 text-sm">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Effect size
+            </h3>
+            <dl class="mt-2 space-y-2">
+              <div>
+                <dt class="text-xs text-slate-500">max |Δμ|</dt>
+                <dd class="mt-0.5 font-mono text-base">{fmt(c.maxDeltaMu)}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500">max |Δσ|</dt>
+                <dd class="mt-0.5 font-mono text-base">{fmt(c.maxDeltaSigma)}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500">|Δμ| / |Δσ|</dt>
+                <dd class="mt-0.5 font-mono text-base">
+                  {ratio(c.maxDeltaMu, c.maxDeltaSigma)}
+                </dd>
+              </div>
+            </dl>
+            <p class="mt-3 text-xs text-slate-500">
+              The textbook bias-only prediction is large |Δμ|, ≈0 |Δσ|. The
+              ratio quantifies it: ratios &gt; 1 mean μ moves more than σ.
+            </p>
+            {c.comparisonId ? (
+              <p class="mt-3 text-xs">
+                <a class="text-accent" href={`/compare#${c.comparisonId}`}>
+                  See on /compare →
+                </a>
+              </p>
+            ) : null}
+          </aside>
+        </div>
+      ) : null}
+    </section>
+  ))}
+
+  {haveData ? (
+    <section class="mb-10 max-w-3xl">
+      <header class="mb-3">
+        <h2 class="text-xl">The takeaway</h2>
+      </header>
+      <p class="text-base text-slate-700">
+        Both species behave like the classical model predicts: μ moves
+        substantially with the prior, and σ moves much less. The mouse
+        biased-block effect is operationalised at the block timescale
+        (priors persist for ~90 trials) and the human cue effect is
+        operationalised at the trial timescale (cue resets every trial),
+        but the canonical parameters land in the same place — μ shifts
+        in the cued/biased direction, σ stays roughly fixed at each
+        species' baseline.
+      </p>
+      <p class="mt-3 text-base text-slate-700">
+        The atlas's job here is to make this readable in one glance. The
+        underlying findings are 4-parameter logistic fits run at build
+        time on the harmonized canonical-trial CSVs from the IBL and
+        Walsh slices; if you want to refit interactively, every curve is
+        also available on{" "}
+        <a class="text-accent" href="/findings?curve=psychometric&fit=1">
+          /findings
+        </a>
+        {" "}with the in-browser scipy fitter enabled.
+      </p>
+    </section>
+  ) : null}
+
+  <section class="mb-10 max-w-3xl">
+    <header class="mb-3">
+      <h2 class="text-xl">Caveats</h2>
+    </header>
+    <ul class="list-disc space-y-2 pl-5 text-sm text-slate-700">
+      <li>
+        IBL biased blocks and Walsh trial-cues operate at very different
+        timescales. The atlas does not claim the underlying neural
+        mechanism is the same — only that the behavioural read-out
+        (psychometric μ vs σ) matches.
+      </li>
+      <li>
+        Walsh's invalid-cue trials are rarer than valid; per-condition
+        sample sizes differ. The slope estimate uncertainty is therefore
+        not symmetric across conditions.
+      </li>
+      <li>
+        Both fits use the 4-parameter logistic with γ and λ free.
+        Bias-only is the textbook expectation but not the only
+        possibility; a slope change would show up as a non-zero Δσ.
+      </li>
+    </ul>
+  </section>
+</BaseLayout>

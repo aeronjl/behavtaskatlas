@@ -9,8 +9,11 @@
   --color-bad-soft: #f8e8e8;
   --color-ok: #246b3b;
   --color-ok-soft: #e7f3ec;
+
   --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,
     "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Iowan Old Style", "Charter", "Source Serif Pro",
+    "Palatino Linotype", "Palatino", Georgia, "Times New Roman", serif;
 }
 
 html {
@@ -23,12 +26,34 @@ body {
   line-height: 1.55;
 }
 
+/* Page titles and section openers get the editorial serif. Nested h1 in
+ * cards is rare; h2/h3/h4 stay sans for tabular and dashboard contexts. */
+h1 {
+  font-family: var(--font-serif);
+  font-feature-settings: "kern", "liga";
+  letter-spacing: -0.005em;
+  line-height: 1.15;
+}
+
+/* Default link styling: subtle underline that brightens on hover. Pages
+ * still opt out with `class="no-underline"` for chrome (nav, cards) and
+ * inline `text-accent` for emphasis. */
 a {
   color: var(--color-accent);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 32%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease, text-decoration-thickness 120ms ease;
 }
 
 a:hover {
+  text-decoration-color: var(--color-accent);
   text-decoration-thickness: 2px;
+}
+
+/* When chrome opts out of the underline, hover should still feel alive. */
+a.no-underline:hover,
+nav a:hover {
+  text-decoration: none;
 }

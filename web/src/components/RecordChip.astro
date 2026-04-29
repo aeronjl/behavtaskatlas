@@ -1,0 +1,59 @@
+---
+type RecordType =
+  | "paper"
+  | "protocol"
+  | "dataset"
+  | "slice"
+  | "finding"
+  | "family"
+  | "comparison"
+  | "fit"
+  | "variant";
+
+interface Props {
+  type: RecordType;
+  label: string;
+  href?: string | null;
+  id?: string | null;
+  size?: "sm" | "md";
+}
+
+const { type, label, href, id, size = "sm" } = Astro.props as Props;
+
+const TYPE_LABELS: Record<RecordType, string> = {
+  paper: "paper",
+  protocol: "protocol",
+  dataset: "dataset",
+  slice: "slice",
+  finding: "finding",
+  family: "family",
+  comparison: "comparison",
+  fit: "fit",
+  variant: "variant",
+};
+
+const padding = size === "md" ? "px-2.5 py-1" : "px-2 py-0.5";
+const textSize = size === "md" ? "text-sm" : "text-xs";
+const baseClasses = `inline-flex items-baseline gap-1.5 rounded border border-slate-200 bg-white ${padding} ${textSize} font-normal text-slate-700`;
+---
+
+{href ? (
+  <a
+    href={href}
+    class={`${baseClasses} no-underline transition-colors hover:border-accent hover:text-accent`}
+  >
+    <span class="text-[10px] uppercase tracking-wide text-slate-500">
+      {TYPE_LABELS[type]}
+    </span>
+    <span class="truncate max-w-xs">{label}</span>
+    {id ? <span class="font-mono text-[10px] text-slate-400">{id}</span> : null}
+  </a>
+) : (
+  <span class={baseClasses}>
+    <span class="text-[10px] uppercase tracking-wide text-slate-500">
+      {TYPE_LABELS[type]}
+    </span>
+    <span class="truncate max-w-xs">{label}</span>
+    {id ? <span class="font-mono text-[10px] text-slate-400">{id}</span> : null}
+  </span>
+)}

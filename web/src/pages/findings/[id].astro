@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import CopyCitation from "../../components/CopyCitation.svelte";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import RecordChip from "../../components/RecordChip.astro";
 import ResidualPlot from "../../components/ResidualPlot.svelte";
 import {
   hrefForFinding,
@@ -225,24 +227,66 @@ const citationText = [
   title={`${entry.finding_id.replace("finding.", "")} · Finding`}
   description={`Observed curve, model fits, diagnostics, and provenance for ${entry.finding_id}.`}
 >
-  <header class="mb-6">
+  <Breadcrumbs
+    crumbs={[
+      { label: "Findings", href: "/findings" },
+      { label: entry.paper_citation, href: `/papers/${slugForId(entry.paper_id)}` },
+      { label: entry.curve_type.replace(/_/g, " ") },
+    ]}
+  />
+
+  <header class="mb-8">
     <p class="text-xs uppercase tracking-wide text-slate-500">Finding</p>
-    <h1 class="break-words font-mono text-xl font-semibold tracking-tight">
+    <h1 class="mt-1 break-words font-mono text-2xl">
       {entry.finding_id.replace("finding.", "")}
     </h1>
     <p class="mt-2 text-sm text-slate-600">
       {entry.paper_citation} · {entry.protocol_name} · {entry.curve_type.replace(/_/g, " ")}
     </p>
     <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 md:grid-cols-4">
-      <dt class="text-slate-500">Species</dt>
-      <dd>{entry.species ?? "-"}</dd>
-      <dt class="text-slate-500">Stratification</dt>
-      <dd>{stratificationLabel(entry)}</dd>
-      <dt class="text-slate-500">Trials</dt>
-      <dd class="font-mono">{entry.n_trials?.toLocaleString() ?? "-"}</dd>
-      <dt class="text-slate-500">Source</dt>
-      <dd>{sourceStatusLabel}</dd>
+      <div>
+        <dt class="text-slate-500">Species</dt>
+        <dd>{entry.species ?? "-"}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">Stratification</dt>
+        <dd>{stratificationLabel(entry)}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">Trials</dt>
+        <dd class="font-mono">{entry.n_trials?.toLocaleString() ?? "-"}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">Source</dt>
+        <dd>{sourceStatusLabel}</dd>
+      </div>
     </dl>
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <RecordChip
+        type="paper"
+        label={entry.paper_citation}
+        href={`/papers/${slugForId(entry.paper_id)}`}
+      />
+      <RecordChip
+        type="protocol"
+        label={entry.protocol_name}
+        href={protocolHref}
+      />
+      {datasetHref ? (
+        <RecordChip
+          type="dataset"
+          label={entry.dataset_id}
+          href={datasetHref}
+        />
+      ) : null}
+      {sliceHref ? (
+        <RecordChip
+          type="slice"
+          label={entry.slice_id}
+          href={sliceHref}
+        />
+      ) : null}
+    </div>
   </header>
 
   <section class="mb-8">
@@ -255,41 +299,7 @@ const citationText = [
     />
   </section>
 
-  <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="rounded-md border border-slate-200 bg-white p-4">
-      <h2 class="mb-2 text-sm font-semibold text-slate-700">Provenance links</h2>
-      <dl class="space-y-2 text-sm">
-        <div class="grid grid-cols-3 gap-2">
-          <dt class="text-slate-500">Paper</dt>
-          <dd class="col-span-2">
-            <a href={`/papers/${slugForId(entry.paper_id)}`}>{entry.paper_citation}</a>
-          </dd>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <dt class="text-slate-500">Protocol</dt>
-          <dd class="col-span-2">
-            <a href={protocolHref}>{entry.protocol_name}</a>
-          </dd>
-        </div>
-        {datasetHref ? (
-          <div class="grid grid-cols-3 gap-2">
-            <dt class="text-slate-500">Dataset</dt>
-            <dd class="col-span-2">
-              <a class="font-mono text-xs" href={datasetHref}>{entry.dataset_id}</a>
-            </dd>
-          </div>
-        ) : null}
-        {sliceHref ? (
-          <div class="grid grid-cols-3 gap-2">
-            <dt class="text-slate-500">Slice</dt>
-            <dd class="col-span-2">
-              <a class="font-mono text-xs" href={sliceHref}>{entry.slice_id}</a>
-            </dd>
-          </div>
-        ) : null}
-      </dl>
-    </div>
-
+  <section class="mb-8">
     <div class="rounded-md border border-slate-200 bg-white p-4">
       <h2 class="mb-2 text-sm font-semibold text-slate-700">Model-selection summary</h2>
       {selection ? (
