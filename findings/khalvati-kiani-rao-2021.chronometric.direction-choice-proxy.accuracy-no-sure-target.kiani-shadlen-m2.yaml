@@ -1,0 +1,45 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+paper_id: paper.khalvati-kiani-rao-2021
+protocol_id: protocol.macaque-rdm-confidence-wager
+dataset_id: dataset.khalvati-kiani-rao-rdm-confidence-source-data
+slice_id: slice.macaque-rdm-confidence-wager
+source_data_level: figure-source-data
+n_trials: 25300
+n_subjects: 1
+stratification:
+  condition: accuracy_no_sure_target
+  subject_id: kiani-shadlen-m2
+curve:
+  curve_type: chronometric
+  x_label: Motion strength
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 3.2
+    n: 5091
+    y: 0.243
+  - x: 6.4
+    n: 5077
+    y: 0.242
+  - x: 12.8
+    n: 4980
+    y: 0.243
+  - x: 25.6
+    n: 5071
+    y: 0.242
+  - x: 51.2
+    n: 5081
+    y: 0.242
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Median response_time per absolute evidence bin from trials.csv for
+  subject_id='kiani-shadlen-m2', prior_context='accuracy_no_sure_target'; bins with
+  <5 rows dropped.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

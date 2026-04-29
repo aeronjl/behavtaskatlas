@@ -92,6 +92,22 @@
   $effect(() => {
     if (inputEl && initialQuery) inputEl.focus();
   });
+
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const trimmed = query.trim();
+    const params = new URLSearchParams(window.location.search);
+    const previous = params.get("q") ?? "";
+    if (trimmed === previous) return;
+    if (trimmed.length === 0) {
+      params.delete("q");
+    } else {
+      params.set("q", trimmed);
+    }
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", next);
+  });
 </script>
 
 <div class="space-y-3">

@@ -537,6 +537,148 @@ class ReleaseCheckPayload(StrictModel):
     items: list[ReleaseCheckItem]
 
 
+class RequestedDataFile(StrictModel):
+    name: str
+    description: str
+    required: bool = True
+    evidence: str | None = None
+
+
+class DataRequestEvidence(StrictModel):
+    evidence_type: Literal[
+        "article_data_availability",
+        "code_reference",
+        "public_archive_check",
+        "source_data_check",
+        "curator_inference",
+    ]
+    description: str
+    url: str | None = None
+    path: str | None = None
+
+
+class DataRequestDraft(StrictModel):
+    subject: str
+    body: str
+
+
+class DataRequestEvent(StrictModel):
+    event_type: Literal[
+        "drafted",
+        "sent",
+        "follow_up_due",
+        "followed_up",
+        "received",
+        "declined",
+        "license_confirmed",
+        "closed",
+        "note",
+    ]
+    event_date: date
+    actor: str
+    notes: str
+    evidence_url: str | None = None
+    evidence_path: str | None = None
+    next_follow_up_date: date | None = None
+
+
+class DataRequest(StrictModel):
+    object_type: Literal["data_request"]
+    schema_version: str
+    id: str
+    title: str
+    status: Literal[
+        "draft",
+        "ready_to_send",
+        "requested",
+        "fulfilled",
+        "declined",
+        "blocked",
+        "closed",
+    ]
+    priority: Literal["low", "normal", "high"]
+    request_type: Literal[
+        "author_request",
+        "repository_issue",
+        "archive_search",
+        "license_clarification",
+    ]
+    dataset_ids: list[str] = Field(default_factory=list)
+    paper_ids: list[str] = Field(default_factory=list)
+    protocol_ids: list[str] = Field(default_factory=list)
+    slice_ids: list[str] = Field(default_factory=list)
+    finding_ids: list[str] = Field(default_factory=list)
+    model_roadmap_issue_types: list[str] = Field(default_factory=list)
+    blocker_type: str | None = None
+    purpose: str
+    blocker_detail: str
+    next_action: str
+    requested_files: list[RequestedDataFile]
+    contact_instructions: str | None = None
+    evidence: list[DataRequestEvidence] = Field(default_factory=list)
+    request_draft: DataRequestDraft | None = None
+    events: list[DataRequestEvent] = Field(default_factory=list)
+    curation_status: str
+    provenance: Provenance
+    notes: str | None = None
+
+
+class DataRequestsIndexFile(StrictModel):
+    name: str
+    description: str
+    required: bool
+
+
+class DataRequestsIndexEntry(StrictModel):
+    request_id: str
+    title: str
+    status: str
+    priority: str
+    request_type: str
+    blocker_type: str | None = None
+    dataset_ids: list[str] = Field(default_factory=list)
+    dataset_names: list[str] = Field(default_factory=list)
+    paper_ids: list[str] = Field(default_factory=list)
+    paper_labels: list[str] = Field(default_factory=list)
+    protocol_ids: list[str] = Field(default_factory=list)
+    slice_ids: list[str] = Field(default_factory=list)
+    finding_ids: list[str] = Field(default_factory=list)
+    model_roadmap_issue_types: list[str] = Field(default_factory=list)
+    purpose: str
+    blocker_detail: str
+    next_action: str
+    requested_files: list[DataRequestsIndexFile] = Field(default_factory=list)
+    contact_instructions: str | None = None
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    request_draft: dict[str, str] | None = None
+    events: list[dict[str, Any]] = Field(default_factory=list)
+    last_event_type: str | None = None
+    last_event_date: date | None = None
+    next_follow_up_date: date | None = None
+    request_export_path: str | None = None
+    request_export_markdown: str | None = None
+    action_state: str | None = None
+    action_summary: str | None = None
+    suggested_command: str | None = None
+    days_since_last_event: int | None = None
+    days_until_follow_up: int | None = None
+    curation_status: str
+    notes: str | None = None
+
+
+class DataRequestsIndexPayload(StrictModel):
+    data_requests_schema_version: str
+    title: str
+    generated_at: str
+    behavtaskatlas_commit: str | None = None
+    behavtaskatlas_git_dirty: bool | None = None
+    counts: dict[str, int] = Field(default_factory=dict)
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    priority_counts: dict[str, int] = Field(default_factory=dict)
+    action_state_counts: dict[str, int] = Field(default_factory=dict)
+    requests: list[DataRequestsIndexEntry]
+
+
 class Paper(StrictModel):
     object_type: Literal["paper"]
     schema_version: str
@@ -662,6 +804,7 @@ class FindingsIndexFitSummary(StrictModel):
     family_id: str
     parameters: dict[str, float]
     quality: dict[str, float]
+    caveat_tags: list[str] = Field(default_factory=list)
     predicted_points: list[FindingsIndexCurvePoint] = Field(default_factory=list)
 
 
@@ -754,6 +897,7 @@ class ModelVariant(StrictModel):
     free_parameters: list[str]
     fixed_parameters: dict[str, float] = Field(default_factory=dict)
     additional_parameters: list[ParameterDefinition] = Field(default_factory=list)
+    parameter_patterns: dict[str, str] = Field(default_factory=dict)
     requires: list[str] = Field(default_factory=list)
     references: list[Reference] = Field(default_factory=list)
     curation_status: str
@@ -806,6 +950,7 @@ class ModelFit(StrictModel):
     predictions: ResultCurve | None = None
     fit_method: FitMethod
     caveats: str | None = None
+    caveat_tags: list[str] = Field(default_factory=list)
     curation_status: str
     provenance: FitProvenance
 
@@ -819,6 +964,7 @@ Record = (
     | Paper
     | Finding
     | Comparison
+    | DataRequest
     | ModelFamily
     | ModelVariant
     | ModelFit
@@ -834,6 +980,7 @@ MODEL_BY_OBJECT_TYPE: dict[str, type[BaseModel]] = {
     "paper": Paper,
     "finding": Finding,
     "comparison": Comparison,
+    "data_request": DataRequest,
     "model_family": ModelFamily,
     "model_variant": ModelVariant,
     "model_fit": ModelFit,
@@ -848,6 +995,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "relationship_graph": RelationshipGraphPayload,
     "curation_queue": CurationQueuePayload,
     "release_check": ReleaseCheckPayload,
+    "data_request": DataRequest,
+    "data_requests_index": DataRequestsIndexPayload,
     "findings_index": FindingsIndexPayload,
     "comparisons_index": ComparisonsIndexPayload,
     "model_family": ModelFamily,

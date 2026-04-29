@@ -1,0 +1,41 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.garrett-2023-visual-behavior.yes-no-change-detection
+paper_id: paper.garrett-2023-visual-behavior
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-brain-observatory-visual-behavior
+slice_id: slice.allen-visual-behavior
+source_data_level: raw-trial
+n_trials: 270
+n_subjects: 1
+stratification:
+  species: mouse
+  subject_id: '453911'
+  condition: yes_no_change_detection
+curve:
+  curve_type: hit_rate_by_condition
+  x_label: Signal state
+  x_units: binary 0=catch/no-change, 1=change
+  y_label: p_go
+  points:
+    - x: 0.0
+      n: 34
+      y: 0.08823529411764706
+    - x: 1.0
+      n: 236
+      y: 0.7627118644067796
+extraction_method: harmonized-pipeline
+extraction_notes: >
+  Aggregate yes/no SDT curve from derived/allen_visual_behavior/analysis_result.json
+  for behavior_session_id 899390684 (mouse 453911). The catch/no-change point
+  is the false-alarm rate over catch trials; the change point is the hit rate
+  over go/change trials. Aborted trials are excluded from both denominators.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added to support model_variant.sdt-yes-no. This finding preserves the
+    go/withhold detection axis separately from the per-image-pair hit-rate
+    finding, whose ordinal x axis is not an SDT signal-present/no-signal axis.

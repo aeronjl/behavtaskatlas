@@ -1,0 +1,43 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.bernoulli-condition-rate.garrett-2023-visual-behavior.yes-no-change-detection
+variant_id: model_variant.bernoulli-condition-rate
+finding_ids:
+- finding.garrett-2023-visual-behavior.yes-no-change-detection
+parameters:
+  response_rate: 0.6777777777777778
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -169.70395663663237
+  aic: 341.40791327326474
+  bic: 345.0063352322631
+  n_trials: 270.0
+  n_free_params: 1.0
+predictions:
+  curve_type: hit_rate_by_condition
+  x_label: Signal state
+  x_units: binary 0=catch/no-change, 1=change
+  y_label: p_go
+  points:
+  - x: 0.0
+    n: 34
+    y: 0.6777777777777778
+  - x: 1.0
+    n: 236
+    y: 0.6777777777777778
+fit_method:
+  type: manual
+  options:
+    estimator: binomial maximum likelihood
+  duration_seconds: 6.914138793945312e-05
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.bernoulli-condition-rate;
+    success=True; closed-form binomial MLE

@@ -5,6 +5,8 @@ import curationQueueJson from "../../../derived/curation_queue.json";
 import papersJson from "../../../derived/papers.json";
 import auditJson from "../../../derived/audit.json";
 import modelsJson from "../../../derived/models.json";
+import linkIntegrityJson from "../../../derived/link_integrity.json";
+import dataRequestsJson from "../../../derived/data_requests.json";
 
 export type Manifest = typeof manifestJson;
 export type Catalog = typeof catalogJson;
@@ -43,6 +45,13 @@ export type ModelFitEntry = ModelsIndex["fits"][number];
 export type SliceCoverageEntry = ModelsIndex["slice_coverage"][number];
 export const models = modelsJson;
 
+export type LinkIntegrityReport = typeof linkIntegrityJson;
+export const linkIntegrity = linkIntegrityJson;
+
+export type DataRequestsIndex = typeof dataRequestsJson;
+export type DataRequestEntry = DataRequestsIndex["requests"][number];
+export const dataRequests = dataRequestsJson;
+
 export function getPaper(id: string): PaperEntry | undefined {
   return papers.papers.find((p) => p.id === id || p.slug === id);
 }
@@ -73,6 +82,10 @@ export function getSlice(id: string): ManifestSlice | undefined {
 
 export function slugForId(id: string): string {
   return id.replace(/^[^.]+\./, "");
+}
+
+export function hrefForFinding(id: string): string {
+  return `/findings/${slugForId(id)}`;
 }
 
 export function hrefForNode(node: GraphNode): string | null {

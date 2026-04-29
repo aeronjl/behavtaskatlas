@@ -16,8 +16,11 @@ source_url: https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-021-2
 access_notes: >
   The MVP downloads the Nature Communications source-data ZIP into ignored
   local raw-data storage. The authors also provide analysis/model code through
-  the POMDP-Confidence GitHub repository, but the complete raw behavioral
-  MATLAB files are not included in this committed atlas record.
+  the POMDP-Confidence GitHub/Zenodo code archive, but the complete raw
+  behavioral MATLAB files referenced by the code (`beh_data.monkey1.mat` and
+  `beh_data.monkey2.mat`) are not included in the public code archive or this
+  committed atlas record. The article data-availability statement says the
+  analyzed data are available from R.K. upon reasonable request.
 source_data_level: figure-source-data
 license: >
   Nature Communications source-data reuse terms and original behavioral data
@@ -68,3 +71,4 @@ caveats:
   - The source-data CSVs are figure source data, not a full raw behavioral export.
   - Signed motion direction, direction choice, raw session id, and saccade response time are not preserved in the CSVs used by this slice.
   - Some source rows may describe overlapping underlying trials across figure panels; source panel identity is preserved in `task_variables`.
+  - Clearing proxy/source-data model caveats requires externally requested raw behavioral MATLAB files.

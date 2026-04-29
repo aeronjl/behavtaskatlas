@@ -1,0 +1,510 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CopyCitation from "../../components/CopyCitation.svelte";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import ResidualPlot from "../../components/ResidualPlot.svelte";
+import {
+  hrefForFinding,
+  models,
+  slugForId,
+} from "../../lib/data";
+import { findings as findingsIndex, type FindingsEntry } from "../../lib/findings";
+
+type CurvePoint = { x: number; y: number; n: number };
+type FitPoint = { x: number; y: number; n: number };
+type FitSummary = {
+  fit_id: string;
+  variant_id: string;
+  family_id: string;
+  parameters: Record<string, number>;
+  quality: Record<string, number>;
+  caveat_tags?: string[];
+  predicted_points?: FitPoint[];
+};
+type FullFit = {
+  id: string;
+  variant_id: string;
+  finding_ids: string[];
+  caveats?: string | null;
+  caveat_tags?: string[];
+  fit_method?: { type?: string; duration_seconds?: number | null };
+  provenance?: {
+    fit_commit?: string | null;
+    fit_dirty?: boolean | null;
+    source_notes?: string | null;
+  };
+};
+type Selection = {
+  finding_id: string;
+  best_fit_id: string;
+  best_variant_id: string;
+  best_aic: number | null;
+  delta_aic_to_next: number | null;
+  n_candidate_fits: number;
+  candidate_fit_ids: string[];
+  candidate_variant_ids: string[];
+  best_caveat_tags?: string[];
+  candidate_caveat_tags?: string[];
+};
+
+export function getStaticPaths() {
+  return (findingsIndex.findings as FindingsEntry[]).map((entry) => ({
+    params: { id: slugForId(entry.finding_id) },
+    props: { findingId: entry.finding_id },
+  }));
+}
+
+const { findingId } = Astro.props as { findingId: string };
+const allFindings = findingsIndex.findings as FindingsEntry[];
+const entry = allFindings.find((finding) => finding.finding_id === findingId)!;
+const fitSummaries =
+  ((entry as unknown as { model_fits?: FitSummary[] }).model_fits ?? []) as FitSummary[];
+const fullFitsById = new Map(
+  ((models.fits ?? []) as unknown as FullFit[]).map((fit) => [fit.id, fit]),
+);
+const selection =
+  ((models as unknown as { model_selection_by_finding?: Selection[] })
+    .model_selection_by_finding ?? []).find(
+    (row) => row.finding_id === entry.finding_id,
+  ) ?? null;
+const caveatDefinitions =
+  (models as unknown as {
+    caveat_tag_definitions?: Record<string, { label: string; description: string }>;
+  }).caveat_tag_definitions ?? {};
+
+function fmt(value: number | null | undefined, digits = 3): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
+  const abs = Math.abs(value);
+  if (abs !== 0 && (abs < 0.001 || abs > 100000)) return value.toExponential(2);
+  return value.toFixed(digits);
+}
+
+function qualityValue(fit: FitSummary, key: string): number | null {
+  const value = fit.quality?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function paramRow(params: Record<string, number>): string {
+  return Object.entries(params)
+    .map(([key, value]) => `${key}=${fmt(value)}`)
+    .join(" · ");
+}
+
+function caveatLabel(tag: string): string {
+  return caveatDefinitions[tag]?.label ?? tag.replace(/_/g, " ");
+}
+
+function caveatTitle(tag: string): string {
+  return caveatDefinitions[tag]?.description ?? tag;
+}
+
+function stratificationLabel(finding: FindingsEntry): string {
+  return (
+    finding.stratification?.condition ??
+    finding.stratification?.subject_id ??
+    "pooled"
+  );
+}
+
+function sourceStatus(finding: FindingsEntry, tags: string[]): string {
+  if (
+    tags.some((tag) =>
+      [
+        "target_coded_choice_proxy",
+        "motion_duration_rt_proxy",
+        "figure_source_data",
+      ].includes(tag),
+    )
+  ) {
+    return "proxy-backed";
+  }
+  if (["raw-trial", "processed-trial"].includes(finding.source_data_level)) {
+    return "trial-backed";
+  }
+  return "summary-backed";
+}
+
+function residuals(fit: FitSummary, points: CurvePoint[]) {
+  const predicted = fit.predicted_points ?? [];
+  if (predicted.length === 0) {
+    return { maxAbs: null, rmse: null, n: 0 };
+  }
+  const byX = new Map(predicted.map((point) => [String(point.x), point.y]));
+  const values = points
+    .map((point) => {
+      const predictedY = byX.get(String(point.x));
+      return predictedY === undefined ? null : predictedY - point.y;
+    })
+    .filter((value): value is number => value !== null);
+  if (values.length === 0) {
+    return { maxAbs: null, rmse: null, n: 0 };
+  }
+  const maxAbs = Math.max(...values.map((value) => Math.abs(value)));
+  const rmse = Math.sqrt(
+    values.reduce((sum, value) => sum + value * value, 0) / values.length,
+  );
+  return { maxAbs, rmse, n: values.length };
+}
+
+const fitRows = fitSummaries
+  .map((fit) => {
+    const full = fullFitsById.get(fit.fit_id) ?? null;
+    const tags = Array.from(
+      new Set([...(fit.caveat_tags ?? []), ...(full?.caveat_tags ?? [])]),
+    ).sort();
+    const diagnostics = residuals(fit, entry.points as CurvePoint[]);
+    return {
+      fit,
+      full,
+      tags,
+      diagnostics,
+      aic: qualityValue(fit, "aic"),
+      bic: qualityValue(fit, "bic"),
+      logL: qualityValue(fit, "log_likelihood"),
+      nTrials: qualityValue(fit, "n_trials"),
+      nParams: qualityValue(fit, "n_free_params"),
+      deltaAic:
+        selection?.best_aic !== null &&
+        selection?.best_aic !== undefined &&
+        qualityValue(fit, "aic") !== null
+          ? Math.max(0, qualityValue(fit, "aic")! - selection.best_aic)
+          : null,
+      isWinner: selection?.best_fit_id === fit.fit_id,
+    };
+  })
+  .sort((a, b) => (a.aic ?? Infinity) - (b.aic ?? Infinity));
+
+const allCaveatTags = Array.from(new Set(fitRows.flatMap((row) => row.tags))).sort();
+const sourceStatusLabel = sourceStatus(entry, allCaveatTags);
+const candidateSet = selection?.candidate_variant_ids ?? fitRows.map((row) => row.fit.variant_id);
+const protocolHref = `/protocols/${slugForId(entry.protocol_id)}`;
+const datasetHref = entry.dataset_id ? `/datasets/${slugForId(entry.dataset_id)}` : null;
+const sliceHref = entry.slice_id ? `/slices/${slugForId(entry.slice_id)}` : null;
+const linkedChronometric = fitRows
+  .flatMap((row) => row.full?.finding_ids ?? [])
+  .filter((id) => id !== entry.finding_id)
+  .filter((id, index, ids) => ids.indexOf(id) === index)
+  .map((id) => allFindings.find((finding) => finding.finding_id === id))
+  .filter((finding): finding is FindingsEntry => finding !== undefined);
+const residualPlotRows = fitRows.flatMap((row) => {
+  const byX = new Map((row.fit.predicted_points ?? []).map((point) => [String(point.x), point]));
+  return (entry.points as CurvePoint[])
+    .map((point) => {
+      const predicted = byX.get(String(point.x));
+      if (!predicted) return null;
+      return {
+        fit_id: row.fit.fit_id,
+        variant: row.fit.variant_id.replace("model_variant.", ""),
+        x: point.x,
+        observed: point.y,
+        predicted: predicted.y,
+        residual: predicted.y - point.y,
+      };
+    })
+    .filter((point): point is NonNullable<typeof point> => point !== null);
+});
+const canonicalUrl = new URL(
+  `/findings/${slugForId(entry.finding_id)}/`,
+  Astro.site ?? Astro.url,
+).toString();
+const citationText = [
+  entry.paper_citation.trim(),
+  `Finding ${entry.finding_id} in behavtaskatlas.`,
+  `Stable URL: ${canonicalUrl}.`,
+  selection
+    ? `Best model by AIC: ${selection.best_variant_id.replace("model_variant.", "")}.`
+    : "No AIC-ranked model winner is currently linked.",
+  `Source status: ${sourceStatusLabel}.`,
+  allCaveatTags.length > 0
+    ? `Caveats: ${allCaveatTags.map(caveatLabel).join("; ")}.`
+    : "Caveats: none tagged.",
+].join(" ");
+---
+
+<BaseLayout
+  title={`${entry.finding_id.replace("finding.", "")} · Finding`}
+  description={`Observed curve, model fits, diagnostics, and provenance for ${entry.finding_id}.`}
+>
+  <header class="mb-6">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Finding</p>
+    <h1 class="break-words font-mono text-xl font-semibold tracking-tight">
+      {entry.finding_id.replace("finding.", "")}
+    </h1>
+    <p class="mt-2 text-sm text-slate-600">
+      {entry.paper_citation} · {entry.protocol_name} · {entry.curve_type.replace(/_/g, " ")}
+    </p>
+    <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 md:grid-cols-4">
+      <dt class="text-slate-500">Species</dt>
+      <dd>{entry.species ?? "-"}</dd>
+      <dt class="text-slate-500">Stratification</dt>
+      <dd>{stratificationLabel(entry)}</dd>
+      <dt class="text-slate-500">Trials</dt>
+      <dd class="font-mono">{entry.n_trials?.toLocaleString() ?? "-"}</dd>
+      <dt class="text-slate-500">Source</dt>
+      <dd>{sourceStatusLabel}</dd>
+    </dl>
+  </header>
+
+  <section class="mb-8">
+    <h2 class="mb-3 text-lg font-semibold">Observed curve and fits</h2>
+    <MiniFindingsChart
+      client:visible
+      findings={[entry]}
+      colorBy="condition"
+      height={300}
+    />
+  </section>
+
+  <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Provenance links</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="grid grid-cols-3 gap-2">
+          <dt class="text-slate-500">Paper</dt>
+          <dd class="col-span-2">
+            <a href={`/papers/${slugForId(entry.paper_id)}`}>{entry.paper_citation}</a>
+          </dd>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <dt class="text-slate-500">Protocol</dt>
+          <dd class="col-span-2">
+            <a href={protocolHref}>{entry.protocol_name}</a>
+          </dd>
+        </div>
+        {datasetHref ? (
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">Dataset</dt>
+            <dd class="col-span-2">
+              <a class="font-mono text-xs" href={datasetHref}>{entry.dataset_id}</a>
+            </dd>
+          </div>
+        ) : null}
+        {sliceHref ? (
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">Slice</dt>
+            <dd class="col-span-2">
+              <a class="font-mono text-xs" href={sliceHref}>{entry.slice_id}</a>
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+    </div>
+
+    <div class="rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Model-selection summary</h2>
+      {selection ? (
+        <dl class="space-y-2 text-sm">
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">Winner</dt>
+            <dd class="col-span-2 font-mono text-xs">
+              {selection.best_variant_id.replace("model_variant.", "")}
+            </dd>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">AIC</dt>
+            <dd class="col-span-2 font-mono">{fmt(selection.best_aic, 1)}</dd>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">Delta next</dt>
+            <dd class="col-span-2 font-mono">
+              {fmt(selection.delta_aic_to_next, 1)}
+            </dd>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <dt class="text-slate-500">Candidates</dt>
+            <dd class="col-span-2">
+              <ul class="flex flex-wrap gap-1">
+                {candidateSet.map((variantId) => (
+                  <li class="rounded bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-700">
+                    {variantId.replace("model_variant.", "")}
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <p class="text-sm text-slate-600">
+          No AIC-ranked candidate fits are linked to this finding yet.
+        </p>
+      )}
+    </div>
+  </section>
+
+  <section class="mb-8">
+    <CopyCitation client:load text={citationText} url={canonicalUrl} />
+  </section>
+
+  {linkedChronometric.length > 0 ? (
+    <section class="mb-8 rounded-md border border-slate-200 bg-white p-4">
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Joint-fit companions</h2>
+      <ul class="space-y-1 text-sm">
+        {linkedChronometric.map((finding) => (
+          <li>
+            <a class="font-mono text-xs" href={hrefForFinding(finding.finding_id)}>
+              {finding.finding_id.replace("finding.", "")}
+            </a>
+            <span class="ml-2 text-xs text-slate-500">
+              {finding.curve_type.replace(/_/g, " ")}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null}
+
+  <section class="mb-8">
+    <h2 class="mb-3 text-lg font-semibold">Fit diagnostics</h2>
+    {fitRows.length === 0 ? (
+      <p class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        No model fits are linked to this finding yet.
+      </p>
+    ) : (
+      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-3 py-2">Variant</th>
+              <th class="px-3 py-2 text-right">AIC</th>
+              <th class="px-3 py-2 text-right">Delta</th>
+              <th class="px-3 py-2 text-right">logL</th>
+              <th class="px-3 py-2 text-right">n</th>
+              <th class="px-3 py-2 text-right">Params</th>
+              <th class="px-3 py-2 text-right">Max abs error</th>
+              <th class="px-3 py-2 text-right">RMSE</th>
+              <th class="px-3 py-2">Caveats</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {fitRows.map((row) => (
+              <tr>
+                <td class="px-3 py-2">
+                  <span class="font-mono text-[11px]">
+                    {row.fit.variant_id.replace("model_variant.", "")}
+                  </span>
+                  {row.isWinner ? (
+                    <span class="ml-2 rounded bg-ok-soft px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ok">
+                      winner
+                    </span>
+                  ) : null}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(row.aic, 1)}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {fmt(row.deltaAic, 1)}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(row.logL, 1)}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {row.nTrials?.toLocaleString() ?? "-"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {fmt(row.nParams, 0)}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {fmt(row.diagnostics.maxAbs, 4)}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {fmt(row.diagnostics.rmse, 4)}
+                </td>
+                <td class="px-3 py-2">
+                  {row.tags.length === 0 ? (
+                    <span class="text-xs text-slate-500">-</span>
+                  ) : (
+                    <ul class="flex max-w-64 flex-wrap gap-1">
+                      {row.tags.map((tag) => (
+                        <li
+                          class="rounded bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800"
+                          title={caveatTitle(tag)}
+                        >
+                          {caveatLabel(tag)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+
+  {residualPlotRows.length > 0 ? (
+    <section class="mb-8">
+      <h2 class="mb-3 text-lg font-semibold">Residuals</h2>
+      <ResidualPlot
+        client:visible
+        rows={residualPlotRows}
+        xLabel={entry.x_label}
+        height={240}
+      />
+    </section>
+  ) : null}
+
+  {fitRows.length > 0 ? (
+    <section class="mb-8">
+      <h2 class="mb-3 text-lg font-semibold">Fit parameters and provenance</h2>
+      <div class="space-y-3">
+        {fitRows.map((row) => (
+          <article class="rounded-md border border-slate-200 bg-white p-4">
+            <header class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 class="font-mono text-sm font-semibold">
+                {row.fit.fit_id.replace("model_fit.", "")}
+              </h3>
+              <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                {row.full?.provenance?.fit_dirty ? "dirty fit" : "recorded fit"}
+              </span>
+            </header>
+            <p class="break-words font-mono text-xs text-slate-700">
+              {paramRow(row.fit.parameters)}
+            </p>
+            <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 md:grid-cols-4">
+              <dt class="text-slate-500">Method</dt>
+              <dd>{row.full?.fit_method?.type ?? "-"}</dd>
+              <dt class="text-slate-500">Commit</dt>
+              <dd class="font-mono">{row.full?.provenance?.fit_commit ?? "-"}</dd>
+              <dt class="text-slate-500">Predicted points</dt>
+              <dd class="font-mono">{row.diagnostics.n}</dd>
+              <dt class="text-slate-500">BIC</dt>
+              <dd class="font-mono">{fmt(row.bic, 1)}</dd>
+            </dl>
+            {row.full?.caveats ? (
+              <p class="mt-2 text-xs text-slate-600">{row.full.caveats}</p>
+            ) : null}
+            {row.full?.provenance?.source_notes ? (
+              <p class="mt-2 text-[11px] text-slate-500">
+                {row.full.provenance.source_notes}
+              </p>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  ) : null}
+
+  <section>
+    <h2 class="mb-3 text-lg font-semibold">Observed points</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">{entry.x_label}</th>
+            <th class="px-3 py-2 text-right">{entry.y_label}</th>
+            <th class="px-3 py-2 text-right">n</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {(entry.points as CurvePoint[]).map((point) => (
+            <tr>
+              <td class="px-3 py-2 font-mono">{fmt(point.x)}</td>
+              <td class="px-3 py-2 text-right font-mono">{fmt(point.y, 4)}</td>
+              <td class="px-3 py-2 text-right font-mono">
+                {point.n.toLocaleString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>

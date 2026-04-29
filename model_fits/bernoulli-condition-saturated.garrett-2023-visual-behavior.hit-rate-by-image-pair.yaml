@@ -1,0 +1,260 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.bernoulli-condition-saturated.garrett-2023-visual-behavior.hit-rate-by-image-pair
+variant_id: model_variant.bernoulli-condition-saturated
+finding_ids:
+- finding.garrett-2023-visual-behavior.hit-rate-by-image-pair
+parameters:
+  response_rate_x0: 0.6666666666666666
+  response_rate_x1: 0.75
+  response_rate_x2: 0.999999999
+  response_rate_x3: 0.6
+  response_rate_x4: 0.999999999
+  response_rate_x5: 0.999999999
+  response_rate_x6: 0.8
+  response_rate_x7: 0.999999999
+  response_rate_x8: 0.999999999
+  response_rate_x9: 0.75
+  response_rate_x10: 0.6666666666666666
+  response_rate_x11: 0.75
+  response_rate_x12: 0.5
+  response_rate_x13: 0.5
+  response_rate_x14: 0.75
+  response_rate_x15: 0.8
+  response_rate_x16: 0.75
+  response_rate_x17: 0.75
+  response_rate_x18: 0.999999999
+  response_rate_x19: 0.999999999
+  response_rate_x20: 0.999999999
+  response_rate_x21: 0.75
+  response_rate_x22: 0.75
+  response_rate_x23: 0.75
+  response_rate_x24: 0.5
+  response_rate_x25: 0.75
+  response_rate_x26: 0.25
+  response_rate_x27: 0.75
+  response_rate_x28: 0.75
+  response_rate_x29: 0.75
+  response_rate_x30: 0.8
+  response_rate_x31: 0.6666666666666666
+  response_rate_x32: 0.999999999
+  response_rate_x33: 0.5
+  response_rate_x34: 0.999999999
+  response_rate_x35: 0.999999999
+  response_rate_x36: 0.5
+  response_rate_x37: 0.5
+  response_rate_x38: 0.75
+  response_rate_x39: 0.6
+  response_rate_x40: 0.75
+  response_rate_x41: 0.75
+  response_rate_x42: 0.75
+  response_rate_x43: 0.75
+  response_rate_x44: 0.75
+  response_rate_x45: 0.8
+  response_rate_x46: 0.75
+  response_rate_x47: 0.75
+  response_rate_x48: 0.8
+  response_rate_x49: 0.999999999
+  response_rate_x50: 0.75
+  response_rate_x51: 0.5
+  response_rate_x52: 0.8
+  response_rate_x53: 0.6
+  response_rate_x54: 0.75
+  response_rate_x55: 0.8
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -106.7301823357128
+  aic: 325.4603646714256
+  bic: 519.4349457528598
+  n_trials: 236.0
+  n_free_params: 56.0
+predictions:
+  curve_type: hit_rate_by_condition
+  x_label: Image-pair index (sorted by initial then change image)
+  x_units: ordinal
+  y_label: hit_rate
+  points:
+  - x: 0.0
+    n: 3
+    y: 0.6666666666666666
+  - x: 1.0
+    n: 4
+    y: 0.75
+  - x: 2.0
+    n: 4
+    y: 0.999999999
+  - x: 3.0
+    n: 5
+    y: 0.6
+  - x: 4.0
+    n: 4
+    y: 0.999999999
+  - x: 5.0
+    n: 4
+    y: 0.999999999
+  - x: 6.0
+    n: 5
+    y: 0.8
+  - x: 7.0
+    n: 4
+    y: 0.999999999
+  - x: 8.0
+    n: 5
+    y: 0.999999999
+  - x: 9.0
+    n: 4
+    y: 0.75
+  - x: 10.0
+    n: 3
+    y: 0.6666666666666666
+  - x: 11.0
+    n: 4
+    y: 0.75
+  - x: 12.0
+    n: 4
+    y: 0.5
+  - x: 13.0
+    n: 4
+    y: 0.5
+  - x: 14.0
+    n: 4
+    y: 0.75
+  - x: 15.0
+    n: 5
+    y: 0.8
+  - x: 16.0
+    n: 4
+    y: 0.75
+  - x: 17.0
+    n: 4
+    y: 0.75
+  - x: 18.0
+    n: 4
+    y: 0.999999999
+  - x: 19.0
+    n: 5
+    y: 0.999999999
+  - x: 20.0
+    n: 4
+    y: 0.999999999
+  - x: 21.0
+    n: 4
+    y: 0.75
+  - x: 22.0
+    n: 4
+    y: 0.75
+  - x: 23.0
+    n: 4
+    y: 0.75
+  - x: 24.0
+    n: 4
+    y: 0.5
+  - x: 25.0
+    n: 4
+    y: 0.75
+  - x: 26.0
+    n: 4
+    y: 0.25
+  - x: 27.0
+    n: 4
+    y: 0.75
+  - x: 28.0
+    n: 4
+    y: 0.75
+  - x: 29.0
+    n: 4
+    y: 0.75
+  - x: 30.0
+    n: 5
+    y: 0.8
+  - x: 31.0
+    n: 3
+    y: 0.6666666666666666
+  - x: 32.0
+    n: 5
+    y: 0.999999999
+  - x: 33.0
+    n: 4
+    y: 0.5
+  - x: 34.0
+    n: 5
+    y: 0.999999999
+  - x: 35.0
+    n: 4
+    y: 0.999999999
+  - x: 36.0
+    n: 4
+    y: 0.5
+  - x: 37.0
+    n: 4
+    y: 0.5
+  - x: 38.0
+    n: 4
+    y: 0.75
+  - x: 39.0
+    n: 5
+    y: 0.6
+  - x: 40.0
+    n: 4
+    y: 0.75
+  - x: 41.0
+    n: 4
+    y: 0.75
+  - x: 42.0
+    n: 4
+    y: 0.75
+  - x: 43.0
+    n: 4
+    y: 0.75
+  - x: 44.0
+    n: 4
+    y: 0.75
+  - x: 45.0
+    n: 5
+    y: 0.8
+  - x: 46.0
+    n: 4
+    y: 0.75
+  - x: 47.0
+    n: 4
+    y: 0.75
+  - x: 48.0
+    n: 5
+    y: 0.8
+  - x: 49.0
+    n: 5
+    y: 0.999999999
+  - x: 50.0
+    n: 4
+    y: 0.75
+  - x: 51.0
+    n: 4
+    y: 0.5
+  - x: 52.0
+    n: 5
+    y: 0.8
+  - x: 53.0
+    n: 5
+    y: 0.6
+  - x: 54.0
+    n: 4
+    y: 0.75
+  - x: 55.0
+    n: 5
+    y: 0.8
+fit_method:
+  type: manual
+  options:
+    estimator: per-condition binomial maximum likelihood
+  duration_seconds: 0.00017499923706054688
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.bernoulli-condition-saturated;
+    success=True; closed-form per-condition Bernoulli MLE

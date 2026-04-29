@@ -25,6 +25,7 @@ applicable_curve_types:
 requires:
   - stimulus_value
   - choice_lr
+  - choice_go_withhold
 references:
   - id: ref.green-swets-1966
     citation: >
@@ -42,6 +43,6 @@ provenance:
   updated: 2026-04-28
   source_notes: >
     Standard SDT family included alongside logistic as the second
-    "no accumulator dynamics" baseline. A yes/no SDT variant for the
-    Allen Visual Behavior change-detection slice (go vs. withhold) is
-    the natural first variant that goes beyond the 2AFC default.
+    "no accumulator dynamics" baseline. The 2AFC variant covers left/right
+    psychometrics; the yes/no variant covers go/withhold change-detection
+    rates on an explicit binary signal axis.

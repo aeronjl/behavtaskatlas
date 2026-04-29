@@ -21,14 +21,16 @@ dataset_ids:
   - dataset.allen-brain-observatory-visual-behavior
 finding_ids:
   - finding.garrett-2023-visual-behavior.hit-rate-by-image-pair
+  - finding.garrett-2023-visual-behavior.yes-no-change-detection
 curation_status: data-linked
 notes: >
   Anchors the allen_visual_behavior vertical slice to its published reference
   (Garrett et al. 2023, bioRxiv) for the Allen Brain Observatory Visual
-  Behavior 2P resource. The single curated finding is per-image-pair hit
-  rate from one OPHYS_1 Familiar session (behavior_session_id 899390684,
-  mouse 453911) — n=1 mouse, so this is a single-session illustration of
-  the change-detection task rather than a population estimate.
+  Behavior 2P resource. The curated findings are per-image-pair hit rate
+  and an aggregate yes/no go-rate curve from one OPHYS_1 Familiar session
+  (behavior_session_id 899390684, mouse 453911) — n=1 mouse, so this is a
+  single-session illustration of the change-detection task rather than a
+  population estimate.
 provenance:
   curators:
     - behavtaskatlas
@@ -38,4 +40,5 @@ provenance:
     Paper record introduced to give the Allen Visual Behavior slice a
     citation anchor and close the last "no paper" gap in the slice graph.
     Per-image-pair hit-rate finding extracted from the slice's
-    image_pair_summary.csv.
+    image_pair_summary.csv; aggregate yes/no finding extracted from the
+    slice's analysis_result.json hit and false-alarm rates.

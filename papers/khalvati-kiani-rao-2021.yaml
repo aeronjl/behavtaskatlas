@@ -26,6 +26,10 @@ finding_ids:
   - finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m2
   - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m1
   - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m2
+  - finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+  - finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+  - finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+  - finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
 curation_status: data-linked
 notes: >
   Source paper for the macaque_rdm_confidence vertical slice's accuracy
@@ -33,7 +37,10 @@ notes: >
   random-dot motion confidence/wagering task with two monkeys (M1, M2).
   Each accuracy curve is reported separately for trials with no sure-target
   option ("accuracy_no_sure_target") and trials where the sure-target option
-  was offered but the direction was chosen instead.
+  was offered but the direction was chosen instead. The no-sure-target rows
+  also have target-coded psychometric and motion-duration chronometric proxy
+  findings for per-monkey baseline model fits; these do not recover raw
+  signed direction or saccade latency.
 provenance:
   curators:
     - behavtaskatlas
@@ -41,5 +48,7 @@ provenance:
   updated: 2026-04-28
   source_notes: >
     Paper record introduced alongside Phase 3 of the meta-analysis extension;
-    findings extracted from the slice's accuracy_summary.csv stratified by
-    source_measure × monkey.
+    accuracy findings extracted from accuracy_summary.csv stratified by
+    source_measure × monkey. Target-coded psychometric and motion-duration
+    proxy chronometric findings are extracted from the regenerated canonical
+    source-row table.

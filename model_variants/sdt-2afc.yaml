@@ -26,6 +26,6 @@ provenance:
   updated: 2026-04-28
   source_notes: >
     Conservative first SDT variant — same data requirements as logistic
-    so every pooled psychometric finding is fittable. A yes/no SDT
-    variant for Allen change-detection (go vs. withhold) is the natural
-    follow-up.
+    so every pooled left/right psychometric finding is fittable. The
+    go/withhold Allen change-detection path is handled separately by
+    model_variant.sdt-yes-no.

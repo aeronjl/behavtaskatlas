@@ -1,0 +1,53 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+parameters:
+  d_prime: 0.029837348228626454
+  criterion: 0.046354318508777026
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -14330.337837329407
+  aic: 28664.675674658814
+  bic: 28680.952794008244
+  n_trials: 25300.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Target-coded motion strength
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: 3.2
+    n: 5091
+    y: 0.5195902378592493
+  - x: 6.4
+    n: 5077
+    y: 0.557488510919482
+  - x: 12.8
+    n: 4980
+    y: 0.6314000639237369
+  - x: 25.6
+    n: 5071
+    y: 0.7634615675956861
+  - x: 51.2
+    n: 5081
+    y: 0.9307390610509547
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.004356861114501953
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

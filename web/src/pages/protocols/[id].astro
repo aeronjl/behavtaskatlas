@@ -18,7 +18,7 @@ interface Props {
 
 type Mapping = Record<string, unknown>;
 
-const { protocol } = Astro.props;
+const { protocol } = Astro.props as Props;
 const stimulus: Mapping = protocol.stimulus as Mapping;
 const choice: Mapping = protocol.choice as Mapping;
 const feedback: Mapping = protocol.feedback as Mapping;

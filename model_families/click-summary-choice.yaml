@@ -1,0 +1,56 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.click-summary-choice
+name: Click-summary choice baselines
+description: >
+  Same-scope baseline models for Poisson clicks findings. These models
+  use per-subject click-task trial rows but summarize the evidence as
+  either an overall choice rate or a signed right-minus-left click-count
+  difference, making them direct comparators for richer click-accumulator
+  fits without invoking full click-timing dynamics.
+parameter_definitions:
+  - name: response_rate
+    symbol: p_right
+    units: probability
+    description: Subject-level probability of choosing right.
+  - name: sensitivity
+    symbol: beta
+    units: 1 / click
+    description: Logistic sensitivity to signed right-minus-left click count.
+  - name: bias
+    symbol: b
+    units: clicks
+    description: Signed click-count value where the logistic curve crosses midpoint.
+  - name: lapse
+    symbol: lambda_lapse
+    units: probability
+    description: Trial-level lapse rate mixed with chance responding.
+applicable_curve_types:
+  - psychometric
+requires:
+  - choice_lr
+  - click_times
+  - subject_id
+references:
+  - id: ref.brunton-2013
+    citation: >
+      Brunton BW, Botvinick MM, Brody CD. Rats and humans can optimally
+      accumulate evidence for decision-making. Science, 2013,
+      340(6128):95-98.
+    doi: 10.1126/science.1233912
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the model-selection roadmap showed that Brunton click
+    accumulator wins lacked same-scope click-summary comparators. These
+    baselines keep summary-scope AIC comparisons separate from generic
+    direct-choice psychometric fits.
+notes: >
+  The count-logistic variant discards click timing and retains only the
+  signed click-count summary, while the rate-null variant discards the
+  stimulus axis entirely. Both fit per-trial choices for the same subject
+  rows used by the click accumulator.

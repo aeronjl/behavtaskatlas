@@ -1,14 +1,39 @@
+# OS / editor
 .DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# secrets — checked-in templates allowed via !.env.example
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# Python
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Project-local data + generated artifacts (see CLAUDE.md)
 data/raw/
 derived/
+
+# Web (Astro / Bun)
 web/node_modules/
 web/dist/
 web/.astro/
+*.tsbuildinfo
+
+# Vercel CLI local state
+.vercel/

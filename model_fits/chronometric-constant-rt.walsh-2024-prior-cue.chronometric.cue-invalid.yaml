@@ -1,0 +1,98 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-constant-rt.walsh-2024-prior-cue.chronometric.cue-invalid
+variant_id: model_variant.chronometric-constant-rt
+finding_ids:
+- finding.walsh-2024-prior-cue.chronometric.cue-invalid
+parameters:
+  rt_level: 0.9126384409408237
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -6.808972747241275
+  aic: 15.61794549448255
+  bic: 16.56238447364899
+  n_trials: 10985.0
+  n_points: 19.0
+  n_free_params: 1.0
+  chronometric_max_residual_s: 0.3372602861893066
+  rt_sigma_assumed_s: 0.123401843671206
+predictions:
+  curve_type: chronometric
+  x_label: Absolute target-distractor contrast
+  x_units: percentage points
+  y_label: median_rt_s
+  points:
+  - x: 3.0000000000000027
+    n: 227
+    y: 0.9126384409408237
+  - x: 4.0000000000000036
+    n: 212
+    y: 0.9126384409408237
+  - x: 6.000000000000005
+    n: 591
+    y: 0.9126384409408237
+  - x: 7.000000000000006
+    n: 1079
+    y: 0.9126384409408237
+  - x: 8.000000000000007
+    n: 682
+    y: 0.9126384409408237
+  - x: 10.000000000000009
+    n: 1849
+    y: 0.9126384409408237
+  - x: 11.00000000000001
+    n: 140
+    y: 0.9126384409408237
+  - x: 12.00000000000001
+    n: 1270
+    y: 0.9126384409408237
+  - x: 12.99999999999999
+    n: 198
+    y: 0.9126384409408237
+  - x: 13.99999999999999
+    n: 1599
+    y: 0.9126384409408237
+  - x: 14.999999999999991
+    n: 673
+    y: 0.9126384409408237
+  - x: 15.999999999999993
+    n: 475
+    y: 0.9126384409408237
+  - x: 16.999999999999993
+    n: 285
+    y: 0.9126384409408237
+  - x: 17.999999999999993
+    n: 383
+    y: 0.9126384409408237
+  - x: 19.999999999999996
+    n: 378
+    y: 0.9126384409408237
+  - x: 21.999999999999996
+    n: 545
+    y: 0.9126384409408237
+  - x: 25.0
+    n: 128
+    y: 0.9126384409408237
+  - x: 26.0
+    n: 127
+    y: 0.9126384409408237
+  - x: 28.000000000000004
+    n: 144
+    y: 0.9126384409408237
+fit_method:
+  type: manual
+  options:
+    estimator: weighted mean median RT
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.00013685226440429688
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.chronometric-constant-rt;
+    success=True; closed-form weighted constant RT estimate

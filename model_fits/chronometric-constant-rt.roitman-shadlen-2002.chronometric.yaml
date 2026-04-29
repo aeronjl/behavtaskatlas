@@ -1,0 +1,59 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-constant-rt.roitman-shadlen-2002.chronometric
+variant_id: model_variant.chronometric-constant-rt
+finding_ids:
+- finding.roitman-shadlen-2002.chronometric
+parameters:
+  rt_level: 0.6708577004390958
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -3.003663717010731
+  aic: 8.007327434021462
+  bic: 7.799086903249517
+  n_trials: 6149.0
+  n_points: 6.0
+  n_free_params: 1.0
+  chronometric_max_residual_s: 0.2608577004390958
+  rt_sigma_assumed_s: 0.15035469637567767
+predictions:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 1019
+    y: 0.6708577004390958
+  - x: 3.2
+    n: 1028
+    y: 0.6708577004390958
+  - x: 6.4
+    n: 1025
+    y: 0.6708577004390958
+  - x: 12.8
+    n: 1023
+    y: 0.6708577004390958
+  - x: 25.6
+    n: 1026
+    y: 0.6708577004390958
+  - x: 51.2
+    n: 1028
+    y: 0.6708577004390958
+fit_method:
+  type: manual
+  options:
+    estimator: weighted mean median RT
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.00012803077697753906
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.chronometric-constant-rt;
+    success=True; closed-form weighted constant RT estimate

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -7,8 +8,10 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from behavtaskatlas.data_requests import validate_data_request_status_event_state
 from behavtaskatlas.models import (
     Comparison,
+    DataRequest,
     Dataset,
     Finding,
     ModelFamily,
@@ -66,6 +69,7 @@ def iter_record_paths(root: Path) -> list[Path]:
         "papers",
         "findings",
         "comparisons",
+        "data_requests",
         "model_families",
         "model_variants",
         "model_fits",
@@ -83,6 +87,7 @@ def iter_record_paths(root: Path) -> list[Path]:
 
 def validate_repository(root: Path) -> ValidationReport:
     records: list[BaseModel] = []
+    path_by_record_object: dict[int, Path] = {}
     issues: list[ValidationIssue] = []
 
     try:
@@ -93,14 +98,16 @@ def validate_repository(root: Path) -> ValidationReport:
     for path in iter_record_paths(root):
         try:
             data = load_yaml(path)
-            records.append(model_from_record(data))
+            record = model_from_record(data)
+            records.append(record)
+            path_by_record_object[id(record)] = path
         except (ValueError, ValidationError, yaml.YAMLError) as exc:
             issues.append(ValidationIssue(path, str(exc)))
 
     ids: dict[str, Path] = {}
     for record in records:
         record_id = getattr(record, "id", None)
-        path = _path_for_record(root, record_id)
+        path = path_by_record_object.get(id(record), root)
         if record_id in ids:
             issues.append(ValidationIssue(path, f"Duplicate record id: {record_id}"))
         ids[record_id] = path
@@ -127,7 +134,7 @@ def validate_repository(root: Path) -> ValidationReport:
             finding_ids.add(record.id)
 
     for record in records:
-        path = _path_for_record(root, record.id)
+        path = path_by_record_object.get(id(record), root)
         issues.extend(_validate_common_vocab(path, record, vocabularies))
 
         if isinstance(record, Protocol):
@@ -275,6 +282,67 @@ def validate_repository(root: Path) -> ValidationReport:
                     )
                 )
 
+        if isinstance(record, DataRequest):
+            for dataset_id in record.dataset_ids:
+                if dataset_id not in dataset_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"DataRequest.dataset_ids references unknown {dataset_id!r}",
+                        )
+                    )
+            for paper_id in record.paper_ids:
+                if paper_id not in paper_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"DataRequest.paper_ids references unknown {paper_id!r}",
+                        )
+                    )
+            for protocol_id in record.protocol_ids:
+                if protocol_id not in protocol_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"DataRequest.protocol_ids references unknown {protocol_id!r}",
+                        )
+                    )
+            for slice_id in record.slice_ids:
+                if slice_id not in slice_by_id:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"DataRequest.slice_ids references unknown {slice_id!r}",
+                        )
+                    )
+            for finding_id in record.finding_ids:
+                if finding_id not in finding_ids:
+                    issues.append(
+                        ValidationIssue(
+                            path,
+                            f"DataRequest.finding_ids references unknown {finding_id!r}",
+                        )
+                    )
+            if not (
+                record.dataset_ids
+                or record.paper_ids
+                or record.protocol_ids
+                or record.slice_ids
+                or record.finding_ids
+            ):
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "DataRequest must reference at least one dataset, paper, "
+                        "protocol, slice, or finding",
+                    )
+                )
+            if not record.requested_files:
+                issues.append(
+                    ValidationIssue(path, "DataRequest must request at least one file")
+                )
+            issues.extend(_validate_data_request_status_events(path, record))
+
         if isinstance(record, ModelVariant):
             if record.family_id not in model_family_ids:
                 issues.append(
@@ -323,6 +391,25 @@ def validate_repository(root: Path) -> ValidationReport:
                             f"fixed: {joined}",
                         )
                     )
+                for fp, pattern in record.parameter_patterns.items():
+                    if fp not in record.free_parameters:
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"ModelVariant.parameter_patterns key {fp!r} "
+                                "must be declared in free_parameters",
+                            )
+                        )
+                    try:
+                        re.compile(pattern)
+                    except re.error as exc:
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"ModelVariant.parameter_patterns {fp!r} has "
+                                f"invalid regex: {exc}",
+                            )
+                        )
 
         if isinstance(record, ModelFit):
             variant = model_variant_by_id.get(record.variant_id)
@@ -337,8 +424,30 @@ def validate_repository(root: Path) -> ValidationReport:
             else:
                 got = set(record.parameters.keys())
                 expected = set(variant.free_parameters)
-                missing = expected - got
-                extra = got - expected
+                patterned_free_parameters = set(variant.parameter_patterns)
+                compiled_patterns: list[tuple[str, re.Pattern[str]]] = []
+                for fp, pattern in variant.parameter_patterns.items():
+                    try:
+                        compiled_patterns.append((fp, re.compile(pattern)))
+                    except re.error:
+                        continue
+                missing = expected - got - patterned_free_parameters
+                extra = {
+                    parameter
+                    for parameter in got - expected
+                    if not any(
+                        pattern.fullmatch(parameter) for _, pattern in compiled_patterns
+                    )
+                }
+                for fp, pattern in compiled_patterns:
+                    if not any(pattern.fullmatch(parameter) for parameter in got):
+                        issues.append(
+                            ValidationIssue(
+                                path,
+                                f"ModelFit has no concrete parameters matching "
+                                f"variant free parameter pattern {fp!r}",
+                            )
+                        )
                 if missing:
                     joined = ", ".join(sorted(missing))
                     issues.append(
@@ -451,6 +560,16 @@ def validate_repository(root: Path) -> ValidationReport:
     return ValidationReport(records=records, issues=issues)
 
 
+def _validate_data_request_status_events(
+    path: Path,
+    record: DataRequest,
+) -> list[ValidationIssue]:
+    return [
+        ValidationIssue(path, message)
+        for message in validate_data_request_status_event_state(record)
+    ]
+
+
 def _validate_common_vocab(
     path: Path, record: BaseModel, vocabularies: dict[str, set[str]]
 ) -> list[ValidationIssue]:
@@ -500,6 +619,12 @@ def _validate_common_vocab(
 
     if isinstance(record, Dataset):
         check(record.source_data_level, "source_data_levels", "source_data_level")
+
+    if isinstance(record, DataRequest):
+        if not record.id.startswith("data_request."):
+            issues.append(
+                ValidationIssue(path, "DataRequest id should start with 'data_request.'")
+            )
 
     if isinstance(record, VerticalSlice):
         check(record.comparison.species, "species", "comparison.species")

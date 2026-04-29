@@ -103,11 +103,33 @@
           "title": "Finding Id",
           "type": "string"
         },
+        "fit": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit"
+        },
         "modalities": {
           "items": {
             "type": "string"
           },
           "title": "Modalities",
+          "type": "array"
+        },
+        "model_fits": {
+          "items": {
+            "$ref": "#/$defs/FindingsIndexFitSummary"
+          },
+          "title": "Model Fits",
           "type": "array"
         },
         "n_subjects": {
@@ -259,6 +281,61 @@
         "points"
       ],
       "title": "FindingsIndexEntry",
+      "type": "object"
+    },
+    "FindingsIndexFitSummary": {
+      "additionalProperties": false,
+      "description": "Compact per-fit summary for embedding in FindingsIndexEntry.",
+      "properties": {
+        "caveat_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Caveat Tags",
+          "type": "array"
+        },
+        "family_id": {
+          "title": "Family Id",
+          "type": "string"
+        },
+        "fit_id": {
+          "title": "Fit Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "predicted_points": {
+          "items": {
+            "$ref": "#/$defs/FindingsIndexCurvePoint"
+          },
+          "title": "Predicted Points",
+          "type": "array"
+        },
+        "quality": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Quality",
+          "type": "object"
+        },
+        "variant_id": {
+          "title": "Variant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fit_id",
+        "variant_id",
+        "family_id",
+        "parameters",
+        "quality"
+      ],
+      "title": "FindingsIndexFitSummary",
       "type": "object"
     },
     "StratificationKey": {

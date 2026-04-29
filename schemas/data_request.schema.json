@@ -1,0 +1,425 @@
+{
+  "$defs": {
+    "DataRequestDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject",
+        "body"
+      ],
+      "title": "DataRequestDraft",
+      "type": "object"
+    },
+    "DataRequestEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "event_date": {
+          "format": "date",
+          "title": "Event Date",
+          "type": "string"
+        },
+        "event_type": {
+          "enum": [
+            "drafted",
+            "sent",
+            "follow_up_due",
+            "followed_up",
+            "received",
+            "declined",
+            "license_confirmed",
+            "closed",
+            "note"
+          ],
+          "title": "Event Type",
+          "type": "string"
+        },
+        "evidence_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Path"
+        },
+        "evidence_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Url"
+        },
+        "next_follow_up_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Follow Up Date"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_type",
+        "event_date",
+        "actor",
+        "notes"
+      ],
+      "title": "DataRequestEvent",
+      "type": "object"
+    },
+    "DataRequestEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_type": {
+          "enum": [
+            "article_data_availability",
+            "code_reference",
+            "public_archive_check",
+            "source_data_check",
+            "curator_inference"
+          ],
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "evidence_type",
+        "description"
+      ],
+      "title": "DataRequestEvidence",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "format": "date",
+          "title": "Created",
+          "type": "string"
+        },
+        "curators": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Curators",
+          "type": "array"
+        },
+        "source_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Notes"
+        },
+        "updated": {
+          "format": "date",
+          "title": "Updated",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created",
+        "updated"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "RequestedDataFile": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "RequestedDataFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "blocker_detail": {
+      "title": "Blocker Detail",
+      "type": "string"
+    },
+    "blocker_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Blocker Type"
+    },
+    "contact_instructions": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Contact Instructions"
+    },
+    "curation_status": {
+      "title": "Curation Status",
+      "type": "string"
+    },
+    "dataset_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dataset Ids",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/DataRequestEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/DataRequestEvidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "finding_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Finding Ids",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "model_roadmap_issue_types": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Model Roadmap Issue Types",
+      "type": "array"
+    },
+    "next_action": {
+      "title": "Next Action",
+      "type": "string"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "object_type": {
+      "const": "data_request",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "paper_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Paper Ids",
+      "type": "array"
+    },
+    "priority": {
+      "enum": [
+        "low",
+        "normal",
+        "high"
+      ],
+      "title": "Priority",
+      "type": "string"
+    },
+    "protocol_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Protocol Ids",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "purpose": {
+      "title": "Purpose",
+      "type": "string"
+    },
+    "request_draft": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DataRequestDraft"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_type": {
+      "enum": [
+        "author_request",
+        "repository_issue",
+        "archive_search",
+        "license_clarification"
+      ],
+      "title": "Request Type",
+      "type": "string"
+    },
+    "requested_files": {
+      "items": {
+        "$ref": "#/$defs/RequestedDataFile"
+      },
+      "title": "Requested Files",
+      "type": "array"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "slice_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Slice Ids",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "ready_to_send",
+        "requested",
+        "fulfilled",
+        "declined",
+        "blocked",
+        "closed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "object_type",
+    "schema_version",
+    "id",
+    "title",
+    "status",
+    "priority",
+    "request_type",
+    "purpose",
+    "blocker_detail",
+    "next_action",
+    "requested_files",
+    "curation_status",
+    "provenance"
+  ],
+  "title": "DataRequest",
+  "type": "object"
+}

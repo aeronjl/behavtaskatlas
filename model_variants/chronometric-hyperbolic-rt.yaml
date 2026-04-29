@@ -1,0 +1,29 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.chronometric-hyperbolic-rt
+family_id: model_family.chronometric-descriptive
+name: Hyperbolic median RT baseline
+description: >
+  Three-parameter monotonic chronometric baseline:
+  median_rt(strength) = rt_floor + rt_span / (1 + strength /
+  half_saturation_strength). Strength is abs(x), so zero-coherence
+  chronometric points are valid. Intended as a descriptive competitor for
+  DDM chronometric predictions.
+free_parameters:
+  - rt_floor
+  - rt_span
+  - half_saturation_strength
+fixed_parameters: {}
+requires:
+  - stimulus_value
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Fit to committed chronometric findings so DDM chronometric rows have a
+    transparent descriptive baseline in the model-selection matrix.

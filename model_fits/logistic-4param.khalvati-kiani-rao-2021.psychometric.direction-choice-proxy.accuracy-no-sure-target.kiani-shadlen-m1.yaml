@@ -1,0 +1,58 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+parameters:
+  bias: 1.6022773328487085
+  slope: 10.475246234043157
+  lower_lapse: 0.06596179929435879
+  upper_lapse: 0.00104126299705286
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -18114.42562478715
+  aic: 36236.8512495743
+  bic: 36270.94847336023
+  n_trials: 37209.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Target-coded motion strength
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: 1.6
+    n: 6225
+    y: 0.5324095594464863
+  - x: 3.2
+    n: 6063
+    y: 0.5679674816220756
+  - x: 6.4
+    n: 6250
+    y: 0.6374606488949244
+  - x: 12.8
+    n: 6227
+    y: 0.7604856204010421
+  - x: 25.6
+    n: 6158
+    y: 0.913235370888257
+  - x: 51.2
+    n: 6286
+    y: 0.9908341016319788
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.00140380859375
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

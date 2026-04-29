@@ -1,10 +1,12 @@
-"""Forward + fit for the 2AFC equal-variance Gaussian SDT variant.
+"""Forward + fit for equal-variance Gaussian SDT variants.
 
   y = Φ(d′ · x − c)
 
 with Φ the standard normal CDF, d′ interpreted as a per-unit-stimulus
-sensitivity slope and c the criterion. Fits maximize the binomial
-likelihood of (x_i, n_i, k_i) under this probit psychometric.
+sensitivity slope and c the criterion. For the yes/no variant x is a
+binary signal-present axis (0=catch/no signal, 1=change/signal).
+Fits maximize the binomial likelihood of (x_i, n_i, k_i) under this
+probit response curve.
 """
 
 from __future__ import annotations
@@ -18,7 +20,9 @@ from scipy.stats import norm
 from behavtaskatlas.model_layer import register_forward
 from behavtaskatlas.models import CurvePoint, Finding
 
-VARIANT_ID = "model_variant.sdt-2afc"
+VARIANT_2AFC_ID = "model_variant.sdt-2afc"
+VARIANT_YES_NO_ID = "model_variant.sdt-yes-no"
+VARIANT_ID = VARIANT_2AFC_ID
 PARAM_ORDER = ("d_prime", "criterion")
 
 
@@ -47,6 +51,20 @@ def _negative_log_likelihood(
 
 
 def fit(finding: Finding) -> dict[str, Any]:
+    return _fit_probit(finding)
+
+
+def fit_yes_no(finding: Finding) -> dict[str, Any]:
+    xs = {float(p.x) for p in finding.curve.points}
+    if finding.curve.curve_type != "hit_rate_by_condition" or xs != {0.0, 1.0}:
+        raise ValueError(
+            "Yes/no SDT fits require a hit_rate_by_condition finding with "
+            "exactly two x values: 0.0 catch/no-signal and 1.0 change/signal."
+        )
+    return _fit_probit(finding)
+
+
+def _fit_probit(finding: Finding) -> dict[str, Any]:
     xs = np.array([p.x for p in finding.curve.points])
     ns = np.array([p.n for p in finding.curve.points])
     ks = np.array(
@@ -95,4 +113,5 @@ def fit(finding: Finding) -> dict[str, Any]:
     }
 
 
-register_forward(VARIANT_ID, forward)
+register_forward(VARIANT_2AFC_ID, forward)
+register_forward(VARIANT_YES_NO_ID, forward)

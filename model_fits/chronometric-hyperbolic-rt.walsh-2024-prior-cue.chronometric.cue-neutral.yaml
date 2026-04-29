@@ -1,0 +1,101 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-hyperbolic-rt.walsh-2024-prior-cue.chronometric.cue-neutral
+variant_id: model_variant.chronometric-hyperbolic-rt
+finding_ids:
+- finding.walsh-2024-prior-cue.chronometric.cue-neutral
+parameters:
+  rt_floor: 0.8849265787674595
+  rt_span: 0.0
+  half_saturation_strength: 13.93840105590621
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -5.940890240882669
+  aic: 17.88178048176534
+  bic: 20.71509741926466
+  n_trials: 10960.0
+  n_points: 19.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.2749804131955388
+  rt_sigma_assumed_s: 0.1340484229453433
+predictions:
+  curve_type: chronometric
+  x_label: Absolute target-distractor contrast
+  x_units: percentage points
+  y_label: median_rt_s
+  points:
+  - x: 3.0000000000000027
+    n: 240
+    y: 0.8849265787674595
+  - x: 4.0000000000000036
+    n: 225
+    y: 0.8849265787674595
+  - x: 6.000000000000005
+    n: 604
+    y: 0.8849265787674595
+  - x: 7.000000000000006
+    n: 1075
+    y: 0.8849265787674595
+  - x: 8.000000000000007
+    n: 691
+    y: 0.8849265787674595
+  - x: 10.000000000000009
+    n: 1829
+    y: 0.8849265787674595
+  - x: 11.00000000000001
+    n: 147
+    y: 0.8849265787674595
+  - x: 12.00000000000001
+    n: 1249
+    y: 0.8849265787674595
+  - x: 12.99999999999999
+    n: 200
+    y: 0.8849265787674595
+  - x: 13.99999999999999
+    n: 1592
+    y: 0.8849265787674595
+  - x: 14.999999999999991
+    n: 673
+    y: 0.8849265787674595
+  - x: 15.999999999999993
+    n: 472
+    y: 0.8849265787674595
+  - x: 16.999999999999993
+    n: 281
+    y: 0.8849265787674595
+  - x: 17.999999999999993
+    n: 382
+    y: 0.8849265787674595
+  - x: 19.999999999999996
+    n: 380
+    y: 0.8849265787674595
+  - x: 21.999999999999996
+    n: 526
+    y: 0.8849265787674595
+  - x: 25.0
+    n: 127
+    y: 0.8849265787674595
+  - x: 26.0
+    n: 129
+    y: 0.8849265787674595
+  - x: 28.000000000000004
+    n: 138
+    y: 0.8849265787674595
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.000865936279296875
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.chronometric-hyperbolic-rt;
+    success=True; CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'

@@ -4,18 +4,34 @@ from behavtaskatlas.rdm import (
     HUMAN_RDM_PROTOCOL_ID,
     MACAQUE_RDM_CONFIDENCE_DATASET_ID,
     MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID,
+    MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS,
     analyze_human_rdm,
     analyze_macaque_rdm_confidence,
     analyze_roitman_rdm,
+    check_macaque_rdm_confidence_raw_behavior_intake,
+    format_macaque_rdm_confidence_raw_behavior_intake_report,
     harmonize_human_rdm_phs_trial,
     harmonize_macaque_rdm_confidence_source_row,
     harmonize_roitman_rdm_trial,
+    load_macaque_rdm_confidence_raw_behavior_mats,
     macaque_rdm_confidence_choice_svg,
     macaque_rdm_confidence_report_html,
     rdm_chronometric_svg,
     rdm_report_html,
     summarize_rdm_chronometric,
 )
+
+
+def _write_khalvati_raw_behavior_mat(path) -> None:
+    import numpy as np
+    import scipy.io
+
+    data = np.empty((1, 6), dtype=object)
+    data[0, 0] = np.array([[1]])
+    for field in MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS:
+        position = int(field["position"])
+        data[0, position] = np.array([[position], [position + 10]])
+    scipy.io.savemat(path, {"data": data})
 
 
 def test_harmonize_roitman_rdm_trial_reconstructs_signed_coherence() -> None:
@@ -116,11 +132,13 @@ def test_harmonize_macaque_rdm_confidence_accuracy_source_row() -> None:
     assert trial.dataset_id == MACAQUE_RDM_CONFIDENCE_DATASET_ID
     assert trial.subject_id == "kiani-shadlen-m1"
     assert trial.stimulus_value == pytest.approx(6.4)
-    assert trial.stimulus_side == "unknown"
-    assert trial.choice == "unknown"
+    assert trial.stimulus_side == "right"
+    assert trial.choice == "right"
     assert trial.correct is True
-    assert trial.response_time is None
+    assert trial.response_time == pytest.approx(0.229)
     assert trial.task_variables["motion_duration_ms"] == pytest.approx(229)
+    assert trial.task_variables["direction_choice_proxy"] is True
+    assert trial.task_variables["response_time_is_motion_duration_proxy"] is True
     assert trial.task_variables["sure_target_available"] is False
 
 
@@ -147,9 +165,62 @@ def test_harmonize_macaque_rdm_confidence_sure_target_source_row() -> None:
     assert trial.subject_id == "kiani-shadlen-m2"
     assert trial.stimulus_value == pytest.approx(0.0)
     assert trial.stimulus_side == "none"
+    assert trial.choice == "unknown"
     assert trial.correct is None
+    assert trial.response_time == pytest.approx(0.108)
     assert trial.feedback == "reward"
+    assert trial.task_variables["direction_choice_proxy"] is False
     assert trial.task_variables["sure_target_chosen"] is True
+
+
+def test_macaque_rdm_confidence_raw_behavior_intake_reports_missing_files(tmp_path) -> None:
+    report = check_macaque_rdm_confidence_raw_behavior_intake(tmp_path)
+
+    assert report["overall_status"] == "blocked"
+    assert report["files"][0]["file_name"] == "beh_data.monkey1.mat"
+    assert report["files"][0]["status"] == "missing"
+    assert report["redistribution_status"]["recorded"] is False
+    assert "redistribution_status_missing_or_incomplete" in report["blocking_reasons"]
+
+    formatted = format_macaque_rdm_confidence_raw_behavior_intake_report(report)
+    assert "beh_data.monkey1.mat" in formatted
+    assert "Create or complete" in formatted
+
+
+def test_macaque_rdm_confidence_raw_behavior_intake_accepts_contract(tmp_path) -> None:
+    for file_name in ["beh_data.monkey1.mat", "beh_data.monkey2.mat"]:
+        _write_khalvati_raw_behavior_mat(tmp_path / file_name)
+    (tmp_path / "redistribution_status.yaml").write_text(
+        "\n".join(
+            [
+                "raw_files_received: 2026-04-29",
+                "raw_files_redistributable: no",
+                "derived_tables_redistributable: yes",
+                "license_notes: Derived trial tables may be redistributed.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = check_macaque_rdm_confidence_raw_behavior_intake(tmp_path)
+
+    assert report["overall_status"] == "ready"
+    assert report["blocking_reasons"] == []
+    assert report["redistribution_status"]["recorded"] is True
+    assert {file["status"] for file in report["files"]} == {"ok"}
+    assert {field["field"] for field in report["files"][0]["fields"]} == {
+        "choice_target",
+        "coherence",
+        "correct_target",
+        "duration",
+        "sure_shown",
+    }
+    assert report["files"][0]["n_trials_estimate"] == 2
+    assert "implement the raw-trial MATLAB harmonizer" in report["next_actions"][0]
+
+    with pytest.raises(NotImplementedError, match="raw-trial harmonizer"):
+        load_macaque_rdm_confidence_raw_behavior_mats(tmp_path)
 
 
 def test_harmonize_roitman_rdm_trial_uses_errors_to_infer_stimulus() -> None:

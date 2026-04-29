@@ -1,0 +1,27 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.accuracy-rate-null
+family_id: model_family.accuracy-psychometric
+name: Strength-invariant accuracy null
+description: >
+  One-parameter accuracy-summary baseline that predicts a single p(correct)
+  across all unsigned stimulus strengths. The fitted accuracy rate is bounded
+  below by the two-choice chance floor, giving accuracy_by_strength findings a
+  same-scope null comparator without reconstructing signed choices.
+free_parameters:
+  - accuracy_rate
+fixed_parameters:
+  chance_floor: 0.5
+requires:
+  - stimulus_value
+  - correct_outcome
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the generated model roadmap identified Khalvati accuracy
+    summaries with only the chance-floor logistic accuracy model available.

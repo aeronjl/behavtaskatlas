@@ -1,0 +1,416 @@
+{
+  "$defs": {
+    "DataRequestsIndexEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action State"
+        },
+        "action_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Summary"
+        },
+        "blocker_detail": {
+          "title": "Blocker Detail",
+          "type": "string"
+        },
+        "blocker_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocker Type"
+        },
+        "contact_instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contact Instructions"
+        },
+        "curation_status": {
+          "title": "Curation Status",
+          "type": "string"
+        },
+        "dataset_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dataset Ids",
+          "type": "array"
+        },
+        "dataset_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dataset Names",
+          "type": "array"
+        },
+        "days_since_last_event": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Days Since Last Event"
+        },
+        "days_until_follow_up": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Days Until Follow Up"
+        },
+        "events": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "finding_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Finding Ids",
+          "type": "array"
+        },
+        "last_event_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Event Date"
+        },
+        "last_event_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Event Type"
+        },
+        "model_roadmap_issue_types": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Roadmap Issue Types",
+          "type": "array"
+        },
+        "next_action": {
+          "title": "Next Action",
+          "type": "string"
+        },
+        "next_follow_up_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Follow Up Date"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "paper_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Paper Ids",
+          "type": "array"
+        },
+        "paper_labels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Paper Labels",
+          "type": "array"
+        },
+        "priority": {
+          "title": "Priority",
+          "type": "string"
+        },
+        "protocol_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Protocol Ids",
+          "type": "array"
+        },
+        "purpose": {
+          "title": "Purpose",
+          "type": "string"
+        },
+        "request_draft": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Draft"
+        },
+        "request_export_markdown": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Export Markdown"
+        },
+        "request_export_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Export Path"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        },
+        "request_type": {
+          "title": "Request Type",
+          "type": "string"
+        },
+        "requested_files": {
+          "items": {
+            "$ref": "#/$defs/DataRequestsIndexFile"
+          },
+          "title": "Requested Files",
+          "type": "array"
+        },
+        "slice_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Slice Ids",
+          "type": "array"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Command"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "title",
+        "status",
+        "priority",
+        "request_type",
+        "purpose",
+        "blocker_detail",
+        "next_action",
+        "curation_status"
+      ],
+      "title": "DataRequestsIndexEntry",
+      "type": "object"
+    },
+    "DataRequestsIndexFile": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "required"
+      ],
+      "title": "DataRequestsIndexFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_state_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Action State Counts",
+      "type": "object"
+    },
+    "behavtaskatlas_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Commit"
+    },
+    "behavtaskatlas_git_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Behavtaskatlas Git Dirty"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "data_requests_schema_version": {
+      "title": "Data Requests Schema Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "priority_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Priority Counts",
+      "type": "object"
+    },
+    "requests": {
+      "items": {
+        "$ref": "#/$defs/DataRequestsIndexEntry"
+      },
+      "title": "Requests",
+      "type": "array"
+    },
+    "status_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Status Counts",
+      "type": "object"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "data_requests_schema_version",
+    "title",
+    "generated_at",
+    "requests"
+  ],
+  "title": "DataRequestsIndexPayload",
+  "type": "object"
+}

@@ -1,0 +1,62 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-hyperbolic-rt.roitman-shadlen-2002.chronometric
+variant_id: model_variant.chronometric-hyperbolic-rt
+finding_ids:
+- finding.roitman-shadlen-2002.chronometric
+parameters:
+  rt_floor: 0.0
+  rt_span: 0.8466497557231211
+  half_saturation_strength: 48.759834687447004
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -0.03080579803246518
+  aic: 6.06161159606493
+  bic: 5.436890003749095
+  n_trials: 6149.0
+  n_points: 6.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.025649755723121115
+  rt_sigma_assumed_s: 0.15035469637567767
+predictions:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 1019
+    y: 0.8466497557231211
+  - x: 3.2
+    n: 1028
+    y: 0.794507957455073
+  - x: 6.4
+    n: 1025
+    y: 0.7484159871244436
+  - x: 12.8
+    n: 1023
+    y: 0.6706077483285527
+  - x: 25.6
+    n: 1026
+    y: 0.5551720535790251
+  - x: 51.2
+    n: 1028
+    y: 0.41299090035821207
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.0016739368438720703
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.chronometric-hyperbolic-rt;
+    success=True; CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'

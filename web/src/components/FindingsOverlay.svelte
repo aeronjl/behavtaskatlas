@@ -34,9 +34,11 @@
     response_modality: "Response modality",
   };
 
-  let currentCurveType = $state(
-    allCurveTypes.includes("psychometric") ? "psychometric" : allCurveTypes[0] ?? "psychometric",
-  );
+  const defaultCurveType = allCurveTypes.includes("psychometric")
+    ? "psychometric"
+    : allCurveTypes[0] ?? "psychometric";
+
+  let currentCurveType = $state(defaultCurveType);
   let active = $state<Record<FilterKey, Set<string>>>({
     species: new Set(filterOptions.species),
     source_data_level: new Set(filterOptions.source_data_level),
@@ -47,6 +49,93 @@
   let yearEnd = $state(maxYear);
   let searchText = $state("");
   let showOnlyPooled = $state(false);
+
+  // ── URL state sync ─────────────────────────────────────────────────────────
+  // Filter state serialises to the query string so views are shareable.
+  // Param keys are short: curve, species, level, evidence, response, years,
+  // q, pooled, fit. A param is only emitted when the value diverges from the
+  // page default; missing params imply defaults.
+
+  const URL_PARAM_BY_FILTER: Record<FilterKey, string> = {
+    species: "species",
+    source_data_level: "level",
+    evidence_type: "evidence",
+    response_modality: "response",
+  };
+
+  let urlReady = $state(false);
+
+  function applyUrlState() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const curveParam = params.get("curve");
+    if (curveParam && allCurveTypes.includes(curveParam)) {
+      currentCurveType = curveParam;
+    }
+    const next = { ...active };
+    let mutated = false;
+    for (const [filterKey, paramKey] of Object.entries(URL_PARAM_BY_FILTER) as [FilterKey, string][]) {
+      if (!params.has(paramKey)) continue;
+      const raw = params.get(paramKey) ?? "";
+      const requested = raw.split(",").map((v) => v.trim()).filter((v) => v.length > 0);
+      const valid = filterOptions[filterKey];
+      const filtered = requested.filter((v) => valid.includes(v));
+      next[filterKey] = new Set(filtered);
+      mutated = true;
+    }
+    if (mutated) active = next;
+    const yearsParam = params.get("years");
+    if (yearsParam) {
+      const [aStr, bStr] = yearsParam.split("-");
+      const a = Number(aStr);
+      const b = Number(bStr);
+      if (Number.isFinite(a)) yearStart = Math.max(minYear, Math.min(maxYear, a));
+      if (Number.isFinite(b)) yearEnd = Math.max(minYear, Math.min(maxYear, b));
+    }
+    const q = params.get("q");
+    if (q !== null) searchText = q;
+    if (params.get("pooled") === "1") showOnlyPooled = true;
+    if (params.get("fit") === "1") fitEnabled = true;
+  }
+
+  function setsEqual(a: Set<string>, b: string[]): boolean {
+    if (a.size !== b.length) return false;
+    for (const v of b) if (!a.has(v)) return false;
+    return true;
+  }
+
+  function buildUrlState(): URLSearchParams {
+    const params = new URLSearchParams();
+    if (currentCurveType !== defaultCurveType) params.set("curve", currentCurveType);
+    for (const [filterKey, paramKey] of Object.entries(URL_PARAM_BY_FILTER) as [FilterKey, string][]) {
+      const set = active[filterKey];
+      const allValues = filterOptions[filterKey];
+      if (setsEqual(set, allValues)) continue;
+      params.set(paramKey, Array.from(set).join(","));
+    }
+    if (yearStart !== minYear || yearEnd !== maxYear) {
+      params.set("years", `${yearStart}-${yearEnd}`);
+    }
+    if (searchText.trim().length > 0) params.set("q", searchText.trim());
+    if (showOnlyPooled) params.set("pooled", "1");
+    if (fitEnabled) params.set("fit", "1");
+    return params;
+  }
+
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    if (!urlReady) {
+      applyUrlState();
+      urlReady = true;
+      return;
+    }
+    const params = buildUrlState();
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, "", next);
+    }
+  });
 
   function isSubjectLevel(entry: FindingsEntry): boolean {
     return Boolean(entry.stratification?.subject_id);

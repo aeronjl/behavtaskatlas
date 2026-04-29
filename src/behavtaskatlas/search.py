@@ -190,7 +190,7 @@ def _finding_entries(
                     ]
                 ),
                 body=f.extraction_notes,
-                href=f"/papers/{slug_for_paper_id(f.paper_id)}",
+                href=f"/findings/{_slug(f.id)}",
                 keywords=[
                     f.curve.curve_type,
                     f.curve.x_label,

@@ -1,0 +1,59 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-constant-rt.palmer-huk-shadlen-2005.chronometric.subject.phs-mm
+variant_id: model_variant.chronometric-constant-rt
+finding_ids:
+- finding.palmer-huk-shadlen-2005.chronometric.subject.phs-mm
+parameters:
+  rt_level: 0.6854113475177305
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -2.998124635583416
+  aic: 7.996249271166832
+  bic: 7.788008740394886
+  n_trials: 564.0
+  n_points: 6.0
+  n_free_params: 1.0
+  chronometric_max_residual_s: 0.18341134751773047
+  rt_sigma_assumed_s: 0.11398489178639228
+predictions:
+  curve_type: chronometric
+  x_label: Absolute motion coherence
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 0.0
+    n: 94
+    y: 0.6854113475177305
+  - x: 3.2
+    n: 93
+    y: 0.6854113475177305
+  - x: 6.4
+    n: 95
+    y: 0.6854113475177305
+  - x: 12.8
+    n: 93
+    y: 0.6854113475177305
+  - x: 25.6
+    n: 95
+    y: 0.6854113475177305
+  - x: 51.2
+    n: 94
+    y: 0.6854113475177305
+fit_method:
+  type: manual
+  options:
+    estimator: weighted mean median RT
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.0001342296600341797
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.chronometric-constant-rt;
+    success=True; closed-form weighted constant RT estimate

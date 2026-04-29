@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FindingsOverlay from "../components/FindingsOverlay.svelte";
 import { findings } from "../lib/findings";
+import { hrefForFinding } from "../lib/data";
 
 const counts = findings.counts as Record<string, number>;
 const findingsList = findings.findings as Array<{
@@ -51,6 +52,7 @@ const findingsList = findings.findings as Array<{
           <table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
+                <th class="px-3 py-2">Finding</th>
                 <th class="px-3 py-2">Paper</th>
                 <th class="px-3 py-2">Year</th>
                 <th class="px-3 py-2">Species</th>
@@ -63,6 +65,14 @@ const findingsList = findings.findings as Array<{
             <tbody class="divide-y divide-slate-200">
               {findingsList.map((entry) => (
                 <tr>
+                  <td class="max-w-64 px-3 py-2">
+                    <a
+                      class="font-mono text-[11px] text-slate-900"
+                      href={hrefForFinding(entry.finding_id)}
+                    >
+                      {entry.finding_id.replace("finding.", "")}
+                    </a>
+                  </td>
                   <td class="px-3 py-2">{entry.paper_citation}</td>
                   <td class="px-3 py-2 text-slate-600">{entry.paper_year}</td>
                   <td class="px-3 py-2 text-slate-600">

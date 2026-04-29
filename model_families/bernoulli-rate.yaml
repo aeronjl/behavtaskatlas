@@ -1,0 +1,36 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.bernoulli-rate
+name: Bernoulli rate baseline
+description: >
+  Bernoulli response-rate baselines for binary outcome summaries. The
+  condition-invariant variant estimates one probability shared across all
+  displayed condition levels, while the condition-saturated variant estimates
+  one probability per condition. These are baselines for hit-rate-by-condition
+  findings whose x axis is categorical or ordinal rather than a signed evidence
+  axis.
+parameter_definitions:
+  - name: response_rate
+    symbol: p
+    units: probability
+    description: Shared response or success probability across conditions.
+  - name: condition_response_rates
+    symbol: p_i
+    units: probability
+    description: Condition-specific response or success probabilities.
+applicable_curve_types:
+  - hit_rate_by_condition
+requires:
+  - choice_go_withhold
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the model-selection matrix exposed an Allen/Garrett
+    per-image-pair hit-rate finding with no valid psychometric x axis.
+    This family provides conservative null and condition-saturated fits without
+    pretending that alphabetical image-pair order is sensory evidence.

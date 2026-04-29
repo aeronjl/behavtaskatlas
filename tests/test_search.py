@@ -243,7 +243,7 @@ def test_search_entries_carry_searchable_fields_and_links() -> None:
     assert "coherence" in slice_entry["body"]
 
     finding_entry = by_type["finding"]
-    assert finding_entry["href"] == "/papers/demo-2024"
+    assert finding_entry["href"] == "/findings/demo.x"
     assert "psychometric" in finding_entry["title"]
 
     comparison_entry = by_type["comparison"]

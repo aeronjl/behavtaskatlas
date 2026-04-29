@@ -1,0 +1,56 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.accuracy-rate-null.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m1
+variant_id: model_variant.accuracy-rate-null
+finding_ids:
+- finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m1
+parameters:
+  accuracy_rate: 0.7343384665000403
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -21540.13354631672
+  aic: 43082.26709263344
+  bic: 43090.791398579924
+  n_trials: 37209.0
+  n_free_params: 1.0
+predictions:
+  curve_type: accuracy_by_strength
+  x_label: Motion strength
+  x_units: percent
+  y_label: p_correct
+  points:
+  - x: 1.6
+    n: 6225
+    y: 0.7343384665000403
+  - x: 3.2
+    n: 6063
+    y: 0.7343384665000403
+  - x: 6.4
+    n: 6250
+    y: 0.7343384665000403
+  - x: 12.8
+    n: 6227
+    y: 0.7343384665000403
+  - x: 25.6
+    n: 6158
+    y: 0.7343384665000403
+  - x: 51.2
+    n: 6286
+    y: 0.7343384665000403
+fit_method:
+  type: manual
+  options:
+    estimator: binomial maximum likelihood
+    chance_floor: 0.5
+  duration_seconds: 8.177757263183594e-05
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.accuracy-rate-null;
+    success=True; closed-form strength-invariant accuracy MLE

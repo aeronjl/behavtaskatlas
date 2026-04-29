@@ -16,7 +16,7 @@ interface Props {
   dataset: CatalogDatasetDetail;
 }
 
-const { dataset } = Astro.props;
+const { dataset } = Astro.props as Props;
 const trialMapping = (dataset.expected_trial_table_mapping ?? {}) as unknown as Record<
   string,
   string

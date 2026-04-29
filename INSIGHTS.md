@@ -2,6 +2,402 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-29 18:02:38 BST - Added model-selection comparability layer
+
+The Khalvati raw-behavior author request is paused durably as a blocked
+data-request with an explicit workflow note, keeping the draft available while
+the roadmap shifts toward broader dataset/model-selection work.
+
+The model-selection product now separates finding-level AIC triage from
+scope-matched interpretation. `/models` shows one best model per finding with
+mixed-scope badges, candidate scope counts, and scope-specific winners beside
+the overall winner; `/models/matrix` adds a finding-level comparability audit
+showing 36 mixed-scope findings and 14 close mixed-scope cases. The CSV exports
+now include `has_mixed_aic_scopes`, `scope_selection_ids`, and
+`candidate_scope_counts`, making the comparability layer machine-readable.
+Immediate MVP implication: users can use the AIC winners without accidentally
+treating cross-scope summary, direct-choice, and joint choice+RT comparisons as
+like-for-like likelihood tests.
+
+## 2026-04-29 17:38:29 BST - Added operational data-request queue
+
+External data requests now derive an `action_state`, queue timing fields, action
+summary, and suggested next CLI command from their status and event history.
+The new `behavtaskatlas data-request-queue` command, generated data-request
+index, CSV export, and `/data-blockers` page all surface ready-to-send,
+waiting, due, overdue, and fulfilled-pending-intake states from the same source
+records.
+
+The active follow-up date is now taken from the most recent recorded reminder
+rather than the earliest historic reminder, so a follow-up event can reset the
+queue correctly. Immediate MVP implication: external blockers now expose what
+to do today and how to record it, reducing the chance that source-data requests
+stall outside the machine-readable atlas workflow.
+
+## 2026-04-29 17:27:19 BST - Added command-driven data-request transitions
+
+External data requests can now move through workflow states via
+`behavtaskatlas data-request-event` instead of manual YAML edits. The command
+appends a validated event, optionally updates `status`, refreshes provenance
+`updated`, records evidence URL/path and follow-up dates, and can create a
+local Markdown evidence stub from the request draft.
+
+The transition is checked against the same status/event rule used by repository
+validation, so `requested` requires `sent`, `fulfilled` requires `received`,
+and invalid status changes are rejected before the source YAML is written.
+Immediate MVP implication: once the Khalvati request is sent, the atlas can
+record that event reproducibly and keep `/data-blockers` as an operational
+workflow surface rather than a manually maintained note.
+
+## 2026-04-29 17:17:48 BST - Added Khalvati raw-file intake contract
+
+The macaque RDM confidence slice now has a raw behavioral MATLAB intake
+preflight for the requested `beh_data.monkey1.mat` and `beh_data.monkey2.mat`
+files. The check encodes the public POMDP-Confidence `fit.py`/`trial.py`
+contract: top-level MATLAB `data`, positional fields for coherence, duration,
+correct target, choice target, and sure-target availability, plus a required
+local `redistribution_status.yaml` sidecar before raw-trial harmonization.
+
+Added `macaque-rdm-confidence-intake-check` for JSON/CLI reports and a guarded
+`macaque-rdm-confidence-raw-harmonize` stub that refuses to write outputs until
+files and redistribution terms are present. Immediate MVP implication: once an
+author reply arrives, the project can drop files into a known ignored raw-data
+directory and immediately know whether the data unlock the blocked Khalvati
+psychometric/DDM work.
+
+## 2026-04-29 17:00:18 BST - Added data-request outbox exports
+
+Tracked external-data requests now render to ready-to-send Markdown packets
+through a shared Python renderer, a `behavtaskatlas data-request-export` CLI,
+generated `derived/data_requests/*.md` artifacts, and static `/data_requests/*.md`
+web endpoints linked from `/data-blockers`. The packet includes the email
+draft, requested files, affected atlas records, provenance checks, license
+question, and the required `sent` event handoff.
+
+Immediate MVP implication: the Khalvati raw-behavior blocker is no longer just
+visible and auditable; the actual author outreach artifact is generated from
+the source record and can be sent without manually reconstructing provenance or
+redistribution questions.
+
+## 2026-04-29 16:49:36 BST - Added auditable data-request timelines
+
+Data requests now carry ordered event timelines with actor, evidence, notes,
+and optional follow-up dates, and validation requires key statuses to have the
+matching transition event. The Khalvati raw-behavior request is still
+`ready_to_send` but now has a `drafted` event, making the next status change
+to `requested` contingent on recording a `sent` event rather than silently
+editing a status field.
+
+The generated data-request index, CSV export, and `/data-blockers` page now
+surface last event, last event date, next follow-up, and request timeline.
+Immediate MVP implication: external-data blockers can be managed as auditable
+workflow state, which is necessary before sending author requests and using any
+received raw trials in model fits.
+
+## 2026-04-29 16:22:45 BST - Made external data requests machine-readable
+
+Added `data_request` as a validated record type and created a ready-to-send
+Khalvati request for `beh_data.monkey1.mat` and `beh_data.monkey2.mat`. The
+record links the blocked dataset, paper, protocol, slice, 8 affected findings,
+evidence trail, requested files, contact instructions, and reusable request
+draft so external-source blockers can move through explicit statuses instead
+of living as prose.
+
+The site-index now writes `derived/data_requests.json`, exports
+`/data_requests.csv`, and joins matching requests into `/data-blockers`.
+Immediate MVP implication: the model roadmap remains locally exhausted, but
+the next unblocking action is a trackable data-request status transition from
+`ready_to_send` to `requested` once the author request is sent.
+
+## 2026-04-29 16:05:19 BST - Promoted external data blockers into a product surface
+
+Added a dedicated `/data-blockers` page that groups generated model-roadmap
+rows with `status=blocked_external_data` by dataset and blocker type. The page
+shows the missing Khalvati behavioral MATLAB files, affected findings, caveats,
+source package, and next request action, so blocked model-layer work is now
+visible as an open-science dependency rather than buried in the roadmap CSV.
+
+Also linked the blocker surface from the navigation, model pages, matrix, and
+audit view, registered the route in link-integrity checks, and cleaned up the
+remaining Astro check hints. Immediate MVP implication: the current model
+roadmap has no ready rows, and the next unblocking work is now explicitly an
+external data request workflow.
+
+## 2026-04-29 15:59:24 BST - Marked remaining roadmap items as blocked external data
+
+Verified that the public POMDP-Confidence code expects
+`beh_data.monkey1.mat` and `beh_data.monkey2.mat`, but the code archive and
+Nature source-data ZIP do not include those raw behavioral MATLAB files. The
+Khalvati proxy/source roadmap rows now carry `status=blocked_external_data`
+and `blocker_type=author_request_raw_trials`, with CSV/UI fields describing the
+external request needed before the caveats can be cleared.
+
+Also marked the auditory-click DDM near-misses as intentionally inapplicable
+for the Brody parsed source schema because that release exposes stimulus
+duration and click times but no response timestamp. The roadmap now has 8 rows,
+all blocked external-data items, while the three auditory-click DDM gaps remain
+machine-readable under `intentionally_inapplicable_near_misses`.
+
+## 2026-04-29 15:48:39 BST - Filtered roadmap near-misses by model context
+
+Tightened `near_miss_slice` generation so a slice must be one data capability
+away from a variant and semantically compatible with it. The filter now uses
+finding curve types, slice protocol/dataset fallback metadata, slice choice
+type, and auditory-click task family membership before recommending a missing
+capability.
+
+This removes spurious go/no-go, click-summary, chronometric, and accuracy
+recommendations from unrelated 2AFC psychometric slices. The model roadmap now
+has 11 items: 8 high-priority Khalvati proxy/source caveats that require raw
+data to clear, and 3 low-priority auditory-click DDM near-misses blocked only
+by missing `response_time`.
+
+## 2026-04-29 14:29:17 BST - Split model selection by AIC scope
+
+Added `model_selection_by_finding_scope` to the generated model index, with
+one AIC winner per finding and comparison scope. The models table, matrix, and
+CSV exports now expose scope-matched winners via `model_selection_by_scope.csv`
+while retaining the original per-finding overall triage winner.
+
+This resolves the `mixed_choice_rt_aic` roadmap class without hiding the mixed
+candidate sets: per-finding rows now carry `scope_selection_ids` and
+`has_mixed_aic_scopes`, while matched-scope rows do the interpretable AIC
+ranking. The roadmap fell from 74 to 59 items, with `mixed_choice_rt_aic`
+reduced from 15 to 0; remaining items are the 8 Khalvati proxy/source caveats
+and 51 low-priority near-miss slice capabilities.
+
+## 2026-04-29 13:54:58 BST - Added condition-saturated hit-rate baseline
+
+Added `model_variant.bernoulli-condition-saturated`, a per-condition Bernoulli
+baseline for categorical or ordinal hit-rate findings, plus regex-backed
+variant parameter patterns so generated `response_rate_x...` parameters remain
+machine-validated without hard-coding condition names.
+
+Generated the Garrett image-pair fit as a same-scope condition-rate comparator.
+The model index now has 15 variants and 204 fits, and the roadmap has
+`single_candidate` reduced from 1 to 0. The one-parameter condition-rate null
+still wins decisively for the image-pair row by AIC, preserving the conclusion
+that the row is descriptive rather than sensory-evidence psychometric.
+
+## 2026-04-29 13:47:28 BST - Added accuracy-summary null comparator
+
+Added `model_variant.accuracy-rate-null`, a one-parameter strength-invariant
+p(correct) baseline in the existing accuracy-summary family. Generated four
+new fits for the Khalvati accuracy-by-strength findings so those rows now have
+same-scope AIC competitors rather than a single chance-floor logistic model.
+
+The model index now has 14 variants and 203 fits. The generated roadmap fell
+from 70 to 67 items, with `single_candidate` rows reduced from 5 to 1. The
+chance-floor log-strength accuracy logistic wins decisively over the constant
+accuracy null for all four Khalvati accuracy summaries, which strengthens the
+interpretation that those source-data curves are genuinely strength-dependent
+while preserving the figure-source-data caveat.
+
+## 2026-04-29 13:39:00 BST - Added chronometric same-scope RT null
+
+Added `model_variant.chronometric-constant-rt`, a one-parameter constant
+median-RT null in the existing descriptive chronometric family. Generated
+15 new fits across all committed chronometric findings so every
+chronometric-summary row now has a same-scope RT baseline alongside the
+hyperbolic median-RT model.
+
+The model index now has 13 variants and 199 fits. The generated roadmap
+has no remaining `summary_baseline_winner` items: that count fell from 15
+to 0, leaving proxy/source-data caveats and mixed choice-vs-choice+RT AIC
+as the top model-layer issues. The AIC winners are informative: the
+hyperbolic RT baseline still wins for Palmer/Roitman processed-trial
+chronometrics, while the constant RT null wins for the Khalvati proxy
+chronometrics and the Walsh prior-cue chronometric summaries.
+
+## 2026-04-29 13:34:38 BST - Added same-scope click-summary baselines for Brunton
+
+Added a `model_family.click-summary-choice` family with two Brunton
+same-scope comparators: `model_variant.click-count-logistic` and
+`model_variant.click-choice-rate-null`. Generated 10 new per-subject
+ModelFit records across the five Brunton rat click findings so the click
+accumulator is no longer judged only against generic direct-choice
+psychometric models.
+
+The rebuilt model matrix now gives each Brunton subject finding five AIC
+candidates. The leaky click accumulator remains the winner for A080, B075,
+and T074; generic logistic wins for B127 and T014. The roadmap no longer
+flags Brunton click-summary winners as unresolved summary-baseline warnings,
+reducing `summary_baseline_winner` items from 18 to 15 and moving the top
+high-priority work back to chronometric RT comparators.
+
+## 2026-04-29 12:01:48 BST - Turned model coverage diagnostics into a roadmap
+
+Added a generated `model_coverage_roadmap` to the model index and a
+`model_roadmap.csv` export. Roadmap items are ranked from no-fit gaps,
+single-candidate findings, proxy/source-data caveats, interpretation warnings,
+and near-miss slice capabilities, with stable issue types, priority scores,
+recommended actions, impact statements, and target links.
+
+The current roadmap has 74 items: 26 high, 20 medium, and 28 low priority.
+High-priority items are dominated by summary/baseline winners that need
+matched same-scope comparators or trial-level likelihoods, plus proxy-backed
+Khalvati source-data rows. The `/audit` and `/models/matrix` pages now surface
+the next model-layer work directly, so the MVP has an automated planning
+surface instead of relying on hand-maintained todo text.
+
+## 2026-04-29 11:44:35 BST - Added comparison-scope semantics to model selection
+
+Added machine-readable `comparison_scope` labels to model-selection rows and
+fit exports so AIC winners are no longer presented as one undifferentiated
+leaderboard. Scopes now distinguish direct choice likelihoods, joint
+choice+RT DDM fits, chronometric summaries, accuracy summaries, condition-rate
+baselines, and click-summary fits; the same fields are exported in
+`model_selection.csv` and `fits_by_finding.csv`.
+
+Added an interpretation-warning layer for rows where the AIC comparison can be
+misread: 18 summary/baseline winners against process or direct-choice
+candidates, and 15 mixed choice-only versus joint choice+RT rows. The
+`/models/matrix` view now shows scope counts, per-row scope badges, a scope
+filter, and an interpretation audit table. The immediate MVP implication is
+that the model-selection surface can be used for triage without implying that
+all AIC gaps have the same evidential meaning.
+
+## 2026-04-29 11:33:17 BST - Added chronometric RT baseline and reduced single-candidate rows
+
+Added a descriptive chronometric family and
+`model_variant.chronometric-hyperbolic-rt` for monotonic median-RT-by-unsigned
+strength curves, including zero-strength points. The fitter uses a
+three-parameter hyperbolic baseline and is caveat-tagged as a
+chronometric-summary fit so it is not confused with a full RT likelihood or
+sequential-sampling process model.
+
+Generated 15 chronometric fits across Khalvati, Palmer, Roitman, and Walsh
+findings and refreshed the model index to 7 families, 10 variants, and 174
+fits. The matrix now has 0 no-fit findings and 5 single-candidate findings,
+down from 15 after the accuracy pass; the remaining single-candidate rows are
+the Garrett image-pair rate null and four Khalvati accuracy summaries. The MVP
+implication is that chronometric DDM rows are now reviewable against a
+transparent descriptive baseline, while AIC comparisons involving this
+baseline should be read with the summary-fit caveat.
+
+## 2026-04-29 10:47:31 BST - Reached full model coverage with Khalvati accuracy fits
+
+Added an accuracy psychometric family and
+`model_variant.chance-floor-accuracy-logistic` for unsigned
+`accuracy_by_strength` curves. The model fixes the lower asymptote at
+two-choice chance and fits threshold strength, log2-strength slope, and upper
+lapse, keeping accuracy summaries separate from signed-choice psychometrics,
+SDT, and DDM fits.
+
+Fitted the variant to all four remaining Khalvati accuracy-only source-data
+findings (`accuracy_no_sure_target` and
+`accuracy_sure_available_direction_chosen`, M1/M2). The matrix now has 0
+no-fit findings, 6 model families, 9 variants, 159 fits, and 82 AIC-ranked
+findings. These four new winners are intentionally single-candidate,
+figure-source-data, accuracy-summary fits; the immediate MVP implication is
+that model coverage is complete, while comparability still depends on caveat
+tags and source-data level.
+
+## 2026-04-29 09:39:11 BST - Closed the Garrett image-pair no-fit gap with a rate null
+
+Added a Bernoulli rate baseline family and `model_variant.bernoulli-condition-rate`
+for categorical or ordinal hit-rate curves where signed-evidence logistic and
+SDT assumptions would be misleading. The first fit is the Garrett/Allen
+per-image-pair hit-rate finding: a one-parameter response-rate null with
+response_rate=0.7627 and AIC=260.62. This closes the matrix's Allen/Garrett
+no-fit row while preserving the fact that image-pair order is not sensory
+evidence.
+
+Also fit the same null to the Allen yes/no change-detection finding, giving
+the SDT yes/no model a real baseline competitor; SDT remains decisively better
+by Delta AIC=58.49. The model index now has 5 families, 8 variants, 155 fits,
+78 AIC-ranked findings, and 4 remaining no-fit findings, all from Khalvati
+accuracy-only source-data rows.
+
+## 2026-04-29 09:28:42 BST - Added AIC confidence labels and model-selection matrix
+
+Promoted AIC winner strength into the derived model index with stable
+`confidence_label` values: decisive (Delta AIC >= 10), supported (>= 2),
+close (< 2), and single-candidate. The current model layer has 28 decisive,
+29 supported, 9 close, and 11 single-candidate winners, making uncertainty in
+the "best model per finding" view machine-readable in JSON and CSV exports.
+
+Added `/models/matrix`, a filterable finding-by-model-class matrix across
+logistic, SDT 2AFC, DDM, click accumulator, and yes/no SDT candidates. The
+same derived payload now reports coverage gaps: 5 findings with no fits, 11
+single-candidate findings, 4 proxy-backed findings needing raw-trial
+replacement, and 17 near-miss slice/variant capability gaps. This turns model
+selection into a triage tool for deciding whether the next MVP work should add
+data, model variants, or adapter fields.
+
+## 2026-04-29 02:46:03 BST - Hardened finding discovery, citation, residuals, and internal links
+
+Search finding hits now route directly to stable `/findings/[id]` pages rather
+than paper pages, making finding detail pages reachable from the primary
+navigation workflow. `site-index` now emits `derived/link_integrity.json`, which
+checks internal search, graph, curation queue, finding provenance, and
+model-selection references against generated routes; the current report is OK
+with 456 checked links and is surfaced on `/audit`.
+
+Finding pages now include a copyable citation block with stable URL, paper
+citation, AIC winner, source status, and caveat summary, plus a residual plot
+showing predicted-minus-observed error by model variant. This makes each
+finding page a stronger review and citation target: users can discover it,
+verify its links, cite it, and inspect fit error visually.
+
+## 2026-04-29 02:37:19 BST - Added stable finding inspection pages
+
+Added `/findings/[id]` pages so every curated finding now has a durable
+inspection surface with the observed curve, overlaid model predictions, AIC
+winner summary, candidate model set, residual diagnostics, caveat badges,
+fit provenance, and paper/protocol/dataset/slice links. Model-selection rows,
+the findings index, paper detail pages, and the RDM story now link directly to
+these pages. This makes each fit reviewable in context and gives the MVP a
+stable citation target for "what was fit and why did this model win?"
+
+## 2026-04-29 01:59:02 BST - Made model selection explainable and exportable
+
+Turned the AIC-winner layer into a usable product surface rather than a static
+table. Model fits now carry inferred `caveat_tags` in derived indexes, covering
+figure/source-data fits, Khalvati target-coded choice proxies, motion-duration
+RT proxies, aggregate DDM RT approximations, yes/no SDT, and click-summary
+accumulator fits. This keeps proxy status machine-readable without migrating
+every historical fit YAML.
+
+`site-index` now writes `derived/model_selection.csv` and
+`derived/fits_by_finding.csv`; the web build also exposes matching
+`/model_selection.csv` and `/fits_by_finding.csv` endpoints. The `/models`
+page has a filterable best-model table with caveat badges and provenance
+counts, and `/stories/rdm` synthesizes the cross-species RDM story from
+existing findings, DDM fits, source slices, and model-selection winners. This
+moves the MVP closer to an atlas that explains when a fit is comparable and
+when it is only a proxy-backed bridge.
+
+## 2026-04-29 01:38:40 BST - Closed model-layer gaps: Khalvati target-coded fits, Allen yes/no SDT, AIC winners
+
+Fixed the `macaque_rdm_confidence` fittability blocker by target-coding the
+recoverable Khalvati direction-choice accuracy rows: `choice=right` now means
+the source row reports a correct direction choice, `choice=left` means an
+incorrect direction choice, and sure-target-only rows remain `choice=unknown`.
+`response_time` is populated from motion duration as an explicitly flagged
+stimulus-duration proxy. This does not recover raw signed direction or saccade
+latency, but it makes the no-sure-target M1/M2 rows usable for baseline
+psychometric and DDM comparisons.
+
+Added two no-sure-target Khalvati per-monkey psychometric findings, paired
+motion-duration chronometric proxy findings, and logistic / 2AFC SDT /
+vanilla-DDM fits. The two new DDM fits pass forward-audit consistency and add
+Khalvati as a third macaque RDM model-fit dataset. In AIC terms, the target-
+coded Khalvati psychometrics currently favor logistic for M1 and M2, with DDM
+close for M1 and farther behind for M2; interpret this as baseline model
+selection over proxy variables, not as a paper-level POMDP-confidence claim.
+
+Added `model_variant.sdt-yes-no` for go/withhold detection and a binary Allen
+yes/no finding (`x=0` catch false-alarm rate, `x=1` change hit rate). The fit
+recovers d_prime ≈ 2.07 and criterion ≈ 1.35 for behavior_session_id 899390684,
+closing the last "no fittable model" slice in the per-slice matrix.
+
+Added a `/models` "Best model per finding" table and a machine-readable
+`model_selection_by_finding` section in `derived/models.json`, selecting the
+lowest-AIC candidate per finding and exposing the AIC gap to the next model.
+Also removed an O(n²) YAML reread path in repository validation so validation
+stays fast as model-fit records grow.
+
 ## 2026-04-28 23:15:00 BST - Model layer (v0.1): families, variants, fits, audit, cross-paper views
 
 Built out the full model layer — schema, fits, audit, UI — and

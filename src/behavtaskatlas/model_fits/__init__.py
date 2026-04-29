@@ -6,6 +6,9 @@ all currently-implemented variants. Future variants drop a new module
 in this package and register themselves the same way.
 """
 
+from behavtaskatlas.model_fits import accuracy as _accuracy  # noqa: F401
+from behavtaskatlas.model_fits import bernoulli as _bernoulli  # noqa: F401
+from behavtaskatlas.model_fits import chronometric as _chronometric  # noqa: F401
 from behavtaskatlas.model_fits import clicks as _clicks  # noqa: F401
 from behavtaskatlas.model_fits import ddm as _ddm  # noqa: F401
 from behavtaskatlas.model_fits import logistic as _logistic  # noqa: F401

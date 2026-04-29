@@ -11,6 +11,8 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from behavtaskatlas.models import CanonicalTrial
 
 ROITMAN_RDM_PROTOCOL_ID = "protocol.random-dot-motion-classic-macaque"
@@ -45,6 +47,12 @@ MACAQUE_RDM_CONFIDENCE_DATASET_ID = (
 )
 DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_ZIP = Path(
     "data/raw/macaque_rdm_confidence_khalvati/source_data.zip"
+)
+DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR = Path(
+    "data/raw/macaque_rdm_confidence_khalvati/raw_behavior"
+)
+DEFAULT_MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS = (
+    DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR / "redistribution_status.yaml"
 )
 DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR = Path("derived/macaque_rdm_confidence")
 DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID = (
@@ -83,6 +91,62 @@ MACAQUE_RDM_CONFIDENCE_CONFIDENCE_FIELDS = [
     "p_sure_target",
     "median_motion_duration_ms",
     "mean_motion_duration_ms",
+]
+MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FILES = [
+    {
+        "monkey": "M1",
+        "file_name": "beh_data.monkey1.mat",
+        "source_code_reference": (
+            "fit.py sets monkey = 1 and calls "
+            "Trial.readFile('beh_data.monkey1.mat')"
+        ),
+    },
+    {
+        "monkey": "M2",
+        "file_name": "beh_data.monkey2.mat",
+        "source_code_reference": (
+            "fit.py sets monkey = 2 and calls "
+            "Trial.readFile('beh_data.monkey2.mat')"
+        ),
+    },
+]
+MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS = [
+    {
+        "field": "coherence",
+        "position": 1,
+        "source_expression": "Trial.readFile: data[0][1]",
+        "description": "motion coherence code used by Trial.getCoherence()",
+    },
+    {
+        "field": "duration",
+        "position": 2,
+        "source_expression": "Trial.readFile: data[0][2]",
+        "description": "stimulus duration used by Trial.getDuration()",
+    },
+    {
+        "field": "correct_target",
+        "position": 3,
+        "source_expression": "Trial.readFile: data[0][3]",
+        "description": "correct direction target used by Trial.getCorrectTarget()",
+    },
+    {
+        "field": "choice_target",
+        "position": 4,
+        "source_expression": "Trial.readFile: data[0][4]",
+        "description": "chosen target, including sure-target code 3",
+    },
+    {
+        "field": "sure_shown",
+        "position": 5,
+        "source_expression": "Trial.readFile: data[0][5]",
+        "description": "whether the sure target was offered on the trial",
+    },
+]
+MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS_REQUIRED_KEYS = [
+    "raw_files_received",
+    "raw_files_redistributable",
+    "derived_tables_redistributable",
+    "license_notes",
 ]
 
 MACAQUE_RDM_CONFIDENCE_SOURCE_TABLES = [
@@ -226,6 +290,130 @@ def download_macaque_rdm_confidence_source_data(
         "n_bytes": len(content),
         "sha256": file_sha256(out_file),
     }
+
+
+def check_macaque_rdm_confidence_raw_behavior_intake(
+    raw_dir: Path = DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR,
+    *,
+    redistribution_status_file: Path | None = None,
+) -> dict[str, Any]:
+    """Preflight the requested Khalvati raw behavioral MATLAB files."""
+    status_path = redistribution_status_file or (
+        raw_dir / DEFAULT_MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS.name
+    )
+    files = [
+        _inspect_macaque_rdm_confidence_raw_behavior_file(raw_dir / spec["file_name"], spec)
+        for spec in MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FILES
+    ]
+    redistribution = _read_macaque_rdm_confidence_redistribution_status(status_path)
+    blocking_reasons = [
+        f"{file['file_name']}: {file['status']}"
+        for file in files
+        if file["status"] != "ok"
+    ]
+    if not redistribution["recorded"]:
+        blocking_reasons.append("redistribution_status_missing_or_incomplete")
+    next_actions = _macaque_rdm_confidence_intake_next_actions(
+        files=files,
+        redistribution=redistribution,
+        raw_dir=raw_dir,
+    )
+    return {
+        "intake_schema_version": "0.1.0",
+        "intake_id": "macaque-rdm-confidence-raw-behavior-matlab",
+        "protocol_id": MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID,
+        "dataset_id": MACAQUE_RDM_CONFIDENCE_DATASET_ID,
+        "raw_dir": str(raw_dir),
+        "redistribution_status_file": str(status_path),
+        "source_code_repository": KHALVATI_RDM_CONFIDENCE_CODE_URL,
+        "source_code_references": [
+            "fit.py calls Trial.readFile('beh_data.monkey' + str(monkey)+ '.mat')",
+            (
+                "trial.py reads scipy.io.loadmat(file)['data'][0], then uses "
+                "positions 1..5 for coherence, duration, correct_target, "
+                "choice_target, and sure_shown"
+            ),
+        ],
+        "expected_files": MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FILES,
+        "field_contract": MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS,
+        "redistribution_status_required_keys": (
+            MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS_REQUIRED_KEYS
+        ),
+        "files": files,
+        "redistribution_status": redistribution,
+        "overall_status": "ready" if not blocking_reasons else "blocked",
+        "blocking_reasons": blocking_reasons,
+        "next_actions": next_actions,
+    }
+
+
+def format_macaque_rdm_confidence_raw_behavior_intake_report(
+    report: dict[str, Any],
+) -> str:
+    """Format a compact CLI preflight report."""
+    lines = [
+        "Macaque RDM confidence raw-behavior intake: "
+        f"{report['overall_status']}",
+        f"Raw directory: {report['raw_dir']}",
+        f"Redistribution status: {report['redistribution_status_file']}",
+        "",
+        "Expected files:",
+    ]
+    for file in report["files"]:
+        summary = f"  - {file['file_name']} ({file['monkey']}): {file['status']}"
+        if file.get("n_trials_estimate") is not None:
+            summary += f", ~{file['n_trials_estimate']} rows"
+        if file.get("sha256"):
+            summary += f", sha256={str(file['sha256'])[:12]}..."
+        lines.append(summary)
+        if file.get("missing_fields"):
+            lines.append(f"    missing fields: {', '.join(file['missing_fields'])}")
+        if file.get("error"):
+            lines.append(f"    error: {file['error']}")
+
+    redistribution = report["redistribution_status"]
+    lines.extend(
+        [
+            "",
+            "Redistribution status:",
+            f"  - recorded: {str(redistribution['recorded']).lower()}",
+        ]
+    )
+    if redistribution.get("missing_keys"):
+        lines.append(f"  - missing keys: {', '.join(redistribution['missing_keys'])}")
+    if redistribution.get("error"):
+        lines.append(f"  - error: {redistribution['error']}")
+
+    if report["next_actions"]:
+        lines.extend(["", "Next actions:"])
+        lines.extend(f"  - {action}" for action in report["next_actions"])
+    return "\n".join(lines)
+
+
+def load_macaque_rdm_confidence_raw_behavior_mats(
+    raw_dir: Path = DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR,
+    *,
+    redistribution_status_file: Path | None = None,
+    session_id: str = "khalvati-kiani-rao-raw-behavior",
+    limit: int | None = None,
+) -> tuple[list[CanonicalTrial], dict[str, Any]]:
+    """Placeholder raw MATLAB harmonizer guarded by an intake preflight."""
+    report = check_macaque_rdm_confidence_raw_behavior_intake(
+        raw_dir,
+        redistribution_status_file=redistribution_status_file,
+    )
+    if report["overall_status"] != "ready":
+        raise FileNotFoundError(
+            format_macaque_rdm_confidence_raw_behavior_intake_report(report)
+        )
+    raise NotImplementedError(
+        "Khalvati raw behavioral MATLAB files passed intake preflight, but the "
+        "raw-trial harmonizer is intentionally still a stub. Next implementation "
+        "step: map Trial.readFile positions 1..5 into CanonicalTrial fields "
+        f"for session_id={session_id!r}"
+        + (f" with limit={limit}" if limit is not None else "")
+        + "."
+    )
 
 
 def load_roitman_rdm_csv(
@@ -607,19 +795,29 @@ def harmonize_macaque_rdm_confidence_source_row(
     motion_strength = _source_motion_strength_percent(source)
     motion_duration_ms = _source_motion_duration_ms(source)
     correct = None
+    choice = "unknown"
     sure_target_chosen = _optional_bool(source.get("_sure_target_chosen"))
     feedback = "unknown"
+    direction_choice_proxy = False
 
     if outcome_field == "Correct":
         correct = _binary_bool(source.get("Correct"), field="Correct")
+        choice = _direction_choice_proxy_label(correct)
         feedback = "reward" if correct else "error"
+        direction_choice_proxy = True
     elif outcome_field == "Sure target":
         sure_target_chosen = _binary_bool(source.get("Sure target"), field="Sure target")
         feedback = "reward" if sure_target_chosen else "unknown"
     else:
         raise ValueError(f"Unsupported confidence source outcome field: {outcome_field!r}")
 
-    stimulus_side = "none" if motion_strength == 0.0 else "unknown"
+    if motion_strength == 0.0:
+        stimulus_side = "none"
+    elif direction_choice_proxy:
+        stimulus_side = "right"
+    else:
+        stimulus_side = "unknown"
+    response_time = motion_duration_ms / 1000.0
     return CanonicalTrial(
         protocol_id=MACAQUE_RDM_CONFIDENCE_PROTOCOL_ID,
         dataset_id=MACAQUE_RDM_CONFIDENCE_DATASET_ID,
@@ -628,14 +826,20 @@ def harmonize_macaque_rdm_confidence_source_row(
         trial_index=trial_index,
         stimulus_modality="visual",
         stimulus_value=motion_strength,
-        stimulus_units="absolute percent motion coherence; sign not available in source data",
+        stimulus_units=(
+            "absolute percent motion coherence; direction-choice rows use a "
+            "target-coded right/left proxy because sign is not available"
+        ),
         stimulus_side=stimulus_side,
         evidence_strength=motion_strength,
         evidence_units="absolute percent motion coherence",
-        choice="unknown",
+        choice=choice,
         correct=correct,
-        response_time=None,
-        response_time_origin=None,
+        response_time=response_time,
+        response_time_origin=(
+            "motion duration in seconds from Khalvati-Kiani-Rao figure source data; "
+            "stimulus-duration proxy, not raw saccade latency"
+        ),
         feedback=feedback,
         prior_context=source_measure,
         task_variables={
@@ -644,6 +848,16 @@ def harmonize_macaque_rdm_confidence_source_row(
             "monkey": monkey,
             "motion_strength_percent": motion_strength,
             "motion_duration_ms": motion_duration_ms,
+            "direction_choice_proxy": direction_choice_proxy,
+            "canonical_choice_convention": (
+                "For source rows with outcome_field='Correct', right means the "
+                "reported direction choice was correct under a target-coded proxy "
+                "and left means it was incorrect; actual motion direction and "
+                "screen-side target labels are absent from the source CSVs."
+            )
+            if direction_choice_proxy
+            else None,
+            "response_time_is_motion_duration_proxy": True,
             "sure_target_available": bool(source["_sure_target_available"]),
             "sure_target_chosen": sure_target_chosen,
             "correct_code": _optional_float(source.get("Correct")),
@@ -783,9 +997,16 @@ def analyze_macaque_rdm_confidence(trials: list[CanonicalTrial]) -> dict[str, An
                 "source-data records and may not be unique raw trial identifiers across panels."
             ),
             (
-                "Motion direction, signed coherence, direction choice, and saccade response time "
-                "are not preserved in these CSVs. The adapter therefore maps motion strength to "
-                "absolute evidence strength and keeps choice as unknown."
+                "Motion direction and screen-side direction choice are not preserved in these "
+                "CSVs. For rows where the source reports direction-choice correctness, the "
+                "adapter exposes a target-coded choice proxy (right=correct direction choice, "
+                "left=incorrect direction choice) so psychometric baselines can be fit without "
+                "claiming raw target side recovery."
+            ),
+            (
+                "Saccade response time is not preserved in these CSVs. response_time is populated "
+                "from the source motion-duration column as a stimulus-duration proxy and is "
+                "flagged in task_variables for model fits that need a chronometric axis."
             ),
             (
                 "White-dot direction-choice accuracy rows are paired after dropping zero-strength "
@@ -1608,6 +1829,223 @@ def _source_file_summary(source: dict[str, Any]) -> str | None:
     return None
 
 
+def _inspect_macaque_rdm_confidence_raw_behavior_file(
+    path: Path,
+    spec: dict[str, str],
+) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "monkey": spec["monkey"],
+        "file_name": spec["file_name"],
+        "path": str(path),
+        "exists": path.exists(),
+        "status": "missing",
+        "source_code_reference": spec["source_code_reference"],
+        "top_level_keys": [],
+        "fields": [],
+        "missing_fields": [field["field"] for field in MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS],
+        "n_trials_estimate": None,
+    }
+    if not path.exists():
+        return row
+
+    row.update(
+        {
+            "status": "unreadable",
+            "n_bytes": path.stat().st_size,
+            "sha256": file_sha256(path),
+        }
+    )
+    try:
+        import scipy.io
+
+        loaded = scipy.io.loadmat(path)
+    except Exception as exc:
+        row["error"] = f"Could not read MATLAB file with scipy.io.loadmat: {exc}"
+        return row
+
+    top_level_keys = sorted(key for key in loaded if not key.startswith("__"))
+    row["top_level_keys"] = top_level_keys
+    if "data" not in loaded:
+        row["status"] = "missing_data_key"
+        row["error"] = "Expected top-level MATLAB variable 'data'."
+        return row
+
+    fields = _inspect_macaque_rdm_confidence_raw_behavior_fields(loaded["data"])
+    missing_fields = [field["field"] for field in fields if not field["found"]]
+    sizes = [
+        int(field["size"])
+        for field in fields
+        if field["found"] and isinstance(field.get("size"), int) and field["size"] > 0
+    ]
+    row["fields"] = fields
+    row["missing_fields"] = missing_fields
+    row["n_trials_estimate"] = min(sizes) if sizes else None
+    row["status"] = "ok" if not missing_fields else "missing_fields"
+    return row
+
+
+def _inspect_macaque_rdm_confidence_raw_behavior_fields(
+    data: Any,
+) -> list[dict[str, Any]]:
+    fields = []
+    for field in MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_FIELDS:
+        position = int(field["position"])
+        value, accessor = _find_macaque_rdm_confidence_raw_behavior_column(
+            data,
+            position=position,
+            field_name=str(field["field"]),
+        )
+        description = {
+            **field,
+            "found": value is not None,
+            "accessor": accessor,
+            "shape": _shape_for_value(value),
+            "size": _size_for_value(value),
+            "dtype": _dtype_for_value(value),
+        }
+        fields.append(description)
+    return fields
+
+
+def _find_macaque_rdm_confidence_raw_behavior_column(
+    data: Any,
+    *,
+    position: int,
+    field_name: str,
+) -> tuple[Any | None, str | None]:
+    candidates = [
+        ("data[0][0][position]", (0, 0, position)),
+        ("data[0][position]", (0, position)),
+        ("data[0, position]", ((0, position),)),
+    ]
+    for label, indexes in candidates:
+        value = _nested_get(data, indexes)
+        if value is not None:
+            return value, label.replace("position", str(position))
+
+    dtype_names = getattr(getattr(data, "dtype", None), "names", None)
+    if dtype_names and field_name in dtype_names:
+        try:
+            return data[field_name], f"data[{field_name!r}]"
+        except (IndexError, KeyError, TypeError, ValueError):
+            return None, None
+    return None, None
+
+
+def _nested_get(value: Any, indexes: tuple[Any, ...]) -> Any | None:
+    current = value
+    try:
+        for index in indexes:
+            current = current[index]
+    except (IndexError, KeyError, TypeError, ValueError):
+        return None
+    if _size_for_value(current) == 0:
+        return None
+    return current
+
+
+def _shape_for_value(value: Any) -> list[int] | None:
+    if value is None:
+        return None
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return None
+    return [int(part) for part in shape]
+
+
+def _size_for_value(value: Any) -> int | None:
+    if value is None:
+        return None
+    size = getattr(value, "size", None)
+    if size is None:
+        return 1
+    return int(size)
+
+
+def _dtype_for_value(value: Any) -> str | None:
+    if value is None:
+        return None
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None:
+        return str(dtype)
+    return type(value).__name__
+
+
+def _read_macaque_rdm_confidence_redistribution_status(path: Path) -> dict[str, Any]:
+    status: dict[str, Any] = {
+        "path": str(path),
+        "exists": path.exists(),
+        "recorded": False,
+        "missing_keys": list(MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS_REQUIRED_KEYS),
+        "values": {},
+        "template": {
+            "raw_files_received": "YYYY-MM-DD",
+            "raw_files_redistributable": "yes/no/unknown",
+            "derived_tables_redistributable": "yes/no/unknown",
+            "license_notes": "Summarize author terms before harmonizing.",
+        },
+    }
+    if not path.exists():
+        return status
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        status["error"] = f"Could not read redistribution status YAML: {exc}"
+        return status
+    if not isinstance(loaded, dict):
+        status["error"] = "Redistribution status YAML must be a mapping."
+        return status
+    missing = [
+        key
+        for key in MACAQUE_RDM_CONFIDENCE_REDISTRIBUTION_STATUS_REQUIRED_KEYS
+        if loaded.get(key) in (None, "")
+    ]
+    status.update(
+        {
+            "recorded": not missing,
+            "missing_keys": missing,
+            "values": {key: _json_safe_value(value) for key, value in loaded.items()},
+        }
+    )
+    return status
+
+
+def _macaque_rdm_confidence_intake_next_actions(
+    *,
+    files: list[dict[str, Any]],
+    redistribution: dict[str, Any],
+    raw_dir: Path,
+) -> list[str]:
+    actions: list[str] = []
+    missing_files = [file["file_name"] for file in files if file["status"] == "missing"]
+    if missing_files:
+        actions.append(
+            "Place requested MATLAB files in "
+            f"`{raw_dir}`: {', '.join(missing_files)}."
+        )
+    problem_files = [
+        file
+        for file in files
+        if file["status"] not in {"ok", "missing"}
+    ]
+    for file in problem_files:
+        actions.append(
+            f"Inspect `{file['path']}`; expected top-level `data` with "
+            "Trial.readFile positional columns 1..5."
+        )
+    if not redistribution["recorded"]:
+        actions.append(
+            "Create or complete "
+            f"`{redistribution['path']}` with raw/derived redistribution terms."
+        )
+    if not actions:
+        actions.append(
+            "Intake is ready; implement the raw-trial MATLAB harmonizer against "
+            "the recorded Trial.readFile field contract."
+        )
+    return actions
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -1643,6 +2081,10 @@ def _binary_bool(value: Any, *, field: str) -> bool:
     if numeric == 0.0:
         return False
     raise ValueError(f"Field {field} must be 0 or 1, got {value!r}")
+
+
+def _direction_choice_proxy_label(correct: bool) -> str:
+    return "right" if correct else "left"
 
 
 def _optional_bool(value: Any) -> bool | None:

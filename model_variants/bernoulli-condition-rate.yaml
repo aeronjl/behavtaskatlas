@@ -1,0 +1,27 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.bernoulli-condition-rate
+family_id: model_family.bernoulli-rate
+name: Condition-invariant Bernoulli rate
+description: >
+  One-parameter binomial model with P(response)=p for every condition
+  level in a hit_rate_by_condition curve. It is intended as a baseline
+  for discrete condition axes, such as Allen Visual Behavior image-pair
+  hit rates, where logistic, 2AFC SDT, and yes/no SDT assumptions do not
+  apply.
+free_parameters:
+  - response_rate
+fixed_parameters: {}
+requires:
+  - choice_go_withhold
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    First used to give the Garrett 2023 image-pair hit-rate finding a
+    real null model while preserving the distinction between categorical
+    image-pair effects and psychometric evidence axes.

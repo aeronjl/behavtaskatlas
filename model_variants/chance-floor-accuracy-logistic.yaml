@@ -1,0 +1,32 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.chance-floor-accuracy-logistic
+family_id: model_family.accuracy-psychometric
+name: Chance-floor log-strength accuracy logistic
+description: >
+  Three-parameter descriptive accuracy model:
+  p_correct(x) = 0.5 + (0.5 - lapse) * sigmoid((log2(x) -
+  log2(threshold_strength)) / slope_log2). The lower asymptote is fixed at
+  two-choice chance and the upper lapse is fitted. Intended for unsigned
+  accuracy_by_strength curves where only percent-correct summaries are
+  available.
+free_parameters:
+  - threshold_strength
+  - slope_log2
+  - lapse
+fixed_parameters:
+  chance_floor: 0.5
+requires:
+  - stimulus_value
+  - correct_outcome
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    First used for the Khalvati/Kiani/Rao accuracy-only confidence source-data
+    rows. It is a descriptive accuracy fit, not a DDM, SDT, or signed-choice
+    psychometric.

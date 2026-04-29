@@ -1,0 +1,44 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.chronometric-descriptive
+name: Descriptive chronometric
+description: >
+  Descriptive models for median response time as a function of unsigned
+  evidence strength. These models provide chronometric baselines without
+  committing to a sequential-sampling process or a full reaction-time
+  likelihood.
+parameter_definitions:
+  - name: rt_floor
+    symbol: floor
+    units: seconds
+    description: Lower asymptote for median response time at high evidence.
+  - name: rt_span
+    symbol: span
+    units: seconds
+    description: Extra median response time at zero or very weak evidence.
+  - name: half_saturation_strength
+    symbol: h
+    units: same as stimulus strength
+    description: Evidence strength where the response-time span is halved.
+  - name: rt_level
+    symbol: rt0
+    units: seconds
+    description: Shared median response time across all evidence strengths.
+applicable_curve_types:
+  - chronometric
+requires:
+  - stimulus_value
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the model-selection matrix made chronometric-only
+    single-candidate rows visible. The family is a baseline for model
+    selection and residual inspection, not a cognitive process model.
+    A constant-RT null was added after the model roadmap flagged
+    chronometric summary winners without same-scope RT comparators.

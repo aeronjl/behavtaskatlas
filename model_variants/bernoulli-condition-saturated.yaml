@@ -1,0 +1,27 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.bernoulli-condition-saturated
+family_id: model_family.bernoulli-rate
+name: Condition-saturated Bernoulli rate
+description: >
+  Per-condition Bernoulli baseline with one response-rate parameter for each
+  displayed condition level. Intended as a descriptive upper-bound comparator
+  for categorical or ordinal hit_rate_by_condition findings, not a sensory
+  evidence model.
+free_parameters:
+  - condition_response_rates
+fixed_parameters: {}
+parameter_patterns:
+  condition_response_rates: ^response_rate_x[0-9A-Za-z]+$
+requires:
+  - choice_go_withhold
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the model roadmap flagged the Garrett image-pair hit-rate
+    finding as a single-candidate condition-rate row.

@@ -3,7 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import CitationDownloads from "../../components/CitationDownloads.astro";
 import { findings } from "../../lib/findings";
-import { slugForId, getPaper } from "../../lib/data";
+import { hrefForFinding, slugForId, getPaper } from "../../lib/data";
 
 type Entry = (typeof findings.findings)[number];
 
@@ -12,8 +12,6 @@ for (const entry of findings.findings as Entry[]) {
   if (!findingsByPaper.has(entry.paper_id)) findingsByPaper.set(entry.paper_id, []);
   findingsByPaper.get(entry.paper_id)!.push(entry);
 }
-
-const paperIds = Array.from(findingsByPaper.keys());
 
 export function getStaticPaths() {
   const ids = new Set<string>();
@@ -151,7 +149,11 @@ const protocolEntries = Array.from(
               const fits = fitsOf(e);
               return (
                 <tr>
-                  <td class="px-3 py-2 font-mono text-xs">{e.finding_id}</td>
+                  <td class="px-3 py-2 font-mono text-xs">
+                    <a href={hrefForFinding(e.finding_id)}>
+                      {e.finding_id}
+                    </a>
+                  </td>
                   <td class="px-3 py-2">{e.curve_type}</td>
                   <td class="px-3 py-2">{e.species ?? "—"}</td>
                   <td class="px-3 py-2">{e.source_data_level}</td>
@@ -198,7 +200,9 @@ const protocolEntries = Array.from(
               .map((e) => (
                 <div>
                   <p class="font-mono text-xs text-slate-700">
-                    {e.finding_id}
+                    <a href={hrefForFinding(e.finding_id)}>
+                      {e.finding_id}
+                    </a>
                     {e.stratification.condition
                       ? ` · ${e.stratification.condition}`
                       : ""}

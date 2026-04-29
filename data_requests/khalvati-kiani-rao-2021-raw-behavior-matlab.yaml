@@ -1,0 +1,128 @@
+object_type: data_request
+schema_version: 0.1.0
+id: data_request.khalvati-kiani-rao-2021-raw-behavior-matlab
+title: Khalvati-Kiani-Rao raw behavioral MATLAB files
+status: blocked
+priority: high
+request_type: author_request
+dataset_ids:
+  - dataset.khalvati-kiani-rao-rdm-confidence-source-data
+paper_ids:
+  - paper.khalvati-kiani-rao-2021
+protocol_ids:
+  - protocol.macaque-rdm-confidence-wager
+slice_ids:
+  - slice.macaque-rdm-confidence-wager
+finding_ids:
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m1
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-no-sure-target.m2
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m1
+  - finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m2
+  - finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+  - finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+  - finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m1
+  - finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+model_roadmap_issue_types:
+  - proxy_source_data
+blocker_type: author_request_raw_trials
+purpose: >-
+  Replace figure-source and direction-choice proxy fits with harmonized
+  trial-level records for the Kiani-Shadlen macaque RDM confidence task, so the
+  atlas can fit psychometric and DDM models against real choice/RT outcomes
+  rather than inferred accuracy summaries.
+blocker_detail: >-
+  The Nature source-data ZIP and public POMDP-Confidence code archive provide
+  figure source tables and model code, but not the behavioral MATLAB files
+  referenced by the code. Without those files, signed direction choice, raw
+  session identifiers, and response-time fields cannot be recovered from the
+  public package.
+next_action: >-
+  Paused for now while the roadmap shifts to broader model-selection
+  comparability work; revisit the ready-to-send author request when the
+  project returns to Khalvati raw-trial recovery.
+requested_files:
+  - name: beh_data.monkey1.mat
+    description: >-
+      MATLAB behavioral data struct for monkey 1, referenced by the public
+      POMDP-Confidence fitting code.
+    required: true
+    evidence: fit.py references beh_data.monkey1.mat in the public code archive.
+  - name: beh_data.monkey2.mat
+    description: >-
+      MATLAB behavioral data struct for monkey 2, referenced by the public
+      POMDP-Confidence fitting code.
+    required: true
+    evidence: fit.py references beh_data.monkey2.mat in the public code archive.
+contact_instructions: >-
+  Use the article's data-availability contact path. If files are shared under
+  non-redistribution terms, keep the raw MATLAB files outside git and commit
+  only schema/provenance metadata plus aggregate checks that the license allows.
+evidence:
+  - evidence_type: article_data_availability
+    description: >-
+      The article data-availability statement says analyzed data are available
+      from R.K. upon reasonable request.
+    url: https://www.nature.com/articles/s41467-021-25419-4
+  - evidence_type: code_reference
+    description: >-
+      The POMDP-Confidence public code references behavioral MATLAB files named
+      beh_data.monkey1.mat and beh_data.monkey2.mat.
+    url: https://github.com/koosha66/POMDP-Confidence
+    path: fit.py
+  - evidence_type: public_archive_check
+    description: >-
+      Local inspection of the public code archive found no .mat, .csv, .npy,
+      .p, .pkl, .npz, or .zip behavioral data files.
+    url: https://github.com/koosha66/POMDP-Confidence
+  - evidence_type: source_data_check
+    description: >-
+      The Nature Communications source-data ZIP contains figure source tables,
+      not the raw behavioral MATLAB files referenced by the code.
+    url: https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-021-25419-4/MediaObjects/41467_2021_25419_MOESM3_ESM.zip
+request_draft:
+  subject: Request for Khalvati/Kiani/Rao 2021 macaque behavioral MATLAB files
+  body: |-
+    Dear Dr. Kiani / Khalvati / Rao team,
+
+    I am curating behavtaskatlas, an open-science atlas of sensory-guided decision-making tasks and reusable behavioral-model fits.
+
+    I am working with the public source-data ZIP and POMDP-Confidence code for:
+
+    Khalvati K, Kiani R, Rao RPN. Bayesian inference with incomplete knowledge explains perceptual confidence and its deviations from accuracy. Nature Communications, 2021.
+
+    The public code appears to reference behavioral MATLAB files named `beh_data.monkey1.mat` and `beh_data.monkey2.mat`, but I could not find those files in the Nature source-data ZIP or the public POMDP-Confidence code archive. Would you be willing to share those analyzed/raw behavioral MATLAB files, or point me to their current public location?
+
+    The immediate use is to build a provenance-preserving trial-level harmonizer for the macaque RDM confidence task, recover signed choice and response-time fields where available, and fit psychometric / DDM models with explicit citation and caveats. I would also appreciate any redistribution terms you want observed for derived canonical trial tables or aggregate model-fit outputs.
+
+    Thank you,
+    behavtaskatlas curator
+events:
+  - event_type: drafted
+    event_date: 2026-04-29
+    actor: behavtaskatlas
+    notes: >-
+      Drafted from the generated model-roadmap blocker after verifying that the
+      public source-data ZIP and POMDP-Confidence code archive do not include
+      the behavioral MATLAB files referenced by the code.
+    evidence_path: data_requests/khalvati-kiani-rao-2021-raw-behavior-matlab.yaml
+  - event_type: note
+    event_date: 2026-04-29
+    actor: behavtaskatlas
+    notes: >-
+      Paused the outbound author request while the roadmap shifts to broader
+      model-selection comparability work. Keep the draft available for a later
+      Khalvati raw-trial recovery pass.
+curation_status: data-linked
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >-
+    Created after the generated model roadmap classified all remaining
+    Khalvati proxy-source-data items as blocked external data.
+notes: >-
+  Paused before sending. When this returns to the active roadmap, update the
+  request back to ready_to_send or requested as appropriate, and fulfill only
+  after received files can be checked against the public code expectations and
+  licensing terms.

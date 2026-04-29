@@ -15,6 +15,8 @@ findings that need them rather than upfront.
 from __future__ import annotations
 
 import csv
+import statistics
+import warnings
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import UTC, date, datetime
@@ -340,29 +342,34 @@ def _fit_logistic_4p(
 
     def _logistic4(x, mu, sigma, gamma, lapse):
         sig = max(float(sigma), 1e-6)
-        return gamma + (1.0 - gamma - lapse) / (1.0 + np.exp(-(x - mu) / sig))
+        z = np.clip((x - mu) / sig, -700.0, 700.0)
+        return gamma + (1.0 - gamma - lapse) / (1.0 + np.exp(-z))
 
     try:
         if force_lower is not None:
             def _model(x, mu, sigma, lapse):
                 return _logistic4(x, mu, sigma, force_lower, lapse)
-            popt, _ = optimize.curve_fit(
-                _model, xs, ys,
-                p0=[mu0, sigma0, 0.05],
-                sigma=sigma_w, absolute_sigma=False,
-                bounds=([-np.inf, 1e-3, 0.0], [np.inf, np.inf, 0.49]),
-                maxfev=4000,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", optimize.OptimizeWarning)
+                popt, _ = optimize.curve_fit(
+                    _model, xs, ys,
+                    p0=[mu0, sigma0, 0.05],
+                    sigma=sigma_w, absolute_sigma=False,
+                    bounds=([-np.inf, 1e-3, 0.0], [np.inf, np.inf, 0.49]),
+                    maxfev=4000,
+                )
             mu, sigma, lapse = popt
             gamma = float(force_lower)
         else:
-            popt, _ = optimize.curve_fit(
-                _logistic4, xs, ys,
-                p0=[mu0, sigma0, 0.05, 0.05],
-                sigma=sigma_w, absolute_sigma=False,
-                bounds=([-np.inf, 1e-3, 0.0, 0.0], [np.inf, np.inf, 0.49, 0.49]),
-                maxfev=4000,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", optimize.OptimizeWarning)
+                popt, _ = optimize.curve_fit(
+                    _logistic4, xs, ys,
+                    p0=[mu0, sigma0, 0.05, 0.05],
+                    sigma=sigma_w, absolute_sigma=False,
+                    bounds=([-np.inf, 1e-3, 0.0, 0.0], [np.inf, np.inf, 0.49, 0.49]),
+                    maxfev=4000,
+                )
             mu, sigma, gamma, lapse = popt
             gamma = float(gamma)
     except Exception:
@@ -623,6 +630,7 @@ def extract_subject_condition_psychometric_findings_for_slice(
     x_units: str = "",
     trials_filename: str = "trials.csv",
     min_points: int = 4,
+    condition_values: tuple[str, ...] | None = None,
 ) -> list[Finding]:
     """Build one psychometric Finding per (subject_id × condition) cell from
     the slice's canonical trials.csv, where the condition is the value of
@@ -644,6 +652,8 @@ def extract_subject_condition_psychometric_findings_for_slice(
         subject = (row.get("subject_id") or "").strip()
         condition = (row.get(condition_column) or "").strip()
         if not subject or not condition:
+            continue
+        if condition_values is not None and condition not in condition_values:
             continue
         choice = (row.get("choice") or "").strip()
         if choice not in {"left", "right"}:
@@ -718,6 +728,120 @@ def extract_subject_condition_psychometric_findings_for_slice(
     return findings
 
 
+def extract_subject_chronometric_findings_for_slice(
+    slice_record: VerticalSlice,
+    *,
+    paper_id: str,
+    derived_dir: Path,
+    finding_id_prefix: str,
+    x_label: str = "Absolute evidence strength",
+    x_units: str = "",
+    trials_filename: str = "trials.csv",
+    condition_column: str | None = None,
+    condition_slugify: bool = True,
+    condition_values: tuple[str, ...] | None = None,
+    min_trials_per_bin: int = 5,
+) -> list[Finding]:
+    """Build one chronometric Finding per subject, optionally split by a
+    trials.csv condition column. The y-axis is median response_time per
+    absolute evidence bin; rows without response_time or evidence are skipped.
+    """
+    trials_path = _slice_derived_dir(slice_record, derived_dir) / trials_filename
+    if not trials_path.exists():
+        raise FileNotFoundError(f"trials CSV not found at {trials_path}")
+
+    rows = _read_csv_rows(trials_path)
+    by_cell: dict[tuple[str, str], dict[float, list[float]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    for row in rows:
+        subject = (row.get("subject_id") or "").strip()
+        if not subject:
+            continue
+        condition = ""
+        if condition_column is not None:
+            condition = (row.get(condition_column) or "").strip()
+            if not condition:
+                continue
+            if condition_values is not None and condition not in condition_values:
+                continue
+        rt = _to_float(row.get("response_time", ""))
+        if rt is None:
+            continue
+        x = _to_float(row.get("evidence_strength", ""))
+        if x is None:
+            stimulus = _to_float(row.get("stimulus_value", ""))
+            x = abs(stimulus) if stimulus is not None else None
+        if x is None:
+            continue
+        by_cell[(subject, condition)][abs(x)].append(rt)
+
+    findings: list[Finding] = []
+    for (subject, condition), bins in sorted(by_cell.items()):
+        points: list[CurvePoint] = []
+        for x in sorted(bins.keys()):
+            values = bins[x]
+            if len(values) < min_trials_per_bin:
+                continue
+            points.append(CurvePoint(x=x, n=len(values), y=statistics.median(values)))
+        if not points:
+            continue
+        subject_slug = (
+            subject.replace("/", "-")
+            .replace(".", "-")
+            .replace("_", "-")
+            .lower()
+        )
+        if condition:
+            condition_slug = (
+                condition.replace("/", "-")
+                .replace(".", "-")
+                .replace("_", "-")
+                .replace("=", "-")
+                .lower()
+                if condition_slugify
+                else condition
+            )
+            finding_id = f"{finding_id_prefix}.{condition_slug}.{subject_slug}"
+            notes_condition = f", {condition_column}={condition!r}"
+        else:
+            finding_id = f"{finding_id_prefix}.{subject_slug}"
+            notes_condition = ""
+        n_trials_total = sum(int(p.n) for p in points)
+        finding = Finding(
+            object_type="finding",
+            schema_version="0.1.0",
+            id=finding_id,
+            paper_id=paper_id,
+            protocol_id=slice_record.protocol_id,
+            dataset_id=slice_record.dataset_id,
+            slice_id=slice_record.id,
+            source_data_level=slice_record.comparison.source_data_level,
+            n_trials=n_trials_total,
+            n_subjects=1,
+            stratification=StratificationKey(
+                subject_id=subject,
+                condition=condition or None,
+            ),
+            curve=ResultCurve(
+                curve_type="chronometric",
+                x_label=x_label,
+                x_units=x_units,
+                y_label="median_rt_s",
+                points=points,
+            ),
+            extraction_method="harmonized-pipeline",
+            extraction_notes=(
+                f"Median response_time per absolute evidence bin from "
+                f"{trials_path.name} for subject_id={subject!r}{notes_condition}; "
+                f"bins with <{min_trials_per_bin} rows dropped."
+            ),
+            provenance=_today_provenance(),
+        )
+        findings.append(finding)
+    return findings
+
+
 def write_finding_yaml(finding: Finding, papers_root: Path | None = None) -> Path:
     """Serialize a Finding to findings/<slug>.yaml. Returns the written
     path. The slug derives from the finding id: drop the "finding."
@@ -770,9 +894,12 @@ def build_findings_index(
         for fit in fits:
             for fid in fit.finding_ids:
                 fits_by_finding.setdefault(fid, []).append(fit)
+    finding_by_id = {f.id: f for f in findings}
+    if fits_by_finding:
+        from behavtaskatlas.model_layer import infer_model_fit_caveat_tags
 
     entries: list[FindingsIndexEntry] = []
-    for finding in findings:
+    for finding in finding_by_id.values():
         paper = paper_by_id.get(finding.paper_id)
         if paper is None:
             continue
@@ -830,6 +957,7 @@ def build_findings_index(
                     family_id=variant_family_by_id.get(fit.variant_id, ""),
                     parameters={k: float(v) for k, v in fit.parameters.items()},
                     quality={k: float(v) for k, v in fit.quality.items()},
+                    caveat_tags=infer_model_fit_caveat_tags(fit, finding_by_id),
                     predicted_points=predicted,
                 )
             )

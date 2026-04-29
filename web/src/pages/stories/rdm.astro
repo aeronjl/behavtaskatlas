@@ -1,0 +1,295 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import DdmParamScatter from "../../components/DdmParamScatter.svelte";
+import { catalog, hrefForFinding, models, slugForId } from "../../lib/data";
+import { findings as findingsIndex, type FindingsEntry } from "../../lib/findings";
+
+type Variant = { id: string; family_id: string; name: string };
+type Fit = {
+  id: string;
+  variant_id: string;
+  finding_ids: string[];
+  parameters: Record<string, number>;
+  quality: Record<string, number>;
+  caveat_tags?: string[];
+};
+type Selection = {
+  finding_id: string;
+  best_fit_id: string;
+  best_variant_id: string;
+  best_aic: number | null;
+  delta_aic_to_next: number | null;
+  n_candidate_fits: number;
+  best_caveat_tags?: string[];
+};
+
+const RDM_PROTOCOL_IDS = new Set([
+  "protocol.random-dot-motion-classic-macaque",
+  "protocol.human-rdm-button-reaction-time",
+  "protocol.macaque-rdm-confidence-wager",
+]);
+
+const allFindings = (findingsIndex.findings ?? []) as FindingsEntry[];
+const rdmFindings = allFindings.filter((entry) =>
+  RDM_PROTOCOL_IDS.has(entry.protocol_id),
+);
+const rdmPsychometric = rdmFindings.filter((entry) =>
+  ["psychometric", "accuracy_by_strength"].includes(entry.curve_type),
+);
+const rdmChronometric = rdmFindings.filter(
+  (entry) => entry.curve_type === "chronometric",
+);
+
+const variants = (models.variants ?? []) as unknown as Variant[];
+const fits = (models.fits ?? []) as unknown as Fit[];
+const ddmVariantIds = new Set(
+  variants
+    .filter((variant) => variant.family_id === "model_family.drift-diffusion")
+    .map((variant) => variant.id),
+);
+const findingsById = new Map(rdmFindings.map((entry) => [entry.finding_id, entry]));
+
+const ddmRows = fits
+  .filter((fit) => ddmVariantIds.has(fit.variant_id))
+  .map((fit) => {
+    const psychometricId =
+      fit.finding_ids.find((id) => findingsById.get(id)?.curve_type === "psychometric") ??
+      fit.finding_ids.find((id) => findingsById.has(id));
+    const entry = psychometricId ? findingsById.get(psychometricId) ?? null : null;
+    if (!entry) return null;
+    return {
+      fit_id: fit.id,
+      variant: fit.variant_id.replace("model_variant.", ""),
+      paper_id: entry.paper_id,
+      paper_label: entry.paper_citation.split(".")[0] ?? entry.paper_id,
+      species: entry.species ?? "unknown",
+      subject_id: entry.stratification?.subject_id ?? null,
+      condition: entry.stratification?.condition ?? null,
+      drift_per_unit_evidence: fit.parameters.drift_per_unit_evidence ?? NaN,
+      boundary: fit.parameters.boundary ?? NaN,
+      non_decision_time: fit.parameters.non_decision_time ?? NaN,
+      starting_point: fit.parameters.starting_point ?? null,
+      drift_bias: fit.parameters.drift_bias ?? null,
+      aic: fit.quality?.aic ?? null,
+    };
+  })
+  .filter((row): row is NonNullable<typeof row> => row !== null);
+
+const selections =
+  ((models as unknown as { model_selection_by_finding?: Selection[] })
+    .model_selection_by_finding ?? []) as Selection[];
+const selectionByFinding = new Map(
+  selections.map((selection) => [selection.finding_id, selection]),
+);
+const rdmSelectionRows = rdmPsychometric
+  .map((entry) => {
+    const selection = selectionByFinding.get(entry.finding_id);
+    if (!selection) return null;
+    return { entry, selection };
+  })
+  .filter((row): row is NonNullable<typeof row> => row !== null)
+  .sort((a, b) => {
+    const paper = a.entry.paper_citation.localeCompare(b.entry.paper_citation);
+    if (paper !== 0) return paper;
+    return a.entry.finding_id.localeCompare(b.entry.finding_id);
+  });
+
+const rdmSlices = (catalog.vertical_slices ?? []).filter((slice) =>
+  RDM_PROTOCOL_IDS.has(slice.protocol_id),
+);
+
+const species = Array.from(
+  new Set(rdmFindings.map((entry) => entry.species ?? "unknown")),
+).sort();
+
+function fmt(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
+  return value.toFixed(digits);
+}
+
+function stratificationLabel(entry: FindingsEntry): string {
+  return (
+    entry.stratification?.subject_id ??
+    entry.stratification?.condition ??
+    "pooled"
+  );
+}
+
+function tagLabel(tag: string): string {
+  const defs =
+    (models as unknown as {
+      caveat_tag_definitions?: Record<string, { label: string }>;
+    }).caveat_tag_definitions ?? {};
+  return defs[tag]?.label ?? tag.replace(/_/g, " ");
+}
+---
+
+<BaseLayout
+  title="RDM cross-species story · behavtaskatlas"
+  description="Cross-species random-dot motion synthesis with macaque and human psychometric findings, DDM fits, provenance caveats, and model-selection winners."
+>
+  <header class="mb-6">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Story · random-dot motion</p>
+    <h1 class="text-3xl font-semibold tracking-tight">
+      Cross-species RDM model story
+    </h1>
+    <p class="mt-2 text-sm text-slate-600">
+      The atlas now links classic macaque RDM, human reaction-time RDM, and
+      macaque confidence/wagering RDM in one model layer. The view below keeps
+      operational variables separate from interpretation: choice curves,
+      chronometric summaries, DDM parameters, and proxy caveats are shown as
+      distinct evidence.
+    </p>
+  </header>
+
+  <section class="mb-8 grid grid-cols-2 gap-3 md:grid-cols-5">
+    <div class="rounded-md border border-slate-200 bg-white p-3">
+      <p class="text-xs text-slate-500">Species</p>
+      <p class="mt-1 font-mono text-2xl">{species.length}</p>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-3">
+      <p class="text-xs text-slate-500">Slices</p>
+      <p class="mt-1 font-mono text-2xl">{rdmSlices.length}</p>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-3">
+      <p class="text-xs text-slate-500">Choice findings</p>
+      <p class="mt-1 font-mono text-2xl">{rdmPsychometric.length}</p>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-3">
+      <p class="text-xs text-slate-500">Chronometric</p>
+      <p class="mt-1 font-mono text-2xl">{rdmChronometric.length}</p>
+    </div>
+    <div class="rounded-md border border-slate-200 bg-white p-3">
+      <p class="text-xs text-slate-500">DDM fits</p>
+      <p class="mt-1 font-mono text-2xl">{ddmRows.length}</p>
+    </div>
+  </section>
+
+  <section class="mb-8">
+    <h2 class="mb-3 text-lg font-semibold">Curves and fitted overlays</h2>
+    <MiniFindingsChart
+      client:visible
+      findings={rdmFindings}
+      colorBy="paper"
+      height={320}
+    />
+  </section>
+
+  {
+    ddmRows.length > 0 ? (
+      <section class="mb-8 rounded-md border border-slate-200 bg-white p-4">
+        <h2 class="mb-3 text-lg font-semibold">DDM parameter spread</h2>
+        <DdmParamScatter client:visible fits={ddmRows} height={300} />
+      </section>
+    ) : null
+  }
+
+  <section class="mb-8">
+    <h2 class="mb-3 text-lg font-semibold">RDM model-selection winners</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Finding</th>
+            <th class="px-3 py-2">Paper</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">Subject / condition</th>
+            <th class="px-3 py-2">Winner</th>
+            <th class="px-3 py-2 text-right">AIC</th>
+            <th class="px-3 py-2 text-right">Delta</th>
+            <th class="px-3 py-2">Caveats</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {rdmSelectionRows.map(({ entry, selection }) => (
+            <tr>
+              <td class="max-w-72 px-3 py-2 font-mono text-[11px]">
+                <a href={hrefForFinding(entry.finding_id)}>
+                  {entry.finding_id.replace("finding.", "")}
+                </a>
+              </td>
+              <td class="px-3 py-2 text-xs">
+                <a
+                  class="text-slate-900 hover:text-accent"
+                  href={`/papers/${slugForId(entry.paper_id)}`}
+                >
+                  {entry.paper_citation.split(".")[0]}
+                </a>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                {entry.species ?? "unknown"}
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                {stratificationLabel(entry)}
+              </td>
+              <td class="px-3 py-2 font-mono text-[11px]">
+                {selection.best_variant_id.replace("model_variant.", "")}
+              </td>
+              <td class="px-3 py-2 text-right font-mono">
+                {fmt(selection.best_aic)}
+              </td>
+              <td class="px-3 py-2 text-right font-mono">
+                {fmt(selection.delta_aic_to_next)}
+              </td>
+              <td class="px-3 py-2">
+                {(selection.best_caveat_tags ?? []).length === 0 ? (
+                  <span class="text-xs text-slate-500">-</span>
+                ) : (
+                  <ul class="flex flex-wrap gap-1">
+                    {(selection.best_caveat_tags ?? []).map((tag) => (
+                      <li class="rounded bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800">
+                        {tagLabel(tag)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mb-8">
+    <h2 class="mb-3 text-lg font-semibold">Source slices</h2>
+    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-3 py-2">Slice</th>
+            <th class="px-3 py-2">Protocol</th>
+            <th class="px-3 py-2">Species</th>
+            <th class="px-3 py-2">Source level</th>
+            <th class="px-3 py-2">Report</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {rdmSlices.map((slice) => (
+            <tr>
+              <td class="px-3 py-2">
+                <a
+                  class="font-mono text-xs text-slate-900 hover:text-accent"
+                  href={`/slices/${slugForId(slice.slice_id)}`}
+                >
+                  {slice.slice_id}
+                </a>
+              </td>
+              <td class="px-3 py-2 font-mono text-[11px] text-slate-600">
+                {slice.protocol_id}
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">{slice.species}</td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                {slice.source_data_level}
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                {slice.report_status}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>

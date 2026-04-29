@@ -236,12 +236,22 @@ const sections = COMPARISONS.map((spec) => {
     {
       sections.map((section) => (
         <section
-          class="rounded-md border border-slate-200 bg-white p-5"
+          class="scroll-mt-20 rounded-md border border-slate-200 bg-white p-5"
           id={section.spec.id}
         >
-          <h2 class="mb-2 text-lg font-semibold text-slate-900">
-            {section.spec.question}
-          </h2>
+          <header class="mb-4 flex items-baseline justify-between gap-3">
+            <h2 class="text-lg font-semibold text-slate-900">
+              {section.spec.question}
+            </h2>
+            <a
+              class="shrink-0 text-xs font-mono text-slate-400 no-underline hover:text-accent"
+              href={`#${section.spec.id}`}
+              aria-label={`Permalink to ${section.spec.question}`}
+              title="Copy permalink"
+            >
+              #
+            </a>
+          </header>
           <p class="mb-4 text-sm text-slate-700">{section.spec.framing}</p>
           {section.entries.length > 0 ? (
             <MiniFindingsChart

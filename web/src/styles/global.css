@@ -5,6 +5,8 @@
   --color-accent-soft: #e8eef7;
   --color-warn: #b35c00;
   --color-warn-soft: #fbf2e6;
+  --color-bad: #9f2424;
+  --color-bad-soft: #f8e8e8;
   --color-ok: #246b3b;
   --color-ok-soft: #e7f3ec;
   --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,

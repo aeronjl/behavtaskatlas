@@ -1,0 +1,406 @@
+{
+  "$defs": {
+    "CurvePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "se": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Se"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "y_lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Lower"
+        },
+        "y_upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Upper"
+        }
+      },
+      "required": [
+        "x",
+        "n",
+        "y"
+      ],
+      "title": "CurvePoint",
+      "type": "object"
+    },
+    "FitMethod": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        },
+        "type": {
+          "enum": [
+            "scipy.optimize.differential_evolution",
+            "scipy.optimize.minimize",
+            "scipy.optimize.curve_fit",
+            "mcmc.pymc",
+            "paper-reported",
+            "manual"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "FitMethod",
+      "type": "object"
+    },
+    "FitProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "format": "date",
+          "title": "Created",
+          "type": "string"
+        },
+        "curators": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Curators",
+          "type": "array"
+        },
+        "fit_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Commit"
+        },
+        "fit_dirty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Dirty"
+        },
+        "fit_environment_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Environment Hash"
+        },
+        "source_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Notes"
+        },
+        "updated": {
+          "format": "date",
+          "title": "Updated",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created",
+        "updated"
+      ],
+      "title": "FitProvenance",
+      "type": "object"
+    },
+    "ParameterUncertainty": {
+      "additionalProperties": false,
+      "properties": {
+        "ci_lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ci Lower"
+        },
+        "ci_upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ci Upper"
+        },
+        "posterior_mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posterior Mean"
+        },
+        "posterior_sd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posterior Sd"
+        },
+        "se": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Se"
+        }
+      },
+      "title": "ParameterUncertainty",
+      "type": "object"
+    },
+    "ResultCurve": {
+      "additionalProperties": false,
+      "properties": {
+        "curve_type": {
+          "enum": [
+            "psychometric",
+            "chronometric",
+            "accuracy_by_strength",
+            "hit_rate_by_condition",
+            "rt_distribution"
+          ],
+          "title": "Curve Type",
+          "type": "string"
+        },
+        "fit": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/CurvePoint"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "x_label": {
+          "title": "X Label",
+          "type": "string"
+        },
+        "x_units": {
+          "title": "X Units",
+          "type": "string"
+        },
+        "y_label": {
+          "title": "Y Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "curve_type",
+        "x_label",
+        "x_units",
+        "y_label",
+        "points"
+      ],
+      "title": "ResultCurve",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "caveat_tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Caveat Tags",
+      "type": "array"
+    },
+    "caveats": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Caveats"
+    },
+    "curation_status": {
+      "title": "Curation Status",
+      "type": "string"
+    },
+    "finding_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Finding Ids",
+      "type": "array"
+    },
+    "fit_method": {
+      "$ref": "#/$defs/FitMethod"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "model_fit",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "parameter_uncertainty": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ParameterUncertainty"
+      },
+      "title": "Parameter Uncertainty",
+      "type": "object"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "predictions": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResultCurve"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "provenance": {
+      "$ref": "#/$defs/FitProvenance"
+    },
+    "quality": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Quality",
+      "type": "object"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "variant_id": {
+      "title": "Variant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "object_type",
+    "schema_version",
+    "id",
+    "variant_id",
+    "finding_ids",
+    "parameters",
+    "fit_method",
+    "curation_status",
+    "provenance"
+  ],
+  "title": "ModelFit",
+  "type": "object"
+}

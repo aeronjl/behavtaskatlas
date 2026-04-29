@@ -1,0 +1,48 @@
+object_type: model_family
+schema_version: 0.1.0
+id: model_family.accuracy-psychometric
+name: Accuracy psychometric
+description: >
+  Descriptive psychometric models for percent-correct or p(correct)
+  summaries as a function of unsigned stimulus strength. These models
+  preserve the distinction between an accuracy curve and a signed-choice
+  psychometric: they estimate sensitivity-like shape parameters without
+  reconstructing left/right choices or response times.
+parameter_definitions:
+  - name: threshold_strength
+    symbol: threshold
+    units: same as stimulus strength
+    description: Stimulus strength at the logistic midpoint between chance and asymptote.
+  - name: slope_log2
+    symbol: slope
+    units: log2 stimulus strength
+    description: Logistic slope width on a log2-strength axis.
+  - name: lapse
+    symbol: lapse
+    units: probability
+    description: Upper lapse away from perfect accuracy.
+  - name: chance_floor
+    symbol: chance
+    units: probability
+    description: Fixed lower asymptote for two-choice accuracy curves.
+  - name: accuracy_rate
+    symbol: p_correct
+    units: probability
+    description: Shared accuracy rate across all stimulus strengths.
+applicable_curve_types:
+  - accuracy_by_strength
+requires:
+  - stimulus_value
+  - correct_outcome
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added to close accuracy-only source-data findings in the model-selection
+    matrix without treating target-coded accuracy rows as signed choices.
+    A strength-invariant accuracy null was added after the generated roadmap
+    flagged these rows as single-candidate accuracy-summary fits.

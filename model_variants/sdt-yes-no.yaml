@@ -1,0 +1,29 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.sdt-yes-no
+family_id: model_family.signal-detection
+name: Yes/no equal-variance Gaussian
+description: >
+  Equal-variance Gaussian SDT for go/no-go detection. The fitted curve uses
+  a binary signal axis where x=0 is catch/no-signal and x=1 is
+  change/signal, with P(go | x) = Phi(d_prime * x - criterion). d_prime is
+  the signal-noise separation on this binary axis; criterion is the fixed
+  go/withhold threshold.
+free_parameters:
+  - d_prime
+  - criterion
+fixed_parameters: {}
+requires:
+  - choice_go_withhold
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added for Allen Visual Behavior change-detection, whose canonical choices
+    are go and withhold rather than left/right 2AFC choices. The variant fits
+    aggregate yes/no rates and is intentionally not applied to arbitrary
+    per-image-pair ordinal hit-rate curves.

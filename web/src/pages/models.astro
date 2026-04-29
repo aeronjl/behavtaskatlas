@@ -1,7 +1,23 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { models, slugForId } from "../lib/data";
+import DdmParamScatter from "../components/DdmParamScatter.svelte";
+import ModelSelectionMatrix from "../components/ModelSelectionMatrix.svelte";
+import ModelSelectionTable from "../components/ModelSelectionTable.svelte";
+import { hrefForFinding, models, slugForId } from "../lib/data";
+import { findings as findingsIndex } from "../lib/findings";
 
+type Family = {
+  id: string;
+  name: string;
+  description: string;
+  parameter_definitions: Array<{
+    name: string;
+    symbol?: string | null;
+    units?: string | null;
+  }>;
+  applicable_curve_types: string[];
+  requires: string[];
+};
 type Variant = {
   id: string;
   family_id: string;
@@ -12,128 +28,956 @@ type Fit = {
   id: string;
   variant_id: string;
   finding_ids: string[];
-  quality?: { log_likelihood?: number; aic?: number; n_trials?: number };
+  parameters?: Record<string, number>;
+  quality?: { aic?: number | null; bic?: number | null; log_likelihood?: number | null; n_trials?: number | null };
+  caveat_tags?: string[];
+};
+type Selection = {
+  selection_id?: string;
+  selection_level?: string;
+  finding_id: string;
+  best_fit_id: string;
+  best_variant_id: string;
+  best_aic: number | null;
+  delta_aic_to_next: number | null;
+  confidence_label?: string;
+  comparison_scope?: string;
+  n_candidate_fits: number;
+  has_mixed_aic_scopes?: boolean;
+  scope_selection_ids?: string[];
+  candidate_scope_counts?: Record<string, number>;
+  candidate_fit_ids: string[];
+  candidate_variant_ids: string[];
+  candidate_comparison_scopes?: string[];
+  best_caveat_tags?: string[];
+  candidate_caveat_tags?: string[];
+  interpretation_warning?: InterpretationWarning | null;
+};
+type InterpretationWarning = {
+  finding_id: string;
+  best_fit_id: string;
+  best_variant_id: string;
+  comparison_scope: string;
+  candidate_comparison_scopes: string[];
+  confidence_label: string;
+  delta_aic_to_next: number | null;
+  severity: string;
+  warning_type: string;
+  message: string;
+};
+type FindingEntry = {
+  finding_id: string;
+  paper_id: string;
+  paper_citation: string;
+  species: string | null;
+  family_name?: string;
+  protocol_name: string;
+  protocol_id: string;
+  curve_type: string;
+  source_data_level: string;
+  stratification?: { condition?: string | null; subject_id?: string | null };
+};
+type MatrixCell = {
+  fit_id: string;
+  variant_id: string;
+  variant_label: string;
+  aic: number | null;
+  delta_from_best: number | null;
+  is_winner: boolean;
+  caveat_tags: string[];
+};
+type CoverageGapFinding = {
+  finding_id: string;
+  paper_id?: string | null;
+  species?: string | null;
+  curve_type?: string | null;
+  source_data_level?: string | null;
+  best_fit_id?: string | null;
+  best_variant_id?: string | null;
+  proxy_caveat_tags?: string[];
+};
+type NearMissSlice = {
+  slice_id: string;
+  variant_id: string;
+  variant_name: string;
+  missing_requirements: string[];
+  satisfied_requirements: string[];
+  n_trials: number;
+  n_subjects: number;
 };
 
-const { families, slice_coverage, counts, known_requirements } = models;
+const {
+  slice_coverage,
+  counts,
+  known_requirements,
+  fit_provenance_summary: provenanceSummary = {},
+  caveat_tag_definitions: caveatDefinitions = {},
+  model_selection_confidence_definitions: confidenceDefinitions = {},
+  model_comparison_scope_definitions: scopeDefinitions = {},
+} = models as unknown as {
+  slice_coverage: typeof models.slice_coverage;
+  counts: typeof models.counts;
+  known_requirements: typeof models.known_requirements;
+  fit_provenance_summary?: Record<string, number>;
+  caveat_tag_definitions?: Record<string, { label: string; description: string }>;
+  model_selection_confidence_definitions?: Record<
+    string,
+    { label: string; description: string }
+  >;
+  model_comparison_scope_definitions?: Record<
+    string,
+    { label: string; description: string }
+  >;
+};
+const families = (models.families ?? []) as unknown as Family[];
 const variants = (models.variants ?? []) as unknown as Variant[];
 const fits = (models.fits ?? []) as unknown as Fit[];
+const findings = (findingsIndex.findings ?? []) as unknown as FindingEntry[];
+const findingSelections =
+  ((models as unknown as { model_selection_by_finding?: Selection[] })
+    .model_selection_by_finding ?? []) as Selection[];
+const scopeSelections =
+  ((models as unknown as { model_selection_by_finding_scope?: Selection[] })
+    .model_selection_by_finding_scope ?? []) as Selection[];
+const interpretationWarnings = ((models as unknown as {
+  model_selection_interpretation_warnings?: InterpretationWarning[];
+}).model_selection_interpretation_warnings ?? []);
+const scopeCounts =
+  ((models as unknown as {
+    model_selection_scope_counts?: Record<string, number>;
+    model_comparison_scope_counts?: Record<string, number>;
+  }).model_selection_scope_counts ??
+    (models as unknown as {
+      model_comparison_scope_counts?: Record<string, number>;
+    }).model_comparison_scope_counts ??
+    {});
+const confidenceCounts =
+  ((models as unknown as {
+    model_selection_scope_confidence_counts?: Record<string, number>;
+    model_selection_confidence_counts?: Record<string, number>;
+  }).model_selection_scope_confidence_counts ??
+    (models as unknown as {
+      model_selection_confidence_counts?: Record<string, number>;
+    }).model_selection_confidence_counts ??
+    {});
+const coverageGaps = ((models as unknown as {
+  model_coverage_gaps?: {
+    counts?: Record<string, number>;
+    findings_with_no_fits?: CoverageGapFinding[];
+    findings_with_single_candidate?: CoverageGapFinding[];
+    proxy_backed_findings?: CoverageGapFinding[];
+    near_miss_slices?: NearMissSlice[];
+  };
+}).model_coverage_gaps ?? {
+  counts: {},
+  findings_with_no_fits: [],
+  findings_with_single_candidate: [],
+  proxy_backed_findings: [],
+  near_miss_slices: [],
+});
 
 const variantsByFamily = new Map<string, Variant[]>();
+const variantsById = new Map<string, Variant>();
 for (const v of variants) {
   if (!variantsByFamily.has(v.family_id)) variantsByFamily.set(v.family_id, []);
   variantsByFamily.get(v.family_id)!.push(v);
+  variantsById.set(v.id, v);
+}
+const familiesById = new Map(families.map((f) => [f.id, f]));
+const findingsById = new Map(findings.map((f) => [f.finding_id, f]));
+const fitsById = new Map(fits.map((f) => [f.id, f]));
+const scopeSelectionsByFinding = new Map<string, Selection[]>();
+for (const s of scopeSelections) {
+  const rows = scopeSelectionsByFinding.get(s.finding_id) ?? [];
+  rows.push(s);
+  scopeSelectionsByFinding.set(s.finding_id, rows);
 }
 
+const proxyCaveatTags = new Set([
+  "figure_source_data",
+  "target_coded_choice_proxy",
+  "motion_duration_rt_proxy",
+]);
+
+const matrixColumns = [
+  { id: "accuracy", label: "Accuracy", description: "Chance-floor p(correct)-by-strength candidate." },
+  { id: "rate", label: "Rate null", description: "Condition-invariant Bernoulli baseline." },
+  { id: "chronometric", label: "Chronometric", description: "Descriptive median-RT-by-strength baseline." },
+  { id: "logistic", label: "Logistic", description: "Logistic psychometric candidate." },
+  { id: "sdt_2afc", label: "SDT 2AFC", description: "Two-alternative forced-choice signal-detection candidate." },
+  { id: "ddm", label: "DDM", description: "Drift-diffusion candidate; best DDM variant per finding." },
+  { id: "click", label: "Clicks", description: "Click accumulator candidate." },
+  { id: "sdt_yes_no", label: "Yes/no", description: "Go/no-go signal-detection candidate." },
+];
+
+function modelClassForVariant(variantId: string): string | null {
+  if (variantId === "model_variant.chance-floor-accuracy-logistic") return "accuracy";
+  if (variantId === "model_variant.bernoulli-condition-rate") return "rate";
+  if (variantId === "model_variant.chronometric-hyperbolic-rt") return "chronometric";
+  if (variantId === "model_variant.sdt-yes-no") return "sdt_yes_no";
+  if (variantId.startsWith("model_variant.sdt")) return "sdt_2afc";
+  if (variantId.startsWith("model_variant.ddm")) return "ddm";
+  if (variantId.startsWith("model_variant.logistic")) return "logistic";
+  if (variantId.startsWith("model_variant.click")) return "click";
+  return null;
+}
+
+function variantLabel(variantId: string): string {
+  return variantId.replace("model_variant.", "");
+}
+function paperLabel(entry: FindingEntry): string {
+  return entry.paper_citation.trim().split(".")[0] ?? entry.paper_id;
+}
+function scopeLabel(scope: string): string {
+  return scopeDefinitions[scope]?.label ?? scope.replace(/_/g, " ");
+}
+function confidenceLabel(selection: Selection): string {
+  if (selection.confidence_label) return selection.confidence_label;
+  if (selection.n_candidate_fits <= 1 || selection.delta_aic_to_next === null) {
+    return "single_candidate";
+  }
+  if (selection.delta_aic_to_next >= 10) return "decisive";
+  if (selection.delta_aic_to_next >= 2) return "supported";
+  return "close";
+}
+function sourceStatus(entry: FindingEntry, caveatTags: string[]): string {
+  const hasProxyCaveat = caveatTags.some((tag) => proxyCaveatTags.has(tag));
+  if (entry.source_data_level === "figure-source-data" || hasProxyCaveat) return "proxy-backed";
+  if (entry.source_data_level === "raw-trial" || entry.source_data_level === "processed-trial") {
+    return "trial-backed";
+  }
+  return "summary-backed";
+}
+function fmtCount(value: number | undefined): string {
+  return (value ?? 0).toLocaleString();
+}
+function fmt(value: number | null | undefined, digits = 3): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return value.toFixed(digits);
+}
+function gapPaper(row: CoverageGapFinding): string {
+  const e = findingsById.get(row.finding_id);
+  return e ? paperLabel(e) : row.paper_id?.replace("paper.", "") ?? "unknown";
+}
+function gapSpecies(row: CoverageGapFinding): string {
+  return row.species ?? findingsById.get(row.finding_id)?.species ?? "unknown";
+}
+function gapCurve(row: CoverageGapFinding): string {
+  return row.curve_type ?? findingsById.get(row.finding_id)?.curve_type ?? "unknown";
+}
+function gapSource(row: CoverageGapFinding): string {
+  return (
+    row.source_data_level ??
+    findingsById.get(row.finding_id)?.source_data_level ??
+    "unknown"
+  );
+}
 function capabilityRow(s: (typeof slice_coverage)[number]): string[] {
   if (!s.capabilities) return [];
   return Object.entries(s.capabilities)
     .filter(([, v]) => v)
     .map(([k]) => k);
 }
+function stratificationLabel(entry: FindingEntry): string {
+  return (
+    entry.stratification?.condition ??
+    entry.stratification?.subject_id ??
+    "pooled"
+  );
+}
+
+type ScopeWinnerRow = {
+  selection_id: string;
+  comparison_scope: string;
+  best_variant_id: string;
+  best_variant_label: string;
+  best_aic: number | null;
+  delta_aic_to_next: number | null;
+  confidence_label?: string;
+};
+function scopeWinnerRows(findingId: string): ScopeWinnerRow[] {
+  return (scopeSelectionsByFinding.get(findingId) ?? [])
+    .slice()
+    .sort((a, b) =>
+      (a.comparison_scope ?? "").localeCompare(b.comparison_scope ?? ""),
+    )
+    .map((s) => ({
+      selection_id: s.selection_id ?? s.finding_id,
+      comparison_scope: s.comparison_scope ?? "direct_choice",
+      best_variant_id: s.best_variant_id,
+      best_variant_label: s.best_variant_id.replace("model_variant.", ""),
+      best_aic: s.best_aic,
+      delta_aic_to_next: s.delta_aic_to_next,
+      confidence_label: s.confidence_label,
+    }));
+}
+
+const modelSelectionRows = findingSelections
+  .map((s) => {
+    const entry = findingsById.get(s.finding_id);
+    if (!entry) return null;
+    const variant = variantsById.get(s.best_variant_id);
+    const family = variant ? familiesById.get(variant.family_id) : undefined;
+    return {
+      finding_id: s.finding_id,
+      selection_id: s.selection_id ?? s.finding_id,
+      selection_level: s.selection_level ?? "finding",
+      finding_href: hrefForFinding(s.finding_id),
+      paper_id: entry.paper_id,
+      paper_href: `/papers/${slugForId(entry.paper_id)}`,
+      paper_label: entry.paper_citation.split(".")[0] ?? entry.paper_citation,
+      species: entry.species ?? "unknown",
+      protocol_name: entry.protocol_name,
+      curve_type: entry.curve_type,
+      source_data_level: entry.source_data_level,
+      stratification_label: stratificationLabel(entry),
+      best_fit_id: s.best_fit_id,
+      best_variant_id: s.best_variant_id,
+      best_variant_label: s.best_variant_id.replace("model_variant.", ""),
+      best_family_label: family?.name ?? variant?.family_id ?? "unknown family",
+      best_aic: s.best_aic,
+      delta_aic_to_next: s.delta_aic_to_next,
+      confidence_label: s.confidence_label,
+      comparison_scope: s.comparison_scope ?? "direct_choice",
+      n_candidate_fits: s.n_candidate_fits,
+      has_mixed_aic_scopes: Boolean(s.has_mixed_aic_scopes),
+      scope_selection_ids: s.scope_selection_ids ?? [],
+      candidate_scope_counts: s.candidate_scope_counts ?? {},
+      candidate_variant_ids: s.candidate_variant_ids ?? [],
+      candidate_comparison_scopes: s.candidate_comparison_scopes ?? [],
+      scope_winners: scopeWinnerRows(s.finding_id),
+      best_caveat_tags: s.best_caveat_tags ?? [],
+      candidate_caveat_tags: s.candidate_caveat_tags ?? [],
+      interpretation_warning: s.interpretation_warning ?? null,
+    };
+  })
+  .filter((row): row is NonNullable<typeof row> => row !== null);
+
+const matrixRows = scopeSelections
+  .map((selection) => {
+    const entry = findingsById.get(selection.finding_id);
+    if (!entry) return null;
+    const cells = Object.fromEntries(
+      matrixColumns.map((c) => [c.id, null]),
+    ) as Record<string, MatrixCell | null>;
+    for (const fitId of selection.candidate_fit_ids ?? []) {
+      const fit = fitsById.get(fitId);
+      if (!fit) continue;
+      const classId = modelClassForVariant(fit.variant_id);
+      if (!classId) continue;
+      const aic = fit.quality?.aic ?? null;
+      const delta =
+        aic === null || selection.best_aic === null
+          ? null
+          : Math.max(0, aic - selection.best_aic);
+      const prior = cells[classId];
+      const priorAic = prior?.aic ?? Number.POSITIVE_INFINITY;
+      if (prior && (aic === null || priorAic <= aic)) continue;
+      cells[classId] = {
+        fit_id: fit.id,
+        variant_id: fit.variant_id,
+        variant_label: variantsById.get(fit.variant_id)?.name ?? variantLabel(fit.variant_id),
+        aic,
+        delta_from_best: delta,
+        is_winner: fit.id === selection.best_fit_id,
+        caveat_tags: fit.caveat_tags ?? [],
+      };
+    }
+    return {
+      selection_id: selection.selection_id ?? selection.finding_id,
+      finding_id: selection.finding_id,
+      finding_href: hrefForFinding(selection.finding_id),
+      paper_label: paperLabel(entry),
+      paper_href: `/papers/${slugForId(entry.paper_id)}`,
+      species: entry.species ?? "unknown",
+      task_family: entry.family_name ?? "",
+      protocol_name: entry.protocol_name,
+      curve_type: entry.curve_type,
+      source_data_level: entry.source_data_level,
+      source_status: sourceStatus(entry, selection.candidate_caveat_tags ?? []),
+      confidence_label: confidenceLabel(selection),
+      comparison_scope: selection.comparison_scope ?? "direct_choice",
+      best_fit_id: selection.best_fit_id,
+      best_variant_id: selection.best_variant_id,
+      n_candidate_fits: selection.n_candidate_fits,
+      candidate_comparison_scopes: selection.candidate_comparison_scopes ?? [],
+      candidate_caveat_tags: selection.candidate_caveat_tags ?? [],
+      interpretation_warning: selection.interpretation_warning ?? null,
+      cells,
+    };
+  })
+  .filter((row): row is NonNullable<typeof row> => row !== null);
+
+// DDM strip plot
+const ddmVariantIds = new Set(
+  variants
+    .filter((v) => v.family_id === "model_family.drift-diffusion")
+    .map((v) => v.id),
+);
+const ddmRows = fits
+  .filter((f) => ddmVariantIds.has(f.variant_id))
+  .map((f) => {
+    const psyId =
+      f.finding_ids.find((fid) => findingsById.get(fid)?.curve_type === "psychometric") ??
+      f.finding_ids[0];
+    const entry = psyId ? findingsById.get(psyId) ?? null : null;
+    if (!entry) return null;
+    return {
+      fit_id: f.id,
+      variant: f.variant_id.replace("model_variant.", ""),
+      paper_id: entry.paper_id,
+      paper_label: entry.paper_citation.split(".")[0] ?? entry.paper_id,
+      species: entry.species ?? "unknown",
+      subject_id: entry.stratification?.subject_id ?? null,
+      condition: entry.stratification?.condition ?? null,
+      drift_per_unit_evidence: f.parameters?.drift_per_unit_evidence ?? NaN,
+      boundary: f.parameters?.boundary ?? NaN,
+      non_decision_time: f.parameters?.non_decision_time ?? NaN,
+      starting_point: f.parameters?.starting_point ?? null,
+      drift_bias: f.parameters?.drift_bias ?? null,
+      aic: f.quality?.aic ?? null,
+    };
+  })
+  .filter((row): row is NonNullable<typeof row> => row !== null);
+const ddmSpecies = Array.from(new Set(ddmRows.map((r) => r.species))).sort();
+const ddmVariants = Array.from(new Set(ddmRows.map((r) => r.variant))).sort();
+
+const noFitRows = coverageGaps.findings_with_no_fits ?? [];
+const singleCandidateRows = coverageGaps.findings_with_single_candidate ?? [];
+const proxyRows = coverageGaps.proxy_backed_findings ?? [];
+const nearMissRows = coverageGaps.near_miss_slices ?? [];
+const confidenceOrder = ["decisive", "supported", "close", "single_candidate"];
+const scopeOrder = [
+  "direct_choice",
+  "joint_choice_rt",
+  "chronometric_summary",
+  "accuracy_summary",
+  "condition_rate",
+  "click_summary",
+];
+
+const sectionLinks = [
+  { id: "families", label: "Families & variants" },
+  { id: "selection", label: "Per-finding selection" },
+  { id: "matrix", label: "Selection matrix" },
+  { id: "ddm", label: "DDM cross-species" },
+  { id: "coverage", label: "Coverage gaps" },
+  { id: "fittability", label: "Slice fittability" },
+  { id: "fits", label: "All fits" },
+];
 ---
 
 <BaseLayout
   title="Models · behavtaskatlas"
-  description="Computational model families, variants, and fits curated alongside findings."
+  description="Computational model families, variants, fits, the AIC selection matrix, and per-slice fittability across the atlas."
 >
   <header class="mb-6">
     <h1 class="text-3xl font-semibold tracking-tight">Models</h1>
-    <p class="mt-2 text-sm text-slate-600">
+    <p class="mt-2 max-w-3xl text-sm text-slate-700">
       {counts.families} families, {counts.variants} variants,
-      {counts.fits} fit{counts.fits === 1 ? "" : "s"}. Each fit is curated
-      as a YAML record with parameters, quality metrics, and provenance.
-      Heavy fits run locally; the
-      <a class="text-accent" href="/audit">audit</a>
-      gate forward-evaluates each committed fit on every CI run to catch
-      drift if data changes underneath. Cross-paper view of DDM
-      parameters: <a class="text-accent" href="/models/ddm">/models/ddm</a>.
+      {counts.fits} fit{counts.fits === 1 ? "" : "s"}. Each fit is a YAML
+      record with parameters, quality metrics, and provenance; the
+      <a class="text-accent" href="/atlas-health#audit">audit</a>
+      forward-evaluates each committed fit on every CI run.
     </p>
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <a
+        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
+        href="/model_selection.csv"
+      >model_selection.csv</a>
+      <a
+        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
+        href="/model_selection_by_scope.csv"
+      >by_scope.csv</a>
+      <a
+        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
+        href="/fits_by_finding.csv"
+      >fits_by_finding.csv</a>
+      <a
+        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
+        href="/model_roadmap.csv"
+      >roadmap.csv</a>
+      <span class="text-slate-500">
+        · provenance: {provenanceSummary.fit_dirty_false ?? 0} clean,
+        {provenanceSummary.fit_dirty_true ?? 0} dirty
+      </span>
+    </div>
   </header>
 
-  {
-    counts.fits === 0 ? (
-      <section class="mb-6 rounded-md border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-        Model layer scaffolding is in. No fits committed yet — the
-        first batch (logistic + SDT for all pooled psychometric findings,
-        then DDM on Roitman / Palmer / Walsh) lands in the next pass.
-      </section>
-    ) : null
-  }
+  <nav class="mb-8 -mx-4 overflow-x-auto px-4">
+    <ul class="flex flex-wrap gap-2 text-xs">
+      {sectionLinks.map((link) => (
+        <li>
+          <a
+            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 no-underline hover:border-accent hover:text-accent"
+            href={`#${link.id}`}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
 
-  <section class="mb-8">
-    <h2 class="mb-3 text-lg font-semibold">Families &amp; variants</h2>
+  {counts.fits === 0 ? (
+    <section class="mb-8 rounded-md border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+      Model layer scaffolding is in. No fits committed yet.
+    </section>
+  ) : null}
+
+  <section id="families" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Families &amp; variants</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Each family declares its parameters, applicable curve types, and data
+        requirements. Variants free a particular subset of the parameters.
+      </p>
+    </header>
     <div class="space-y-4">
-      {
-        families.map((family) => (
-          <article class="rounded-md border border-slate-200 bg-white p-4">
-            <header class="mb-2 flex items-baseline justify-between gap-3">
-              <h3 class="text-base font-semibold">{family.name}</h3>
-              <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
-                {family.applicable_curve_types.join(", ")}
-              </span>
-            </header>
-            <p class="text-xs font-mono text-slate-500">{family.id}</p>
-            <p class="mt-2 text-sm text-slate-700">{family.description}</p>
-            <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div>
-                <h4 class="mb-1 text-xs font-semibold text-slate-700">Parameters</h4>
-                <ul class="space-y-1 text-xs text-slate-700">
-                  {family.parameter_definitions.map((p) => (
-                    <li>
-                      <span class="font-mono">
-                        {p.symbol ?? p.name}
-                      </span>
-                      <span class="ml-1 text-slate-500">{p.name}</span>
-                      {p.units ? (
-                        <span class="ml-1 text-slate-500">[{p.units}]</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 class="mb-1 text-xs font-semibold text-slate-700">Requires</h4>
-                <ul class="flex flex-wrap gap-1">
-                  {family.requires.map((r) => (
-                    <li class="rounded bg-slate-100 px-2 py-0.5 text-xs font-mono">
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <h4 class="mb-1 text-xs font-semibold text-slate-700">
-                Variants ({(variantsByFamily.get(family.id) ?? []).length})
-              </h4>
-              <ul class="space-y-1 text-xs">
-                {(variantsByFamily.get(family.id) ?? []).map((v) => (
+      {families.map((family) => (
+        <article class="rounded-md border border-slate-200 bg-white p-4">
+          <header class="mb-2 flex items-baseline justify-between gap-3">
+            <h3 class="text-base font-semibold">{family.name}</h3>
+            <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+              {family.applicable_curve_types.join(", ")}
+            </span>
+          </header>
+          <p class="font-mono text-xs text-slate-500">{family.id}</p>
+          <p class="mt-2 text-sm text-slate-700">{family.description}</p>
+          <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <h4 class="mb-1 text-xs font-semibold text-slate-700">Parameters</h4>
+              <ul class="space-y-1 text-xs text-slate-700">
+                {family.parameter_definitions.map((p) => (
                   <li>
-                    <span class="font-mono text-slate-700">{v.id}</span>
-                    <span class="ml-2 text-slate-600">— {v.name}</span>
-                    <span class="ml-2 text-slate-500">
-                      free=[{v.free_parameters.join(", ")}]
-                    </span>
+                    <span class="font-mono">{p.symbol ?? p.name}</span>
+                    <span class="ml-1 text-slate-500">{p.name}</span>
+                    {p.units ? <span class="ml-1 text-slate-500">[{p.units}]</span> : null}
                   </li>
                 ))}
               </ul>
             </div>
-          </article>
-        ))
-      }
+            <div>
+              <h4 class="mb-1 text-xs font-semibold text-slate-700">Requires</h4>
+              <ul class="flex flex-wrap gap-1">
+                {family.requires.map((r) => (
+                  <li class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">{r}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div class="mt-3">
+            <h4 class="mb-1 text-xs font-semibold text-slate-700">
+              Variants ({(variantsByFamily.get(family.id) ?? []).length})
+            </h4>
+            <ul class="space-y-1 text-xs">
+              {(variantsByFamily.get(family.id) ?? []).map((v) => (
+                <li>
+                  <span class="font-mono text-slate-700">{v.id}</span>
+                  <span class="ml-2 text-slate-600">— {v.name}</span>
+                  <span class="ml-2 text-slate-500">free=[{v.free_parameters.join(", ")}]</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      ))}
     </div>
   </section>
 
-  <section class="mb-8">
-    <h2 class="mb-3 text-lg font-semibold">Per-slice fittability</h2>
-    <p class="mb-3 text-xs text-slate-600">
-      Mapping from canonical-trial coverage in each slice's harmonized
-      trials.csv to the variants whose data requirements it satisfies.
-      Slices with empty fittability either lack the right canonical
-      fields (RT, signed choice, click times) or need adapter fixes.
-    </p>
+  {modelSelectionRows.length > 0 ? (
+    <section id="selection" class="mb-12 scroll-mt-20">
+      <header class="mb-3">
+        <h2 class="text-xl font-semibold tracking-tight">Per-finding selection</h2>
+        <p class="mt-1 max-w-3xl text-sm text-slate-600">
+          Finding-level AIC winners alongside their scope-specific winners.
+          Mixed-scope rows are useful for triage; scope-specific rows keep
+          direct-choice, joint choice+RT, and summary likelihoods separate.
+        </p>
+      </header>
+      <ModelSelectionTable
+        client:visible
+        rows={modelSelectionRows}
+        caveatDefinitions={caveatDefinitions}
+        confidenceDefinitions={confidenceDefinitions}
+        scopeDefinitions={scopeDefinitions}
+      />
+    </section>
+  ) : null}
+
+  <section id="matrix" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Selection matrix</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Rows are finding-by-comparison-scope groups; columns are model classes.
+        Each filled cell is the best AIC candidate in that class within the
+        same likelihood scope. Scope winners marked in green.
+      </p>
+    </header>
+
+    <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+      {confidenceOrder.map((key) => (
+        <div class="rounded-md border border-slate-200 bg-white p-3">
+          <p class="text-xs uppercase text-slate-500">
+            {confidenceDefinitions[key]?.label ?? key.replace(/_/g, " ")}
+          </p>
+          <p class="mt-1 text-2xl font-semibold">{fmtCount(confidenceCounts[key])}</p>
+          <p class="mt-1 text-xs text-slate-500 line-clamp-2">
+            {confidenceDefinitions[key]?.description ?? ""}
+          </p>
+        </div>
+      ))}
+    </div>
+
+    <details class="mb-4 rounded-md border border-slate-200 bg-white p-4">
+      <summary class="cursor-pointer text-sm font-semibold text-slate-700">
+        Comparison-scope reference ({scopeOrder.length} scopes)
+      </summary>
+      <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+        {scopeOrder.map((scope) => (
+          <div class="rounded border border-slate-200 p-3">
+            <div class="flex items-baseline justify-between gap-2">
+              <p class="text-xs uppercase text-slate-500">{scopeLabel(scope)}</p>
+              <p class="font-mono text-sm text-slate-700">
+                {fmtCount(scopeCounts[scope])}
+              </p>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">
+              {scopeDefinitions[scope]?.description ?? ""}
+            </p>
+          </div>
+        ))}
+      </div>
+    </details>
+
+    <ModelSelectionMatrix
+      client:visible
+      rows={matrixRows}
+      columns={matrixColumns}
+      caveatDefinitions={caveatDefinitions}
+      confidenceDefinitions={confidenceDefinitions}
+      scopeDefinitions={scopeDefinitions}
+    />
+
+    {interpretationWarnings.length > 0 ? (
+      <details class="mt-4 rounded-md border border-slate-200 bg-white p-4">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-700">
+          Interpretation warnings ({interpretationWarnings.length})
+        </summary>
+        <div class="mt-3 max-h-80 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Finding</th>
+                <th class="px-3 py-2">Warning</th>
+                <th class="px-3 py-2">Winner scope</th>
+                <th class="px-3 py-2">Candidate scopes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {interpretationWarnings.map((w) => (
+                <tr>
+                  <td class="px-3 py-2">
+                    <a class="font-mono text-[11px]" href={hrefForFinding(w.finding_id)}>
+                      {w.finding_id.replace("finding.", "")}
+                    </a>
+                    <p class="text-[11px] text-slate-500">
+                      {w.best_variant_id.replace("model_variant.", "")} ·
+                      {" "}{w.confidence_label.replace(/_/g, " ")}
+                    </p>
+                  </td>
+                  <td class="px-3 py-2">
+                    <span
+                      class={
+                        w.severity === "high"
+                          ? "rounded bg-warn-soft px-1.5 py-0.5 text-[10px] uppercase text-warn"
+                          : "rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600"
+                      }
+                    >
+                      {w.warning_type.replace(/_/g, " ")}
+                    </span>
+                    <p class="mt-1 text-xs text-slate-600">{w.message}</p>
+                  </td>
+                  <td class="px-3 py-2 text-xs text-slate-600">
+                    {scopeLabel(w.comparison_scope)}
+                  </td>
+                  <td class="px-3 py-2">
+                    <ul class="flex flex-wrap gap-1">
+                      {w.candidate_comparison_scopes.map((scope) => (
+                        <li class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                          {scopeLabel(scope)}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    ) : null}
+  </section>
+
+  {ddmRows.length > 0 ? (
+    <section id="ddm" class="mb-12 scroll-mt-20">
+      <header class="mb-3">
+        <h2 class="text-xl font-semibold tracking-tight">DDM cross-species</h2>
+        <p class="mt-1 max-w-3xl text-sm text-slate-600">
+          {ddmRows.length} drift-diffusion fits across {ddmSpecies.length} species
+          and {ddmVariants.length} variant{ddmVariants.length === 1 ? "" : "s"}.
+          Strip plot shows drift, boundary, and non-decision time; points
+          coloured by paper, shaped by variant.
+        </p>
+      </header>
+      <div class="rounded-md border border-slate-200 bg-white p-4">
+        <DdmParamScatter client:visible fits={ddmRows} height={280} />
+      </div>
+      <details class="mt-3 rounded-md border border-slate-200 bg-white">
+        <summary class="cursor-pointer p-3 text-sm font-semibold text-slate-700">
+          DDM fit table
+        </summary>
+        <div class="overflow-x-auto border-t border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Variant</th>
+                <th class="px-3 py-2">Paper</th>
+                <th class="px-3 py-2">Species</th>
+                <th class="px-3 py-2">Subject / cond.</th>
+                <th class="px-3 py-2 text-right">k</th>
+                <th class="px-3 py-2 text-right">a</th>
+                <th class="px-3 py-2 text-right">t0 (s)</th>
+                <th class="px-3 py-2 text-right">z</th>
+                <th class="px-3 py-2 text-right">v0</th>
+                <th class="px-3 py-2 text-right">AIC</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {ddmRows.map((r) => (
+                <tr>
+                  <td class="px-3 py-2 font-mono text-[11px]">{r.variant}</td>
+                  <td class="px-3 py-2 text-xs">{r.paper_label}</td>
+                  <td class="px-3 py-2 text-xs">{r.species}</td>
+                  <td class="px-3 py-2 text-[11px] text-slate-600">
+                    {r.subject_id ?? r.condition ?? "—"}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {fmt(r.drift_per_unit_evidence, 4)}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">{fmt(r.boundary)}</td>
+                  <td class="px-3 py-2 text-right font-mono">{fmt(r.non_decision_time)}</td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {r.starting_point !== null ? fmt(r.starting_point) : "—"}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {r.drift_bias !== null ? fmt(r.drift_bias) : "—"}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">{fmt(r.aic, 1)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p class="mt-2 text-xs text-slate-500">
+        Vanilla, z-bias, and v-bias variants free different parameters; z and
+        v0 columns only have values when the variant frees that parameter.
+        See <a class="text-accent" href="/compare#comparison.walsh-bias-locus">Walsh bias-locus comparison</a> for the AIC verdict per cue.
+      </p>
+    </section>
+  ) : null}
+
+  <section id="coverage" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Coverage gaps</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Findings without competing fits, single-candidate winners, proxy-backed
+        wins, and slice capabilities one requirement away from supporting a
+        variant. Roadmap of next-best work lives on
+        <a class="text-accent" href="/atlas-health#roadmap">/atlas-health</a>.
+      </p>
+    </header>
+    <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <p class="text-xs uppercase text-slate-500">No fits</p>
+        <p class="mt-1 text-2xl font-semibold">
+          {fmtCount(coverageGaps.counts?.findings_with_no_fits)}
+        </p>
+      </div>
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <p class="text-xs uppercase text-slate-500">Single candidate</p>
+        <p class="mt-1 text-2xl font-semibold">
+          {fmtCount(coverageGaps.counts?.findings_with_single_candidate)}
+        </p>
+      </div>
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <p class="text-xs uppercase text-slate-500">Proxy backed</p>
+        <p class="mt-1 text-2xl font-semibold">
+          {fmtCount(coverageGaps.counts?.proxy_backed_findings)}
+        </p>
+      </div>
+      <div class="rounded-md border border-slate-200 bg-white p-3">
+        <p class="text-xs uppercase text-slate-500">Near-miss slices</p>
+        <p class="mt-1 text-2xl font-semibold">
+          {fmtCount(coverageGaps.counts?.near_miss_slices)}
+        </p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <article class="rounded-md border border-slate-200 bg-white">
+        <header class="border-b border-slate-200 px-3 py-2">
+          <h3 class="text-sm font-semibold">Findings with no fits</h3>
+        </header>
+        <div class="max-h-80 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Finding</th>
+                <th class="px-3 py-2">Paper</th>
+                <th class="px-3 py-2">Source</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {noFitRows.map((row) => (
+                <tr>
+                  <td class="px-3 py-2">
+                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
+                      {row.finding_id.replace("finding.", "")}
+                    </a>
+                    <p class="text-[11px] text-slate-500">
+                      {gapSpecies(row)} · {gapCurve(row)}
+                    </p>
+                  </td>
+                  <td class="px-3 py-2 text-xs text-slate-600">{gapPaper(row)}</td>
+                  <td class="px-3 py-2 text-xs text-slate-600">{gapSource(row)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="rounded-md border border-slate-200 bg-white">
+        <header class="border-b border-slate-200 px-3 py-2">
+          <h3 class="text-sm font-semibold">Single-candidate findings</h3>
+        </header>
+        <div class="max-h-80 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Finding</th>
+                <th class="px-3 py-2">Only winner</th>
+                <th class="px-3 py-2">Source</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {singleCandidateRows.map((row) => (
+                <tr>
+                  <td class="px-3 py-2">
+                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
+                      {row.finding_id.replace("finding.", "")}
+                    </a>
+                    <p class="text-[11px] text-slate-500">
+                      {gapSpecies(row)} · {gapCurve(row)}
+                    </p>
+                  </td>
+                  <td class="px-3 py-2 font-mono text-[11px]">
+                    {(row.best_variant_id ?? "").replace("model_variant.", "")}
+                  </td>
+                  <td class="px-3 py-2 text-xs text-slate-600">{gapSource(row)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="rounded-md border border-slate-200 bg-white">
+        <header class="border-b border-slate-200 px-3 py-2">
+          <h3 class="text-sm font-semibold">Proxy-backed findings</h3>
+        </header>
+        <div class="max-h-80 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Finding</th>
+                <th class="px-3 py-2">Proxy caveats</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {proxyRows.map((row) => (
+                <tr>
+                  <td class="px-3 py-2">
+                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
+                      {row.finding_id.replace("finding.", "")}
+                    </a>
+                    <p class="text-[11px] text-slate-500">
+                      {gapSpecies(row)} · {gapCurve(row)}
+                    </p>
+                  </td>
+                  <td class="px-3 py-2">
+                    <ul class="flex flex-wrap gap-1">
+                      {(row.proxy_caveat_tags ?? []).map((tag) => (
+                        <li class="rounded bg-warn-soft px-1.5 py-0.5 text-[10px] text-warn">
+                          {caveatDefinitions[tag]?.label ?? tag.replace(/_/g, " ")}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="rounded-md border border-slate-200 bg-white">
+        <header class="border-b border-slate-200 px-3 py-2">
+          <h3 class="text-sm font-semibold">Near-miss slice capabilities</h3>
+        </header>
+        <div class="max-h-80 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2">Slice</th>
+                <th class="px-3 py-2">Variant</th>
+                <th class="px-3 py-2">Missing</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {nearMissRows.map((row) => (
+                <tr>
+                  <td class="px-3 py-2">
+                    <a class="font-mono text-[11px]" href={`/slices/${slugForId(row.slice_id)}`}>
+                      {row.slice_id.replace("slice.", "")}
+                    </a>
+                    <p class="text-[11px] text-slate-500">
+                      {row.n_trials.toLocaleString()} trials · {row.n_subjects} subjects
+                    </p>
+                  </td>
+                  <td class="px-3 py-2 font-mono text-[11px]">
+                    {row.variant_id.replace("model_variant.", "")}
+                  </td>
+                  <td class="px-3 py-2 font-mono text-[11px]">
+                    {row.missing_requirements.join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="fittability" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Per-slice fittability</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Mapping from canonical-trial coverage in each slice's harmonized
+        trials.csv to the variants whose data requirements it satisfies.
+        Slices with empty fittability lack the right canonical fields
+        (RT, signed choice, click times) or need adapter fixes.
+      </p>
+    </header>
     <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -146,48 +990,44 @@ function capabilityRow(s: (typeof slice_coverage)[number]): string[] {
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200">
-          {
-            slice_coverage.map((s) => (
-              <tr>
-                <td class="px-3 py-2">
-                  <a class="font-mono text-xs" href={`/slices/${slugForId(s.slice_id)}`}>
-                    {s.slice_id}
-                  </a>
-                </td>
-                <td class="px-3 py-2 text-right font-mono">
-                  {s.n_trials.toLocaleString()}
-                </td>
-                <td class="px-3 py-2 text-right font-mono">
-                  {s.n_subjects}
-                </td>
-                <td class="px-3 py-2">
-                  <ul class="flex flex-wrap gap-1">
-                    {capabilityRow(s).map((c) => (
-                      <li class="rounded bg-ok-soft px-2 py-0.5 text-[11px] font-mono text-ok">
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                </td>
-                <td class="px-3 py-2">
-                  {(() => {
-                    const ids = (s.fittable_variant_ids ?? []) as string[];
-                    return ids.length === 0 ? (
-                      <span class="text-xs text-slate-500">—</span>
-                    ) : (
-                      <ul class="flex flex-wrap gap-1">
-                        {ids.map((vid) => (
-                          <li class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono">
-                            {vid.replace("model_variant.", "")}
-                          </li>
-                        ))}
-                      </ul>
-                    );
-                  })()}
-                </td>
-              </tr>
-            ))
-          }
+          {slice_coverage.map((s) => (
+            <tr>
+              <td class="px-3 py-2">
+                <a class="font-mono text-xs" href={`/slices/${slugForId(s.slice_id)}`}>
+                  {s.slice_id}
+                </a>
+              </td>
+              <td class="px-3 py-2 text-right font-mono">
+                {s.n_trials.toLocaleString()}
+              </td>
+              <td class="px-3 py-2 text-right font-mono">{s.n_subjects}</td>
+              <td class="px-3 py-2">
+                <ul class="flex flex-wrap gap-1">
+                  {capabilityRow(s).map((c) => (
+                    <li class="rounded bg-ok-soft px-2 py-0.5 text-[11px] font-mono text-ok">
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </td>
+              <td class="px-3 py-2">
+                {(() => {
+                  const ids = (s.fittable_variant_ids ?? []) as string[];
+                  return ids.length === 0 ? (
+                    <span class="text-xs text-slate-500">—</span>
+                  ) : (
+                    <ul class="flex flex-wrap gap-1">
+                      {ids.map((vid) => (
+                        <li class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono">
+                          {vid.replace("model_variant.", "")}
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -196,45 +1036,48 @@ function capabilityRow(s: (typeof slice_coverage)[number]): string[] {
     </p>
   </section>
 
-  {
-    fits.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-3 text-lg font-semibold">Fits</h2>
-        <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+  {fits.length > 0 ? (
+    <section id="fits" class="mb-8 scroll-mt-20">
+      <header class="mb-3">
+        <h2 class="text-xl font-semibold tracking-tight">All fits</h2>
+        <p class="mt-1 text-sm text-slate-600">
+          Raw fit list. For per-finding context, follow the finding link.
+        </p>
+      </header>
+      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-3 py-2">Fit</th>
+              <th class="px-3 py-2">Variant</th>
+              <th class="px-3 py-2">Findings</th>
+              <th class="px-3 py-2 text-right">logL</th>
+              <th class="px-3 py-2 text-right">AIC</th>
+              <th class="px-3 py-2 text-right">n_trials</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {fits.map((f) => (
               <tr>
-                <th class="px-3 py-2">Fit</th>
-                <th class="px-3 py-2">Variant</th>
-                <th class="px-3 py-2">Findings</th>
-                <th class="px-3 py-2 text-right">logL</th>
-                <th class="px-3 py-2 text-right">AIC</th>
-                <th class="px-3 py-2 text-right">n_trials</th>
+                <td class="px-3 py-2 font-mono text-xs">{f.id}</td>
+                <td class="px-3 py-2 font-mono text-xs">{f.variant_id}</td>
+                <td class="px-3 py-2 font-mono text-[11px]">
+                  {f.finding_ids.map((fid) => (
+                    <a class="mr-1" href={hrefForFinding(fid)}>{fid}</a>
+                  ))}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {f.quality?.log_likelihood ?? "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{f.quality?.aic ?? "—"}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {f.quality?.n_trials ?? "—"}
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {fits.map((f) => (
-                <tr>
-                  <td class="px-3 py-2 font-mono text-xs">{f.id}</td>
-                  <td class="px-3 py-2 font-mono text-xs">{f.variant_id}</td>
-                  <td class="px-3 py-2 font-mono text-[11px]">
-                    {f.finding_ids.join(", ")}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {f.quality?.log_likelihood ?? "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {f.quality?.aic ?? "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {f.quality?.n_trials ?? "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    ) : null
-  }
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ) : null}
 </BaseLayout>

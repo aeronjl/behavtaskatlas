@@ -1,0 +1,56 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-constant-rt.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+variant_id: model_variant.chronometric-constant-rt
+finding_ids:
+- finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+parameters:
+  rt_level: 0.24239806324110674
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -0.599022242965834
+  aic: 3.1980444859316677
+  bic: 2.807482398365768
+  n_trials: 25300.0
+  n_points: 5.0
+  n_free_params: 1.0
+  chronometric_max_residual_s: 0.0006019367588932512
+  rt_sigma_assumed_s: 0.001
+predictions:
+  curve_type: chronometric
+  x_label: Motion strength
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 3.2
+    n: 5091
+    y: 0.24239806324110674
+  - x: 6.4
+    n: 5077
+    y: 0.24239806324110674
+  - x: 12.8
+    n: 4980
+    y: 0.24239806324110674
+  - x: 25.6
+    n: 5071
+    y: 0.24239806324110674
+  - x: 51.2
+    n: 5081
+    y: 0.24239806324110674
+fit_method:
+  type: manual
+  options:
+    estimator: weighted mean median RT
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.0001709461212158203
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.chronometric-constant-rt;
+    success=True; closed-form weighted constant RT estimate

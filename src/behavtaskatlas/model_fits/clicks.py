@@ -35,7 +35,17 @@ from scipy.stats import norm
 from behavtaskatlas.model_layer import register_forward
 from behavtaskatlas.models import CurvePoint, Finding
 
-VARIANT_ID = "model_variant.click-leaky-accumulator"
+VARIANT_LEAKY_ID = "model_variant.click-leaky-accumulator"
+VARIANT_COUNT_LOGISTIC_ID = "model_variant.click-count-logistic"
+VARIANT_CHOICE_RATE_NULL_ID = "model_variant.click-choice-rate-null"
+VARIANT_ID = VARIANT_LEAKY_ID
+CLICK_SUMMARY_VARIANT_IDS = frozenset(
+    {
+        VARIANT_LEAKY_ID,
+        VARIANT_COUNT_LOGISTIC_ID,
+        VARIANT_CHOICE_RATE_NULL_ID,
+    }
+)
 PARAM_ORDER = (
     "input_gain",
     "leak",
@@ -44,6 +54,8 @@ PARAM_ORDER = (
     "bias",
     "lapse",
 )
+COUNT_LOGISTIC_PARAM_ORDER = ("sensitivity", "bias", "lapse")
+CHOICE_RATE_NULL_PARAM_ORDER = ("response_rate",)
 SLICE_TRIALS_PATH = Path("derived/auditory_clicks/trials.csv")
 
 
@@ -74,10 +86,12 @@ def _load_clicks(
             stim_values[i] = float(row.get("stimulus_value", "nan"))
         except ValueError:
             stim_values[i] = float("nan")
-        choices[i] = 1 if row.get("choice") == "right" else 0
+        choices[i] = 1 if (row.get("choice") or "").strip() == "right" else 0
         tv = json.loads(row.get("task_variables_json") or "{}")
         rt = np.asarray(tv.get("right_click_times", []), dtype=float)
         lt = np.asarray(tv.get("left_click_times", []), dtype=float)
+        if not np.isfinite(stim_values[i]):
+            stim_values[i] = float(rt.size - lt.size)
         right_times.append(rt)
         left_times.append(lt)
         T = float(tv.get("stimulus_duration") or 0.0)
@@ -142,6 +156,29 @@ def predict_p_right_per_trial(
     return lapse / 2.0 + (1.0 - lapse) * base
 
 
+def _logistic_cdf(z: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-np.clip(z, -700.0, 700.0)))
+
+
+def predict_count_logistic(
+    params: dict[str, float], signed_click_difference: np.ndarray
+) -> np.ndarray:
+    sensitivity = float(params["sensitivity"])
+    bias = float(params["bias"])
+    lapse = float(np.clip(params["lapse"], 0.0, 0.5))
+    if sensitivity <= 0:
+        return np.full_like(signed_click_difference, 0.5, dtype=float)
+    base = _logistic_cdf(sensitivity * (signed_click_difference - bias))
+    return lapse / 2.0 + (1.0 - lapse) * base
+
+
+def predict_choice_rate_null(
+    params: dict[str, float], xs: np.ndarray
+) -> np.ndarray:
+    response_rate = float(np.clip(params["response_rate"], 1e-9, 1.0 - 1e-9))
+    return np.full_like(xs, response_rate, dtype=float)
+
+
 def _aggregate_to_curve(
     finding_xs: np.ndarray,
     stim_values: np.ndarray,
@@ -184,6 +221,38 @@ def forward(params: dict[str, float], finding: Finding) -> list[CurvePoint]:
     return _aggregate_to_curve(
         finding_xs, data["stimulus_values"], p_trial, np.array([p.n for p in finding.curve.points])
     )
+
+
+def forward_count_logistic(
+    params: dict[str, float], finding: Finding
+) -> list[CurvePoint]:
+    subject_id = finding.stratification.subject_id
+    data = _load_cached(subject_id)
+    if data is None or data["n_trials"] == 0:
+        return [CurvePoint(x=p.x, n=p.n, y=0.5) for p in finding.curve.points]
+    signed_click_difference = np.asarray(data["stimulus_values"], dtype=float)
+    mask = np.isfinite(signed_click_difference)
+    if not np.any(mask):
+        return [CurvePoint(x=p.x, n=p.n, y=0.5) for p in finding.curve.points]
+    p_trial = predict_count_logistic(params, signed_click_difference[mask])
+    finding_xs = np.array([p.x for p in finding.curve.points])
+    return _aggregate_to_curve(
+        finding_xs,
+        signed_click_difference[mask],
+        p_trial,
+        np.array([p.n for p in finding.curve.points]),
+    )
+
+
+def forward_choice_rate_null(
+    params: dict[str, float], finding: Finding
+) -> list[CurvePoint]:
+    xs = np.array([p.x for p in finding.curve.points])
+    ys = predict_choice_rate_null(params, xs)
+    return [
+        CurvePoint(x=p.x, n=p.n, y=float(y))
+        for p, y in zip(finding.curve.points, ys, strict=True)
+    ]
 
 
 def fit(finding: Finding) -> dict[str, Any]:
@@ -273,4 +342,146 @@ def fit(finding: Finding) -> dict[str, Any]:
     }
 
 
-register_forward(VARIANT_ID, forward)
+def fit_count_logistic(finding: Finding) -> dict[str, Any]:
+    subject_id = finding.stratification.subject_id
+    if subject_id is None:
+        raise ValueError(
+            "Click-count logistic fits currently anchor on per-subject "
+            "psychometric findings."
+        )
+    data = _load_cached(subject_id)
+    if data is None or data["n_trials"] == 0:
+        raise ValueError(
+            f"No click trials found for subject_id={subject_id!r} at "
+            f"{SLICE_TRIALS_PATH}; run clicks-aggregate-trials first."
+        )
+
+    signed_click_difference = np.asarray(data["stimulus_values"], dtype=float)
+    mask = np.isfinite(signed_click_difference)
+    if not np.any(mask):
+        raise ValueError(
+            f"No finite signed click-count differences found for {subject_id!r}."
+        )
+    xs = signed_click_difference[mask]
+    choices = data["choices"].astype(float)[mask]
+
+    def _objective(theta: np.ndarray) -> float:
+        params = dict(zip(COUNT_LOGISTIC_PARAM_ORDER, theta, strict=True))
+        if params["sensitivity"] <= 0:
+            return 1e9
+        if params["lapse"] < 0 or params["lapse"] > 0.5:
+            return 1e9
+        p = predict_count_logistic(params, xs)
+        p = np.clip(p, 1e-9, 1.0 - 1e-9)
+        return float(-np.sum(choices * np.log(p) + (1.0 - choices) * np.log(1.0 - p)))
+
+    x_min = float(xs.min())
+    x_max = float(xs.max())
+    x_range = max(x_max - x_min, 1e-6)
+    x0 = np.array([4.0 / x_range, 0.0, 0.05])
+    bounds = [
+        (1e-6, 100.0 / x_range),  # sensitivity per click
+        (x_min - 1.0, x_max + 1.0),  # bias in right-minus-left clicks
+        (0.0, 0.5),  # lapse
+    ]
+    result = minimize(
+        _objective,
+        x0,
+        method="L-BFGS-B",
+        bounds=bounds,
+        options={"maxiter": 500},
+    )
+    parameters = dict(
+        zip(COUNT_LOGISTIC_PARAM_ORDER, [float(v) for v in result.x], strict=True)
+    )
+    log_likelihood = float(-result.fun)
+    n_trials = int(xs.size)
+    n_free = len(COUNT_LOGISTIC_PARAM_ORDER)
+    aic = float(2 * n_free - 2 * log_likelihood)
+    bic = float(n_free * np.log(max(n_trials, 1)) - 2 * log_likelihood)
+    p_per_trial = predict_count_logistic(parameters, xs)
+    finding_xs = np.array([p.x for p in finding.curve.points])
+    curve = _aggregate_to_curve(
+        finding_xs,
+        xs,
+        p_per_trial,
+        np.array([p.n for p in finding.curve.points]),
+    )
+    predictions = [{"x": float(p.x), "n": int(p.n), "y": float(p.y)} for p in curve]
+    return {
+        "parameters": parameters,
+        "quality": {
+            "log_likelihood": log_likelihood,
+            "aic": aic,
+            "bic": bic,
+            "n_trials": float(n_trials),
+            "n_free_params": float(n_free),
+        },
+        "predictions": predictions,
+        "fit_method": {
+            "type": "scipy.optimize.minimize",
+            "options": {
+                "method": "L-BFGS-B",
+                "loss": "per-trial Bernoulli NLL over signed click-count difference",
+            },
+            "duration_seconds": None,
+        },
+        "success": bool(result.success),
+        "message": str(getattr(result, "message", "")),
+    }
+
+
+def fit_choice_rate_null(finding: Finding) -> dict[str, Any]:
+    subject_id = finding.stratification.subject_id
+    if subject_id is None:
+        raise ValueError(
+            "Click choice-rate null fits currently anchor on per-subject "
+            "psychometric findings."
+        )
+    data = _load_cached(subject_id)
+    if data is None or data["n_trials"] == 0:
+        raise ValueError(
+            f"No click trials found for subject_id={subject_id!r} at "
+            f"{SLICE_TRIALS_PATH}; run clicks-aggregate-trials first."
+        )
+
+    choices = data["choices"].astype(float)
+    n_trials = int(choices.size)
+    if n_trials <= 0:
+        raise ValueError("Click choice-rate null requires at least one trial.")
+    response_rate = float(np.clip(choices.mean(), 1e-9, 1.0 - 1e-9))
+    p = np.full_like(choices, response_rate, dtype=float)
+    log_likelihood = float(
+        np.sum(choices * np.log(p) + (1.0 - choices) * np.log(1.0 - p))
+    )
+    n_free = len(CHOICE_RATE_NULL_PARAM_ORDER)
+    aic = float(2 * n_free - 2 * log_likelihood)
+    bic = float(n_free * np.log(max(n_trials, 1)) - 2 * log_likelihood)
+    xs = np.array([p.x for p in finding.curve.points])
+    predictions = [
+        {"x": float(x), "n": int(point.n), "y": response_rate}
+        for x, point in zip(xs, finding.curve.points, strict=True)
+    ]
+    return {
+        "parameters": {"response_rate": response_rate},
+        "quality": {
+            "log_likelihood": log_likelihood,
+            "aic": aic,
+            "bic": bic,
+            "n_trials": float(n_trials),
+            "n_free_params": float(n_free),
+        },
+        "predictions": predictions,
+        "fit_method": {
+            "type": "manual",
+            "options": {"estimator": "per-subject Bernoulli maximum likelihood"},
+            "duration_seconds": None,
+        },
+        "success": True,
+        "message": "closed-form per-subject Bernoulli MLE",
+    }
+
+
+register_forward(VARIANT_LEAKY_ID, forward)
+register_forward(VARIANT_COUNT_LOGISTIC_ID, forward_count_logistic)
+register_forward(VARIANT_CHOICE_RATE_NULL_ID, forward_choice_rate_null)

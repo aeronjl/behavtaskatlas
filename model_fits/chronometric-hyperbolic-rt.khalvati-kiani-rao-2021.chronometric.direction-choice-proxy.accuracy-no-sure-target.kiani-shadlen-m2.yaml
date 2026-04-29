@@ -1,0 +1,59 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chronometric-hyperbolic-rt.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+variant_id: model_variant.chronometric-hyperbolic-rt
+finding_ids:
+- finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+parameters:
+  rt_floor: 0.24176073928917027
+  rt_span: 0.0012742379067844233
+  half_saturation_strength: 12.799992464009135
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -0.4069191118196758
+  aic: 6.813838223639352
+  bic: 5.642151960941653
+  n_trials: 25300.0
+  n_points: 5.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.0006102310603139094
+  rt_sigma_assumed_s: 0.001
+predictions:
+  curve_type: chronometric
+  x_label: Motion strength
+  x_units: percent
+  y_label: median_rt_s
+  points:
+  - x: 3.2
+    n: 5091
+    y: 0.24278012949456468
+  - x: 6.4
+    n: 5077
+    y: 0.2426102310603139
+  - x: 12.8
+    n: 4980
+    y: 0.24239785805501077
+  - x: 25.6
+    n: 5071
+    y: 0.2421854850913858
+  - x: 51.2
+    n: 5081
+    y: 0.2420155867504941
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: weighted Gaussian summary chi-squared
+  duration_seconds: 0.00098419189453125
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.chronometric-hyperbolic-rt;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

@@ -1,0 +1,58 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.chance-floor-accuracy-logistic.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m1
+variant_id: model_variant.chance-floor-accuracy-logistic
+finding_ids:
+- finding.khalvati-kiani-rao-2021.accuracy.accuracy-sure-available-direction-chosen.m1
+parameters:
+  threshold_strength: 7.677461214049774
+  slope_log2: 0.7070904827082919
+  lapse: 0.0
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -8291.174100755723
+  aic: 16588.348201511446
+  bic: 16612.427042234816
+  n_trials: 22613.0
+  n_free_params: 3.0
+predictions:
+  curve_type: accuracy_by_strength
+  x_label: Motion strength
+  x_units: percent
+  y_label: p_correct
+  points:
+  - x: 1.6
+    n: 2834
+    y: 0.5195863777442632
+  - x: 3.2
+    n: 3011
+    y: 0.5718085429076853
+  - x: 6.4
+    n: 3075
+    y: 0.7041109524486184
+  - x: 12.8
+    n: 3567
+    y: 0.8697070295185836
+  - x: 25.6
+    n: 4664
+    y: 0.9605421549831126
+  - x: 51.2
+    n: 5462
+    y: 0.9897980837917728
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.001397848129272461
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.chance-floor-accuracy-logistic;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

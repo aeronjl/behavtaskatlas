@@ -9,6 +9,29 @@ source_subjects:
   - M1
   - M2
 source_row_count: 174160
+raw_behavior_intake:
+  status: waiting_on_author_request
+  raw_dir: data/raw/macaque_rdm_confidence_khalvati/raw_behavior
+  redistribution_status_file: data/raw/macaque_rdm_confidence_khalvati/raw_behavior/redistribution_status.yaml
+  requested_files:
+    - beh_data.monkey1.mat
+    - beh_data.monkey2.mat
+  source_code_contract:
+    repository: https://github.com/koosha66/POMDP-Confidence
+    fit_reference: fit.py calls Trial.readFile('beh_data.monkey' + str(monkey)+ '.mat')
+    trial_reader: trial.py reads scipy.io.loadmat(file)['data'][0]
+    positional_fields:
+      - position: 1
+        field: coherence
+      - position: 2
+        field: duration
+      - position: 3
+        field: correct_target
+      - position: 4
+        field: choice_target
+      - position: 5
+        field: sure_shown
+  preflight_command: uv run behavtaskatlas macaque-rdm-confidence-intake-check
 source_rows_excluded_before_pairing:
   - 5066 zero-strength white-dot accuracy rows are dropped before pairing strength and duration because the duration source table omits zero-strength accuracy rows.
 source_tables:
@@ -59,17 +82,22 @@ canonical_mapping:
   session_id: Fixed processed source-data id `khalvati-kiani-rao-natcomm2021-source-data`.
   trial_index: Global row index across paired source-data CSVs.
   stimulus_value: Absolute motion strength percentage; signed direction is unavailable.
-  stimulus_side: Unknown for nonzero motion strengths; none for zero-strength rows.
+  stimulus_side: Right for source rows with target-coded direction-choice proxy; unknown for sure-target-only rows; none for zero-strength rows.
   evidence_strength: Absolute motion strength percentage.
-  choice: Unknown because direction choice and sure-target responses cannot be represented as left/right choices from these CSVs.
+  choice: For source rows with `Correct`, right means reported correct direction choice and left means reported incorrect direction choice under a target-coded proxy; unknown for sure-target-only rows.
   correct: Source `Correct` mapped to boolean for accuracy rows; empty for sure-target choice rows.
-  response_time: Empty because source duration is stimulus duration, not response time.
+  response_time: Source motion duration converted from milliseconds to seconds as a stimulus-duration proxy, not raw saccade latency.
   prior_context: Source measure name.
   task_variables.motion_duration_ms: Source `Motion duration (msc)` value.
+  task_variables.direction_choice_proxy: Whether canonical left/right choice is a target-coded correctness proxy.
+  task_variables.response_time_is_motion_duration_proxy: Always true for this source-row table.
   task_variables.sure_target_available: Whether the source measure came from sure-target trials.
   task_variables.sure_target_chosen: Source `Sure target` mapped to boolean where available.
   task_variables.source_measure: Source-data table type used for grouping.
 source_notes:
   - The source-data ZIP is sufficient for figure-level accuracy and sure-target summaries but not for reconstructing signed direction choice.
+  - The public POMDP-Confidence code references `beh_data.monkey1.mat` and `beh_data.monkey2.mat`, but those raw behavioral MATLAB files are not included in the public code archive or Nature source-data ZIP.
+  - The article data-availability statement says the analyzed data are available from R.K. upon reasonable request.
   - `Motion duration (msc)` is preserved as written in the source header and interpreted as milliseconds.
+  - Target-coded choice and motion-duration response_time are modeling conveniences for baseline psychometric/DDM fits; they should not be interpreted as recovered raw direction or saccade latency.
   - The canonical CSV generated for this slice should be read as a source-row table, not a unique raw-trial table.

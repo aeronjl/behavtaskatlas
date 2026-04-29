@@ -1,0 +1,30 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.click-count-logistic
+family_id: model_family.click-summary-choice
+name: Signed click-count logistic
+description: >
+  Three-parameter click-summary baseline with P(right) defined by a
+  logistic function of signed right-minus-left click count plus a lapse
+  mixture. It uses per-subject click-task trials but ignores click timing,
+  so it is a same-scope comparator for timing-sensitive click accumulators.
+free_parameters:
+  - sensitivity
+  - bias
+  - lapse
+fixed_parameters: {}
+requires:
+  - choice_lr
+  - click_times
+  - subject_id
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Introduced as a Brunton 2013 model-selection baseline after the
+    roadmap highlighted click-summary accumulator winners without
+    same-scope comparators.

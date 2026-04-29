@@ -61,6 +61,7 @@ from behavtaskatlas.findings import (
     extract_accuracy_findings_for_slice,
     extract_chronometric_findings_for_slice,
     extract_psychometric_findings_for_slice,
+    extract_subject_chronometric_findings_for_slice,
     extract_subject_condition_psychometric_findings_for_slice,
     extract_subject_psychometric_findings_for_slice,
     import_csv_findings,
@@ -104,6 +105,7 @@ from behavtaskatlas.rdm import (
     DEFAULT_HUMAN_RDM_RAW_DIR,
     DEFAULT_HUMAN_RDM_SESSION_ID,
     DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR,
+    DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR,
     DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_ZIP,
     DEFAULT_MACAQUE_RDM_CONFIDENCE_SESSION_ID,
     DEFAULT_RDM_DERIVED_DIR,
@@ -115,11 +117,14 @@ from behavtaskatlas.rdm import (
     analyze_human_rdm,
     analyze_macaque_rdm_confidence,
     analyze_roitman_rdm,
+    check_macaque_rdm_confidence_raw_behavior_intake,
     download_human_rdm_phs_files,
     download_macaque_rdm_confidence_source_data,
     download_roitman_rdm_csv,
+    format_macaque_rdm_confidence_raw_behavior_intake_report,
     human_rdm_provenance_payload,
     load_human_rdm_phs_mats,
+    load_macaque_rdm_confidence_raw_behavior_mats,
     load_macaque_rdm_confidence_source_data,
     load_roitman_rdm_csv,
     macaque_rdm_confidence_provenance_payload,
@@ -872,6 +877,29 @@ def main(argv: list[str] | None = None) -> int:
         help="Local output path under ignored raw-data storage",
     )
 
+    macaque_confidence_intake_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-intake-check",
+        help="Preflight requested Khalvati raw behavioral MATLAB files",
+    )
+    macaque_confidence_intake_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR),
+        help="Directory containing beh_data.monkey1.mat and beh_data.monkey2.mat",
+    )
+    macaque_confidence_intake_parser.add_argument(
+        "--redistribution-status",
+        default=None,
+        help=(
+            "Optional YAML file recording raw/derived redistribution terms "
+            "(default: <raw-dir>/redistribution_status.yaml)"
+        ),
+    )
+    macaque_confidence_intake_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional JSON report output path",
+    )
+
     macaque_confidence_parser = subparsers.add_parser(
         "macaque-rdm-confidence-harmonize",
         help="Harmonize macaque RDM confidence source-data rows",
@@ -896,6 +924,40 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=None,
         help="Optional source-row limit",
+    )
+
+    macaque_confidence_raw_parser = subparsers.add_parser(
+        "macaque-rdm-confidence-raw-harmonize",
+        help="Placeholder harmonizer for requested Khalvati raw behavioral MATLAB files",
+    )
+    macaque_confidence_raw_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_RAW_BEHAVIOR_DIR),
+        help="Directory containing beh_data.monkey1.mat and beh_data.monkey2.mat",
+    )
+    macaque_confidence_raw_parser.add_argument(
+        "--redistribution-status",
+        default=None,
+        help=(
+            "Optional YAML file recording raw/derived redistribution terms "
+            "(default: <raw-dir>/redistribution_status.yaml)"
+        ),
+    )
+    macaque_confidence_raw_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_MACAQUE_RDM_CONFIDENCE_DERIVED_DIR),
+        help="Directory for future raw-trial macaque confidence artifacts",
+    )
+    macaque_confidence_raw_parser.add_argument(
+        "--session-id",
+        default="khalvati-kiani-rao-raw-behavior",
+        help="Session directory name for future raw-trial outputs",
+    )
+    macaque_confidence_raw_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional raw-trial limit for future importer implementation",
     )
 
     macaque_confidence_analyze_parser = subparsers.add_parser(
@@ -1058,17 +1120,27 @@ def main(argv: list[str] | None = None) -> int:
         "--by-subject",
         action="store_true",
         help=(
-            "For psychometric only: read trials.csv and emit one finding "
-            "per subject_id rather than the pooled summary."
+            "For psychometric or chronometric curves: read trials.csv and emit "
+            "one finding per subject_id rather than the pooled summary."
         ),
     )
     extract_finding_parser.add_argument(
         "--by-subject-condition",
         default=None,
         help=(
-            "For psychometric only: read trials.csv and emit one finding "
-            "per (subject_id × <column>) cell. Pass the trials column to "
-            "stratify on, typically `prior_context`. Implies --by-subject."
+            "For psychometric or chronometric curves: read trials.csv and emit "
+            "one finding per (subject_id × <column>) cell. Pass the trials "
+            "column to stratify on, typically `prior_context`. Implies "
+            "--by-subject."
+        ),
+    )
+    extract_finding_parser.add_argument(
+        "--condition-value",
+        action="append",
+        default=None,
+        help=(
+            "Optional value filter for --by-subject-condition. May be passed "
+            "multiple times."
         ),
     )
     extract_finding_parser.add_argument(
@@ -1135,6 +1207,144 @@ def main(argv: list[str] | None = None) -> int:
         "--curation-queue-json-file",
         default=None,
         help="Optional curation queue JSON output path",
+    )
+
+    data_request_export_parser = subparsers.add_parser(
+        "data-request-export",
+        help="Render ready-to-send Markdown packets for tracked external data requests",
+    )
+    data_request_export_parser.add_argument(
+        "request_id",
+        nargs="?",
+        default=None,
+        help=(
+            "Optional request id or slug to export. If omitted, all data "
+            "requests are exported."
+        ),
+    )
+    data_request_export_parser.add_argument(
+        "--root",
+        default=".",
+        help="Repository root containing data_request records",
+    )
+    data_request_export_parser.add_argument(
+        "--out-dir",
+        default="derived/data_requests",
+        help="Output directory for Markdown request packets",
+    )
+    data_request_export_parser.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Print a single request packet instead of writing files",
+    )
+
+    data_request_queue_parser = subparsers.add_parser(
+        "data-request-queue",
+        help="Print the operational queue for tracked external data requests",
+    )
+    data_request_queue_parser.add_argument(
+        "--root",
+        default=".",
+        help="Repository root containing data_request records",
+    )
+    data_request_queue_parser.add_argument(
+        "--today",
+        default=None,
+        help="Queue date in YYYY-MM-DD form; defaults to today",
+    )
+    data_request_queue_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the queue payload as JSON",
+    )
+    data_request_queue_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional JSON queue output path",
+    )
+
+    data_request_event_parser = subparsers.add_parser(
+        "data-request-event",
+        help="Append a workflow event to a tracked external data request",
+    )
+    data_request_event_parser.add_argument(
+        "request_id",
+        help="Data request id or slug",
+    )
+    data_request_event_parser.add_argument(
+        "--event-type",
+        required=True,
+        choices=[
+            "drafted",
+            "sent",
+            "follow_up_due",
+            "followed_up",
+            "received",
+            "declined",
+            "license_confirmed",
+            "closed",
+            "note",
+        ],
+        help="Workflow event type to append",
+    )
+    data_request_event_parser.add_argument(
+        "--event-date",
+        default=None,
+        help="Event date in YYYY-MM-DD form; defaults to today",
+    )
+    data_request_event_parser.add_argument(
+        "--actor",
+        required=True,
+        help="Person or process recording the event",
+    )
+    data_request_event_parser.add_argument(
+        "--notes",
+        required=True,
+        help="Short evidence-backed event note",
+    )
+    data_request_event_parser.add_argument(
+        "--status",
+        choices=[
+            "draft",
+            "ready_to_send",
+            "requested",
+            "fulfilled",
+            "declined",
+            "blocked",
+            "closed",
+        ],
+        default=None,
+        help="Optional data_request status to set after appending the event",
+    )
+    data_request_event_parser.add_argument(
+        "--evidence-url",
+        default=None,
+        help="Optional URL proving the event occurred",
+    )
+    data_request_event_parser.add_argument(
+        "--evidence-path",
+        default=None,
+        help="Optional local evidence path to record on the event",
+    )
+    data_request_event_parser.add_argument(
+        "--next-follow-up-date",
+        default=None,
+        help="Optional follow-up date in YYYY-MM-DD form",
+    )
+    data_request_event_parser.add_argument(
+        "--create-evidence-stub",
+        action="store_true",
+        help="Create a local Markdown evidence stub from the request draft",
+    )
+    data_request_event_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing evidence stub",
+    )
+    data_request_event_parser.add_argument(
+        "--root",
+        default=".",
+        help="Repository root containing data_request records",
     )
 
     audit_findings_parser = subparsers.add_parser(
@@ -1460,9 +1670,27 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "macaque-rdm-confidence-download":
         return _macaque_rdm_confidence_download(out_file=Path(args.out_file))
+    if args.command == "macaque-rdm-confidence-intake-check":
+        return _macaque_rdm_confidence_intake_check(
+            raw_dir=Path(args.raw_dir),
+            redistribution_status=(
+                Path(args.redistribution_status) if args.redistribution_status else None
+            ),
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
     if args.command == "macaque-rdm-confidence-harmonize":
         return _macaque_rdm_confidence_harmonize(
             source_zip=Path(args.source_zip),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+        )
+    if args.command == "macaque-rdm-confidence-raw-harmonize":
+        return _macaque_rdm_confidence_raw_harmonize(
+            raw_dir=Path(args.raw_dir),
+            redistribution_status=(
+                Path(args.redistribution_status) if args.redistribution_status else None
+            ),
             out_dir=Path(args.out_dir),
             session_id=args.session_id,
             limit=args.limit,
@@ -1515,6 +1743,9 @@ def main(argv: list[str] | None = None) -> int:
             curve_type=args.curve_type,
             by_subject=bool(args.by_subject),
             by_subject_condition=args.by_subject_condition,
+            condition_values=(
+                tuple(args.condition_value) if args.condition_value else None
+            ),
             x_label=args.x_label,
             x_units=args.x_units,
             derived_dir=Path(args.derived_dir),
@@ -1535,6 +1766,35 @@ def main(argv: list[str] | None = None) -> int:
             curation_queue_json_file=Path(args.curation_queue_json_file)
             if args.curation_queue_json_file
             else None,
+        )
+    if args.command == "data-request-export":
+        return _data_request_export(
+            request_id=args.request_id,
+            root=Path(args.root),
+            out_dir=Path(args.out_dir),
+            stdout=bool(args.stdout),
+        )
+    if args.command == "data-request-queue":
+        return _data_request_queue(
+            root=Path(args.root),
+            today=args.today,
+            json_output=bool(args.json),
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "data-request-event":
+        return _data_request_event(
+            request_id=args.request_id,
+            root=Path(args.root),
+            event_type=args.event_type,
+            event_date=args.event_date,
+            actor=args.actor,
+            notes=args.notes,
+            status=args.status,
+            evidence_url=args.evidence_url,
+            evidence_path=Path(args.evidence_path) if args.evidence_path else None,
+            next_follow_up_date=args.next_follow_up_date,
+            create_evidence_stub=bool(args.create_evidence_stub),
+            force=bool(args.force),
         )
     if args.command == "release-check":
         return _release_check(
@@ -2796,6 +3056,27 @@ def _macaque_rdm_confidence_download(*, out_file: Path) -> int:
     return 0
 
 
+def _macaque_rdm_confidence_intake_check(
+    *,
+    raw_dir: Path,
+    redistribution_status: Path | None,
+    out_file: Path | None,
+) -> int:
+    report = check_macaque_rdm_confidence_raw_behavior_intake(
+        raw_dir,
+        redistribution_status_file=redistribution_status,
+    )
+    if out_file is not None:
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(
+            json.dumps(report, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote intake report to {out_file}")
+    print(format_macaque_rdm_confidence_raw_behavior_intake_report(report))
+    return 0 if report["overall_status"] == "ready" else 2
+
+
 def _macaque_rdm_confidence_harmonize(
     *,
     source_zip: Path,
@@ -2836,6 +3117,32 @@ def _macaque_rdm_confidence_harmonize(
     print(f"Wrote {len(trials)} source rows to {trials_path}")
     print(f"Wrote {len(summary)} generic summary rows to {summary_path}")
     print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _macaque_rdm_confidence_raw_harmonize(
+    *,
+    raw_dir: Path,
+    redistribution_status: Path | None,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+) -> int:
+    try:
+        load_macaque_rdm_confidence_raw_behavior_mats(
+            raw_dir,
+            redistribution_status_file=redistribution_status,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (FileNotFoundError, NotImplementedError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        print(
+            "No raw-trial files were written. Future outputs will be rooted at "
+            f"{out_dir / session_id}.",
+            file=sys.stderr,
+        )
+        return 2
     return 0
 
 
@@ -3023,6 +3330,7 @@ def _extract_finding(
     curve_type: str,
     by_subject: bool = False,
     by_subject_condition: str | None = None,
+    condition_values: tuple[str, ...] | None = None,
     x_label: str | None,
     x_units: str | None,
     derived_dir: Path,
@@ -3043,10 +3351,16 @@ def _extract_finding(
         return 2
 
     by_subject_active = by_subject or by_subject_condition is not None
-    if by_subject_active and curve_type != "psychometric":
+    if by_subject_active and curve_type not in {"psychometric", "chronometric"}:
         print(
             f"--by-subject / --by-subject-condition is only supported for "
-            f"curve_type=psychometric; got {curve_type!r}.",
+            f"curve_type=psychometric or chronometric; got {curve_type!r}.",
+            file=sys.stderr,
+        )
+        return 2
+    if condition_values is not None and by_subject_condition is None:
+        print(
+            "--condition-value requires --by-subject-condition.",
             file=sys.stderr,
         )
         return 2
@@ -3069,6 +3383,7 @@ def _extract_finding(
                 findings = extract_subject_condition_psychometric_findings_for_slice(
                     slice_record,
                     condition_column=by_subject_condition,
+                    condition_values=condition_values,
                     **extractor_kwargs,
                 )
             elif by_subject:
@@ -3080,9 +3395,21 @@ def _extract_finding(
                     slice_record, **extractor_kwargs
                 )
         elif curve_type == "chronometric":
-            findings = extract_chronometric_findings_for_slice(
-                slice_record, **extractor_kwargs
-            )
+            if by_subject_condition is not None:
+                findings = extract_subject_chronometric_findings_for_slice(
+                    slice_record,
+                    condition_column=by_subject_condition,
+                    condition_values=condition_values,
+                    **extractor_kwargs,
+                )
+            elif by_subject:
+                findings = extract_subject_chronometric_findings_for_slice(
+                    slice_record, **extractor_kwargs
+                )
+            else:
+                findings = extract_chronometric_findings_for_slice(
+                    slice_record, **extractor_kwargs
+                )
         elif curve_type == "accuracy_by_strength":
             findings = extract_accuracy_findings_for_slice(
                 slice_record, **extractor_kwargs
@@ -3177,6 +3504,218 @@ def _import_supplement(
     return 0
 
 
+def _data_request_export(
+    *,
+    request_id: str | None,
+    root: Path,
+    out_dir: Path,
+    stdout: bool,
+) -> int:
+    from behavtaskatlas.data_requests import (
+        data_request_slug,
+        render_data_request_markdown,
+        write_data_request_markdown_exports,
+    )
+    from behavtaskatlas.models import DataRequest, Dataset, Paper
+
+    records = load_repository_records(root)
+    requests = [record for record in records if isinstance(record, DataRequest)]
+    datasets = [record for record in records if isinstance(record, Dataset)]
+    papers = [record for record in records if isinstance(record, Paper)]
+    if request_id:
+        requests = [
+            request
+            for request in requests
+            if request.id == request_id or data_request_slug(request.id) == request_id
+        ]
+        if not requests:
+            print(f"No data request matched {request_id!r}", file=sys.stderr)
+            return 2
+
+    if stdout:
+        if len(requests) != 1:
+            print(
+                "--stdout requires exactly one selected data request",
+                file=sys.stderr,
+            )
+            return 2
+        print(render_data_request_markdown(requests[0], datasets=datasets, papers=papers))
+        return 0
+
+    written = write_data_request_markdown_exports(
+        requests=requests,
+        datasets=datasets,
+        papers=papers,
+        out_dir=out_dir,
+    )
+    if not written:
+        print("No data requests to export", file=sys.stderr)
+        return 2
+
+    print(f"Wrote {len(written)} data request export(s) to {out_dir}")
+    for path in written:
+        print(f"  {path}")
+    return 0
+
+
+def _data_request_event(
+    *,
+    request_id: str,
+    root: Path,
+    event_type: str,
+    event_date: str | None,
+    actor: str,
+    notes: str,
+    status: str | None,
+    evidence_url: str | None,
+    evidence_path: Path | None,
+    next_follow_up_date: str | None,
+    create_evidence_stub: bool,
+    force: bool,
+) -> int:
+    from behavtaskatlas.data_requests import append_data_request_event
+
+    try:
+        parsed_event_date = _parse_iso_date(
+            event_date,
+            field="event-date",
+            default=date.today(),
+        )
+        parsed_follow_up_date = (
+            _parse_iso_date(next_follow_up_date, field="next-follow-up-date")
+            if next_follow_up_date
+            else None
+        )
+        result = append_data_request_event(
+            root=root,
+            request_id=request_id,
+            event_type=event_type,
+            event_date=parsed_event_date,
+            actor=actor,
+            notes=notes,
+            status=status,
+            evidence_url=evidence_url,
+            evidence_path=evidence_path,
+            next_follow_up_date=parsed_follow_up_date,
+            create_evidence_stub=create_evidence_stub,
+            force=force,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    print(
+        f"Updated {result['request_id']}: "
+        f"{result['previous_status']} -> {result['status']}"
+    )
+    print(f"Appended {event_type} event to {result['path']}")
+    if result.get("evidence_stub_path"):
+        print(f"Wrote evidence stub to {result['evidence_stub_path']}")
+    return 0
+
+
+def _data_request_queue(
+    *,
+    root: Path,
+    today: str | None,
+    json_output: bool,
+    out_file: Path | None,
+) -> int:
+    from behavtaskatlas.data_requests import build_data_requests_index
+    from behavtaskatlas.models import DataRequest, Dataset, Paper
+
+    try:
+        queue_date = _parse_iso_date(today, field="today", default=date.today())
+        records = load_repository_records(root)
+        payload = build_data_requests_index(
+            requests=[record for record in records if isinstance(record, DataRequest)],
+            datasets=[record for record in records if isinstance(record, Dataset)],
+            papers=[record for record in records if isinstance(record, Paper)],
+            today=queue_date,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    if out_file is not None:
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(
+            json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote data request queue to {out_file}")
+
+    if json_output:
+        print(json.dumps(payload, indent=2, sort_keys=True, default=str))
+    else:
+        print(_format_data_request_queue(payload))
+    return 0
+
+
+def _format_data_request_queue(payload: dict[str, Any]) -> str:
+    rows = list(payload.get("requests", []))
+    lines = [
+        f"Data request queue: {len(rows)} request(s)",
+        "Action states: "
+        + ", ".join(
+            f"{state}={count}"
+            for state, count in sorted(payload.get("action_state_counts", {}).items())
+        ),
+    ]
+    if not rows:
+        return "\n".join(lines)
+    for row in sorted(
+        rows,
+        key=lambda item: (
+            _data_request_action_sort_key(str(item.get("action_state") or "")),
+            str(item.get("priority") or ""),
+            str(item.get("request_id") or ""),
+        ),
+    ):
+        lines.extend(
+            [
+                "",
+                f"- {row['request_id']} [{row.get('action_state', 'unknown')}]",
+                f"  status: {row.get('status')} priority: {row.get('priority')}",
+                f"  action: {row.get('action_summary')}",
+            ]
+        )
+        if row.get("next_follow_up_date"):
+            lines.append(
+                "  follow-up: "
+                f"{row['next_follow_up_date']} "
+                f"({row.get('days_until_follow_up')} day(s))"
+            )
+        if row.get("suggested_command"):
+            lines.append(f"  command: {row['suggested_command']}")
+    return "\n".join(lines)
+
+
+def _data_request_action_sort_key(action_state: str) -> int:
+    order = {
+        "overdue": 0,
+        "follow_up_due": 1,
+        "ready_to_send": 2,
+        "fulfilled_pending_intake": 3,
+        "waiting": 4,
+        "blocked": 5,
+        "draft": 6,
+        "closed": 7,
+    }
+    return order.get(action_state, 99)
+
+
+def _parse_iso_date(value: str | None, *, field: str, default: date | None = None) -> date:
+    if value is None:
+        if default is not None:
+            return default
+        raise ValueError(f"--{field} is required")
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"--{field} must use YYYY-MM-DD format: {value!r}") from exc
+
+
 def _site_index(
     *,
     derived_dir: Path,
@@ -3266,15 +3805,16 @@ def _site_index(
     )
 
     from behavtaskatlas.citations import build_papers_index, write_citation_files
-    from behavtaskatlas.models import Dataset, VerticalSlice
+    from behavtaskatlas.models import DataRequest, Dataset, VerticalSlice
     from behavtaskatlas.search import build_search_index
 
     citations_dir = derived_dir / "citations"
     paper_records = [r for r in records if isinstance(r, Paper)]
     citation_counts = write_citation_files(paper_records, citations_dir)
     papers_index_path = derived_dir / "papers.json"
+    papers_payload = build_papers_index(paper_records)
     papers_index_path.write_text(
-        json.dumps(build_papers_index(paper_records), indent=2, sort_keys=True) + "\n",
+        json.dumps(papers_payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     search_payload = build_search_index(
@@ -3302,7 +3842,35 @@ def _site_index(
         encoding="utf-8",
     )
 
-    from behavtaskatlas.model_layer import build_models_index
+    from behavtaskatlas.data_requests import (
+        build_data_requests_index,
+        write_data_request_markdown_exports,
+    )
+
+    data_request_records = [r for r in records if isinstance(r, DataRequest)]
+    dataset_records = [r for r in records if isinstance(r, Dataset)]
+    data_requests_payload = build_data_requests_index(
+        requests=data_request_records,
+        datasets=dataset_records,
+        papers=paper_records,
+    )
+    data_requests_path = derived_dir / "data_requests.json"
+    data_requests_path.write_text(
+        json.dumps(data_requests_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    data_request_export_paths = write_data_request_markdown_exports(
+        requests=data_request_records,
+        datasets=dataset_records,
+        papers=paper_records,
+        out_dir=derived_dir / "data_requests",
+        generated_at=str(data_requests_payload["generated_at"]),
+    )
+
+    from behavtaskatlas.model_layer import (
+        build_models_index,
+        write_model_selection_exports,
+    )
     from behavtaskatlas.models import ModelFamily, ModelFit, ModelVariant
 
     models_payload = build_models_index(
@@ -3311,10 +3879,34 @@ def _site_index(
         fits=[r for r in records if isinstance(r, ModelFit)],
         slices=[r for r in records if isinstance(r, VerticalSlice)],
         derived_dir=derived_dir,
+        findings=finding_records,
     )
     models_path = derived_dir / "models.json"
     models_path.write_text(
         json.dumps(models_payload, indent=2, sort_keys=True, default=str) + "\n",
+        encoding="utf-8",
+    )
+    model_export_payload = write_model_selection_exports(
+        derived_dir=derived_dir,
+        models_payload=models_payload,
+        findings_payload=findings_payload,
+    )
+
+    from behavtaskatlas.link_integrity import build_link_integrity_payload
+
+    link_integrity_payload = build_link_integrity_payload(
+        papers_payload=papers_payload,
+        catalog_payload=catalog_payload,
+        findings_payload=findings_payload,
+        models_payload=models_payload,
+        search_payload=search_payload,
+        graph_payload=graph_payload,
+        curation_queue_payload=curation_queue_payload,
+        data_requests_payload=data_requests_payload,
+    )
+    link_integrity_path = derived_dir / "link_integrity.json"
+    link_integrity_path.write_text(
+        json.dumps(link_integrity_payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -3336,9 +3928,31 @@ def _site_index(
         f"{audit_payload['overall_status']}) to {audit_path}"
     )
     print(
+        "Wrote data requests index "
+        f"({data_requests_payload['counts']['requests']} requests) "
+        f"to {data_requests_path}"
+    )
+    print(
+        "Wrote data request Markdown exports "
+        f"({len(data_request_export_paths)} requests) to {derived_dir / 'data_requests'}"
+    )
+    print(
         f"Wrote models index ({models_payload['counts']['families']} families, "
         f"{models_payload['counts']['variants']} variants, "
         f"{models_payload['counts']['fits']} fits) to {models_path}"
+    )
+    print(
+        "Wrote model-selection CSV exports "
+        f"({model_export_payload['model_selection']['rows']} winners, "
+        f"{model_export_payload['model_selection_by_scope']['rows']} "
+        "scope winners, "
+        f"{model_export_payload['fits_by_finding']['rows']} fit rows, "
+        f"{model_export_payload['model_roadmap']['rows']} roadmap rows)"
+    )
+    print(
+        f"Wrote link-integrity report ({link_integrity_payload['overall_status']}, "
+        f"{link_integrity_payload['counts']['checked_links']} links checked) "
+        f"to {link_integrity_path}"
     )
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
@@ -3438,6 +4052,9 @@ def _do_fit_one(
     import time
 
     from behavtaskatlas.ibl import current_git_commit, current_git_dirty
+    from behavtaskatlas.model_fits import accuracy as accuracy_module
+    from behavtaskatlas.model_fits import bernoulli as bernoulli_module
+    from behavtaskatlas.model_fits import chronometric as chronometric_module
     from behavtaskatlas.model_fits import ddm as ddm_module
     from behavtaskatlas.model_fits import logistic as logistic_module
     from behavtaskatlas.model_fits import sdt as sdt_module
@@ -3478,8 +4095,23 @@ def _do_fit_one(
 
     from behavtaskatlas.model_fits import clicks as clicks_module
     fitter_by_variant = {
+        accuracy_module.VARIANT_LOGISTIC_ID: lambda f: accuracy_module.fit(f),
+        accuracy_module.VARIANT_RATE_NULL_ID: (
+            lambda f: accuracy_module.fit_rate_null(f)
+        ),
+        bernoulli_module.VARIANT_RATE_ID: lambda f: bernoulli_module.fit(f),
+        bernoulli_module.VARIANT_SATURATED_ID: (
+            lambda f: bernoulli_module.fit_saturated(f)
+        ),
+        chronometric_module.VARIANT_HYPERBOLIC_ID: (
+            lambda f: chronometric_module.fit(f)
+        ),
+        chronometric_module.VARIANT_CONSTANT_ID: (
+            lambda f: chronometric_module.fit_constant(f)
+        ),
         logistic_module.VARIANT_ID: lambda f: logistic_module.fit(f),
         sdt_module.VARIANT_ID: lambda f: sdt_module.fit(f),
+        sdt_module.VARIANT_YES_NO_ID: lambda f: sdt_module.fit_yes_no(f),
         ddm_module.VARIANT_VANILLA: lambda f: ddm_module.fit(
             f, chronometric=paired_chronometric
         ),
@@ -3489,7 +4121,13 @@ def _do_fit_one(
         ddm_module.VARIANT_V_BIAS: lambda f: ddm_module.fit_v_bias(
             f, chronometric=paired_chronometric
         ),
-        clicks_module.VARIANT_ID: lambda f: clicks_module.fit(f),
+        clicks_module.VARIANT_LEAKY_ID: lambda f: clicks_module.fit(f),
+        clicks_module.VARIANT_COUNT_LOGISTIC_ID: (
+            lambda f: clicks_module.fit_count_logistic(f)
+        ),
+        clicks_module.VARIANT_CHOICE_RATE_NULL_ID: (
+            lambda f: clicks_module.fit_choice_rate_null(f)
+        ),
     }
     fitter = fitter_by_variant.get(variant_id)
     if fitter is None:
@@ -3572,6 +4210,9 @@ def _fit_stale_models(
     curve_types: tuple[str, ...],
     out_dir: Path,
 ) -> int:
+    from behavtaskatlas.model_fits import accuracy as accuracy_module
+    from behavtaskatlas.model_fits import bernoulli as bernoulli_module
+    from behavtaskatlas.model_fits import chronometric as chronometric_module
     from behavtaskatlas.model_fits import ddm as ddm_module
     from behavtaskatlas.model_fits import logistic as logistic_module
     from behavtaskatlas.model_fits import sdt as sdt_module
@@ -3594,10 +4235,14 @@ def _fit_stale_models(
     }
     from behavtaskatlas.model_fits import clicks as clicks_module
     fitter_variants = {
+        *accuracy_module.ACCURACY_SUMMARY_VARIANT_IDS,
+        *bernoulli_module.CONDITION_RATE_VARIANT_IDS,
+        *chronometric_module.CHRONOMETRIC_SUMMARY_VARIANT_IDS,
         logistic_module.VARIANT_ID,
         sdt_module.VARIANT_ID,
+        sdt_module.VARIANT_YES_NO_ID,
         *ddm_variants_set,
-        clicks_module.VARIANT_ID,
+        *clicks_module.CLICK_SUMMARY_VARIANT_IDS,
     }
     if variant_filter is not None:
         fitter_variants = {variant_filter}
@@ -3620,13 +4265,38 @@ def _fit_stale_models(
                 and finding.curve.curve_type != "psychometric"
             ):
                 continue
+            if (
+                variant.id in chronometric_module.CHRONOMETRIC_SUMMARY_VARIANT_IDS
+                and finding.curve.curve_type != "chronometric"
+            ):
+                continue
+            if (
+                variant.id in accuracy_module.ACCURACY_SUMMARY_VARIANT_IDS
+                and finding.curve.curve_type != "accuracy_by_strength"
+            ):
+                continue
+            if (
+                variant.id in bernoulli_module.CONDITION_RATE_VARIANT_IDS
+                and finding.curve.curve_type != "hit_rate_by_condition"
+            ):
+                continue
+            if (
+                variant.id == bernoulli_module.VARIANT_SATURATED_ID
+                and {float(p.x) for p in finding.curve.points} == {0.0, 1.0}
+            ):
+                continue
+            if variant.id == sdt_module.VARIANT_YES_NO_ID and (
+                finding.curve.curve_type != "hit_rate_by_condition"
+                or {float(p.x) for p in finding.curve.points} != {0.0, 1.0}
+            ):
+                continue
             if variant.id in ddm_variants_set and (
                 _find_paired_chronometric(finding, records) is None
             ):
                 continue
-            # Click-rate accumulator only applies to per-subject Brunton
-            # psychometrics; the variant requires click_times.
-            if variant.id == clicks_module.VARIANT_ID and (
+            # Click-summary variants only apply to per-subject Brunton
+            # psychometrics; they require click-task trial rows.
+            if variant.id in clicks_module.CLICK_SUMMARY_VARIANT_IDS and (
                 finding.slice_id != "slice.auditory-clicks"
                 or finding.stratification.subject_id is None
             ):

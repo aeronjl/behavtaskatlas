@@ -1,0 +1,58 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.ddm-vanilla.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+variant_id: model_variant.ddm-vanilla
+finding_ids:
+- finding.khalvati-kiani-rao-2021.psychometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+- finding.khalvati-kiani-rao-2021.chronometric.direction-choice-proxy.accuracy-no-sure-target.kiani-shadlen-m2
+parameters:
+  drift_per_unit_evidence: 2.083332564205823
+  boundary: 0.02291271586330848
+  non_decision_time: 0.242
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -14340.268610927442
+  aic: 28686.537221854884
+  bic: 28710.95290087903
+  n_trials: 25300.0
+  n_free_params: 3.0
+  chronometric_max_residual_s: 0.0007659316862703713
+  rt_sigma_assumed_s: 0.001
+predictions:
+  curve_type: psychometric
+  x_label: Target-coded motion strength
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: 3.2
+    n: 5091
+    y: 0.5381137654847459
+  - x: 6.4
+    n: 5077
+    y: 0.5757871593369066
+  - x: 12.8
+    n: 4980
+    y: 0.6481701431102421
+  - x: 25.6
+    n: 5071
+    y: 0.7724172652570254
+  - x: 51.2
+    n: 5081
+    y: 0.9201231997549807
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+    loss: binomial NLL + Gaussian RT chi-squared
+  duration_seconds: 0.0018777847290039062
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.ddm-vanilla;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

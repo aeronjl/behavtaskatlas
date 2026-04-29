@@ -1,0 +1,27 @@
+object_type: model_variant
+schema_version: 0.1.0
+id: model_variant.chronometric-constant-rt
+family_id: model_family.chronometric-descriptive
+name: Constant median RT null
+description: >
+  One-parameter chronometric summary baseline that predicts a single
+  median response time across all evidence strengths. It is a same-scope
+  null comparator for descriptive chronometric curves and helps separate
+  RT-summary fit quality from process-model evidence.
+free_parameters:
+  - rt_level
+fixed_parameters: {}
+requires:
+  - stimulus_value
+  - response_time
+references: []
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added after the generated model roadmap identified chronometric
+    summary winners whose only RT-summary candidate was the hyperbolic
+    median-RT baseline.

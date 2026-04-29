@@ -1,0 +1,205 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.bernoulli-condition-rate.garrett-2023-visual-behavior.hit-rate-by-image-pair
+variant_id: model_variant.bernoulli-condition-rate
+finding_ids:
+- finding.garrett-2023-visual-behavior.hit-rate-by-image-pair
+parameters:
+  response_rate: 0.7627118644067796
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -129.31237814463776
+  aic: 260.6247562892755
+  bic: 264.08858809430114
+  n_trials: 236.0
+  n_free_params: 1.0
+predictions:
+  curve_type: hit_rate_by_condition
+  x_label: Image-pair index (sorted by initial then change image)
+  x_units: ordinal
+  y_label: hit_rate
+  points:
+  - x: 0.0
+    n: 3
+    y: 0.7627118644067796
+  - x: 1.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 2.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 3.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 4.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 5.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 6.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 7.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 8.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 9.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 10.0
+    n: 3
+    y: 0.7627118644067796
+  - x: 11.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 12.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 13.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 14.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 15.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 16.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 17.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 18.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 19.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 20.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 21.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 22.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 23.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 24.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 25.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 26.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 27.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 28.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 29.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 30.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 31.0
+    n: 3
+    y: 0.7627118644067796
+  - x: 32.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 33.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 34.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 35.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 36.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 37.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 38.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 39.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 40.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 41.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 42.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 43.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 44.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 45.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 46.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 47.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 48.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 49.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 50.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 51.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 52.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 53.0
+    n: 5
+    y: 0.7627118644067796
+  - x: 54.0
+    n: 4
+    y: 0.7627118644067796
+  - x: 55.0
+    n: 5
+    y: 0.7627118644067796
+fit_method:
+  type: manual
+  options:
+    estimator: binomial maximum likelihood
+  duration_seconds: 9.107589721679688e-05
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-29'
+  updated: '2026-04-29'
+  fit_commit: 3ec74b4
+  fit_dirty: true
+  source_notes: Fitted with manual via behavtaskatlas.model_fits.bernoulli-condition-rate;
+    success=True; closed-form binomial MLE
