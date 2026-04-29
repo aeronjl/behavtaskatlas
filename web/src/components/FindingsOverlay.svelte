@@ -48,7 +48,21 @@
   let yearStart = $state(minYear);
   let yearEnd = $state(maxYear);
   let searchText = $state("");
-  let showOnlyPooled = $state(false);
+
+  // Trace level: how to collapse the 1 trace per finding wall.
+  // - "aggregate" (default): one trace per (paper × condition). When a
+  //   pooled finding exists in the group, use it; otherwise synthesise an
+  //   n-weighted average across the per-subject findings.
+  // - "pooled": only show findings with no subject_id (drops papers that
+  //   only published per-subject curves).
+  // - "all": every finding shown individually.
+  type TraceMode = "aggregate" | "pooled" | "all";
+  let traceMode = $state<TraceMode>("aggregate");
+  const traceModeOptions: Array<{ key: TraceMode; label: string; description: string }> = [
+    { key: "aggregate", label: "Per condition", description: "One trace per paper × condition. Subjects pooled where pooled curve doesn't exist." },
+    { key: "all", label: "All curves", description: "Every finding shown individually." },
+    { key: "pooled", label: "Pooled only", description: "Only published-pooled findings (drops per-subject)." },
+  ];
 
   // ── Stimulus axis (x-label) selector ───────────────────────────────────────
   // Different psychometric findings calibrate the stimulus along incompatible
@@ -137,7 +151,13 @@
     }
     const q = params.get("q");
     if (q !== null) searchText = q;
-    if (params.get("pooled") === "1") showOnlyPooled = true;
+    const modeParam = params.get("mode");
+    if (modeParam === "all" || modeParam === "pooled" || modeParam === "aggregate") {
+      traceMode = modeParam;
+    } else if (params.get("pooled") === "1") {
+      // Back-compat with pre-trace-mode shareable URLs.
+      traceMode = "pooled";
+    }
     if (params.get("fit") === "1") fitEnabled = true;
   }
 
@@ -167,7 +187,7 @@
       params.set("years", `${yearStart}-${yearEnd}`);
     }
     if (searchText.trim().length > 0) params.set("q", searchText.trim());
-    if (showOnlyPooled) params.set("pooled", "1");
+    if (traceMode !== "aggregate") params.set("mode", traceMode);
     if (fitEnabled) params.set("fit", "1");
     return params;
   }
@@ -191,14 +211,12 @@
     return Boolean(entry.stratification?.subject_id);
   }
 
-  const subjectLevelCount = allEntries.filter(isSubjectLevel).length;
-
   const filteredEntries = $derived.by(() => {
     const needle = searchText.trim().toLowerCase();
     return allEntries.filter((entry) => {
       if (entry.curve_type !== currentCurveType) return false;
       if (activeXLabel && (entry.x_label ?? "x") !== activeXLabel) return false;
-      if (showOnlyPooled && isSubjectLevel(entry)) return false;
+      if (traceMode === "pooled" && isSubjectLevel(entry)) return false;
       const matches = (key: FilterKey, value: string | null | undefined): boolean => {
         if (value === null || value === undefined || value === "") return true;
         return active[key].has(value);
@@ -223,8 +241,72 @@
     });
   });
 
+  // displayEntries: the actual traces drawn on the chart. In aggregate
+  // mode, each (paper × condition) group becomes ONE trace — the pooled
+  // finding if available, otherwise an n-weighted average across the
+  // per-subject findings in the group. Pooled and "all curves" modes pass
+  // filteredEntries through unchanged.
+  function aggregateGroup(group: FindingsEntry[]): FindingsEntry {
+    const pooled = group.find((e) => !e.stratification?.subject_id);
+    if (pooled) return pooled;
+    const first = group[0];
+    const xKeys = new Map<string, { x: number; ySum: number; nSum: number }>();
+    for (const entry of group) {
+      for (const p of entry.points) {
+        const key = String(p.x);
+        const acc = xKeys.get(key) ?? { x: p.x, ySum: 0, nSum: 0 };
+        const weight = Math.max(p.n ?? 1, 1);
+        acc.ySum += p.y * weight;
+        acc.nSum += weight;
+        xKeys.set(key, acc);
+      }
+    }
+    const aggregatedPoints = Array.from(xKeys.values())
+      .sort((a, b) => a.x - b.x)
+      .map(({ x, ySum, nSum }) => ({
+        x,
+        y: nSum > 0 ? ySum / nSum : 0,
+        n: nSum,
+        y_lower: null,
+        y_upper: null,
+      }));
+    const totalTrials = group.reduce(
+      (sum, e) => sum + (typeof e.n_trials === "number" ? e.n_trials : 0),
+      0,
+    );
+    const synthId = `${first.paper_id}|${first.stratification?.condition ?? ""}|aggregate`;
+    return {
+      ...first,
+      finding_id: synthId,
+      stratification: {
+        condition: first.stratification?.condition ?? null,
+        subject_id: null,
+      },
+      points: aggregatedPoints,
+      n_trials: totalTrials,
+      n_subjects: group.length,
+    } as FindingsEntry;
+  }
+
+  const displayEntries = $derived.by<FindingsEntry[]>(() => {
+    if (traceMode !== "aggregate") return filteredEntries;
+    const groups = new Map<string, FindingsEntry[]>();
+    for (const entry of filteredEntries) {
+      const condition = entry.stratification?.condition ?? "";
+      const key = `${entry.paper_id}|${condition}`;
+      const list = groups.get(key) ?? [];
+      list.push(entry);
+      groups.set(key, list);
+    }
+    const out: FindingsEntry[] = [];
+    for (const list of groups.values()) {
+      out.push(aggregateGroup(list));
+    }
+    return out;
+  });
+
   const flatPoints = $derived.by(() =>
-    filteredEntries.flatMap((entry) =>
+    displayEntries.flatMap((entry) =>
       entry.points.map((p) => ({
         finding_id: entry.finding_id,
         paper_citation: entry.paper_citation,
@@ -242,8 +324,8 @@
   );
 
   const yLabel = $derived.by(() => {
-    if (filteredEntries.length === 0) return "Y";
-    return filteredEntries[0].y_label;
+    if (displayEntries.length === 0) return "Y";
+    return displayEntries[0].y_label;
   });
 
   const yScale = $derived.by(() => {
@@ -277,7 +359,7 @@
     yearStart = minYear;
     yearEnd = maxYear;
     searchText = "";
-    showOnlyPooled = false;
+    traceMode = "aggregate";
   }
 
   // ── View presets ───────────────────────────────────────────────────────────
@@ -292,6 +374,7 @@
     | "mouse"
     | "macaque"
     | "rdm"
+    | "clicks"
     | "walsh-cue";
 
   const presets: Array<{ key: PresetKey; label: string; description: string }> = [
@@ -323,12 +406,17 @@
     {
       key: "rdm",
       label: "RDM cross-species",
-      description: "Random-dot motion findings across species.",
+      description: "Random-dot motion findings on signed motion coherence.",
+    },
+    {
+      key: "clicks",
+      label: "Clicks",
+      description: "Auditory clicks task — rats and humans on the same axis.",
     },
     {
       key: "walsh-cue",
       label: "Walsh prior-cue",
-      description: "Walsh 2024 prior-cue conditions only.",
+      description: "Walsh 2024 prior-cue conditions on signed contrast.",
     },
   ];
 
@@ -372,10 +460,26 @@
     }
     if (key === "rdm") {
       searchText = "motion";
+      const rdmAxis = axisOptionsForCurve.find((o) =>
+        o.label.toLowerCase().includes("motion coherence"),
+      );
+      if (rdmAxis) activeXLabel = rdmAxis.label;
+      return;
+    }
+    if (key === "clicks") {
+      searchText = "click";
+      const clicksAxis = axisOptionsForCurve.find((o) =>
+        o.label.toLowerCase().includes("click"),
+      );
+      if (clicksAxis) activeXLabel = clicksAxis.label;
       return;
     }
     if (key === "walsh-cue") {
       searchText = "walsh";
+      const walshAxis = axisOptionsForCurve.find((o) =>
+        o.label.toLowerCase().includes("contrast"),
+      );
+      if (walshAxis) activeXLabel = walshAxis.label;
       return;
     }
   }
@@ -438,7 +542,7 @@
     if (active.response_modality.size !== filterOptions.response_modality.length) n += 1;
     if (yearStart !== minYear || yearEnd !== maxYear) n += 1;
     if (searchText.trim().length > 0) n += 1;
-    if (showOnlyPooled) n += 1;
+    if (traceMode !== "aggregate") n += 1;
     return n;
   });
 
@@ -453,7 +557,7 @@
       yearStart === minYear &&
       yearEnd === maxYear &&
       searchText === "" &&
-      !showOnlyPooled;
+      traceMode === "aggregate";
     if (key === "all") return allDefault;
     if (key === "trial-backed") {
       return (
@@ -476,6 +580,7 @@
       );
     }
     if (key === "rdm") return searchText === "motion";
+    if (key === "clicks") return searchText === "click";
     if (key === "walsh-cue") return searchText === "walsh";
     return false;
   }
@@ -772,13 +877,13 @@ def fit_curves(payload_json):
   const signature = $derived(
     JSON.stringify({
       curveType: currentCurveType,
-      ids: filteredEntries.map((e) => e.finding_id),
+      ids: displayEntries.map((e) => e.finding_id),
     }),
   );
 
   async function runFit() {
     fitError = "";
-    if (filteredEntries.length === 0) {
+    if (displayEntries.length === 0) {
       fitData = null;
       fitStatus = "done";
       return;
@@ -786,7 +891,7 @@ def fit_curves(payload_json):
     try {
       const py = await ensureFitRuntime();
       fitStatus = "fitting";
-      const curves = filteredEntries.map((entry) => ({
+      const curves = displayEntries.map((entry) => ({
         finding_id: entry.finding_id,
         points: entry.points.map((p) => ({ x: p.x, y: p.y, n: p.n })),
       }));
@@ -840,7 +945,7 @@ def fit_curves(payload_json):
       c.line.map((p) => ({
         finding_id: c.finding_id,
         paper_citation:
-          filteredEntries.find((e) => e.finding_id === c.finding_id)?.paper_citation
+          displayEntries.find((e) => e.finding_id === c.finding_id)?.paper_citation
           ?? c.finding_id,
         x: p.x,
         y: p.y,
@@ -904,7 +1009,7 @@ def fit_curves(payload_json):
     if (!fitEnabled || !fitData) return [];
     if (fitData.curveType !== currentCurveType) return [];
     const rows: FitRow[] = fitData.perCurve.map((c) => {
-      const entry = filteredEntries.find((e) => e.finding_id === c.finding_id);
+      const entry = displayEntries.find((e) => e.finding_id === c.finding_id);
       return {
         finding_id: c.finding_id,
         paper_citation: entry?.paper_citation ?? c.finding_id,
@@ -959,7 +1064,7 @@ def fit_curves(payload_json):
       disagreementContainer.innerHTML = "";
       return;
     }
-    const xTitle = filteredEntries[0]?.x_label ?? "x";
+    const xTitle = displayEntries[0]?.x_label ?? "x";
     const spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container" as const,
@@ -1020,7 +1125,7 @@ def fit_curves(payload_json):
     if (yScale) {
       ySpec.scale = { domain: yScale };
     }
-    const firstX = filteredEntries[0];
+    const firstX = displayEntries[0];
     const xTitle = firstX?.x_label
       ? firstX.x_units
         ? `${firstX.x_label} (${firstX.x_units})`
@@ -1310,34 +1415,50 @@ def fit_curves(payload_json):
   <div class="mb-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
     <p class="text-sm text-slate-700">
       <span class="font-semibold text-slate-900">
-        {filteredEntries.length}
-        {currentCurveType.replace(/_/g, " ")}
-        finding{filteredEntries.length === 1 ? "" : "s"}
+        {displayEntries.length}
+        {displayEntries.length === 1 ? "trace" : "traces"}
       </span>
       <span class="text-slate-500">
+        {#if traceMode === "aggregate" && displayEntries.length !== filteredEntries.length}
+          · from {filteredEntries.length}
+          {currentCurveType.replace(/_/g, " ")} finding{filteredEntries.length === 1 ? "" : "s"}
+        {:else}
+          · {currentCurveType.replace(/_/g, " ")}
+        {/if}
         · {filteredSummary.papers} paper{filteredSummary.papers === 1 ? "" : "s"}
         · {filteredSummary.species} species
         · {flatPoints.length.toLocaleString()} points
       </span>
     </p>
     <div class="flex flex-wrap items-center gap-3">
-      {#if subjectLevelCount > 0}
-        <label class="flex items-center gap-2 text-xs text-slate-700">
-          <input type="checkbox" bind:checked={showOnlyPooled} />
-          <span>
-            Pooled only
-            <span class="text-[11px] text-slate-500">
-              (hide {subjectLevelCount} per-subject)
-            </span>
-          </span>
-        </label>
-      {/if}
-      <label class="flex items-center gap-2 text-xs text-slate-700">
+      <fieldset class="flex flex-wrap items-center gap-1 text-xs">
+        <legend class="sr-only">Trace level</legend>
+        {#each traceModeOptions as option (option.key)}
+          {@const isOn = traceMode === option.key}
+          <button
+            type="button"
+            title={option.description}
+            class={[
+              "rounded-md border px-2 py-1",
+              isOn
+                ? "border-accent bg-accent text-white"
+                : "border-slate-300 text-slate-700 hover:bg-slate-50",
+            ]}
+            onclick={() => (traceMode = option.key)}
+          >
+            {option.label}
+          </button>
+        {/each}
+      </fieldset>
+      <label
+        class="flex items-center gap-2 text-xs text-slate-700"
+        title="Refits each visible curve in your browser with a 4-parameter logistic; the dark line is the n-weighted pooled fit across the same axis"
+      >
         <input type="checkbox" bind:checked={fitEnabled} />
         <span>
           Fit + aggregate
           <span class="text-[11px] text-slate-500">
-            (logistic + bootstrap CI)
+            (per-axis pool)
           </span>
         </span>
       </label>
