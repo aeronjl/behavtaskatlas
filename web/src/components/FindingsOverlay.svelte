@@ -50,6 +50,47 @@
   let searchText = $state("");
   let showOnlyPooled = $state(false);
 
+  // ── Stimulus axis (x-label) selector ───────────────────────────────────────
+  // Different psychometric findings calibrate the stimulus along incompatible
+  // axes (signed motion coherence in % vs. signed click difference vs. signed
+  // contrast). Plotting them on one axis is misleading, so the chart only
+  // ever shows findings whose x_label matches the active selection. The
+  // default is the most-populous group for the current curve type.
+
+  type AxisOption = { label: string; units: string; count: number };
+
+  const axisOptionsForCurve = $derived.by<AxisOption[]>(() => {
+    const counts = new Map<string, AxisOption>();
+    for (const entry of allEntries) {
+      if (entry.curve_type !== currentCurveType) continue;
+      const label = entry.x_label ?? "x";
+      const units = entry.x_units ?? "";
+      const key = `${label}|${units}`;
+      const existing = counts.get(key);
+      if (existing) existing.count += 1;
+      else counts.set(key, { label, units, count: 1 });
+    }
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  });
+
+  let activeXLabel = $state<string | null>(null);
+
+  $effect(() => {
+    // When curve type changes (or the available axes change because of
+    // filters), pick the most populous group if the current pick is no
+    // longer available.
+    if (axisOptionsForCurve.length === 0) {
+      activeXLabel = null;
+      return;
+    }
+    if (
+      !activeXLabel ||
+      !axisOptionsForCurve.some((o) => o.label === activeXLabel)
+    ) {
+      activeXLabel = axisOptionsForCurve[0].label;
+    }
+  });
+
   // ── URL state sync ─────────────────────────────────────────────────────────
   // Filter state serialises to the query string so views are shareable.
   // Param keys are short: curve, species, level, evidence, response, years,
@@ -72,6 +113,8 @@
     if (curveParam && allCurveTypes.includes(curveParam)) {
       currentCurveType = curveParam;
     }
+    const axisParam = params.get("axis");
+    if (axisParam) activeXLabel = axisParam;
     const next = { ...active };
     let mutated = false;
     for (const [filterKey, paramKey] of Object.entries(URL_PARAM_BY_FILTER) as [FilterKey, string][]) {
@@ -107,6 +150,13 @@
   function buildUrlState(): URLSearchParams {
     const params = new URLSearchParams();
     if (currentCurveType !== defaultCurveType) params.set("curve", currentCurveType);
+    if (
+      activeXLabel &&
+      axisOptionsForCurve.length > 0 &&
+      axisOptionsForCurve[0].label !== activeXLabel
+    ) {
+      params.set("axis", activeXLabel);
+    }
     for (const [filterKey, paramKey] of Object.entries(URL_PARAM_BY_FILTER) as [FilterKey, string][]) {
       const set = active[filterKey];
       const allValues = filterOptions[filterKey];
@@ -147,6 +197,7 @@
     const needle = searchText.trim().toLowerCase();
     return allEntries.filter((entry) => {
       if (entry.curve_type !== currentCurveType) return false;
+      if (activeXLabel && (entry.x_label ?? "x") !== activeXLabel) return false;
       if (showOnlyPooled && isSubjectLevel(entry)) return false;
       const matches = (key: FilterKey, value: string | null | undefined): boolean => {
         if (value === null || value === undefined || value === "") return true;
@@ -969,7 +1020,12 @@ def fit_curves(payload_json):
     if (yScale) {
       ySpec.scale = { domain: yScale };
     }
-    const xTitle = filteredEntries[0]?.x_label ?? "x";
+    const firstX = filteredEntries[0];
+    const xTitle = firstX?.x_label
+      ? firstX.x_units
+        ? `${firstX.x_label} (${firstX.x_units})`
+        : firstX.x_label
+      : "x";
     const layers: Record<string, unknown>[] = [];
 
     if (fitEnabled && POOLED_BAND_VALUES.length > 0) {
@@ -1105,6 +1161,35 @@ def fit_curves(payload_json):
       Reset filters
     </button>
   </div>
+
+  {#if axisOptionsForCurve.length > 1}
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <span class="text-xs font-semibold text-slate-700">Stimulus axis:</span>
+      {#each axisOptionsForCurve as option (option.label)}
+        {@const isOn = option.label === activeXLabel}
+        <button
+          type="button"
+          title={option.units ? `${option.label} · ${option.units}` : option.label}
+          class={[
+            "rounded-md border px-2.5 py-1 text-xs",
+            isOn
+              ? "border-accent bg-accent text-white"
+              : "border-slate-300 text-slate-700 hover:bg-slate-50",
+          ]}
+          onclick={() => (activeXLabel = option.label)}
+        >
+          {option.label}
+          <span class={isOn ? "ml-1 text-white/80" : "ml-1 text-slate-500"}>
+            {option.count}
+          </span>
+        </button>
+      {/each}
+      <span class="ml-auto max-w-md text-[11px] text-slate-500">
+        Findings on different stimulus axes are kept apart — units are
+        not comparable across paradigms.
+      </span>
+    </div>
+  {/if}
 
   <div class="mb-4 flex flex-wrap items-center gap-2">
     <span class="text-xs font-semibold text-slate-700">Preset:</span>
