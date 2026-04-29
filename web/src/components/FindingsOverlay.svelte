@@ -332,6 +332,39 @@
   // Mobile filter collapse: filters stay visible on md+, toggle on smaller.
   let filtersExpandedMobile = $state(false);
 
+  // Copy-link affordance — relies on the URL-sync effect to keep the URL
+  // up to date with current filter state.
+  let copyState = $state<"idle" | "copied" | "error">("idle");
+
+  async function copyLink() {
+    if (typeof window === "undefined") return;
+    const href = window.location.href;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(href);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = href;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      copyState = "copied";
+      setTimeout(() => {
+        copyState = "idle";
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      copyState = "error";
+      setTimeout(() => {
+        copyState = "idle";
+      }, 1500);
+    }
+  }
+
   const activeFilterCount = $derived.by(() => {
     let n = 0;
     if (active.species.size !== filterOptions.species.length) n += 1;
@@ -1041,6 +1074,18 @@ def fit_curves(payload_json):
     <button
       type="button"
       class="ml-auto rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
+      onclick={copyLink}
+      title="Copy a shareable URL of the current view"
+    >
+      {copyState === "copied"
+        ? "Copied ✓"
+        : copyState === "error"
+          ? "Copy failed"
+          : "Copy link"}
+    </button>
+    <button
+      type="button"
+      class="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
       onclick={resetFilters}
     >
       Reset filters
@@ -1217,7 +1262,32 @@ def fit_curves(payload_json):
     </div>
   {/if}
 
-  <div bind:this={chartContainer} class="w-full"></div>
+  {#if filteredEntries.length === 0}
+    <div
+      class="flex flex-col items-center justify-center gap-3 rounded border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center"
+    >
+      <p class="text-sm text-slate-700">
+        No findings match these filters.
+      </p>
+      {#if activeFilterCount > 0}
+        <button
+          type="button"
+          class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:border-accent hover:text-accent"
+          onclick={resetFilters}
+        >
+          Clear {activeFilterCount} active filter{activeFilterCount === 1 ? "" : "s"}
+        </button>
+      {:else}
+        <p class="text-xs text-slate-500">
+          Try a different curve type above.
+        </p>
+      {/if}
+    </div>
+  {/if}
+  <div
+    bind:this={chartContainer}
+    class:list={["w-full", filteredEntries.length === 0 ? "hidden" : ""]}
+  ></div>
 
   {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
     <div class="mt-4">

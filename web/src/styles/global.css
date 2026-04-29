@@ -57,3 +57,55 @@ a.no-underline:hover,
 nav a:hover {
   text-decoration: none;
 }
+
+/* Print: cleanup chrome and force a readable academic layout. */
+@media print {
+  nav,
+  footer,
+  form,
+  button,
+  input[type="search"],
+  input[type="number"],
+  fieldset {
+    display: none !important;
+  }
+  a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+  body {
+    background: #fff !important;
+    line-height: 1.4;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  table,
+  figure,
+  article {
+    break-inside: avoid;
+  }
+  table {
+    width: 100% !important;
+    font-size: 11pt;
+  }
+  details {
+    display: block;
+  }
+  details > summary {
+    display: none;
+  }
+  details > * {
+    display: block !important;
+  }
+  .shadow-2xl,
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+}
