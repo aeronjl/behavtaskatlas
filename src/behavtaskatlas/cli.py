@@ -3476,6 +3476,7 @@ def _do_fit_one(
     if variant_id in ddm_variants:
         paired_chronometric = _find_paired_chronometric(finding, records)
 
+    from behavtaskatlas.model_fits import clicks as clicks_module
     fitter_by_variant = {
         logistic_module.VARIANT_ID: lambda f: logistic_module.fit(f),
         sdt_module.VARIANT_ID: lambda f: sdt_module.fit(f),
@@ -3488,6 +3489,7 @@ def _do_fit_one(
         ddm_module.VARIANT_V_BIAS: lambda f: ddm_module.fit_v_bias(
             f, chronometric=paired_chronometric
         ),
+        clicks_module.VARIANT_ID: lambda f: clicks_module.fit(f),
     }
     fitter = fitter_by_variant.get(variant_id)
     if fitter is None:
@@ -3590,10 +3592,12 @@ def _fit_stale_models(
         ddm_module.VARIANT_Z_BIAS,
         ddm_module.VARIANT_V_BIAS,
     }
+    from behavtaskatlas.model_fits import clicks as clicks_module
     fitter_variants = {
         logistic_module.VARIANT_ID,
         sdt_module.VARIANT_ID,
         *ddm_variants_set,
+        clicks_module.VARIANT_ID,
     }
     if variant_filter is not None:
         fitter_variants = {variant_filter}
@@ -3618,6 +3622,13 @@ def _fit_stale_models(
                 continue
             if variant.id in ddm_variants_set and (
                 _find_paired_chronometric(finding, records) is None
+            ):
+                continue
+            # Click-rate accumulator only applies to per-subject Brunton
+            # psychometrics; the variant requires click_times.
+            if variant.id == clicks_module.VARIANT_ID and (
+                finding.slice_id != "slice.auditory-clicks"
+                or finding.stratification.subject_id is None
             ):
                 continue
             try:
