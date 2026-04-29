@@ -1060,7 +1060,7 @@ def fit_curves(payload_json):
     {#each allCurveTypes as type (type)}
       <button
         type="button"
-        class:list={[
+        class={[
           "rounded-md border px-2.5 py-1 text-xs",
           type === currentCurveType
             ? "border-accent bg-accent text-white"
@@ -1099,7 +1099,7 @@ def fit_curves(payload_json):
       <button
         type="button"
         title={preset.description}
-        class:list={[
+        class={[
           "rounded-full border px-3 py-1 text-xs",
           isOn
             ? "border-slate-900 bg-slate-900 text-white"
@@ -1130,7 +1130,7 @@ def fit_curves(payload_json):
   </button>
 
   <div
-    class:list={[
+    class={[
       filtersExpandedMobile ? "block" : "hidden",
       "md:block",
     ]}
@@ -1238,7 +1238,7 @@ def fit_curves(payload_json):
 
   {#if fitEnabled && fitStatus !== "idle" && fitStatus !== "done"}
     <div
-      class:list={[
+      class={[
         "mb-3 flex items-center gap-3 rounded px-3 py-2 text-xs",
         fitStatus === "error"
           ? "border border-bad bg-bad-soft text-bad"
@@ -1286,7 +1286,7 @@ def fit_curves(payload_json):
   {/if}
   <div
     bind:this={chartContainer}
-    class:list={["w-full", filteredEntries.length === 0 ? "hidden" : ""]}
+    class={["w-full", filteredEntries.length === 0 ? "hidden" : ""]}
   ></div>
 
   {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
@@ -1361,7 +1361,7 @@ def fit_curves(payload_json):
 
 {#snippet sortHeader(col: SortColumn, label: string, align: "left" | "right" = "left")}
   <th
-    class:list={[
+    class={[
       "px-3 py-2 cursor-pointer select-none",
       align === "right" ? "text-right" : "text-left",
     ]}

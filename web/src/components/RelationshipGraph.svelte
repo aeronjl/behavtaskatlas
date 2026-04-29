@@ -209,7 +209,7 @@
       {@const isActive = activeType === type}
       <button
         type="button"
-        class:list={[
+        class={[
           "inline-flex items-center gap-1.5 rounded border px-2 py-1",
           isActive
             ? "border-slate-900 bg-slate-900 text-white"

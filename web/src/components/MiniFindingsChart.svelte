@@ -246,7 +246,7 @@
             {#each allCurveTypes as type (type)}
               <button
                 type="button"
-                class:list={[
+                class={[
                   "rounded border px-2 py-0.5 text-[11px]",
                   type === currentCurveType
                     ? "border-accent bg-accent text-white"

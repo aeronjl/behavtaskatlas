@@ -213,7 +213,7 @@
               <a
                 href={entry.href}
                 data-active={isActive ? "true" : "false"}
-                class:list={[
+                class={[
                   "flex flex-col gap-0.5 px-4 py-2.5 no-underline",
                   isActive ? "bg-accent-soft" : "hover:bg-slate-50",
                 ]}
