@@ -301,7 +301,7 @@
     <table class="w-full min-w-[1120px] border-collapse text-sm">
       <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
         <tr>
-          <th class="sticky left-0 z-10 w-80 bg-slate-50 px-3 py-2">Finding</th>
+          <th class="sticky left-0 z-10 w-80 bg-slate-50 px-3 py-2 shadow-[1px_0_0_0_#e2e8f0]">Finding</th>
           <th class="px-3 py-2">Confidence</th>
           {#each columns as column (column.id)}
             <th class="min-w-36 px-3 py-2" title={column.description}>
@@ -313,7 +313,7 @@
       <tbody class="divide-y divide-slate-200">
         {#each filteredRows as row (row.selection_id)}
           <tr>
-            <td class="sticky left-0 z-10 w-80 bg-white px-3 py-2 align-top">
+            <td class="sticky left-0 z-10 w-80 bg-white px-3 py-2 align-top shadow-[1px_0_0_0_#e2e8f0]">
               <a class="font-mono text-[11px] text-slate-900" href={row.finding_href}>
                 {row.finding_id.replace("finding.", "")}
               </a>

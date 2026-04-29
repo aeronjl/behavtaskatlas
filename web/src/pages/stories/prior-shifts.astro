@@ -48,6 +48,7 @@ type DeltaRow = {
   paper_id: string;
   label: string;
   reference: boolean;
+  n_trials: number | null;
   mu: number | null;
   sigma: number | null;
   delta_mu: number | null;
@@ -78,6 +79,7 @@ function deltasFor(entries: FindingsEntry[], referenceLabel: string | null): Del
         entry.stratification?.subject_id ??
         "pooled",
       reference: isRef,
+      n_trials: typeof entry.n_trials === "number" ? entry.n_trials : null,
       mu: fit?.mu ?? null,
       sigma: fit?.sigma ?? null,
       delta_mu:
@@ -225,6 +227,7 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
               <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
                 <tr>
                   <th class="px-3 py-2">Condition</th>
+                  <th class="px-3 py-2 text-right" title="Trial count for this condition">n</th>
                   <th class="px-3 py-2 text-right">μ (bias)</th>
                   <th class="px-3 py-2 text-right">σ (slope)</th>
                   <th class="px-3 py-2 text-right">Δμ</th>
@@ -244,6 +247,9 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
                       {row.reference ? (
                         <span class="ml-2 text-[10px] text-slate-500">(reference)</span>
                       ) : null}
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono">
+                      {row.n_trials !== null ? row.n_trials.toLocaleString() : "—"}
                     </td>
                     <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
                     <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>

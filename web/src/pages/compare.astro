@@ -217,12 +217,11 @@ const sections = COMPARISONS.map((spec) => {
   description="Pre-baked cross-paper comparisons that answer specific questions: prior-block shifts, species differences, cueing effects, all on shared signed-evidence axes with fitted parameter deltas."
 >
   <header class="mb-8">
-    <h1 class="text-3xl font-semibold tracking-tight">Compare</h1>
-    <p class="mt-2 text-sm text-slate-600">
+    <h1 class="text-3xl">Compare</h1>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">
       Curated cross-paper comparisons that answer one question each. Each
       panel embeds the relevant findings overlaid on shared signed-evidence
-      axes and reports fitted parameter deltas (Δμ bias shift, Δσ slope
-      change, and the threshold crossing) computed at build time from a
+      axes and reports fitted parameter deltas computed at build time from a
       4-parameter logistic fit to each finding.
     </p>
     <p class="mt-2 text-xs text-slate-500">
@@ -231,6 +230,38 @@ const sections = COMPARISONS.map((spec) => {
       complete catalog is on <a class="text-accent" href="/findings">/findings</a>.
     </p>
   </header>
+
+  <aside
+    class="mb-10 rounded-md border border-slate-200 bg-white p-4 text-sm"
+    aria-label="Reading the parameter columns"
+  >
+    <h2 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      Reading the deltas
+    </h2>
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+      <div>
+        <dt class="font-mono text-slate-900">Δμ</dt>
+        <dd class="text-slate-600">
+          Bias shift along the x-axis (in stimulus units). Positive Δμ means
+          the curve moved rightward relative to the reference.
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-slate-900">Δσ</dt>
+        <dd class="text-slate-600">
+          Slope change. Larger σ = shallower psychometric (lower
+          discriminability). |Δσ|≈0 means sensitivity is preserved.
+        </dd>
+      </div>
+      <div>
+        <dt class="font-mono text-slate-900">Δ threshold</dt>
+        <dd class="text-slate-600">
+          Difference in the x at which P(right)=75% (or 84% for accuracy
+          curves). Same direction as Δμ but reads in stimulus units.
+        </dd>
+      </div>
+    </dl>
+  </aside>
 
   <div class="space-y-12">
     {
@@ -258,7 +289,7 @@ const sections = COMPARISONS.map((spec) => {
               client:visible
               findings={section.entries}
               colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
-              height={260}
+              height={320}
             />
           ) : section.modelFitRows.length === 0 ? (
             <p class="rounded border border-warn bg-warn-soft p-3 text-xs text-warn">
@@ -371,12 +402,30 @@ const sections = COMPARISONS.map((spec) => {
                   <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
                     <tr>
                       <th class="px-3 py-2">Finding</th>
-                      <th class="px-3 py-2 text-right">μ (bias)</th>
-                      <th class="px-3 py-2 text-right">σ (slope)</th>
-                      <th class="px-3 py-2 text-right">{section.target_y_label}</th>
-                      <th class="px-3 py-2 text-right">Δμ</th>
-                      <th class="px-3 py-2 text-right">Δσ</th>
-                      <th class="px-3 py-2 text-right">Δ threshold</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="Mid-asymptote crossing (psychometric bias)"
+                      >μ (bias)</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="Slope width; larger σ = shallower psychometric"
+                      >σ (slope)</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="x-value where the fitted curve crosses the threshold target"
+                      >{section.target_y_label}</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="Bias shift relative to reference row"
+                      >Δμ</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="Slope change relative to reference row"
+                      >Δσ</th>
+                      <th
+                        class="px-3 py-2 text-right"
+                        title="Threshold-crossing change relative to reference row"
+                      >Δ threshold</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-200">

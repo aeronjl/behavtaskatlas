@@ -229,6 +229,144 @@
     showOnlyPooled = false;
   }
 
+  // ── View presets ───────────────────────────────────────────────────────────
+  // Each preset resets to default first, then applies its overrides — clicking
+  // a preset gives a fully-configured view rather than overlaying onto whatever
+  // the user already had.
+
+  type PresetKey =
+    | "all"
+    | "trial-backed"
+    | "human"
+    | "mouse"
+    | "macaque"
+    | "rdm"
+    | "walsh-cue";
+
+  const presets: Array<{ key: PresetKey; label: string; description: string }> = [
+    {
+      key: "all",
+      label: "All",
+      description: "All psychometric findings across the atlas.",
+    },
+    {
+      key: "trial-backed",
+      label: "Trial-backed",
+      description: "Only findings sourced from raw or processed trial data.",
+    },
+    {
+      key: "human",
+      label: "Human",
+      description: "Only human findings.",
+    },
+    {
+      key: "mouse",
+      label: "Mouse",
+      description: "Only mouse findings.",
+    },
+    {
+      key: "macaque",
+      label: "Macaque",
+      description: "Only macaque findings.",
+    },
+    {
+      key: "rdm",
+      label: "RDM cross-species",
+      description: "Random-dot motion findings across species.",
+    },
+    {
+      key: "walsh-cue",
+      label: "Walsh prior-cue",
+      description: "Walsh 2024 prior-cue conditions only.",
+    },
+  ];
+
+  function intersect(allowed: string[], available: string[]): Set<string> {
+    return new Set(allowed.filter((v) => available.includes(v)));
+  }
+
+  function applyPreset(key: PresetKey) {
+    resetFilters();
+    if (key === "all") return;
+    if (key === "trial-backed") {
+      active = {
+        ...active,
+        source_data_level: intersect(
+          ["raw-trial", "processed-trial"],
+          filterOptions.source_data_level,
+        ),
+      };
+      return;
+    }
+    if (key === "human") {
+      active = {
+        ...active,
+        species: intersect(["human"], filterOptions.species),
+      };
+      return;
+    }
+    if (key === "mouse") {
+      active = {
+        ...active,
+        species: intersect(["mouse"], filterOptions.species),
+      };
+      return;
+    }
+    if (key === "macaque") {
+      active = {
+        ...active,
+        species: intersect(["macaque"], filterOptions.species),
+      };
+      return;
+    }
+    if (key === "rdm") {
+      searchText = "motion";
+      return;
+    }
+    if (key === "walsh-cue") {
+      searchText = "walsh";
+      return;
+    }
+  }
+
+  function isPresetActive(key: PresetKey): boolean {
+    const hasFullSet = (filterKey: FilterKey) =>
+      active[filterKey].size === filterOptions[filterKey].length;
+    const allDefault =
+      hasFullSet("species") &&
+      hasFullSet("source_data_level") &&
+      hasFullSet("evidence_type") &&
+      hasFullSet("response_modality") &&
+      yearStart === minYear &&
+      yearEnd === maxYear &&
+      searchText === "" &&
+      !showOnlyPooled;
+    if (key === "all") return allDefault;
+    if (key === "trial-backed") {
+      return (
+        hasFullSet("species") &&
+        hasFullSet("evidence_type") &&
+        hasFullSet("response_modality") &&
+        active.source_data_level.size <= 2 &&
+        Array.from(active.source_data_level).every((v) =>
+          ["raw-trial", "processed-trial"].includes(v),
+        ) &&
+        searchText === ""
+      );
+    }
+    if (key === "human" || key === "mouse" || key === "macaque") {
+      return (
+        active.species.size === 1 &&
+        active.species.has(key) &&
+        hasFullSet("source_data_level") &&
+        searchText === ""
+      );
+    }
+    if (key === "rdm") return searchText === "motion";
+    if (key === "walsh-cue") return searchText === "walsh";
+    return false;
+  }
+
   let chartContainer: HTMLDivElement | undefined = $state();
   let disagreementContainer: HTMLDivElement | undefined = $state();
   let chartReady = $state(false);
@@ -869,7 +1007,7 @@ def fit_curves(payload_json):
 </script>
 
 <div class="rounded-md border border-slate-200 bg-white p-4">
-  <div class="mb-4 flex flex-wrap items-center gap-2">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
     <span class="text-xs font-semibold text-slate-700">Curve type:</span>
     {#each allCurveTypes as type (type)}
       <button
@@ -892,6 +1030,26 @@ def fit_curves(payload_json):
     >
       Reset filters
     </button>
+  </div>
+
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <span class="text-xs font-semibold text-slate-700">Preset:</span>
+    {#each presets as preset (preset.key)}
+      {@const isOn = isPresetActive(preset.key)}
+      <button
+        type="button"
+        title={preset.description}
+        class:list={[
+          "rounded-full border px-3 py-1 text-xs",
+          isOn
+            ? "border-slate-900 bg-slate-900 text-white"
+            : "border-slate-300 text-slate-700 hover:border-accent hover:text-accent",
+        ]}
+        onclick={() => applyPreset(preset.key)}
+      >
+        {preset.label}
+      </button>
+    {/each}
   </div>
 
   <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -189,65 +189,76 @@ const protocolEntries = Array.from(
         </tbody>
       </table>
     </div>
-    {
-      paperEntries.some((e) => fitsOf(e).length > 0) ? (
-        <details class="mt-3 rounded-md border border-slate-200 bg-white p-3">
-          <summary class="cursor-pointer text-sm font-semibold text-slate-700">
-            Fit parameters
-          </summary>
-          <div class="mt-3 space-y-3">
-            {paperEntries
-              .filter((e) => fitsOf(e).length > 0)
-              .map((e) => (
-                <div>
-                  <p class="font-mono text-xs text-slate-700">
-                    <a href={hrefForFinding(e.finding_id)}>
-                      {e.finding_id}
-                    </a>
-                    {e.stratification.condition
-                      ? ` · ${e.stratification.condition}`
-                      : ""}
-                    {e.stratification.subject_id
-                      ? ` · ${e.stratification.subject_id}`
-                      : ""}
-                  </p>
-                  <table class="mt-1 w-full text-[11px]">
-                    <thead class="text-left text-[10px] uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th class="px-2 py-1">Variant</th>
-                        <th class="px-2 py-1">Parameters</th>
-                        <th class="px-2 py-1 text-right">logL</th>
-                        <th class="px-2 py-1 text-right">AIC</th>
-                        <th class="px-2 py-1 text-right">BIC</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                      {fitsOf(e).map((f) => (
-                        <tr>
-                          <td class="px-2 py-1 font-mono">
-                            {f.variant_id.replace("model_variant.", "")}
-                          </td>
-                          <td class="px-2 py-1 font-mono">
-                            {paramRow(f.parameters)}
-                          </td>
-                          <td class="px-2 py-1 text-right font-mono">
-                            {f.quality?.log_likelihood?.toFixed(1) ?? "—"}
-                          </td>
-                          <td class="px-2 py-1 text-right font-mono">
-                            {f.quality?.aic?.toFixed(1) ?? "—"}
-                          </td>
-                          <td class="px-2 py-1 text-right font-mono">
-                            {f.quality?.bic?.toFixed(1) ?? "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-          </div>
-        </details>
-      ) : null
-    }
   </section>
+
+  {paperEntries.some((e) => fitsOf(e).length > 0) ? (
+    <section class="mt-10">
+      <header class="mb-3">
+        <h2 class="text-xl">Fit parameters</h2>
+        <p class="mt-1 text-sm text-slate-600">
+          Per-finding fits committed alongside this paper. Parameters,
+          log-likelihood, AIC, and BIC for each variant. Click the finding
+          id for residuals, model-selection winner, and provenance.
+        </p>
+      </header>
+      <div class="space-y-4">
+        {paperEntries
+          .filter((e) => fitsOf(e).length > 0)
+          .map((e) => (
+            <article class="rounded-md border border-slate-200 bg-white p-3">
+              <header class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                <a class="font-mono text-xs" href={hrefForFinding(e.finding_id)}>
+                  {e.finding_id}
+                </a>
+                <span class="text-xs text-slate-500">
+                  {e.stratification.condition
+                    ? `${e.stratification.condition}`
+                    : ""}
+                  {e.stratification.condition && e.stratification.subject_id
+                    ? " · "
+                    : ""}
+                  {e.stratification.subject_id
+                    ? `${e.stratification.subject_id}`
+                    : ""}
+                </span>
+              </header>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-left text-[10px] uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th class="px-2 py-1">Variant</th>
+                      <th class="px-2 py-1">Parameters</th>
+                      <th class="px-2 py-1 text-right" title="log-likelihood">logL</th>
+                      <th class="px-2 py-1 text-right" title="Akaike information criterion">AIC</th>
+                      <th class="px-2 py-1 text-right" title="Bayesian information criterion">BIC</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    {fitsOf(e).map((f) => (
+                      <tr>
+                        <td class="px-2 py-1 font-mono">
+                          {f.variant_id.replace("model_variant.", "")}
+                        </td>
+                        <td class="px-2 py-1 font-mono">
+                          {paramRow(f.parameters)}
+                        </td>
+                        <td class="px-2 py-1 text-right font-mono">
+                          {f.quality?.log_likelihood?.toFixed(1) ?? "—"}
+                        </td>
+                        <td class="px-2 py-1 text-right font-mono">
+                          {f.quality?.aic?.toFixed(1) ?? "—"}
+                        </td>
+                        <td class="px-2 py-1 text-right font-mono">
+                          {f.quality?.bic?.toFixed(1) ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          ))}
+      </div>
+    </section>
+  ) : null}
 </BaseLayout>
