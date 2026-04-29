@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import Term from "../../components/Term.astro";
 import {
   comparisons,
   findings as findingsIndex,
@@ -179,13 +180,16 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
     </h1>
     <p class="mt-3 text-base text-slate-700">
       A textbook prediction in perceptual decision-making: telling a subject
-      that one option is more likely should bias them toward it (μ moves)
-      without changing their underlying sensitivity to the stimulus (σ stays
-      put). Two papers in the atlas test exactly this — once in mice via
-      block-level prior schedules, once in humans via trial-by-trial cues.
-      They use different mechanics, but they make the same prediction.
-      The atlas's canonical psychometric axis lets us read both off side by
-      side.
+      that one option is more likely should bias them toward it (
+      <Term define="psychometric bias — the x-value where P(right) = 50%, in stimulus units">μ</Term>
+      moves) without changing their underlying sensitivity to the stimulus
+      (
+      <Term define="psychometric slope width — larger σ means a shallower curve, i.e. lower discriminability">σ</Term>
+      stays put). Two papers in the atlas test exactly this — once in mice
+      via block-level prior schedules, once in humans via trial-by-trial
+      cues. They use different mechanics, but they make the same
+      prediction. The atlas's canonical psychometric axis lets us read
+      both off side by side.
     </p>
   </header>
 
@@ -307,14 +311,18 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
         <h2 class="text-xl">The takeaway</h2>
       </header>
       <p class="text-base text-slate-700">
-        Both species behave like the classical model predicts: μ moves
-        substantially with the prior, and σ moves much less. The mouse
-        biased-block effect is operationalised at the block timescale
-        (priors persist for ~90 trials) and the human cue effect is
-        operationalised at the trial timescale (cue resets every trial),
-        but the canonical parameters land in the same place — μ shifts
-        in the cued/biased direction, σ stays roughly fixed at each
-        species' baseline.
+        Both species behave like the classical model predicts:
+        <Term define="psychometric bias">μ</Term>
+        moves substantially with the prior, and
+        <Term define="psychometric slope">σ</Term>
+        moves much less. The mouse biased-block effect is operationalised
+        at the block timescale (priors persist for ~90 trials) and the
+        human cue effect is operationalised at the trial timescale (cue
+        resets every trial), but the canonical parameters land in the
+        same place — <Term define="psychometric bias">μ</Term> shifts in
+        the cued/biased direction,
+        <Term define="psychometric slope">σ</Term>
+        stays roughly fixed at each species' baseline.
       </p>
       <p class="mt-3 text-base text-slate-700">
         The atlas's job here is to make this readable in one glance. The
@@ -347,9 +355,17 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
         not symmetric across conditions.
       </li>
       <li>
-        Both fits use the 4-parameter logistic with γ and λ free.
-        Bias-only is the textbook expectation but not the only
-        possibility; a slope change would show up as a non-zero Δσ.
+        Both fits use the
+        <Term define="ψ(x) = γ + (1 − γ − λ) · sigmoid((x − μ) / σ); μ is bias, σ is slope, γ is lower asymptote, λ is upper lapse rate">
+          4-parameter logistic
+        </Term>
+        with
+        <Term define="lower asymptote — chance-rate or guessing baseline at very negative x">γ</Term>
+        and
+        <Term define="upper lapse rate — error rate at very positive x">λ</Term>
+        free. Bias-only is the textbook expectation but not the only
+        possibility; a slope change would show up as a non-zero
+        <Term define="change in σ relative to the reference condition">Δσ</Term>.
       </li>
     </ul>
   </section>

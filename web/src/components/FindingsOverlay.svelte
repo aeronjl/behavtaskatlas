@@ -329,6 +329,21 @@
     }
   }
 
+  // Mobile filter collapse: filters stay visible on md+, toggle on smaller.
+  let filtersExpandedMobile = $state(false);
+
+  const activeFilterCount = $derived.by(() => {
+    let n = 0;
+    if (active.species.size !== filterOptions.species.length) n += 1;
+    if (active.source_data_level.size !== filterOptions.source_data_level.length) n += 1;
+    if (active.evidence_type.size !== filterOptions.evidence_type.length) n += 1;
+    if (active.response_modality.size !== filterOptions.response_modality.length) n += 1;
+    if (yearStart !== minYear || yearEnd !== maxYear) n += 1;
+    if (searchText.trim().length > 0) n += 1;
+    if (showOnlyPooled) n += 1;
+    return n;
+  });
+
   function isPresetActive(key: PresetKey): boolean {
     const hasFullSet = (filterKey: FilterKey) =>
       active[filterKey].size === filterOptions[filterKey].length;
@@ -1052,77 +1067,101 @@ def fit_curves(payload_json):
     {/each}
   </div>
 
-  <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-    {#each Object.entries(filterOptions) as [key, values] (key)}
+  <button
+    type="button"
+    class="mb-3 flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 md:hidden"
+    onclick={() => (filtersExpandedMobile = !filtersExpandedMobile)}
+    aria-expanded={filtersExpandedMobile}
+  >
+    <span class="font-semibold">
+      Filters
+      {#if activeFilterCount > 0}
+        <span class="ml-1 rounded bg-accent-soft px-1.5 py-0.5 text-[10px] text-accent">
+          {activeFilterCount} active
+        </span>
+      {/if}
+    </span>
+    <span aria-hidden="true">{filtersExpandedMobile ? "−" : "+"}</span>
+  </button>
+
+  <div
+    class:list={[
+      filtersExpandedMobile ? "block" : "hidden",
+      "md:block",
+    ]}
+  >
+    <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      {#each Object.entries(filterOptions) as [key, values] (key)}
+        <fieldset class="rounded border border-slate-200 p-3">
+          <legend class="px-1 text-xs font-semibold text-slate-700">
+            {filterLabels[key as FilterKey]}
+          </legend>
+          <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {#each values as value (value)}
+              <label class="flex items-center gap-1 text-xs text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={active[key as FilterKey].has(value)}
+                  onchange={() => toggle(key as FilterKey, value)}
+                />
+                {value}
+              </label>
+            {/each}
+          </div>
+          <div class="mt-2 flex gap-2 text-[11px]">
+            <button
+              type="button"
+              class="text-accent underline"
+              onclick={() => selectAll(key as FilterKey)}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="text-accent underline"
+              onclick={() => selectNone(key as FilterKey)}
+            >
+              None
+            </button>
+          </div>
+        </fieldset>
+      {/each}
+    </div>
+
+    <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
       <fieldset class="rounded border border-slate-200 p-3">
-        <legend class="px-1 text-xs font-semibold text-slate-700">
-          {filterLabels[key as FilterKey]}
-        </legend>
-        <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-          {#each values as value (value)}
-            <label class="flex items-center gap-1 text-xs text-slate-700">
-              <input
-                type="checkbox"
-                checked={active[key as FilterKey].has(value)}
-                onchange={() => toggle(key as FilterKey, value)}
-              />
-              {value}
-            </label>
-          {/each}
-        </div>
-        <div class="mt-2 flex gap-2 text-[11px]">
-          <button
-            type="button"
-            class="text-accent underline"
-            onclick={() => selectAll(key as FilterKey)}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            class="text-accent underline"
-            onclick={() => selectNone(key as FilterKey)}
-          >
-            None
-          </button>
+        <legend class="px-1 text-xs font-semibold text-slate-700">Year range</legend>
+        <div class="mt-1 flex items-center gap-2 text-xs text-slate-700">
+          <input
+            type="number"
+            min={minYear}
+            max={maxYear}
+            bind:value={yearStart}
+            class="w-20 rounded border border-slate-200 px-1 py-0.5"
+          />
+          <span>–</span>
+          <input
+            type="number"
+            min={minYear}
+            max={maxYear}
+            bind:value={yearEnd}
+            class="w-20 rounded border border-slate-200 px-1 py-0.5"
+          />
+          <span class="ml-2 text-[11px] text-slate-500">
+            (atlas: {minYear}–{maxYear})
+          </span>
         </div>
       </fieldset>
-    {/each}
-  </div>
-
-  <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-    <fieldset class="rounded border border-slate-200 p-3">
-      <legend class="px-1 text-xs font-semibold text-slate-700">Year range</legend>
-      <div class="mt-1 flex items-center gap-2 text-xs text-slate-700">
+      <fieldset class="rounded border border-slate-200 p-3">
+        <legend class="px-1 text-xs font-semibold text-slate-700">Search</legend>
         <input
-          type="number"
-          min={minYear}
-          max={maxYear}
-          bind:value={yearStart}
-          class="w-20 rounded border border-slate-200 px-1 py-0.5"
+          type="search"
+          placeholder="paper / protocol / finding id…"
+          bind:value={searchText}
+          class="mt-1 w-full rounded border border-slate-200 px-2 py-1 text-xs"
         />
-        <span>–</span>
-        <input
-          type="number"
-          min={minYear}
-          max={maxYear}
-          bind:value={yearEnd}
-          class="w-20 rounded border border-slate-200 px-1 py-0.5"
-        />
-        <span class="ml-2 text-[11px] text-slate-500">
-          (atlas: {minYear}–{maxYear})
-        </span>
-      </div>
-    </fieldset>
-    <fieldset class="rounded border border-slate-200 p-3">
-      <legend class="px-1 text-xs font-semibold text-slate-700">Search</legend>
-      <input
-        type="search"
-        placeholder="paper / protocol / finding id…"
-        bind:value={searchText}
-        class="mt-1 w-full rounded border border-slate-200 px-2 py-1 text-xs"
-      />
-    </fieldset>
+      </fieldset>
+    </div>
   </div>
 
   <div class="mb-2 flex flex-wrap items-center gap-3">
@@ -1150,10 +1189,33 @@ def fit_curves(payload_json):
         </span>
       </span>
     </label>
-    {#if fitStatusLabel}
-      <span class="text-[11px] text-slate-500">{fitStatusLabel}</span>
-    {/if}
   </div>
+
+  {#if fitEnabled && fitStatus !== "idle" && fitStatus !== "done"}
+    <div
+      class:list={[
+        "mb-3 flex items-center gap-3 rounded px-3 py-2 text-xs",
+        fitStatus === "error"
+          ? "border border-bad bg-bad-soft text-bad"
+          : "border border-accent-soft bg-accent-soft text-accent",
+      ]}
+      role="status"
+      aria-live="polite"
+    >
+      {#if fitStatus !== "error"}
+        <span
+          class="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"
+          aria-hidden="true"
+        ></span>
+      {/if}
+      <span>
+        {fitStatusLabel || "Working…"}
+        {#if fitStatus === "loading-runtime"}
+          <span class="text-slate-500">— first toggle downloads ~10 MB Pyodide; subsequent fits are fast</span>
+        {/if}
+      </span>
+    </div>
+  {/if}
 
   <div bind:this={chartContainer} class="w-full"></div>
 

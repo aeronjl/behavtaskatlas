@@ -699,6 +699,27 @@ def _lsp_query(kind, code, line, col):
         : ""}{edited ? " · edited" : ""}
     </span>
   </div>
+
+  {#if inFlight}
+    <div
+      class="mt-3 flex items-center gap-3 rounded border border-accent-soft bg-accent-soft px-3 py-2 text-xs text-accent"
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        class="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"
+        aria-hidden="true"
+      ></span>
+      <span>
+        {STATUS_LABELS[status]}
+        {#if status === "loading-runtime"}
+          <span class="text-slate-500">— first run downloads ~10 MB; subsequent runs are instant</span>
+        {:else if status === "loading-packages"}
+          <span class="text-slate-500">— numpy, pandas, matplotlib (cached after first run)</span>
+        {/if}
+      </span>
+    </div>
+  {/if}
   {#if output}
     <pre
       class="mt-3 max-h-96 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800">{output}</pre>

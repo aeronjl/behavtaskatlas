@@ -1,0 +1,30 @@
+---
+interface Props {
+  define: string;
+  class?: string;
+}
+
+const { define, class: className } = Astro.props as Props;
+---
+
+<abbr
+  title={define}
+  class:list={[
+    "cursor-help no-underline decoration-dotted decoration-slate-400 underline-offset-2 hover:decoration-solid",
+    "[text-decoration-line:underline]",
+    className,
+  ]}
+>
+  <slot />
+</abbr>
+
+<style>
+  abbr {
+    text-decoration: underline dotted #94a3b8;
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+  abbr:hover {
+    text-decoration-style: solid;
+  }
+</style>
