@@ -22,7 +22,10 @@ protocol_ids:
   - protocol.mouse-visual-contrast-wheel-temporal-regularities
 dataset_ids:
   - dataset.fritsche-temporal-regularities-figshare
-finding_ids: []
+finding_ids:
+  - finding.fritsche-2024-temporal-regularities.psychometric.alternating
+  - finding.fritsche-2024-temporal-regularities.psychometric.neutral
+  - finding.fritsche-2024-temporal-regularities.psychometric.repeating
 curation_status: analysis-verified
 notes: >
   Directly relevant visual contrast wheel variant that manipulates

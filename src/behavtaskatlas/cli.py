@@ -1974,6 +1974,40 @@ def main(argv: list[str] | None = None) -> int:
         help="X-axis units written into the curve",
     )
     extract_finding_parser.add_argument(
+        "--summary-filename",
+        default=None,
+        help=(
+            "For pooled psychometric extraction, summary CSV filename under "
+            "the slice derived directory."
+        ),
+    )
+    extract_finding_parser.add_argument(
+        "--condition-column",
+        default=None,
+        help=(
+            "For pooled psychometric extraction, column used to split "
+            "condition-specific findings."
+        ),
+    )
+    extract_finding_parser.add_argument(
+        "--y-column",
+        default=None,
+        help="For pooled psychometric extraction, response fraction column.",
+    )
+    extract_finding_parser.add_argument(
+        "--y-label",
+        default=None,
+        help="For pooled psychometric extraction, y-axis label.",
+    )
+    extract_finding_parser.add_argument(
+        "--n-column",
+        default=None,
+        help=(
+            "For pooled psychometric extraction, denominator column. If omitted, "
+            "n_response then n_trials are used."
+        ),
+    )
+    extract_finding_parser.add_argument(
         "--derived-dir",
         default="derived",
         help="Derived artifact root containing the slice's summary CSV",
@@ -2762,6 +2796,11 @@ def main(argv: list[str] | None = None) -> int:
             ),
             x_label=args.x_label,
             x_units=args.x_units,
+            summary_filename=args.summary_filename,
+            condition_column=args.condition_column,
+            y_column=args.y_column,
+            y_label=args.y_label,
+            n_column=args.n_column,
             derived_dir=Path(args.derived_dir),
         )
     if args.command == "import-supplement":
@@ -5734,6 +5773,11 @@ def _extract_finding(
     condition_values: tuple[str, ...] | None = None,
     x_label: str | None,
     x_units: str | None,
+    summary_filename: str | None,
+    condition_column: str | None,
+    y_column: str | None,
+    y_label: str | None,
+    n_column: str | None,
     derived_dir: Path,
 ) -> int:
     from behavtaskatlas.models import VerticalSlice
@@ -5775,12 +5819,30 @@ def _extract_finding(
         extractor_kwargs["x_label"] = x_label
     if x_units is not None:
         extractor_kwargs["x_units"] = x_units
+    if summary_filename is not None:
+        extractor_kwargs["summary_filename"] = summary_filename
+    if condition_column is not None:
+        extractor_kwargs["condition_column"] = condition_column
+    if y_column is not None:
+        extractor_kwargs["y_column"] = y_column
+    if y_label is not None:
+        extractor_kwargs["y_label"] = y_label
+    if n_column is not None:
+        extractor_kwargs["n_column"] = n_column
 
     try:
         if curve_type == "psychometric":
             extractor_kwargs.setdefault("x_label", "Signed evidence")
             extractor_kwargs.setdefault("x_units", "")
             if by_subject_condition is not None:
+                for key in (
+                    "summary_filename",
+                    "condition_column",
+                    "y_column",
+                    "y_label",
+                    "n_column",
+                ):
+                    extractor_kwargs.pop(key, None)
                 findings = extract_subject_condition_psychometric_findings_for_slice(
                     slice_record,
                     condition_column=by_subject_condition,
@@ -5788,6 +5850,14 @@ def _extract_finding(
                     **extractor_kwargs,
                 )
             elif by_subject:
+                for key in (
+                    "summary_filename",
+                    "condition_column",
+                    "y_column",
+                    "y_label",
+                    "n_column",
+                ):
+                    extractor_kwargs.pop(key, None)
                 findings = extract_subject_psychometric_findings_for_slice(
                     slice_record, **extractor_kwargs
                 )

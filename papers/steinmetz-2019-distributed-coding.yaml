@@ -21,7 +21,8 @@ protocol_ids:
   - protocol.mouse-unforced-visual-contrast-wheel
 dataset_ids:
   - dataset.steinmetz-visual-decision-figshare
-finding_ids: []
+finding_ids:
+  - finding.steinmetz-2019-distributed-coding.choice-conditional-psychometric
 curation_status: data-linked
 notes: >
   Source paper for the Steinmetz mouse visual decision Figshare/ONE dataset.

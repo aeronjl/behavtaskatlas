@@ -5,11 +5,11 @@ per stratification group), and walks every Paper + Finding YAML in the
 repository into a denormalized FindingsIndexPayload that the Astro
 build consumes statically.
 
-Slice extraction is intentionally narrow: it currently understands the
-psychometric_summary.csv format (signed-evidence axis, p_right by
-prior_context group). Other curve types — chronometric, accuracy by
-strength, hit-rate by image pair — get their own helpers as we add
-findings that need them rather than upfront.
+Slice extraction is intentionally narrow: the psychometric path reads a
+signed-evidence axis and p_right-like response fraction, optionally grouped by
+a condition column. Other curve types — chronometric, accuracy by strength,
+hit-rate by image pair — get their own helpers as we add findings that need
+them rather than upfront.
 """
 
 from __future__ import annotations
@@ -98,10 +98,14 @@ def extract_psychometric_findings_for_slice(
     x_label: str,
     x_units: str,
     summary_filename: str = "psychometric_summary.csv",
+    condition_column: str = "prior_context",
+    y_column: str = "p_right",
+    y_label: str = "p_right",
+    n_column: str | None = None,
 ) -> list[Finding]:
-    """Build one Finding per prior_context group from the slice's
-    psychometric_summary.csv. If the prior_context column is empty
-    everywhere, return a single ungrouped Finding.
+    """Build one Finding per condition group from a slice summary CSV.
+    If the condition column is absent or empty everywhere, return a single
+    ungrouped Finding.
 
     The slice must point at one dataset and one protocol; the resulting
     findings inherit those plus the slice's source_data_level so the
@@ -114,7 +118,7 @@ def extract_psychometric_findings_for_slice(
     rows = _read_csv_rows(summary_path)
     grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in rows:
-        ctx = (row.get("prior_context") or "").strip()
+        ctx = (row.get(condition_column) or "").strip()
         grouped[ctx].append(row)
 
     findings: list[Finding] = []
@@ -122,8 +126,13 @@ def extract_psychometric_findings_for_slice(
         points: list[CurvePoint] = []
         for row in ctx_rows:
             x = _to_float(row.get("stimulus_value", ""))
-            y = _to_float(row.get("p_right", ""))
-            n = _to_int(row.get("n_response", "")) or _to_int(row.get("n_trials", ""))
+            y = _to_float(row.get(y_column, ""))
+            if n_column is None:
+                n = _to_int(row.get("n_response", "")) or _to_int(
+                    row.get("n_trials", "")
+                )
+            else:
+                n = _to_int(row.get(n_column, ""))
             if x is None or y is None or n is None:
                 continue
             points.append(CurvePoint(x=x, n=n, y=y))
@@ -154,13 +163,14 @@ def extract_psychometric_findings_for_slice(
                 curve_type="psychometric",
                 x_label=x_label,
                 x_units=x_units,
-                y_label="p_right",
+                y_label=y_label,
                 points=points,
             ),
             extraction_method="harmonized-pipeline",
             extraction_notes=(
                 f"Aggregated from {summary_path.name} for "
-                f"prior_context={ctx or 'all'!r}."
+                f"{condition_column}={ctx or 'all'!r}; y_column={y_column!r}, "
+                f"n_column={n_column or 'n_response|n_trials'!r}."
             ),
             provenance=_today_provenance(),
         )

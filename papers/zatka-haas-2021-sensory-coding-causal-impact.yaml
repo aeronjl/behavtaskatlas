@@ -20,7 +20,8 @@ protocol_ids:
   - protocol.mouse-unforced-visual-contrast-wheel
 dataset_ids:
   - dataset.zatka-haas-visual-decision-figshare
-finding_ids: []
+finding_ids:
+  - finding.zatka-haas-2021-sensory-coding-causal-impact.choice-conditional-psychometric
 curation_status: data-linked
 notes: >
   Uses a wheel-based mouse visual contrast decision task to separate sensory

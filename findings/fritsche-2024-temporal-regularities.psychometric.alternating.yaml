@@ -1,0 +1,60 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.fritsche-2024-temporal-regularities.psychometric.alternating
+paper_id: paper.fritsche-2024-temporal-regularities
+protocol_id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_id: dataset.fritsche-temporal-regularities-figshare
+slice_id: slice.fritsche-temporal-regularities
+source_data_level: processed-trial
+n_trials: 47176
+stratification:
+  condition: Alternating
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 3972
+    y: 0.0798086606243706
+  - x: -50.0
+    n: 3871
+    y: 0.10023249806251615
+  - x: -25.0
+    n: 3995
+    y: 0.12265331664580725
+  - x: -12.5
+    n: 3999
+    y: 0.18129532383095773
+  - x: -6.25
+    n: 3892
+    y: 0.2787769784172662
+  - x: 0.0
+    n: 7843
+    y: 0.4782608695652174
+  - x: 6.25
+    n: 3973
+    y: 0.6800906116284923
+  - x: 12.5
+    n: 3970
+    y: 0.806801007556675
+  - x: 25.0
+    n: 3960
+    y: 0.8671717171717171
+  - x: 50.0
+    n: 3813
+    y: 0.912667191188041
+  - x: 100.0
+    n: 3888
+    y: 0.9320987654320988
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='Alternating';
+  y_column='p_right', n_column='n_response'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

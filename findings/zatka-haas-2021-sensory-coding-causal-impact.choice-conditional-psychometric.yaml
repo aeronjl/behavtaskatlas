@@ -1,0 +1,65 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.zatka-haas-2021-sensory-coding-causal-impact.choice-conditional-psychometric
+paper_id: paper.zatka-haas-2021-sensory-coding-causal-impact
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.zatka-haas-visual-decision-figshare
+slice_id: slice.zatka-haas-visual-decision
+source_data_level: processed-trial
+n_trials: 7547
+stratification: {}
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right_choice_trials
+  points:
+  - x: -54.0
+    n: 579
+    y: 0.05008635578583765
+  - x: -44.0
+    n: 357
+    y: 0.12885154061624648
+  - x: -30.0
+    n: 418
+    y: 0.2631578947368421
+  - x: -24.0
+    n: 549
+    y: 0.08925318761384335
+  - x: -14.0
+    n: 389
+    y: 0.22879177377892032
+  - x: -10.0
+    n: 283
+    y: 0.15901060070671377
+  - x: 0.0
+    n: 2357
+    y: 0.4739075095460331
+  - x: 10.0
+    n: 286
+    y: 0.7867132867132867
+  - x: 14.0
+    n: 393
+    y: 0.6997455470737913
+  - x: 24.0
+    n: 554
+    y: 0.8826714801444043
+  - x: 30.0
+    n: 388
+    y: 0.6469072164948454
+  - x: 44.0
+    n: 419
+    y: 0.8329355608591885
+  - x: 54.0
+    n: 575
+    y: 0.951304347826087
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from choice_summary.csv for condition='all'; y_column='p_right',
+  n_column='n_choice'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

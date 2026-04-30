@@ -1,0 +1,66 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.fritsche-2024-temporal-regularities.psychometric.neutral
+paper_id: paper.fritsche-2024-temporal-regularities
+protocol_id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_id: dataset.fritsche-temporal-regularities-figshare
+slice_id: slice.fritsche-temporal-regularities
+source_data_level: processed-trial
+n_trials: 173723
+stratification:
+  condition: Neutral
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 38565
+    y: 0.39976662777129524
+  - x: -50.0
+    n: 14168
+    y: 0.17080745341614906
+  - x: -25.0
+    n: 11404
+    y: 0.17406173272535952
+  - x: -12.5
+    n: 8941
+    y: 0.204675092271558
+  - x: -12.0
+    n: 1002
+    y: 0.4780439121756487
+  - x: -6.25
+    n: 9082
+    y: 0.3595023122660207
+  - x: 0.0
+    n: 12092
+    y: 0.4688223618921601
+  - x: 6.25
+    n: 9066
+    y: 0.6031325832781822
+  - x: 12.0
+    n: 946
+    y: 0.7219873150105708
+  - x: 12.5
+    n: 9044
+    y: 0.7320875718708536
+  - x: 25.0
+    n: 11438
+    y: 0.7975170484350411
+  - x: 50.0
+    n: 14202
+    y: 0.8333333333333334
+  - x: 100.0
+    n: 33773
+    y: 0.6816687886773458
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from psychometric_summary.csv for prior_context='Neutral';
+  y_column='p_right', n_column='n_response'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

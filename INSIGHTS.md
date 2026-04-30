@@ -2,6 +2,29 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:53:53 BST - Promoted three visual-contrast papers into findings
+
+Converted Fritsche, Steinmetz, and Zatka-Haas data-linked slice outputs into
+first-class `Finding` YAML records and linked them from their paper records.
+Fritsche contributes prior/regularity-stratified psychometric curves; Steinmetz
+and Zatka-Haas contribute choice-conditional psychometric curves using
+`n_choice` denominators because no-go/withhold is an explicit task outcome.
+Immediate MVP implication: the visual contrast depth pass now adds both
+strict-2AFC regularity variation and unforced-wheel choice-surface variation to
+the comparable findings layer, raising coverage to 87 findings across 11
+finding-backed papers.
+
+## 2026-04-30 13:53:53 BST - Deferred IBL 2025 paper findings pending aggregate scope
+
+Kept the IBL Brainwide Map and prior-map papers as data-linked/no-finding
+records for this pass. The current paper-linked slice is a representative
+single session, while the family aggregate contains multiple Brainwide sessions
+but is not yet represented as a paper-specific finding source. Immediate MVP
+implication: the next IBL step should be either a clearly labeled
+representative-session finding or a proper multi-session Brainwide aggregate,
+not a duplicate of the existing IBL 2021 single-session curves under the 2025
+papers.
+
 ## 2026-04-30 13:45:26 BST - Classified zero-finding paper gaps
 
 The ten curated papers without standardized findings split into two gap types:

@@ -1,0 +1,53 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.steinmetz-2019-distributed-coding.choice-conditional-psychometric
+paper_id: paper.steinmetz-2019-distributed-coding
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.steinmetz-visual-decision-figshare
+slice_id: slice.steinmetz-visual-decision
+source_data_level: processed-trial
+n_trials: 6745
+stratification: {}
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right_choice_trials
+  points:
+  - x: -100.0
+    n: 722
+    y: 0.01662049861495845
+  - x: -75.0
+    n: 587
+    y: 0.06814310051107325
+  - x: -50.0
+    n: 891
+    y: 0.08080808080808081
+  - x: -25.0
+    n: 476
+    y: 0.15756302521008403
+  - x: 0.0
+    n: 1439
+    y: 0.5496872828353023
+  - x: 25.0
+    n: 544
+    y: 0.8382352941176471
+  - x: 50.0
+    n: 824
+    y: 0.8883495145631068
+  - x: 75.0
+    n: 533
+    y: 0.9174484052532833
+  - x: 100.0
+    n: 729
+    y: 0.9684499314128944
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: Aggregated from aggregate_signed_contrast_summary.csv for condition='all';
+  y_column='p_right', n_column='n_choice'.
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.
