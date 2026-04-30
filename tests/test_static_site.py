@@ -150,14 +150,14 @@ def test_static_manifest_json_contains_comparison_rows(tmp_path) -> None:
     )
     assert loaded["manifest_schema_version"] == "0.1.0"
     assert loaded["manifest_link"] == "manifest.json"
-    assert len(loaded["comparison_rows"]) == 9
+    assert len(loaded["comparison_rows"]) == 17
     assert rdm_row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert rdm_row["source_data_level"] == "processed-trial"
     assert rdm_row["trial_count"] == 6149
     assert loaded["health"]["source_data_level_counts"] == {
         "figure-source-data": 1,
-        "processed-trial": 6,
-        "raw-trial": 2,
+        "processed-trial": 12,
+        "raw-trial": 4,
     }
 
 
@@ -307,6 +307,46 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["protocols"]
         if row["protocol_id"] == "protocol.mouse-visual-contrast-wheel-unbiased"
     )
+    port_contrast_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-contrast-port-2afc"
+    )
+    value_block_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-contrast-wheel-value-blocks"
+    )
+    temporal_regularities_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-contrast-wheel-temporal-regularities"
+    )
+    lick_gonogo_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-contrast-lick-gonogo"
+    )
+    steinmetz_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-unforced-visual-contrast-wheel"
+    )
+    odoemene_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-visual-flash-rate-accumulation"
+    )
+    coen_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-audiovisual-spatial-wheel"
+    )
+    rodgers_protocol = next(
+        row
+        for row in payload["protocols"]
+        if row["protocol_id"] == "protocol.mouse-whisker-object-recognition-lick"
+    )
     human_visual_protocol = next(
         row
         for row in payload["protocols"]
@@ -342,6 +382,46 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         row
         for row in payload["vertical_slices"]
         if row["slice_id"] == "slice.mouse-visual-contrast-unbiased"
+    )
+    temporal_regularities_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.fritsche-temporal-regularities"
+    )
+    steinmetz_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.steinmetz-visual-decision"
+    )
+    zatka_haas_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.zatka-haas-visual-decision"
+    )
+    odoemene_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.odoemene-visual-accumulation"
+    )
+    coen_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.coen-audiovisual-spatial-wheel"
+    )
+    rodgers_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.rodgers-whisker-object-recognition"
+    )
+    brainwide_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.ibl-brainwide-map-behavior"
+    )
+    allen_vbn_slice = next(
+        row
+        for row in payload["vertical_slices"]
+        if row["slice_id"] == "slice.allen-visual-behavior-neuropixels"
     )
     human_visual_slice = next(
         row
@@ -383,6 +463,46 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         for row in payload["datasets"]
         if row["dataset_id"] == "dataset.walsh-prior-cue-human-contrast-osf"
     )
+    steinmetz_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.steinmetz-visual-decision-figshare"
+    )
+    zatka_haas_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.zatka-haas-visual-decision-figshare"
+    )
+    odoemene_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.odoemene-visual-evidence-accumulation-cshl"
+    )
+    coen_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.coen-audiovisual-decisions-ucl"
+    )
+    rodgers_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.rodgers-whisker-object-recognition-dandi"
+    )
+    brainwide_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.ibl-brainwide-map-2025"
+    )
+    temporal_regularities_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.fritsche-temporal-regularities-figshare"
+    )
+    allen_vbn_dataset = next(
+        row
+        for row in payload["datasets"]
+        if row["dataset_id"] == "dataset.allen-visual-behavior-neuropixels"
+    )
     rdm_detail = next(
         row
         for row in payload["protocol_details"]
@@ -394,21 +514,24 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         if row["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     )
 
-    assert payload["counts"]["task_families"] == 4
-    assert payload["counts"]["protocols"] == 10
-    assert payload["counts"]["datasets"] == 8
-    assert payload["counts"]["vertical_slices"] == 9
+    assert payload["counts"]["task_families"] == 7
+    assert payload["counts"]["protocols"] == 18
+    assert payload["counts"]["datasets"] == 16
+    assert payload["counts"]["vertical_slices"] == 17
     assert payload["counts"]["report_available"] == 1
-    assert len(payload["protocol_details"]) == 10
-    assert len(payload["dataset_details"]) == 8
-    assert graph_payload["counts"]["nodes"] == 31
-    assert graph_payload["counts"]["edges"] == 48
-    assert graph_payload["counts"]["qa_issues"] == 0
-    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 0, "total": 0}
+    assert len(payload["protocol_details"]) == 18
+    assert len(payload["dataset_details"]) == 16
+    assert graph_payload["counts"]["nodes"] == 58
+    assert graph_payload["counts"]["edges"] == 88
+    assert graph_payload["counts"]["qa_issues"] == 6
+    assert graph_payload["qa_summary"] == {"error": 0, "warning": 0, "info": 6, "total": 6}
     assert loaded_graph["graph_schema_version"] == "0.1.0"
-    assert queue_payload["counts"] == {"items": 0, "open": 0}
-    assert queue_payload["priority_counts"] == {}
-    assert queue_payload["action_counts"] == {}
+    assert queue_payload["counts"] == {"items": 6, "open": 6}
+    assert queue_payload["priority_counts"] == {"normal": 6}
+    assert queue_payload["action_counts"] == {
+        "needs dataset": 3,
+        "needs vertical slice": 3,
+    }
     assert loaded_queue["queue_schema_version"] == "0.1.0"
     assert any(
         node["node_id"] == "protocol.random-dot-motion-classic-macaque"
@@ -442,6 +565,18 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
         "edge_type": "protocol_variant",
         "label": "template has variant",
     } in graph_payload["edges"]
+    assert {
+        "source": "dataset.allen-visual-behavior-neuropixels",
+        "target": "slice.allen-visual-behavior-neuropixels",
+        "edge_type": "dataset_slice",
+        "label": "dataset backs slice",
+    } in graph_payload["edges"]
+    assert {
+        "source": "protocol.mouse-visual-contrast-wheel-temporal-regularities",
+        "target": "dataset.fritsche-temporal-regularities-figshare",
+        "edge_type": "protocol_dataset",
+        "label": "protocol uses dataset",
+    } in graph_payload["edges"]
     assert not any(issue["severity"] == "warning" for issue in graph_payload["qa_issues"])
     assert rdm_protocol["dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
     assert rdm_protocol["declared_dataset_ids"] == ["dataset.roitman-shadlen-rdm-pyddm"]
@@ -467,8 +602,81 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert mouse_unbiased_protocol["dataset_ids"] == ["dataset.ibl-public-behavior"]
     assert mouse_unbiased_protocol["slice_ids"] == ["slice.mouse-visual-contrast-unbiased"]
     assert mouse_unbiased_protocol["report_status"] == "analysis pending"
+    assert port_contrast_protocol["dataset_ids"] == []
+    assert port_contrast_protocol["slice_ids"] == []
+    assert port_contrast_protocol["report_status"] == "no slice"
+    assert value_block_protocol["dataset_ids"] == []
+    assert value_block_protocol["slice_ids"] == []
+    assert value_block_protocol["report_status"] == "no slice"
+    assert temporal_regularities_protocol["dataset_ids"] == [
+        "dataset.fritsche-temporal-regularities-figshare"
+    ]
+    assert temporal_regularities_protocol["declared_dataset_ids"] == [
+        "dataset.fritsche-temporal-regularities-figshare"
+    ]
+    assert temporal_regularities_protocol["slice_ids"] == [
+        "slice.fritsche-temporal-regularities"
+    ]
+    assert temporal_regularities_protocol["report_status"] == "analysis pending"
+    assert lick_gonogo_protocol["dataset_ids"] == []
+    assert lick_gonogo_protocol["slice_ids"] == []
+    assert lick_gonogo_protocol["report_status"] == "no slice"
     assert mouse_unbiased_slice["protocol_id"] == "protocol.mouse-visual-contrast-wheel-unbiased"
     assert mouse_unbiased_slice["report_status"] == "missing"
+    assert temporal_regularities_slice["protocol_id"] == (
+        "protocol.mouse-visual-contrast-wheel-temporal-regularities"
+    )
+    assert temporal_regularities_slice["dataset_id"] == (
+        "dataset.fritsche-temporal-regularities-figshare"
+    )
+    assert temporal_regularities_slice["source_data_level"] == "processed-trial"
+    assert temporal_regularities_slice["report_status"] == "missing"
+    assert steinmetz_protocol["dataset_ids"] == [
+        "dataset.steinmetz-visual-decision-figshare",
+        "dataset.zatka-haas-visual-decision-figshare",
+    ]
+    assert steinmetz_protocol["slice_ids"] == [
+        "slice.steinmetz-visual-decision",
+        "slice.zatka-haas-visual-decision",
+    ]
+    assert steinmetz_protocol["report_status"] == "analysis pending"
+    assert steinmetz_slice["protocol_id"] == "protocol.mouse-unforced-visual-contrast-wheel"
+    assert steinmetz_slice["source_data_level"] == "processed-trial"
+    assert steinmetz_slice["report_status"] == "missing"
+    assert zatka_haas_slice["protocol_id"] == "protocol.mouse-unforced-visual-contrast-wheel"
+    assert zatka_haas_slice["dataset_id"] == "dataset.zatka-haas-visual-decision-figshare"
+    assert zatka_haas_slice["source_data_level"] == "processed-trial"
+    assert zatka_haas_slice["report_status"] == "missing"
+    assert odoemene_protocol["dataset_ids"] == [
+        "dataset.odoemene-visual-evidence-accumulation-cshl"
+    ]
+    assert odoemene_protocol["slice_ids"] == ["slice.odoemene-visual-accumulation"]
+    assert odoemene_protocol["report_status"] == "analysis pending"
+    assert odoemene_slice["protocol_id"] == "protocol.mouse-visual-flash-rate-accumulation"
+    assert odoemene_slice["source_data_level"] == "raw-trial"
+    assert odoemene_slice["report_status"] == "missing"
+    assert coen_protocol["dataset_ids"] == ["dataset.coen-audiovisual-decisions-ucl"]
+    assert coen_protocol["slice_ids"] == ["slice.coen-audiovisual-spatial-wheel"]
+    assert coen_protocol["report_status"] == "analysis pending"
+    assert coen_slice["protocol_id"] == "protocol.mouse-audiovisual-spatial-wheel"
+    assert coen_slice["source_data_level"] == "processed-trial"
+    assert coen_slice["report_status"] == "missing"
+    assert rodgers_protocol["dataset_ids"] == [
+        "dataset.rodgers-whisker-object-recognition-dandi"
+    ]
+    assert rodgers_protocol["slice_ids"] == ["slice.rodgers-whisker-object-recognition"]
+    assert rodgers_protocol["report_status"] == "analysis pending"
+    assert rodgers_slice["protocol_id"] == "protocol.mouse-whisker-object-recognition-lick"
+    assert rodgers_slice["source_data_level"] == "processed-trial"
+    assert rodgers_slice["report_status"] == "missing"
+    assert brainwide_slice["protocol_id"] == "protocol.ibl-visual-decision-v1"
+    assert brainwide_slice["dataset_id"] == "dataset.ibl-brainwide-map-2025"
+    assert brainwide_slice["source_data_level"] == "processed-trial"
+    assert brainwide_slice["report_status"] == "missing"
+    assert allen_vbn_slice["protocol_id"] == "protocol.mouse-visual-change-detection-allen"
+    assert allen_vbn_slice["dataset_id"] == "dataset.allen-visual-behavior-neuropixels"
+    assert allen_vbn_slice["source_data_level"] == "raw-trial"
+    assert allen_vbn_slice["report_status"] == "missing"
     assert human_visual_protocol["dataset_ids"] == [
         "dataset.walsh-prior-cue-human-contrast-osf"
     ]
@@ -511,5 +719,15 @@ def test_catalog_payload_indexes_records_and_report_status(tmp_path) -> None:
     assert rdm_dataset["dataset_id"] == "dataset.roitman-shadlen-rdm-pyddm"
     assert human_clicks_dataset["dataset_id"] == "dataset.london-human-poisson-clicks-dbs-mendeley"
     assert human_visual_dataset["dataset_id"] == "dataset.walsh-prior-cue-human-contrast-osf"
+    assert steinmetz_dataset["slice_ids"] == ["slice.steinmetz-visual-decision"]
+    assert zatka_haas_dataset["slice_ids"] == ["slice.zatka-haas-visual-decision"]
+    assert odoemene_dataset["slice_ids"] == ["slice.odoemene-visual-accumulation"]
+    assert coen_dataset["slice_ids"] == ["slice.coen-audiovisual-spatial-wheel"]
+    assert rodgers_dataset["slice_ids"] == ["slice.rodgers-whisker-object-recognition"]
+    assert brainwide_dataset["slice_ids"] == ["slice.ibl-brainwide-map-behavior"]
+    assert temporal_regularities_dataset["slice_ids"] == [
+        "slice.fritsche-temporal-regularities"
+    ]
+    assert allen_vbn_dataset["slice_ids"] == ["slice.allen-visual-behavior-neuropixels"]
     assert loaded["catalog_schema_version"] == "0.1.0"
     assert loaded["health"]["source_data_level_counts"]["figure-source-data"] == 1

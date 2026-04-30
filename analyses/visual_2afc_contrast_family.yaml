@@ -1,0 +1,52 @@
+analysis_id: analysis.visual-2afc-contrast-family.real-trial-summary
+family_id: family.visual-2afc-contrast
+status: analysis-verified
+inputs:
+  - IBL visual decision canonical trials
+  - IBL trainingChoiceWorld canonical trials
+  - Fritsche temporal-regularities visual wheel canonical trials
+  - 10 IBL Brainwide Map ephysChoiceWorld canonical trial sessions
+  - 39 Steinmetz visual decision canonical trial sessions
+  - Zatka-Haas higher-power inactivation canonical trials
+implemented_outputs:
+  - source-level real-trial summary preserving protocol, dataset, and slice ids
+  - signed-contrast summary by source
+  - pooled signed-contrast summary with explicit withhold and no-response counts
+  - response-format summary splitting strict 2AFC wheel and unforced wheel sources
+  - protocol-normalized signed-contrast summary and SVG
+  - source-balanced protocol-normalized summary and SVG
+  - session-balanced protocol-normalized summary and SVG
+  - subject-balanced protocol-normalized summary and SVG
+  - Fritsche temporal-regularities source coverage with environment-preserving canonical trials
+  - multi-session IBL Brainwide Map visual-decision coverage in source and session summaries
+  - all 39 extracted Steinmetz visual-decision sessions in source and session summaries
+  - Zatka-Haas perturbation region effect summary joined into the family view
+  - perturbation effect SVG comparing weighted choice, withhold, and correctness deltas
+  - static HTML family report
+grouping_variables:
+  - source id
+  - dataset id
+  - protocol id
+  - signed contrast
+  - choice outcome
+  - response format
+  - source-balanced signed-contrast bin
+  - session-balanced signed-contrast bin
+  - subject-balanced signed-contrast bin
+  - temporal-regularity environment
+  - perturbation source id
+  - laser region
+  - region family
+  - hemisphere
+planned_outputs:
+  - choice-history summaries for temporal-regularity visual wheel tasks
+  - additional perturbation sources where public causal-manipulation trial summaries are available
+  - paper-family source-acquisition queue for Busse, Burgess, Lak, and Pho
+deferred_outputs:
+  - cross-paper hierarchical psychometric model
+  - exhaustive notable-paper source-data joins for Busse, Burgess, Lak, and Pho
+provenance_requirements:
+  - canonical trial CSV path for each source
+  - slice id, dataset id, and protocol id for each source
+  - generated date and adapter commit hash
+  - caveat preserving strict 2AFC versus unforced wheel task differences

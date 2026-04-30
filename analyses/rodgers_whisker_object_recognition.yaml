@@ -1,0 +1,39 @@
+analysis_id: analysis.rodgers-whisker-object-recognition.behavior
+protocol_id: protocol.mouse-whisker-object-recognition-lick
+dataset_id: dataset.rodgers-whisker-object-recognition-dandi
+status: adapter-ready
+inputs:
+  - canonical trial table generated from a Rodgers DANDI NWB session or exported NWB trials CSV/TSV
+implemented_outputs:
+  - canonical trial table preserving shape, position, task rule, lick choice, and response timing
+  - task-rule summary CSV
+  - condition-level accuracy and response-time CSV
+  - shape-detection hit and false-alarm summary CSV
+  - dependency-free SVG accuracy plot
+  - static HTML report over source provenance, task-rule summaries, condition accuracy, detection rates, and caveats
+grouping_variables:
+  - task rule
+  - stimulus shape or catch condition
+  - servo/object position
+  - subject
+  - session
+  - ignore-trial analysis eligibility
+planned_outputs:
+  - accuracy by shape and object position
+  - median response time by shape and object position
+  - hit and false-alarm rates for shape-detection sessions
+  - optional mean contact count by condition when contact annotations are available
+deferred_outputs:
+  - paper-matched touch-aligned behavior and neural analyses
+  - per-whisker contact kinematics beyond simple counts
+  - video frame alignment reports
+  - neural unit and barrel-cortex population summaries
+provenance_requirements:
+  - DANDI source DOI and version
+  - NWB filename or CSV export path and hash
+  - source kind
+  - subject and session identifiers
+  - task-rule inference or override
+  - h5py version when reading NWB directly
+  - adapter version or commit hash
+  - date generated

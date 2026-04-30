@@ -1,0 +1,40 @@
+analysis_id: analysis.zatka-haas-visual-decision.descriptive-choice-surface
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.zatka-haas-visual-decision-figshare
+status: analysis-verified
+inputs:
+  - public Figshare code.zip file
+  - targeted extraction of OptogeneticInactivation/Inactivation_HigherPower.mat from the large split Figshare archive
+implemented_outputs:
+  - code ZIP manifest with file counts, SHA-256, data dependency paths, loader files, and Stan choice-code evidence
+  - MATLAB v7.3/HDF5 table loader for stimulus, response, feedback, RT, session/subject, and laser variables
+  - canonical trial table preserving 10,054 real left/right/withhold choices
+  - signed-contrast and contrast-pair descriptive summaries
+  - non-laser versus laser and laser-region stratified choice summaries
+  - matched perturbation deltas for each laser region and signed contrast
+  - compact region-effect summaries for VIS/M2/S1/RSP/M1 and front-outside controls
+  - report HTML and choice summary SVG for the higher-power inactivation table
+grouping_variables:
+  - signed contrast difference
+  - left contrast
+  - right contrast
+  - subject
+  - session
+  - laser type
+  - laser region
+planned_outputs:
+  - comparison to Steinmetz unforced wheel and IBL 2AFC slices
+  - coordinate-aware perturbation maps for the optogenetic targets
+deferred_outputs:
+  - widefield calcium imaging joins
+  - Neuropixels inclusion-file joins
+  - optogenetic coordinate maps
+  - paper-matched neurometric and causal-impact model fits
+provenance_requirements:
+  - code ZIP URL, file id, SHA-256, and file count
+  - split ZIP part id, source member path, byte range, and extracted SHA-256
+  - source MAT filename and variable name
+  - source field list
+  - trial count and excluded/missing field counts
+  - date generated
+  - adapter version or commit hash

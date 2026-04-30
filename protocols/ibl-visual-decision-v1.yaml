@@ -11,7 +11,7 @@ description: >
   probability manipulate sensory and value-related evidence.
 species:
   - mouse
-curation_status: data-linked
+curation_status: adapter-ready
 stimulus:
   modalities:
     - visual
@@ -71,6 +71,7 @@ software:
   - IBL task control software
 dataset_ids:
   - dataset.ibl-public-behavior
+  - dataset.ibl-brainwide-map-2025
 expected_analyses:
   - psychometric curve by contrast and prior block
   - chronometric curve by contrast
@@ -90,13 +91,29 @@ references:
       measurement of decision-making in mice. eLife, 2021.
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
     doi: 10.7554/eLife.63711
+  - id: ref.ibl-2025-brainwide-map
+    citation: >
+      The International Brain Laboratory et al. A brain-wide map of neural
+      activity during complex behaviour. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09235-0
+    doi: 10.1038/s41586-025-09235-0
+  - id: ref.ibl-2025-prior-map
+    citation: >
+      The International Brain Laboratory et al. Brain-wide representations of
+      prior information in mouse decision-making. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09226-1
+    doi: 10.1038/s41586-025-09226-1
 provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Seed protocol record drafted from the open eLife/PMC article.
+  updated: 2026-04-30
+  source_notes: >
+    Seed protocol record drafted from the open eLife/PMC article. The protocol
+    now has adapter-backed behavioral slices for both the broad IBL public
+    behavior archive and the IBL Brainwide Map 2025 ephys release. The two
+    2025 Nature companion papers are linked as source analyses for the ephys
+    and block-prior variants.
 open_questions:
-  - Add exact field mappings from the IBL ONE data model.
+  - Extend Brainwide Map curation from behavior trials to probe insertions, brain regions, spike-sorting QC, and video pose features.
   - Split biased and unbiased variants if the schema needs finer protocol granularity.
-

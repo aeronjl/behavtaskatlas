@@ -1,0 +1,41 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.fritsche-2024-temporal-regularities
+citation: >
+  Fritsche M, Majumdar A, Strickland L, Liebana Garcia S, Bogacz R, Lak A.
+  Temporal regularities shape perceptual decisions and striatal dopamine
+  signals. Nature Communications 15:7093, 2024.
+authors:
+  - Fritsche, Matthias
+  - Majumdar, Antara
+  - Strickland, Lauren
+  - Liebana Garcia, Samuel
+  - Bogacz, Rafal
+  - Lak, Armin
+year: 2024
+venue: Nature Communications
+doi: 10.1038/s41467-024-51393-8
+url: https://www.nature.com/articles/s41467-024-51393-8
+species:
+  - mouse
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_ids:
+  - dataset.fritsche-temporal-regularities-figshare
+finding_ids: []
+curation_status: analysis-verified
+notes: >
+  Directly relevant visual contrast wheel variant that manipulates
+  trial-to-trial stimulus-side transition statistics. It deepens the visual
+  contrast family along the history/regularity axis while staying within
+  sensory-guided decision-making and preserving task variables separately from
+  reinforcement-learning interpretations.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual contrast depth pass after verifying that the article
+    data-availability statement points to a CC BY 4.0 Figshare data/code deposit
+    with generated trial-level behavior CSVs.

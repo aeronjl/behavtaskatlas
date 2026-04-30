@@ -1,0 +1,97 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-contrast-lick-gonogo
+family_id: family.visual-2afc-contrast
+name: Mouse visual contrast lick go/no-go task
+aliases:
+  - mouse go/no-go visual contrast discrimination
+  - Pho parietal visual discrimination task
+description: >
+  Head-fixed mice view target and non-target visual stimuli, including
+  variable-contrast conditions, and report the target class by licking or
+  withholding a lick. This is a contrast-family boundary variant: it uses the
+  same visual evidence axis as 2AFC contrast tasks but has asymmetric go/no-go
+  response demands.
+species:
+  - mouse
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - target identity
+    - task engagement condition
+  evidence_type: static
+  evidence_schedule: >
+    Visual target and non-target stimuli are presented during engaged task
+    performance and passive-viewing controls; variable-contrast blocks probe
+    sensitivity to stimulus strength.
+  units:
+    - percent contrast
+choice:
+  choice_type: go-no-go
+  alternatives:
+    - lick
+    - withhold lick
+  response_modalities:
+    - lick
+  action_mapping: >
+    Licking reports the target or go stimulus; withholding lick reports the
+    non-target or no-go condition.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct licks on target trials.
+  penalty: Protocol-specific penalty or lack of reward for false alarms and misses.
+timing:
+  - name: stimulus
+    duration: protocol-specific
+    description: Target or non-target visual stimulus is presented.
+  - name: response
+    duration: response-limited
+    description: Mouse licks or withholds licking during the response epoch.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: hit, miss, false alarm, or correct rejection
+training:
+  stages:
+    - lick shaping
+    - target/non-target discrimination
+    - passive-viewing controls
+apparatus:
+  - head fixation
+  - visual display
+  - lick spout
+  - water delivery
+expected_analyses:
+  - hit and false-alarm rates by contrast
+  - contrast modulation of neural responses
+  - task-engaged versus passive-viewing response comparison
+  - target/non-target selectivity and choice selectivity
+interpretive_claims:
+  - label: sensorimotor transformation
+    source: ref.pho-2018-task-dependent-parietal
+    confidence: medium
+    caveat: >
+      Go/no-go licking confounds response criterion and action initiation more
+      than symmetric two-choice tasks, so operational response class must stay
+      explicit.
+references:
+  - id: ref.pho-2018-task-dependent-parietal
+    citation: >
+      Pho GN, Goard MJ, Woodson J, Crawford B, Sur M. Task-dependent
+      representations of stimulus and choice in mouse parietal cortex.
+      Nature Communications, 2018.
+    url: https://www.nature.com/articles/s41467-018-05012-y
+    doi: 10.1038/s41467-018-05012-y
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass as an explicitly marked
+    go/no-go boundary variant for contrast-family coverage.
+open_questions:
+  - Decide whether go/no-go contrast tasks should remain in this family or move to a linked contrast-detection subfamily.
+  - Search for reusable trial-level data from Pho et al. or closely matched go/no-go contrast datasets.

@@ -1,0 +1,36 @@
+analysis_id: analysis.ibl-brainwide-map.behavioral-psychometric
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-brainwide-map-2025
+status: adapter-ready
+inputs:
+  - canonical trial table generated from one IBL Brainwide Map ALF `_ibl_trials.table.pqt`
+implemented_outputs:
+  - canonical trial table preserving contrast, choice, feedback, response timing, and probability-left block
+  - psychometric summary CSV grouped by prior block and signed contrast
+  - four-parameter logistic fit per prior context
+  - dependency-free SVG psychometric plot
+  - static HTML report over behavioral summary, fit table, caveats, and provenance
+grouping_variables:
+  - probabilityLeft prior block
+  - signed contrast
+  - subject
+  - session eid
+planned_outputs:
+  - behavioral psychometric curve by prior block
+  - empirical bias and threshold by prior block
+  - lapse estimates from logistic psychometric fits
+deferred_outputs:
+  - multi-session Brainwide Map aggregate behavior
+  - probe insertion and brain-region availability table
+  - neural decoding and encoding model summaries
+  - spike sorting, histology, and video pose QC joins
+provenance_requirements:
+  - OpenAlyx EID
+  - ONE project `ibl_neuropixel_brainwide_01`
+  - release tag `Brainwidemap`
+  - selected trials-table revision and QC
+  - AWS registry URL and bucket
+  - subject, lab, task protocol, and session start time
+  - ONE-api version
+  - adapter version or commit hash
+  - date generated

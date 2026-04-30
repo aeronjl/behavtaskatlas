@@ -1,0 +1,47 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.whisker-object-discrimination
+name: Whisker object discrimination
+aliases:
+  - tactile object recognition
+  - whisker shape discrimination
+description: >
+  Somatosensory decision tasks in which rodents actively sample an object or
+  pole with their whiskers and report object identity, presence, or location.
+  The canonical operational variables include object geometry, object position,
+  touch timing, and contact kinematics.
+modalities:
+  - somatosensory
+canonical_variables:
+  - object shape
+  - object presence
+  - object position
+  - whisker contact
+common_choice_types:
+  - 2afc
+  - detection
+  - discrimination
+common_response_modalities:
+  - lick
+curation_status: literature-curated
+references:
+  - id: ref.rodgers-2022-object-recognition
+    citation: >
+      Rodgers CC. A detailed behavioral, videographic, and neural dataset on
+      object recognition in mice. Scientific Data, 2022.
+    url: https://www.nature.com/articles/s41597-022-01728-1
+    doi: 10.1038/s41597-022-01728-1
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during the dataset coverage expansion to broaden the MVP beyond
+    visual and auditory examples while staying within sensory-guided
+    decision-making tasks.
+notes: >
+  Tactile object datasets require trial-level links between behavior,
+  high-speed whisker video, and neural events; canonical trials should retain
+  object geometry and contact measurements as task variables.
+

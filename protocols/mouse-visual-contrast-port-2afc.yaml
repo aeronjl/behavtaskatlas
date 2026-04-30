@@ -1,0 +1,102 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-contrast-port-2afc
+family_id: family.visual-2afc-contrast
+name: Mouse port-based visual contrast 2AFC task
+aliases:
+  - Busse visual contrast detection task
+  - freely moving mouse visual contrast 2AFC
+  - central-port visual contrast detection
+description: >
+  Freely moving mice initiate each trial at a central port, view a lateralized
+  visual contrast stimulus, and report the perceived stimulus side by choosing
+  a left or right response port. This variant preserves the port-based action
+  sequence and reward/history effects separately from head-fixed wheel tasks.
+species:
+  - mouse
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - signed contrast
+    - stimulus side
+  evidence_type: static
+  evidence_schedule: >
+    A visual stimulus of variable contrast is presented on the left or right;
+    signed contrast encodes both stimulus strength and side.
+  units:
+    - percent contrast
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left port
+    - right port
+  response_modalities:
+    - nose-poke
+  action_mapping: >
+    After central-port trial initiation and stimulus presentation, choosing the
+    left or right port reports the stimulus side.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct left or right port choices.
+  penalty: Error or timeout penalty for incorrect choices and task-rule violations.
+  notes: >
+    Busse et al. modeled choice as a function of contrast, overall bias, and
+    recent success/failure history; the protocol record keeps those analysis
+    variables distinct from the visual stimulus variables.
+timing:
+  - name: trial_initiation
+    duration: self-paced
+    description: Mouse initiates a trial by entering or holding the central port.
+  - name: visual_stimulus
+    duration: protocol-specific
+    description: Lateralized visual contrast stimulus is presented.
+  - name: report
+    duration: response-limited
+    description: Mouse exits the central port and selects a side response port.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - port shaping
+    - side response training
+    - contrast detection
+apparatus:
+  - behavioral choice box
+  - central initiation port
+  - left and right response ports
+  - visual display
+  - water delivery
+expected_analyses:
+  - psychometric curve by signed contrast
+  - contrast threshold by session and subject
+  - port bias estimates
+  - logistic choice model with stimulus, bias, and recent-history predictors
+interpretive_claims:
+  - label: visual contrast detection
+    source: ref.busse-2011-detection-visual-contrast
+    confidence: high
+    caveat: >
+      Reward imbalance and recent trial outcomes can influence choices, so
+      contrast sensitivity should not be interpreted from raw accuracy alone.
+references:
+  - id: ref.busse-2011-detection-visual-contrast
+    citation: >
+      Busse L, Ayaz A, Dhruv NT, Katzner S, Saleem AB, Scholvinck ML,
+      Zaharia AD, Carandini M. The detection of visual contrast in the
+      behaving mouse. Journal of Neuroscience, 2011.
+    url: https://pubmed.ncbi.nlm.nih.gov/21813694/
+    doi: 10.1523/JNEUROSCI.6689-10.2011
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass to represent the classic
+    port-based mouse contrast task separately from head-fixed wheel protocols.
+open_questions:
+  - Locate or request reusable trial-level data from Busse et al. or close replications.
+  - Decide whether later port-based history-bias studies should share this protocol or get source-specific variants.

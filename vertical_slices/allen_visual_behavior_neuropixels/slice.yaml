@@ -1,0 +1,63 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.allen-visual-behavior-neuropixels
+title: Allen Visual Behavior Neuropixels Change Detection
+description: >
+  Behavior-first Allen Visual Behavior Neuropixels slice mapping one VBN NWB
+  trials table from the active visual change-detection block into the canonical
+  go/no-go trial model. The slice reuses the Allen change-detection adapter but
+  stamps canonical rows, analysis, and provenance with the VBN dataset id so
+  electrophysiology-backed sessions are not conflated with the Visual Behavior
+  2P source.
+curation_status: adapter-ready
+display_order: 55
+family_id: family.visual-change-detection
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-visual-behavior-neuropixels
+report_path: allen_visual_behavior_neuropixels/report.html
+analysis_result_path: allen_visual_behavior_neuropixels/analysis_result.json
+primary_artifact_path: allen_visual_behavior_neuropixels/lick_latency.svg
+primary_artifact_label: Open VBN lick-latency SVG
+artifact_links:
+  - label: Report HTML
+    path: allen_visual_behavior_neuropixels/report.html
+  - label: Analysis result JSON
+    path: allen_visual_behavior_neuropixels/analysis_result.json
+  - label: Lick latency SVG
+    path: allen_visual_behavior_neuropixels/lick_latency.svg
+  - label: Outcome summary CSV
+    path: allen_visual_behavior_neuropixels/outcome_summary.csv
+  - label: Image-pair summary CSV
+    path: allen_visual_behavior_neuropixels/image_pair_summary.csv
+  - label: Canonical trials CSV
+    path: allen_visual_behavior_neuropixels/trials.csv
+  - label: Provenance JSON
+    path: allen_visual_behavior_neuropixels/provenance.json
+  - label: Slice notes
+    path: vertical_slices/allen_visual_behavior_neuropixels/README.md
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: image change vs no-change
+  evidence_type: change-detection
+  choice_type: go-no-go
+  response_modality: lick
+  source_data_level: raw-trial
+  analysis_outputs: hit/false-alarm rates, d-prime, per-image-pair table, lick latency
+  data_scope: one Allen Visual Behavior Neuropixels NWB session
+  canonical_axis: lick=hit on change trials, withhold=correct rejection on catch trials
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Slice added after verifying the AllenSDK VBN tutorials, DANDI 000713
+    version metadata, public VBN S3 metadata tables, and Allen data-book
+    task structure. Neural side tables are deliberately deferred.
+notes: >
+  The source archive is DANDI:000713 version 0.240702.1725, with Allen's
+  recommended access path through VisualBehaviorNeuropixelsProjectCache or the
+  public S3 bucket. The adapter reads the NWB /intervals/trials table directly
+  via h5py when a local VBN NWB file is provided.

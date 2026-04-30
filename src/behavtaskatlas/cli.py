@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+import zipfile
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -11,11 +12,16 @@ from typing import Any
 import yaml
 
 from behavtaskatlas.allen import (
+    DEFAULT_ALLEN_VBN_DERIVED_DIR,
+    DEFAULT_ALLEN_VBN_RAW_DIR,
     DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR,
     DEFAULT_ALLEN_VISUAL_BEHAVIOR_RAW_DIR,
+    allen_vbn_provenance_payload,
     allen_visual_behavior_provenance_payload,
     analyze_allen_change_detection,
+    analyze_allen_vbn_change_detection,
     download_allen_visual_behavior_session,
+    load_allen_vbn_session,
     load_allen_visual_behavior_session,
     write_change_detection_report_html,
     write_image_pair_csv,
@@ -55,6 +61,19 @@ from behavtaskatlas.clicks import (
     write_evidence_kernel_summary_csv,
     write_evidence_kernel_svg,
 )
+from behavtaskatlas.coen import (
+    DEFAULT_COEN_DERIVED_DIR,
+    DEFAULT_COEN_RAW_FILE,
+    DEFAULT_COEN_SESSION_ID,
+    analyze_coen_audiovisual_decisions,
+    coen_provenance_payload,
+    load_coen_audiovisual_source,
+    write_coen_condition_csv,
+    write_coen_condition_svg,
+    write_coen_conflict_csv,
+    write_coen_modality_csv,
+    write_coen_report_html,
+)
 from behavtaskatlas.findings import (
     build_comparisons_index,
     build_findings_index,
@@ -67,6 +86,30 @@ from behavtaskatlas.findings import (
     import_csv_findings,
     load_import_mapping,
     write_finding_yaml,
+)
+from behavtaskatlas.fritsche import (
+    DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_CODE_ZIP,
+    DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_DERIVED_DIR,
+    DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_RAW_DIR,
+    DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_SESSION_ID,
+    DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_ZIP,
+    analyze_fritsche_temporal_regularities,
+    build_fritsche_code_manifest,
+    download_fritsche_temporal_regularities_code,
+    download_fritsche_temporal_regularities_data,
+    fritsche_artifact_provenance_rows,
+    fritsche_temporal_regularities_provenance_payload,
+    harmonize_fritsche_temporal_regularities_rows,
+    load_fritsche_temporal_regularities_rows,
+    write_fritsche_artifact_provenance_csv,
+    write_fritsche_choice_history_csv,
+    write_fritsche_choice_history_model_csv,
+    write_fritsche_code_manifest,
+    write_fritsche_neutral_adaptation_csv,
+    write_fritsche_neutral_adaptation_session_csv,
+    write_fritsche_report_html,
+    write_fritsche_subject_environment_csv,
+    write_fritsche_transition_csv,
 )
 from behavtaskatlas.human_visual import (
     DEFAULT_HUMAN_VISUAL_CONTRAST_DERIVED_DIR,
@@ -81,13 +124,18 @@ from behavtaskatlas.human_visual import (
 )
 from behavtaskatlas.ibl import (
     DEFAULT_DERIVED_DIR,
+    DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR,
+    DEFAULT_IBL_BRAINWIDE_MAP_EID,
     DEFAULT_IBL_EID,
     DEFAULT_MOUSE_UNBIASED_DERIVED_DIR,
     DEFAULT_MOUSE_UNBIASED_EID,
+    IBL_BRAINWIDE_MAP_DATASET_ID,
     IBL_VISUAL_PROTOCOL_ID,
     MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+    analyze_ibl_brainwide_map_behavior,
     analyze_ibl_visual_protocol,
     harmonize_ibl_visual_trials,
+    ibl_brainwide_map_provenance_payload,
     load_canonical_trials_csv,
     load_ibl_trials_from_openalyx,
     provenance_payload,
@@ -100,6 +148,17 @@ from behavtaskatlas.ibl import (
     write_summary_csv,
 )
 from behavtaskatlas.models import SCHEMA_MODELS, CanonicalTrial
+from behavtaskatlas.odoemene import (
+    DEFAULT_ODOEMENE_DERIVED_DIR,
+    DEFAULT_ODOEMENE_RAW_MAT,
+    DEFAULT_ODOEMENE_SESSION_ID,
+    analyze_odoemene_visual_accumulation,
+    load_odoemene_visual_accumulation_mat,
+    odoemene_provenance_payload,
+    write_odoemene_kernel_csv,
+    write_odoemene_kernel_svg,
+    write_odoemene_report_html,
+)
 from behavtaskatlas.rdm import (
     DEFAULT_HUMAN_RDM_DERIVED_DIR,
     DEFAULT_HUMAN_RDM_RAW_DIR,
@@ -143,6 +202,19 @@ from behavtaskatlas.release import (
     write_release_check_html,
     write_release_check_json,
 )
+from behavtaskatlas.rodgers import (
+    DEFAULT_RODGERS_DERIVED_DIR,
+    DEFAULT_RODGERS_RAW_FILE,
+    DEFAULT_RODGERS_SESSION_ID,
+    analyze_rodgers_whisker_object_recognition,
+    load_rodgers_whisker_source,
+    rodgers_provenance_payload,
+    write_rodgers_accuracy_svg,
+    write_rodgers_condition_csv,
+    write_rodgers_detection_csv,
+    write_rodgers_report_html,
+    write_rodgers_task_rule_csv,
+)
 from behavtaskatlas.static_site import (
     build_catalog_payload,
     build_curation_queue_payload,
@@ -154,7 +226,52 @@ from behavtaskatlas.static_site import (
     write_static_graph_json,
     write_static_manifest_json,
 )
+from behavtaskatlas.steinmetz import (
+    DEFAULT_STEINMETZ_DERIVED_DIR,
+    DEFAULT_STEINMETZ_RAW_DIR,
+    DEFAULT_STEINMETZ_SESSION_ID,
+    analyze_steinmetz_session_aggregate,
+    analyze_steinmetz_visual_decision,
+    harmonize_steinmetz_visual_trials,
+    load_steinmetz_derived_sessions,
+    load_steinmetz_session_dir,
+    steinmetz_provenance_payload,
+    summarize_steinmetz_choice_by_contrast_pair,
+    summarize_steinmetz_choice_by_signed_contrast,
+    write_steinmetz_aggregate_outputs,
+    write_steinmetz_choice_svg,
+    write_steinmetz_condition_csv,
+    write_steinmetz_report_html,
+    write_steinmetz_summary_csv,
+)
 from behavtaskatlas.validation import validate_repository
+from behavtaskatlas.visual_contrast_family import (
+    DEFAULT_VISUAL_CONTRAST_FAMILY_DERIVED_DIR,
+    analyze_visual_contrast_family,
+    load_visual_contrast_family_perturbation_effects,
+    load_visual_contrast_family_trials,
+    write_visual_contrast_family_outputs,
+)
+from behavtaskatlas.zatka_haas import (
+    DEFAULT_ZATKA_HAAS_CODE_ZIP,
+    DEFAULT_ZATKA_HAAS_DERIVED_DIR,
+    DEFAULT_ZATKA_HAAS_HIGHER_POWER_SESSION_ID,
+    DEFAULT_ZATKA_HAAS_SESSION_ID,
+    analyze_zatka_haas_visual_decision,
+    build_zatka_haas_code_manifest,
+    harmonize_zatka_haas_visual_trials,
+    load_zatka_haas_processed_mat,
+    write_zatka_haas_choice_svg,
+    write_zatka_haas_code_manifest,
+    write_zatka_haas_condition_csv,
+    write_zatka_haas_laser_region_csv,
+    write_zatka_haas_laser_state_csv,
+    write_zatka_haas_perturbation_delta_csv,
+    write_zatka_haas_perturbation_region_effect_csv,
+    write_zatka_haas_report_html,
+    write_zatka_haas_summary_csv,
+    zatka_haas_provenance_payload,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -242,6 +359,92 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional report HTML output path",
     )
 
+    ibl_brainwide_parser = subparsers.add_parser(
+        "ibl-brainwide-harmonize",
+        help="Harmonize one IBL Brainwide Map visual decision session",
+    )
+    ibl_brainwide_parser.add_argument(
+        "--eid",
+        default=DEFAULT_IBL_BRAINWIDE_MAP_EID,
+        help="IBL Brainwide Map session UUID/eid",
+    )
+    ibl_brainwide_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR),
+        help="Directory for generated Brainwide Map artifacts",
+    )
+    ibl_brainwide_parser.add_argument(
+        "--cache-dir",
+        default=None,
+        help="Optional ONE cache directory",
+    )
+    ibl_brainwide_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional trial limit",
+    )
+    ibl_brainwide_parser.add_argument(
+        "--revision",
+        default=None,
+        help="Optional IBL dataset revision to load",
+    )
+
+    ibl_brainwide_analyze_parser = subparsers.add_parser(
+        "ibl-brainwide-analyze",
+        help="Analyze a harmonized IBL Brainwide Map behavior session",
+    )
+    ibl_brainwide_analyze_parser.add_argument(
+        "--eid",
+        default=DEFAULT_IBL_BRAINWIDE_MAP_EID,
+        help="IBL Brainwide Map session UUID/eid",
+    )
+    ibl_brainwide_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR),
+        help="Directory containing generated Brainwide Map artifacts",
+    )
+    ibl_brainwide_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    ibl_brainwide_report_parser = subparsers.add_parser(
+        "ibl-brainwide-report",
+        help="Render a static HTML report from an IBL Brainwide Map behavior analysis",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--eid",
+        default=DEFAULT_IBL_BRAINWIDE_MAP_EID,
+        help="IBL Brainwide Map session UUID/eid",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR),
+        help="Directory containing generated Brainwide Map artifacts",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    ibl_brainwide_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
     mouse_unbiased_parser = subparsers.add_parser(
         "mouse-unbiased-harmonize",
         help="Harmonize one IBL trainingChoiceWorld visual contrast session",
@@ -323,6 +526,550 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional explicit path to psychometric.svg",
     )
     mouse_unbiased_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    fritsche_download_parser = subparsers.add_parser(
+        "fritsche-download",
+        help="Download the Fritsche et al. temporal-regularities Figshare data ZIP",
+    )
+    fritsche_download_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_RAW_DIR),
+        help="Directory for the downloaded Fritsche Figshare data ZIP",
+    )
+
+    fritsche_code_download_parser = subparsers.add_parser(
+        "fritsche-code-download",
+        help="Download the Fritsche et al. temporal-regularities Figshare code ZIP",
+    )
+    fritsche_code_download_parser.add_argument(
+        "--raw-dir",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_RAW_DIR),
+        help="Directory for the downloaded Fritsche Figshare code ZIP",
+    )
+
+    fritsche_code_manifest_parser = subparsers.add_parser(
+        "fritsche-code-manifest",
+        help="Build a source-code manifest from the Fritsche Figshare code ZIP",
+    )
+    fritsche_code_manifest_parser.add_argument(
+        "--code-zip",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_CODE_ZIP),
+        help="Path to the downloaded Fritsche Figshare code.zip file",
+    )
+    fritsche_code_manifest_parser.add_argument(
+        "--out-file",
+        default=str(
+            DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_DERIVED_DIR
+            / DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_SESSION_ID
+            / "code_manifest.json"
+        ),
+        help="Output path for the Fritsche code manifest JSON",
+    )
+
+    fritsche_parser = subparsers.add_parser(
+        "fritsche-harmonize",
+        help="Harmonize Fritsche et al. temporal-regularities visual wheel trials",
+    )
+    fritsche_parser.add_argument(
+        "--zip-file",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_ZIP),
+        help="Path to Figshare data.zip",
+    )
+    fritsche_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_DERIVED_DIR),
+        help="Directory for generated Fritsche artifacts",
+    )
+    fritsche_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_SESSION_ID,
+        help="Aggregate session directory name for generated artifacts",
+    )
+    fritsche_parser.add_argument(
+        "--experiment",
+        action="append",
+        default=None,
+        help=(
+            "Experiment key to include; repeat for multiple. Defaults to exp1, "
+            "exp2, and exp3 behavior CSVs."
+        ),
+    )
+    fritsche_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    fritsche_analyze_parser = subparsers.add_parser(
+        "fritsche-analyze",
+        help="Analyze harmonized Fritsche temporal-regularities trials",
+    )
+    fritsche_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_SESSION_ID,
+        help="Generated session directory name",
+    )
+    fritsche_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_DERIVED_DIR),
+        help="Directory containing generated Fritsche artifacts",
+    )
+    fritsche_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    fritsche_report_parser = subparsers.add_parser(
+        "fritsche-report",
+        help="Render a static HTML report from a Fritsche temporal-regularities analysis",
+    )
+    fritsche_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_SESSION_ID,
+        help="Generated session directory name",
+    )
+    fritsche_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_FRITSCHE_TEMPORAL_REGULARITIES_DERIVED_DIR),
+        help="Directory containing generated Fritsche artifacts",
+    )
+    fritsche_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    fritsche_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    fritsche_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    fritsche_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    steinmetz_parser = subparsers.add_parser(
+        "steinmetz-harmonize",
+        help="Harmonize one extracted Steinmetz et al. visual decision ALF session",
+    )
+    steinmetz_parser.add_argument(
+        "--session-dir",
+        default=str(DEFAULT_STEINMETZ_RAW_DIR / DEFAULT_STEINMETZ_SESSION_ID),
+        help="Directory containing extracted Steinmetz `trials.*.npy` files",
+    )
+    steinmetz_parser.add_argument(
+        "--session-id",
+        default=None,
+        help="Harmonized session directory name; defaults to --session-dir basename",
+    )
+    steinmetz_parser.add_argument(
+        "--subject-id",
+        default=None,
+        help="Optional subject id to stamp into canonical trials",
+    )
+    steinmetz_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_STEINMETZ_DERIVED_DIR),
+        help="Directory for generated Steinmetz artifacts",
+    )
+    steinmetz_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    steinmetz_analyze_parser = subparsers.add_parser(
+        "steinmetz-analyze",
+        help="Analyze a harmonized Steinmetz visual decision session",
+    )
+    steinmetz_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_STEINMETZ_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    steinmetz_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_STEINMETZ_DERIVED_DIR),
+        help="Directory containing generated Steinmetz artifacts",
+    )
+    steinmetz_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    steinmetz_report_parser = subparsers.add_parser(
+        "steinmetz-report",
+        help="Render a static HTML report from a Steinmetz visual decision analysis",
+    )
+    steinmetz_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_STEINMETZ_SESSION_ID,
+        help="Harmonized session directory name",
+    )
+    steinmetz_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_STEINMETZ_DERIVED_DIR),
+        help="Directory containing generated Steinmetz artifacts",
+    )
+    steinmetz_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    steinmetz_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    steinmetz_report_parser.add_argument(
+        "--choice-svg",
+        default=None,
+        help="Optional explicit path to choice_summary.svg",
+    )
+    steinmetz_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    steinmetz_aggregate_parser = subparsers.add_parser(
+        "steinmetz-aggregate",
+        help="Aggregate generated Steinmetz visual decision sessions",
+    )
+    steinmetz_aggregate_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_STEINMETZ_DERIVED_DIR),
+        help="Directory containing generated Steinmetz session artifacts",
+    )
+    steinmetz_aggregate_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_STEINMETZ_DERIVED_DIR / "aggregate"),
+        help="Directory for aggregate Steinmetz outputs",
+    )
+    steinmetz_aggregate_parser.add_argument(
+        "--session-id",
+        action="append",
+        default=None,
+        help="Optional session id to include; repeat for multiple sessions",
+    )
+
+    zatka_manifest_parser = subparsers.add_parser(
+        "zatka-haas-code-manifest",
+        help=(
+            "Inspect the public Zatka-Haas Figshare code ZIP without downloading "
+            "the full data archive"
+        ),
+    )
+    zatka_manifest_parser.add_argument(
+        "--code-zip",
+        default=str(DEFAULT_ZATKA_HAAS_CODE_ZIP),
+        help="Path to the downloaded Zatka-Haas code.zip file",
+    )
+    zatka_manifest_parser.add_argument(
+        "--out-file",
+        default=str(
+            DEFAULT_ZATKA_HAAS_DERIVED_DIR
+            / DEFAULT_ZATKA_HAAS_SESSION_ID
+            / "code_manifest.json"
+        ),
+        help="Output path for the code manifest JSON",
+    )
+
+    zatka_harmonize_parser = subparsers.add_parser(
+        "zatka-haas-harmonize",
+        help="Harmonize a processed Zatka-Haas behavioral MATLAB D struct",
+    )
+    zatka_harmonize_parser.add_argument(
+        "--mat-file",
+        required=True,
+        help="Path to a processed Zatka-Haas MAT file containing variable D",
+    )
+    zatka_harmonize_parser.add_argument(
+        "--source-variable",
+        default="D",
+        help="MATLAB variable name containing the processed behavior struct/table",
+    )
+    zatka_harmonize_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_ZATKA_HAAS_HIGHER_POWER_SESSION_ID,
+        help="Fallback session id when the source does not carry sessionID",
+    )
+    zatka_harmonize_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_ZATKA_HAAS_DERIVED_DIR),
+        help="Directory for generated Zatka-Haas artifacts",
+    )
+    zatka_harmonize_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional trial limit",
+    )
+
+    visual_contrast_family_parser = subparsers.add_parser(
+        "visual-contrast-family-summary",
+        help="Summarize available real-trial visual contrast slices as a family",
+    )
+    visual_contrast_family_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_VISUAL_CONTRAST_FAMILY_DERIVED_DIR),
+        help="Directory for generated visual contrast family artifacts",
+    )
+
+    odoemene_parser = subparsers.add_parser(
+        "odoemene-harmonize",
+        help="Harmonize the Odoemene et al. visual evidence accumulation MATLAB file",
+    )
+    odoemene_parser.add_argument(
+        "--mat-file",
+        default=str(DEFAULT_ODOEMENE_RAW_MAT),
+        help="Path to the local Odoemene CSHL `.mat` file",
+    )
+    odoemene_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_ODOEMENE_DERIVED_DIR),
+        help="Directory for generated Odoemene artifacts",
+    )
+    odoemene_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_ODOEMENE_SESSION_ID,
+        help="Base session id for generated subject-session rows",
+    )
+    odoemene_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+    odoemene_parser.add_argument(
+        "--max-subjects",
+        type=int,
+        default=None,
+        help="Optional maximum number of subjects to harmonize",
+    )
+
+    odoemene_analyze_parser = subparsers.add_parser(
+        "odoemene-analyze",
+        help="Analyze a harmonized Odoemene visual evidence accumulation dataset",
+    )
+    odoemene_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_ODOEMENE_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    odoemene_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ODOEMENE_DERIVED_DIR),
+        help="Directory containing generated Odoemene artifacts",
+    )
+    odoemene_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    odoemene_report_parser = subparsers.add_parser(
+        "odoemene-report",
+        help="Render a static HTML report from an Odoemene visual accumulation analysis",
+    )
+    odoemene_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_ODOEMENE_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    odoemene_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ODOEMENE_DERIVED_DIR),
+        help="Directory containing generated Odoemene artifacts",
+    )
+    odoemene_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    odoemene_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    odoemene_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    odoemene_report_parser.add_argument(
+        "--kernel-svg",
+        default=None,
+        help="Optional explicit path to event_kernel.svg",
+    )
+    odoemene_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    coen_parser = subparsers.add_parser(
+        "coen-harmonize",
+        help="Harmonize Coen et al. audiovisual spatial decision trials",
+    )
+    coen_parser.add_argument(
+        "--source-file",
+        default=str(DEFAULT_COEN_RAW_FILE),
+        help="Path to a local Coen CSV/TSV trial export or MATLAB block file",
+    )
+    coen_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_COEN_DERIVED_DIR),
+        help="Directory for generated Coen artifacts",
+    )
+    coen_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_COEN_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    coen_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    coen_analyze_parser = subparsers.add_parser(
+        "coen-analyze",
+        help="Analyze a harmonized Coen audiovisual spatial decision dataset",
+    )
+    coen_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_COEN_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    coen_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_COEN_DERIVED_DIR),
+        help="Directory containing generated Coen artifacts",
+    )
+    coen_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    coen_report_parser = subparsers.add_parser(
+        "coen-report",
+        help="Render a static HTML report from a Coen audiovisual decision analysis",
+    )
+    coen_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_COEN_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    coen_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_COEN_DERIVED_DIR),
+        help="Directory containing generated Coen artifacts",
+    )
+    coen_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    coen_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    coen_report_parser.add_argument(
+        "--psychometric-svg",
+        default=None,
+        help="Optional explicit path to psychometric.svg",
+    )
+    coen_report_parser.add_argument(
+        "--condition-svg",
+        default=None,
+        help="Optional explicit path to condition_summary.svg",
+    )
+    coen_report_parser.add_argument(
+        "--out-file",
+        default=None,
+        help="Optional report HTML output path",
+    )
+
+    rodgers_parser = subparsers.add_parser(
+        "rodgers-harmonize",
+        help="Harmonize Rodgers DANDI whisker object-recognition trials",
+    )
+    rodgers_parser.add_argument(
+        "--source-file",
+        default=str(DEFAULT_RODGERS_RAW_FILE),
+        help="Path to a local Rodgers NWB file or exported CSV/TSV trials table",
+    )
+    rodgers_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_RODGERS_DERIVED_DIR),
+        help="Directory for generated Rodgers artifacts",
+    )
+    rodgers_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RODGERS_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    rodgers_parser.add_argument(
+        "--subject-id",
+        default=None,
+        help="Optional subject id for CSV exports without NWB subject metadata",
+    )
+    rodgers_parser.add_argument(
+        "--task-rule",
+        choices=["shape_detection", "shape_discrimination", "unknown"],
+        default=None,
+        help="Optional task rule override; inferred from rows by default",
+    )
+    rodgers_parser.add_argument("--limit", type=int, default=None, help="Optional trial limit")
+
+    rodgers_analyze_parser = subparsers.add_parser(
+        "rodgers-analyze",
+        help="Analyze a harmonized Rodgers whisker object-recognition dataset",
+    )
+    rodgers_analyze_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RODGERS_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    rodgers_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_RODGERS_DERIVED_DIR),
+        help="Directory containing generated Rodgers artifacts",
+    )
+    rodgers_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    rodgers_report_parser = subparsers.add_parser(
+        "rodgers-report",
+        help="Render a static HTML report from a Rodgers whisker object analysis",
+    )
+    rodgers_report_parser.add_argument(
+        "--session-id",
+        default=DEFAULT_RODGERS_SESSION_ID,
+        help="Harmonized artifact directory name",
+    )
+    rodgers_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_RODGERS_DERIVED_DIR),
+        help="Directory containing generated Rodgers artifacts",
+    )
+    rodgers_report_parser.add_argument(
+        "--analysis-result",
+        default=None,
+        help="Optional explicit path to analysis_result.json",
+    )
+    rodgers_report_parser.add_argument(
+        "--provenance",
+        default=None,
+        help="Optional explicit path to provenance.json",
+    )
+    rodgers_report_parser.add_argument(
+        "--accuracy-svg",
+        default=None,
+        help="Optional explicit path to accuracy.svg",
+    )
+    rodgers_report_parser.add_argument(
         "--out-file",
         default=None,
         help="Optional report HTML output path",
@@ -1090,6 +1837,79 @@ def main(argv: list[str] | None = None) -> int:
         "--out-file", default=None, help="Optional report HTML output path"
     )
 
+    allen_vbn_download_parser = subparsers.add_parser(
+        "allen-vbn-download",
+        help="Download one Allen Visual Behavior Neuropixels NWB file from a public URL",
+    )
+    allen_vbn_download_parser.add_argument(
+        "--nwb-url",
+        required=True,
+        help="Public HTTPS URL pointing at a Visual Behavior Neuropixels NWB file",
+    )
+    allen_vbn_download_parser.add_argument(
+        "--out-file",
+        default=None,
+        help=(
+            "Optional output NWB path; defaults to "
+            "data/raw/allen_visual_behavior_neuropixels/<basename>"
+        ),
+    )
+
+    allen_vbn_harmonize_parser = subparsers.add_parser(
+        "allen-vbn-harmonize",
+        help="Harmonize one Allen Visual Behavior Neuropixels NWB trials table",
+    )
+    allen_vbn_harmonize_parser.add_argument(
+        "--nwb-file",
+        required=True,
+        help="Path to a downloaded Visual Behavior Neuropixels NWB file",
+    )
+    allen_vbn_harmonize_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_ALLEN_VBN_DERIVED_DIR),
+        help="Directory for generated artifacts",
+    )
+    allen_vbn_harmonize_parser.add_argument(
+        "--limit", type=int, default=None, help="Optional trial limit"
+    )
+
+    allen_vbn_analyze_parser = subparsers.add_parser(
+        "allen-vbn-analyze",
+        help="Analyze a harmonized Allen Visual Behavior Neuropixels session",
+    )
+    allen_vbn_analyze_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ALLEN_VBN_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    allen_vbn_analyze_parser.add_argument(
+        "--trials-csv",
+        default=None,
+        help="Optional explicit canonical trial CSV path",
+    )
+
+    allen_vbn_report_parser = subparsers.add_parser(
+        "allen-vbn-report",
+        help="Render a static HTML report for the Allen Visual Behavior Neuropixels slice",
+    )
+    allen_vbn_report_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_ALLEN_VBN_DERIVED_DIR),
+        help="Directory containing generated artifacts",
+    )
+    allen_vbn_report_parser.add_argument(
+        "--analysis-result", default=None, help="Optional explicit path to analysis_result.json"
+    )
+    allen_vbn_report_parser.add_argument(
+        "--provenance", default=None, help="Optional explicit path to provenance.json"
+    )
+    allen_vbn_report_parser.add_argument(
+        "--lick-latency-svg", default=None, help="Optional explicit path to lick_latency.svg"
+    )
+    allen_vbn_report_parser.add_argument(
+        "--out-file", default=None, help="Optional report HTML output path"
+    )
+
     extract_finding_parser = subparsers.add_parser(
         "extract-finding",
         help="Extract a Finding YAML from a slice's per-curve summary CSV",
@@ -1490,6 +2310,29 @@ def main(argv: list[str] | None = None) -> int:
             psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
+    if args.command == "ibl-brainwide-harmonize":
+        return _ibl_brainwide_harmonize(
+            eid=args.eid,
+            out_dir=Path(args.out_dir),
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
+            limit=args.limit,
+            revision=args.revision,
+        )
+    if args.command == "ibl-brainwide-analyze":
+        return _ibl_brainwide_analyze(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "ibl-brainwide-report":
+        return _ibl_report(
+            eid=args.eid,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
     if args.command == "mouse-unbiased-harmonize":
         return _ibl_harmonize(
             eid=args.eid,
@@ -1513,6 +2356,153 @@ def main(argv: list[str] | None = None) -> int:
             analysis_result=Path(args.analysis_result) if args.analysis_result else None,
             provenance=Path(args.provenance) if args.provenance else None,
             psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "fritsche-download":
+        return _fritsche_download(raw_dir=Path(args.raw_dir))
+    if args.command == "fritsche-code-download":
+        return _fritsche_code_download(raw_dir=Path(args.raw_dir))
+    if args.command == "fritsche-code-manifest":
+        return _fritsche_code_manifest(
+            code_zip=Path(args.code_zip),
+            out_file=Path(args.out_file),
+        )
+    if args.command == "fritsche-harmonize":
+        return _fritsche_harmonize(
+            zip_file=Path(args.zip_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            experiments=args.experiment,
+            limit=args.limit,
+        )
+    if args.command == "fritsche-analyze":
+        return _fritsche_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "fritsche-report":
+        return _fritsche_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "steinmetz-harmonize":
+        return _steinmetz_harmonize(
+            session_dir=Path(args.session_dir),
+            session_id=args.session_id,
+            subject_id=args.subject_id,
+            out_dir=Path(args.out_dir),
+            limit=args.limit,
+        )
+    if args.command == "steinmetz-analyze":
+        return _steinmetz_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "steinmetz-report":
+        return _steinmetz_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            choice_svg=Path(args.choice_svg) if args.choice_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "steinmetz-aggregate":
+        return _steinmetz_aggregate(
+            derived_dir=Path(args.derived_dir),
+            out_dir=Path(args.out_dir),
+            session_ids=args.session_id,
+        )
+    if args.command == "zatka-haas-code-manifest":
+        return _zatka_haas_code_manifest(
+            code_zip=Path(args.code_zip),
+            out_file=Path(args.out_file),
+        )
+    if args.command == "zatka-haas-harmonize":
+        return _zatka_haas_harmonize(
+            mat_file=Path(args.mat_file),
+            source_variable=args.source_variable,
+            session_id=args.session_id,
+            out_dir=Path(args.out_dir),
+            limit=args.limit,
+        )
+    if args.command == "visual-contrast-family-summary":
+        return _visual_contrast_family_summary(out_dir=Path(args.out_dir))
+    if args.command == "odoemene-harmonize":
+        return _odoemene_harmonize(
+            mat_file=Path(args.mat_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+            max_subjects=args.max_subjects,
+        )
+    if args.command == "odoemene-analyze":
+        return _odoemene_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "odoemene-report":
+        return _odoemene_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            kernel_svg=Path(args.kernel_svg) if args.kernel_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "coen-harmonize":
+        return _coen_harmonize(
+            source_file=Path(args.source_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            limit=args.limit,
+        )
+    if args.command == "coen-analyze":
+        return _coen_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "coen-report":
+        return _coen_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            psychometric_svg=Path(args.psychometric_svg) if args.psychometric_svg else None,
+            condition_svg=Path(args.condition_svg) if args.condition_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "rodgers-harmonize":
+        return _rodgers_harmonize(
+            source_file=Path(args.source_file),
+            out_dir=Path(args.out_dir),
+            session_id=args.session_id,
+            subject_id=args.subject_id,
+            task_rule=args.task_rule,
+            limit=args.limit,
+        )
+    if args.command == "rodgers-analyze":
+        return _rodgers_analyze(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "rodgers-report":
+        return _rodgers_report(
+            session_id=args.session_id,
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            accuracy_svg=Path(args.accuracy_svg) if args.accuracy_svg else None,
             out_file=Path(args.out_file) if args.out_file else None,
         )
     if args.command == "human-visual-download":
@@ -1729,6 +2719,30 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "allen-visual-behavior-report":
         return _allen_visual_behavior_report(
+            derived_dir=Path(args.derived_dir),
+            analysis_result=Path(args.analysis_result) if args.analysis_result else None,
+            provenance=Path(args.provenance) if args.provenance else None,
+            lick_latency_svg=Path(args.lick_latency_svg) if args.lick_latency_svg else None,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "allen-vbn-download":
+        return _allen_vbn_download(
+            nwb_url=args.nwb_url,
+            out_file=Path(args.out_file) if args.out_file else None,
+        )
+    if args.command == "allen-vbn-harmonize":
+        return _allen_vbn_harmonize(
+            nwb_file=Path(args.nwb_file),
+            out_dir=Path(args.out_dir),
+            limit=args.limit,
+        )
+    if args.command == "allen-vbn-analyze":
+        return _allen_vbn_analyze(
+            derived_dir=Path(args.derived_dir),
+            trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "allen-vbn-report":
+        return _allen_vbn_report(
             derived_dir=Path(args.derived_dir),
             analysis_result=Path(args.analysis_result) if args.analysis_result else None,
             provenance=Path(args.provenance) if args.provenance else None,
@@ -2003,6 +3017,1244 @@ def _ibl_report(
         print(
             "Psychometric SVG not found, wrote report without inline plot: "
             f"{psychometric_svg_path}"
+        )
+    return 0
+
+
+def _fritsche_download(*, raw_dir: Path) -> int:
+    try:
+        details = download_fritsche_temporal_regularities_data(raw_dir)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded Fritsche Figshare data ZIP to {details['path']}")
+    print(f"File size: {details['n_bytes']} bytes")
+    print(f"SHA-256: {details['sha256']}")
+    return 0
+
+
+def _fritsche_code_download(*, raw_dir: Path) -> int:
+    try:
+        details = download_fritsche_temporal_regularities_code(raw_dir)
+    except OSError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"Downloaded Fritsche Figshare code ZIP to {details['path']}")
+    print(f"File size: {details['n_bytes']} bytes")
+    print(f"SHA-256: {details['sha256']}")
+    return 0
+
+
+def _fritsche_code_manifest(*, code_zip: Path, out_file: Path) -> int:
+    try:
+        manifest = build_fritsche_code_manifest(code_zip)
+    except (OSError, zipfile.BadZipFile) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    write_fritsche_code_manifest(out_file, manifest)
+    artifact_provenance_path = out_file.with_name("artifact_provenance.csv")
+    session_dir = out_file.parent
+    if session_dir.name:
+        artifact_rows = fritsche_artifact_provenance_rows(
+            derived_dir=session_dir.parent,
+            session_id=session_dir.name,
+        )
+    else:
+        artifact_rows = fritsche_artifact_provenance_rows()
+    write_fritsche_artifact_provenance_csv(artifact_provenance_path, artifact_rows)
+    print(f"Wrote Fritsche code manifest to {out_file}")
+    print(
+        "Wrote Fritsche artifact provenance table to "
+        f"{artifact_provenance_path} ({len(artifact_rows)} artifact row(s))"
+    )
+    print(
+        "Inventoried "
+        f"{manifest.get('zip', {}).get('n_files', 0)} ZIP file(s), "
+        f"{manifest.get('zip', {}).get('n_source_scripts_hashed', 0)} hashed source script(s)"
+    )
+    return 0
+
+
+def _fritsche_harmonize(
+    *,
+    zip_file: Path,
+    out_dir: Path,
+    session_id: str,
+    experiments: list[str] | None,
+    limit: int | None,
+) -> int:
+    try:
+        source_rows, details = load_fritsche_temporal_regularities_rows(
+            zip_file,
+            experiments=experiments,
+            limit=limit,
+        )
+        trials = harmonize_fritsche_temporal_regularities_rows(source_rows)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / session_id
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        fritsche_temporal_regularities_provenance_payload(
+            zip_file=zip_file,
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} Fritsche temporal-regularities trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _fritsche_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical Fritsche temporal-regularities trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas fritsche-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_fritsche_temporal_regularities(trials)
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+    transition_path = session_dir / "transition_summary.csv"
+    choice_history_path = session_dir / "choice_history_summary.csv"
+    subject_environment_path = session_dir / "subject_environment_summary.csv"
+    choice_history_model_path = session_dir / "choice_history_model_coefficients.csv"
+    neutral_adaptation_path = session_dir / "neutral_adaptation_summary.csv"
+    neutral_adaptation_session_path = session_dir / "neutral_adaptation_session_summary.csv"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_fritsche_transition_csv(transition_path, result["transition_rows"])
+    write_fritsche_choice_history_csv(choice_history_path, result["choice_history_rows"])
+    write_fritsche_subject_environment_csv(
+        subject_environment_path,
+        result["subject_environment_rows"],
+    )
+    write_fritsche_choice_history_model_csv(
+        choice_history_model_path,
+        result["choice_history_model_term_rows"],
+    )
+    write_fritsche_neutral_adaptation_csv(
+        neutral_adaptation_path,
+        result["neutral_adaptation_rows"],
+    )
+    write_fritsche_neutral_adaptation_session_csv(
+        neutral_adaptation_session_path,
+        result["neutral_adaptation_session_rows"],
+    )
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(plot_path, result["summary_rows"])
+
+    print(f"Analyzed {len(trials)} Fritsche temporal-regularities trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote transition summary to {transition_path}")
+    print(f"Wrote choice-history summary to {choice_history_path}")
+    print(f"Wrote subject-environment summary to {subject_environment_path}")
+    print(f"Wrote choice-history model coefficients to {choice_history_model_path}")
+    print(f"Wrote neutral-adaptation summary to {neutral_adaptation_path}")
+    print(f"Wrote neutral-adaptation session summary to {neutral_adaptation_session_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _fritsche_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    session_dir = derived_dir / session_id
+    analysis_path = analysis_result or session_dir / "analysis_result.json"
+    provenance_path = provenance or session_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or session_dir / "psychometric.svg"
+    report_path = out_file or session_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Fritsche temporal-regularities analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas fritsche-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = None
+    if psychometric_svg_path.exists():
+        psychometric_svg_text = psychometric_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", session_dir / "psychometric_summary.csv"),
+            ("transition summary CSV", session_dir / "transition_summary.csv"),
+            ("choice-history summary CSV", session_dir / "choice_history_summary.csv"),
+            ("subject-environment summary CSV", session_dir / "subject_environment_summary.csv"),
+            (
+                "choice-history model coefficients CSV",
+                session_dir / "choice_history_model_coefficients.csv",
+            ),
+            ("neutral adaptation summary CSV", session_dir / "neutral_adaptation_summary.csv"),
+            (
+                "neutral adaptation session CSV",
+                session_dir / "neutral_adaptation_session_summary.csv",
+            ),
+            ("artifact provenance CSV", session_dir / "artifact_provenance.csv"),
+            ("code manifest JSON", session_dir / "code_manifest.json"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("canonical trials CSV", session_dir / "trials.csv"),
+            ("harmonization summary CSV", session_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_fritsche_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote Fritsche temporal-regularities report to {report_path}")
+    if psychometric_svg_text is None:
+        print(
+            "Psychometric SVG not found, wrote report without inline plot: "
+            f"{psychometric_svg_path}"
+        )
+    return 0
+
+
+def _ibl_brainwide_harmonize(
+    *,
+    eid: str,
+    out_dir: Path,
+    cache_dir: Path | None,
+    limit: int | None,
+    revision: str | None,
+) -> int:
+    try:
+        source_trials, details = load_ibl_trials_from_openalyx(
+            eid,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
+        trials = harmonize_ibl_visual_trials(
+            source_trials,
+            session_id=eid,
+            subject_id=details.get("subject"),
+            dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+            protocol_id=IBL_VISUAL_PROTOCOL_ID,
+            limit=limit,
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    session_dir = out_dir / eid
+    trials_path = session_dir / "trials.csv"
+    summary_path = session_dir / "summary.csv"
+    provenance_path = session_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        ibl_brainwide_map_provenance_payload(
+            eid=eid,
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} Brainwide Map trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _ibl_brainwide_analyze(
+    *,
+    eid: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    session_dir = derived_dir / eid
+    trials_path = trials_csv or session_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical IBL Brainwide Map trials CSV not found: {trials_path}. "
+            "Run `uv run --extra ibl behavtaskatlas ibl-brainwide-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_ibl_brainwide_map_behavior(trials)
+    summary_path = session_dir / "psychometric_summary.csv"
+    result_path = session_dir / "analysis_result.json"
+    plot_path = session_dir / "psychometric.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(plot_path, result["summary_rows"])
+
+    print(f"Analyzed {len(trials)} Brainwide Map trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _steinmetz_harmonize(
+    *,
+    session_dir: Path,
+    session_id: str | None,
+    subject_id: str | None,
+    out_dir: Path,
+    limit: int | None,
+) -> int:
+    selected_session_id = session_id or session_dir.name
+    if not session_dir.exists():
+        print(
+            f"Steinmetz session directory not found: {session_dir}. "
+            "Extract one session from the Figshare archive and point --session-dir at "
+            "the directory containing trials.*.npy files.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        source_trials, details = load_steinmetz_session_dir(session_dir)
+        trials = harmonize_steinmetz_visual_trials(
+            source_trials,
+            session_id=selected_session_id,
+            subject_id=subject_id,
+            limit=limit,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    artifact_dir = out_dir / selected_session_id
+    trials_path = artifact_dir / "trials.csv"
+    summary_path = artifact_dir / "summary.csv"
+    condition_path = artifact_dir / "condition_summary.csv"
+    provenance_path = artifact_dir / "provenance.json"
+    summary = summarize_steinmetz_choice_by_signed_contrast(trials)
+    condition_summary = summarize_steinmetz_choice_by_contrast_pair(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_steinmetz_summary_csv(summary_path, summary)
+    write_steinmetz_condition_csv(condition_path, condition_summary)
+    write_provenance_json(
+        provenance_path,
+        steinmetz_provenance_payload(
+            session_dir=session_dir,
+            session_id=selected_session_id,
+            subject_id=subject_id,
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "condition_summary": str(condition_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} signed-contrast summary rows to {summary_path}")
+    print(f"Wrote {len(condition_summary)} contrast-condition rows to {condition_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _steinmetz_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    trials_path = trials_csv or artifact_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical Steinmetz trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas steinmetz-harmonize --session-dir <dir>` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_steinmetz_visual_decision(trials)
+    summary_path = artifact_dir / "choice_summary.csv"
+    condition_path = artifact_dir / "condition_summary.csv"
+    result_path = artifact_dir / "analysis_result.json"
+    plot_path = artifact_dir / "choice_summary.svg"
+
+    write_steinmetz_summary_csv(summary_path, result["summary_rows"])
+    write_steinmetz_condition_csv(condition_path, result["condition_rows"])
+    write_analysis_json(result_path, result)
+    write_steinmetz_choice_svg(plot_path, result["summary_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote choice summary to {summary_path}")
+    print(f"Wrote condition summary to {condition_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote choice plot to {plot_path}")
+    return 0
+
+
+def _steinmetz_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    choice_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    analysis_path = analysis_result or artifact_dir / "analysis_result.json"
+    provenance_path = provenance or artifact_dir / "provenance.json"
+    choice_svg_path = choice_svg or artifact_dir / "choice_summary.svg"
+    report_path = out_file or artifact_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Steinmetz analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas steinmetz-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    choice_svg_text = None
+    if choice_svg_path.exists():
+        choice_svg_text = choice_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("choice summary CSV", artifact_dir / "choice_summary.csv"),
+            ("condition summary CSV", artifact_dir / "condition_summary.csv"),
+            ("choice summary SVG", choice_svg_path),
+            ("canonical trials CSV", artifact_dir / "trials.csv"),
+        ]
+        if path.exists()
+    }
+    write_steinmetz_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        choice_svg_text=choice_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote Steinmetz visual decision report to {report_path}")
+    if choice_svg_text is None:
+        print(
+            "Choice summary SVG not found, wrote report without inline plot: "
+            f"{choice_svg_path}"
+        )
+    return 0
+
+
+def _steinmetz_aggregate(
+    *,
+    derived_dir: Path,
+    out_dir: Path,
+    session_ids: list[str] | None,
+) -> int:
+    try:
+        loaded_sessions = load_steinmetz_derived_sessions(
+            derived_dir,
+            session_ids=session_ids,
+        )
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not loaded_sessions:
+        print(
+            f"No generated Steinmetz session trials found under {derived_dir}",
+            file=sys.stderr,
+        )
+        return 2
+
+    result = analyze_steinmetz_session_aggregate(loaded_sessions)
+    paths = write_steinmetz_aggregate_outputs(out_dir, result)
+    print(
+        "Aggregated Steinmetz visual decision sessions: "
+        f"{result['n_sessions']} session(s), {result['n_subjects']} subject(s), "
+        f"{result['n_trials']} trial(s)"
+    )
+    print(f"Wrote aggregate result to {paths['aggregate_result']}")
+    print(f"Wrote session summary to {paths['session_summary']}")
+    print(f"Wrote subject summary to {paths['subject_summary']}")
+    print(f"Wrote signed contrast summary to {paths['signed_contrast_summary']}")
+    print(f"Wrote aggregate choice SVG to {paths['choice_svg']}")
+    print(f"Wrote aggregate report to {paths['report']}")
+    return 0
+
+
+def _zatka_haas_code_manifest(*, code_zip: Path, out_file: Path) -> int:
+    try:
+        manifest = build_zatka_haas_code_manifest(code_zip)
+    except (OSError, zipfile.BadZipFile) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    write_zatka_haas_code_manifest(out_file, manifest)
+    print(f"Wrote Zatka-Haas code manifest to {out_file}")
+    print(
+        "Found "
+        f"{len(manifest.get('source_data_dependencies', []))} source data dependency path(s)"
+    )
+    return 0
+
+
+def _zatka_haas_harmonize(
+    *,
+    mat_file: Path,
+    source_variable: str,
+    session_id: str,
+    out_dir: Path,
+    limit: int | None,
+) -> int:
+    try:
+        source = load_zatka_haas_processed_mat(mat_file, variable=source_variable)
+        trials = harmonize_zatka_haas_visual_trials(
+            source,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (OSError, KeyError, TypeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    artifact_dir = out_dir / session_id
+    trials_path = artifact_dir / "trials.csv"
+    summary_path = artifact_dir / "choice_summary.csv"
+    choice_svg_path = artifact_dir / "choice_summary.svg"
+    condition_path = artifact_dir / "condition_summary.csv"
+    laser_state_path = artifact_dir / "laser_state_summary.csv"
+    laser_region_path = artifact_dir / "laser_region_summary.csv"
+    perturbation_delta_path = artifact_dir / "perturbation_delta_summary.csv"
+    perturbation_region_effect_path = artifact_dir / "perturbation_region_effect_summary.csv"
+    result_path = artifact_dir / "analysis_result.json"
+    provenance_path = artifact_dir / "provenance.json"
+    report_path = artifact_dir / "report.html"
+    result = analyze_zatka_haas_visual_decision(trials)
+    write_canonical_trials_csv(trials_path, trials)
+    write_zatka_haas_summary_csv(summary_path, result["summary_rows"])
+    write_zatka_haas_choice_svg(choice_svg_path, result["summary_rows"])
+    write_zatka_haas_condition_csv(condition_path, result["condition_rows"])
+    write_zatka_haas_laser_state_csv(laser_state_path, result["laser_state_rows"])
+    write_zatka_haas_laser_region_csv(laser_region_path, result["laser_region_rows"])
+    write_zatka_haas_perturbation_delta_csv(
+        perturbation_delta_path,
+        result["perturbation_delta_rows"],
+    )
+    write_zatka_haas_perturbation_region_effect_csv(
+        perturbation_region_effect_path,
+        result["perturbation_region_effect_rows"],
+    )
+    write_analysis_json(result_path, result)
+    output_files = {
+        "trials": str(trials_path),
+        "choice_summary": str(summary_path),
+        "choice_summary_svg": str(choice_svg_path),
+        "condition_summary": str(condition_path),
+        "laser_state_summary": str(laser_state_path),
+        "laser_region_summary": str(laser_region_path),
+        "perturbation_delta_summary": str(perturbation_delta_path),
+        "perturbation_region_effect_summary": str(perturbation_region_effect_path),
+        "analysis_result": str(result_path),
+        "provenance": str(provenance_path),
+        "report": str(report_path),
+    }
+    provenance = zatka_haas_provenance_payload(
+        source_file=mat_file,
+        session_id=session_id,
+        details={
+            "source_fields": sorted(source),
+            "n_trials": len(trials),
+            "source_variable": source_variable,
+        },
+        trials=trials,
+        output_files=output_files,
+    )
+    write_provenance_json(
+        provenance_path,
+        provenance,
+    )
+    write_zatka_haas_report_html(
+        report_path,
+        result,
+        provenance=provenance,
+        choice_svg_text=choice_svg_path.read_text(encoding="utf-8"),
+        artifact_links={
+            "Canonical trials CSV": "trials.csv",
+            "Choice summary CSV": "choice_summary.csv",
+            "Choice summary SVG": "choice_summary.svg",
+            "Condition summary CSV": "condition_summary.csv",
+            "Laser-state summary CSV": "laser_state_summary.csv",
+            "Laser-region summary CSV": "laser_region_summary.csv",
+            "Perturbation delta summary CSV": "perturbation_delta_summary.csv",
+            "Perturbation region effect CSV": "perturbation_region_effect_summary.csv",
+            "Analysis result JSON": "analysis_result.json",
+            "Provenance JSON": "provenance.json",
+        },
+    )
+
+    print(f"Wrote {len(trials)} Zatka-Haas trials to {trials_path}")
+    print(f"Wrote choice summary to {summary_path}")
+    print(f"Wrote choice summary SVG to {choice_svg_path}")
+    print(f"Wrote condition summary to {condition_path}")
+    print(f"Wrote laser-state summary to {laser_state_path}")
+    print(f"Wrote laser-region summary to {laser_region_path}")
+    print(f"Wrote perturbation delta summary to {perturbation_delta_path}")
+    print(f"Wrote perturbation region effect summary to {perturbation_region_effect_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    print(f"Wrote report to {report_path}")
+    return 0
+
+
+def _visual_contrast_family_summary(*, out_dir: Path) -> int:
+    try:
+        loaded_sources = load_visual_contrast_family_trials()
+        perturbation_effect_rows = load_visual_contrast_family_perturbation_effects()
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    result = analyze_visual_contrast_family(
+        loaded_sources,
+        perturbation_effect_rows=perturbation_effect_rows,
+    )
+    paths = write_visual_contrast_family_outputs(out_dir, result)
+    print(
+        "Wrote visual contrast family summary for "
+        f"{result['n_sources']} source(s) and {result['n_trials']} trial(s)"
+    )
+    print(f"Wrote analysis result to {paths['analysis_result']}")
+    print(f"Wrote source summary to {paths['source_summary']}")
+    print(f"Wrote signed contrast summary to {paths['signed_contrast_summary']}")
+    print(f"Wrote pooled signed contrast summary to {paths['pooled_signed_contrast_summary']}")
+    print(f"Wrote response format summary to {paths['response_format_summary']}")
+    print(
+        "Wrote protocol-normalized signed contrast summary to "
+        f"{paths['protocol_normalized_signed_contrast_summary']}"
+    )
+    print(
+        "Wrote protocol-normalized choice SVG to "
+        f"{paths['protocol_normalized_choice_svg']}"
+    )
+    print(
+        "Wrote source-balanced protocol-normalized summary to "
+        f"{paths['source_balanced_protocol_normalized_summary']}"
+    )
+    print(
+        "Wrote source-balanced protocol-normalized SVG to "
+        f"{paths['source_balanced_protocol_normalized_svg']}"
+    )
+    print(
+        "Wrote session-balanced protocol-normalized summary to "
+        f"{paths['session_balanced_protocol_normalized_summary']}"
+    )
+    print(
+        "Wrote session-balanced protocol-normalized SVG to "
+        f"{paths['session_balanced_protocol_normalized_svg']}"
+    )
+    print(
+        "Wrote subject-balanced protocol-normalized summary to "
+        f"{paths['subject_balanced_protocol_normalized_summary']}"
+    )
+    print(
+        "Wrote subject-balanced protocol-normalized SVG to "
+        f"{paths['subject_balanced_protocol_normalized_svg']}"
+    )
+    print(
+        "Wrote perturbation region effect summary to "
+        f"{paths['perturbation_region_effect_summary']}"
+    )
+    print(
+        "Wrote perturbation region effect SVG to "
+        f"{paths['perturbation_region_effects_svg']}"
+    )
+    print(f"Wrote report to {paths['report']}")
+    return 0
+
+
+def _odoemene_harmonize(
+    *,
+    mat_file: Path,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+    max_subjects: int | None,
+) -> int:
+    if not mat_file.exists():
+        print(
+            f"Odoemene MATLAB file not found: {mat_file}. "
+            "Download the CSHL dataset into ignored raw-data storage first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_odoemene_visual_accumulation_mat(
+            mat_file,
+            session_id=session_id,
+            limit=limit,
+            max_subjects=max_subjects,
+        )
+    except (RuntimeError, OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    artifact_dir = out_dir / session_id
+    trials_path = artifact_dir / "trials.csv"
+    summary_path = artifact_dir / "summary.csv"
+    provenance_path = artifact_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        odoemene_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _odoemene_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    trials_path = trials_csv or artifact_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical Odoemene trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas odoemene-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_odoemene_visual_accumulation(trials)
+    summary_path = artifact_dir / "psychometric_summary.csv"
+    result_path = artifact_dir / "analysis_result.json"
+    psychometric_path = artifact_dir / "psychometric.svg"
+    kernel_path = artifact_dir / "event_kernel.csv"
+    kernel_svg_path = artifact_dir / "event_kernel.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        psychometric_path,
+        result["summary_rows"],
+        x_axis_label="Signed flash rate (flashes/s minus 12 Hz boundary)",
+    )
+    write_odoemene_kernel_csv(kernel_path, result["event_kernel_rows"])
+    write_odoemene_kernel_svg(kernel_svg_path, result["event_kernel_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {psychometric_path}")
+    print(f"Wrote event kernel to {kernel_path}")
+    print(f"Wrote event-kernel plot to {kernel_svg_path}")
+    return 0
+
+
+def _odoemene_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    kernel_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    analysis_path = analysis_result or artifact_dir / "analysis_result.json"
+    provenance_path = provenance or artifact_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or artifact_dir / "psychometric.svg"
+    kernel_svg_path = kernel_svg or artifact_dir / "event_kernel.svg"
+    report_path = out_file or artifact_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Odoemene analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas odoemene-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = None
+    if psychometric_svg_path.exists():
+        psychometric_svg_text = psychometric_svg_path.read_text(encoding="utf-8")
+    kernel_svg_text = None
+    if kernel_svg_path.exists():
+        kernel_svg_text = kernel_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", artifact_dir / "psychometric_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("event kernel CSV", artifact_dir / "event_kernel.csv"),
+            ("event kernel SVG", kernel_svg_path),
+            ("canonical trials CSV", artifact_dir / "trials.csv"),
+            ("harmonization summary CSV", artifact_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_odoemene_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        kernel_svg_text=kernel_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote Odoemene visual accumulation report to {report_path}")
+    if psychometric_svg_text is None:
+        print(
+            "Psychometric SVG not found, wrote report without inline psychometric plot: "
+            f"{psychometric_svg_path}"
+        )
+    if kernel_svg_text is None:
+        print(
+            "Event-kernel SVG not found, wrote report without inline kernel plot: "
+            f"{kernel_svg_path}"
+        )
+    return 0
+
+
+def _coen_harmonize(
+    *,
+    source_file: Path,
+    out_dir: Path,
+    session_id: str,
+    limit: int | None,
+) -> int:
+    if not source_file.exists():
+        print(
+            f"Coen audiovisual source file not found: {source_file}. "
+            "Download the UCL release or export the combined block into ignored "
+            "raw-data storage first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_coen_audiovisual_source(
+            source_file,
+            session_id=session_id,
+            limit=limit,
+        )
+    except (RuntimeError, OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    artifact_dir = out_dir / session_id
+    trials_path = artifact_dir / "trials.csv"
+    summary_path = artifact_dir / "summary.csv"
+    provenance_path = artifact_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        coen_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _coen_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    trials_path = trials_csv or artifact_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical Coen trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas coen-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_coen_audiovisual_decisions(trials)
+    summary_path = artifact_dir / "psychometric_summary.csv"
+    modality_path = artifact_dir / "modality_summary.csv"
+    condition_path = artifact_dir / "condition_summary.csv"
+    conflict_path = artifact_dir / "conflict_summary.csv"
+    result_path = artifact_dir / "analysis_result.json"
+    psychometric_path = artifact_dir / "psychometric.svg"
+    condition_svg_path = artifact_dir / "condition_summary.svg"
+
+    write_summary_csv(summary_path, result["summary_rows"])
+    write_coen_modality_csv(modality_path, result["modality_rows"])
+    write_coen_condition_csv(condition_path, result["condition_rows"])
+    write_coen_conflict_csv(conflict_path, result["conflict_rows"])
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(
+        psychometric_path,
+        result["summary_rows"],
+        x_axis_label="Signed audiovisual evidence proxy (visDiff + audDiff)",
+    )
+    write_coen_condition_svg(condition_svg_path, result["condition_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote psychometric summary to {summary_path}")
+    print(f"Wrote modality summary to {modality_path}")
+    print(f"Wrote condition summary to {condition_path}")
+    print(f"Wrote conflict summary to {conflict_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote psychometric plot to {psychometric_path}")
+    print(f"Wrote condition-surface plot to {condition_svg_path}")
+    return 0
+
+
+def _coen_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    psychometric_svg: Path | None,
+    condition_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    analysis_path = analysis_result or artifact_dir / "analysis_result.json"
+    provenance_path = provenance or artifact_dir / "provenance.json"
+    psychometric_svg_path = psychometric_svg or artifact_dir / "psychometric.svg"
+    condition_svg_path = condition_svg or artifact_dir / "condition_summary.svg"
+    report_path = out_file or artifact_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Coen analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas coen-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    psychometric_svg_text = None
+    if psychometric_svg_path.exists():
+        psychometric_svg_text = psychometric_svg_path.read_text(encoding="utf-8")
+    condition_svg_text = None
+    if condition_svg_path.exists():
+        condition_svg_text = condition_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("psychometric summary CSV", artifact_dir / "psychometric_summary.csv"),
+            ("modality summary CSV", artifact_dir / "modality_summary.csv"),
+            ("condition summary CSV", artifact_dir / "condition_summary.csv"),
+            ("conflict summary CSV", artifact_dir / "conflict_summary.csv"),
+            ("psychometric SVG", psychometric_svg_path),
+            ("condition summary SVG", condition_svg_path),
+            ("canonical trials CSV", artifact_dir / "trials.csv"),
+            ("harmonization summary CSV", artifact_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_coen_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        psychometric_svg_text=psychometric_svg_text,
+        condition_svg_text=condition_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote Coen audiovisual decision report to {report_path}")
+    if psychometric_svg_text is None:
+        print(
+            "Psychometric SVG not found, wrote report without inline psychometric plot: "
+            f"{psychometric_svg_path}"
+        )
+    if condition_svg_text is None:
+        print(
+            "Condition summary SVG not found, wrote report without inline condition plot: "
+            f"{condition_svg_path}"
+        )
+    return 0
+
+
+def _rodgers_harmonize(
+    *,
+    source_file: Path,
+    out_dir: Path,
+    session_id: str,
+    subject_id: str | None,
+    task_rule: str | None,
+    limit: int | None,
+) -> int:
+    if not source_file.exists():
+        print(
+            f"Rodgers source file not found: {source_file}. Download a DANDI NWB "
+            "session or export the NWB trials table into ignored raw-data storage first.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        trials, details = load_rodgers_whisker_source(
+            source_file,
+            session_id=session_id,
+            subject_id=subject_id,
+            task_rule=task_rule,
+            limit=limit,
+        )
+    except (RuntimeError, OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    artifact_dir = out_dir / session_id
+    trials_path = artifact_dir / "trials.csv"
+    summary_path = artifact_dir / "summary.csv"
+    provenance_path = artifact_dir / "provenance.json"
+    summary = summarize_canonical_trials(trials)
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary)
+    write_provenance_json(
+        provenance_path,
+        rodgers_provenance_payload(
+            details=details,
+            trials=trials,
+            output_files={
+                "trials": str(trials_path),
+                "summary": str(summary_path),
+                "provenance": str(provenance_path),
+            },
+        ),
+    )
+
+    print(f"Wrote {len(trials)} trials to {trials_path}")
+    print(f"Wrote {len(summary)} summary rows to {summary_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _rodgers_analyze(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    trials_path = trials_csv or artifact_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical Rodgers trials CSV not found: {trials_path}. "
+            "Run `uv run behavtaskatlas rodgers-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_rodgers_whisker_object_recognition(trials)
+    task_rule_path = artifact_dir / "task_rule_summary.csv"
+    condition_path = artifact_dir / "condition_summary.csv"
+    detection_path = artifact_dir / "detection_summary.csv"
+    result_path = artifact_dir / "analysis_result.json"
+    accuracy_path = artifact_dir / "accuracy.svg"
+
+    write_rodgers_task_rule_csv(task_rule_path, result["task_rule_rows"])
+    write_rodgers_condition_csv(condition_path, result["condition_rows"])
+    write_rodgers_detection_csv(detection_path, result["detection_rows"])
+    write_analysis_json(result_path, result)
+    write_rodgers_accuracy_svg(accuracy_path, result["condition_rows"])
+
+    print(f"Analyzed {len(trials)} trials from {trials_path}")
+    print(f"Wrote task-rule summary to {task_rule_path}")
+    print(f"Wrote condition summary to {condition_path}")
+    print(f"Wrote detection summary to {detection_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote accuracy plot to {accuracy_path}")
+    return 0
+
+
+def _rodgers_report(
+    *,
+    session_id: str,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    accuracy_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    artifact_dir = derived_dir / session_id
+    analysis_path = analysis_result or artifact_dir / "analysis_result.json"
+    provenance_path = provenance or artifact_dir / "provenance.json"
+    accuracy_svg_path = accuracy_svg or artifact_dir / "accuracy.svg"
+    report_path = out_file or artifact_dir / "report.html"
+    if not analysis_path.exists():
+        print(
+            f"Rodgers analysis result not found: {analysis_path}. "
+            "Run `uv run behavtaskatlas rodgers-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        loaded = _read_json_object_file(analysis_path)
+        provenance_payload = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else None
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    accuracy_svg_text = None
+    if accuracy_svg_path.exists():
+        accuracy_svg_text = accuracy_svg_path.read_text(encoding="utf-8")
+
+    report_dir = report_path.parent
+    artifact_links = {
+        label: _relative_artifact_link(path, report_dir)
+        for label, path in [
+            ("analysis result JSON", analysis_path),
+            ("provenance JSON", provenance_path),
+            ("task-rule summary CSV", artifact_dir / "task_rule_summary.csv"),
+            ("condition summary CSV", artifact_dir / "condition_summary.csv"),
+            ("detection summary CSV", artifact_dir / "detection_summary.csv"),
+            ("accuracy SVG", accuracy_svg_path),
+            ("canonical trials CSV", artifact_dir / "trials.csv"),
+            ("harmonization summary CSV", artifact_dir / "summary.csv"),
+        ]
+        if path.exists()
+    }
+    write_rodgers_report_html(
+        report_path,
+        loaded,
+        provenance=provenance_payload,
+        accuracy_svg_text=accuracy_svg_text,
+        artifact_links=artifact_links,
+    )
+
+    print(f"Wrote Rodgers whisker object-recognition report to {report_path}")
+    if accuracy_svg_text is None:
+        print(
+            "Accuracy SVG not found, wrote report without inline accuracy plot: "
+            f"{accuracy_svg_path}"
         )
     return 0
 
@@ -2314,6 +4566,155 @@ def _allen_visual_behavior_report(
     )
 
     print(f"Wrote Allen Visual Behavior report to {report_path}")
+    return 0
+
+
+def _allen_vbn_download(
+    *,
+    nwb_url: str,
+    out_file: Path | None,
+) -> int:
+    target = out_file or DEFAULT_ALLEN_VBN_RAW_DIR / nwb_url.rsplit("/", 1)[-1]
+    try:
+        details = download_allen_visual_behavior_session(
+            nwb_url=nwb_url,
+            out_file=target,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(
+        f"Downloaded {details['nwb_file_bytes']} bytes from {nwb_url} to "
+        f"{details['nwb_file']}"
+    )
+    print(f"SHA256 {details['nwb_file_sha256']}")
+    return 0
+
+
+def _allen_vbn_harmonize(
+    *,
+    nwb_file: Path,
+    out_dir: Path,
+    limit: int | None,
+) -> int:
+    try:
+        trials, details = load_allen_vbn_session(
+            nwb_file=nwb_file,
+            limit=limit,
+        )
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    trials_path = out_dir / "trials.csv"
+    outcome_path = out_dir / "outcome_summary.csv"
+    provenance_path = out_dir / "provenance.json"
+
+    write_allen_canonical_trials_csv(trials_path, trials)
+    outcome_counts: dict[str, int] = {}
+    for trial in trials:
+        outcome = str(trial.task_variables.get("outcome", "unknown"))
+        outcome_counts[outcome] = outcome_counts.get(outcome, 0) + 1
+    write_outcome_summary_csv(outcome_path, outcome_counts)
+    write_provenance_json(
+        provenance_path,
+        allen_vbn_provenance_payload(
+            details=details,
+            output_files={
+                "trials": str(trials_path),
+                "outcome_summary": str(outcome_path),
+                "provenance": str(provenance_path),
+            },
+            trials=trials,
+        ),
+    )
+
+    print(f"Wrote {len(trials)} VBN trials to {trials_path}")
+    print(f"Wrote outcome summary to {outcome_path}")
+    print(f"Wrote provenance to {provenance_path}")
+    return 0
+
+
+def _allen_vbn_analyze(
+    *,
+    derived_dir: Path,
+    trials_csv: Path | None,
+) -> int:
+    trials_path = trials_csv or derived_dir / "trials.csv"
+    if not trials_path.exists():
+        print(
+            f"Canonical VBN trials CSV not found: {trials_path}. "
+            "Run `uv run --extra allen behavtaskatlas allen-vbn-harmonize` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    trials = load_canonical_trials_csv(trials_path)
+    result = analyze_allen_vbn_change_detection(trials)
+
+    image_pair_path = derived_dir / "image_pair_summary.csv"
+    result_path = derived_dir / "analysis_result.json"
+    plot_path = derived_dir / "lick_latency.svg"
+
+    write_image_pair_csv(image_pair_path, result["image_pair_summary"])
+    write_allen_analysis_json(result_path, result)
+    write_lick_latency_svg(
+        plot_path,
+        trials,
+        title="VBN hit lick latency (seconds after change)",
+    )
+
+    print(f"Analyzed {len(trials)} VBN trials from {trials_path}")
+    print(f"Wrote image pair summary to {image_pair_path}")
+    print(f"Wrote analysis result to {result_path}")
+    print(f"Wrote lick latency plot to {plot_path}")
+    return 0
+
+
+def _allen_vbn_report(
+    *,
+    derived_dir: Path,
+    analysis_result: Path | None,
+    provenance: Path | None,
+    lick_latency_svg: Path | None,
+    out_file: Path | None,
+) -> int:
+    analysis_path = analysis_result or derived_dir / "analysis_result.json"
+    provenance_path = provenance or derived_dir / "provenance.json"
+    lick_latency_path = lick_latency_svg or derived_dir / "lick_latency.svg"
+    report_path = out_file or derived_dir / "report.html"
+
+    if not analysis_path.exists():
+        print(
+            f"Allen Visual Behavior Neuropixels analysis result not found: {analysis_path}. "
+            "Run `behavtaskatlas allen-vbn-analyze` first.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        analysis = _read_json_object_file(analysis_path)
+        provenance_payload_data = (
+            _read_json_object_file(provenance_path) if provenance_path.exists() else {}
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    if not lick_latency_path.exists():
+        print(
+            "VBN lick latency SVG not found at "
+            f"{lick_latency_path}; report will reference a missing image."
+        )
+
+    write_change_detection_report_html(
+        report_path,
+        analysis=analysis,
+        provenance=provenance_payload_data,
+        image_pair_rows=list(analysis.get("image_pair_summary") or []),
+    )
+
+    print(f"Wrote Allen Visual Behavior Neuropixels report to {report_path}")
     return 0
 
 

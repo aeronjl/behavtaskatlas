@@ -3,13 +3,16 @@ import math
 import pytest
 
 from behavtaskatlas.ibl import (
+    IBL_BRAINWIDE_MAP_DATASET_ID,
     MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
+    analyze_ibl_brainwide_map_behavior,
     analyze_ibl_visual_decision,
     analyze_ibl_visual_protocol,
     choice_label,
     feedback_label,
     harmonize_ibl_visual_trial,
     harmonize_ibl_visual_trials,
+    ibl_brainwide_map_provenance_payload,
     ibl_visual_report_html,
     load_canonical_trials_csv,
     provenance_payload,
@@ -247,6 +250,43 @@ def test_analyze_ibl_visual_protocol_supports_mouse_unbiased_slice() -> None:
     assert result["report_title"] == "Mouse Visual Contrast Training Report"
     assert len(result["prior_results"]) == 2
     assert any("trainingChoiceWorld" in caveat for caveat in result["caveats"])
+
+
+def test_ibl_brainwide_map_analysis_uses_dataset_specific_provenance() -> None:
+    trials = harmonize_ibl_visual_trials(
+        {
+            "contrastLeft": [1.0, 0.25, math.nan, math.nan],
+            "contrastRight": [math.nan, math.nan, 0.25, 1.0],
+            "choice": [1, 1, -1, -1],
+            "feedbackType": [1, 1, 1, 1],
+            "response_times": [1.2, 2.3, 3.4, 4.5],
+            "stimOn_times": [1.0, 2.0, 3.0, 4.0],
+            "probabilityLeft": [0.5, 0.5, 0.5, 0.5],
+        },
+        session_id="session",
+        dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+    )
+
+    result = analyze_ibl_brainwide_map_behavior(trials)
+    provenance = ibl_brainwide_map_provenance_payload(
+        eid="session",
+        details={
+            "subject": "subject",
+            "lab": "lab",
+            "projects": "ibl_neuropixel_brainwide_01",
+            "_behavtaskatlas_trials_revision": {"selected_revision": "2025-03-03"},
+        },
+        output_files={"trials": "trials.csv"},
+        trials=trials,
+    )
+
+    assert {trial.dataset_id for trial in trials} == {IBL_BRAINWIDE_MAP_DATASET_ID}
+    assert result["analysis_id"] == "analysis.ibl-brainwide-map.behavioral-psychometric"
+    assert result["dataset_id"] == IBL_BRAINWIDE_MAP_DATASET_ID
+    assert result["release_tag"] == "Brainwidemap"
+    assert provenance["dataset_id"] == IBL_BRAINWIDE_MAP_DATASET_ID
+    assert provenance["source"]["one_project"] == "ibl_neuropixel_brainwide_01"
+    assert provenance["source"]["release_tag"] == "Brainwidemap"
 
 
 def test_psychometric_svg_contains_prior_label() -> None:

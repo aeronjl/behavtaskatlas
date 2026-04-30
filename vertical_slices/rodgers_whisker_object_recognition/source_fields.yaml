@@ -1,0 +1,56 @@
+slice_id: slice.rodgers-whisker-object-recognition
+protocol_id: protocol.mouse-whisker-object-recognition-lick
+dataset_id: dataset.rodgers-whisker-object-recognition-dandi
+source_url: https://dandiarchive.org/dandiset/000231/0.220904.1554
+source_doi: 10.48324/dandi.000231/0.220904.1554
+paper_url: https://www.nature.com/articles/s41597-022-01728-1
+paper_doi: 10.1038/s41597-022-01728-1
+code_url: https://github.com/cxrodgers/NwbDandiData2022
+source_object: DANDI NWB /intervals/trials table or exported CSV/TSV trial table
+source_trial_fields:
+  required:
+    - stimulus
+    - choice
+    - outcome
+    - rewarded_side
+    - response_window_open_time
+    - choice_time
+  strongly_recommended:
+    - start_time
+    - stop_time
+    - direct_delivery
+    - stim_is_random
+    - optogenetic
+    - servo_position
+    - ignore_trial
+    - trial
+  optional_contact_fields:
+    - processing/identified_whisker_contacts/whisker_C0
+    - processing/identified_whisker_contacts/whisker_C1
+    - processing/identified_whisker_contacts/whisker_C2
+    - processing/identified_whisker_contacts/whisker_C3
+    - n_contacts_total
+    - n_contacts_C0
+    - n_contacts_C1
+    - n_contacts_C2
+    - n_contacts_C3
+canonical_mapping:
+  stimulus_value: null; object shape and presence remain categorical task variables
+  stimulus_modality: somatosensory
+  stimulus_side: none; the shape is sampled with the right whisker field and report side is lick choice
+  evidence_strength: null in the base adapter; contact-derived summaries are optional task variables
+  choice: source choice left/right maps directly; source nogo maps to no-response
+  correct: source outcome correct maps true, error maps false, and spoil maps null
+  response_time: source choice_time minus response_window_open_time for left/right choices
+  feedback: reward for correct choices, error for incorrect choices, none for spoiled/no-response trials
+  prior_context: task_rule, inferred as shape_detection or shape_discrimination when possible
+  task_variables: >
+    task_rule, stimulus, servo_position, source_outcome, rewarded_side,
+    ignore_trial, analysis_eligible, direct_delivery, stim_is_random,
+    optogenetic, start_time, stop_time, choice_time, response_window_open_time,
+    source_trial, and optional contact counts by whisker.
+source_notes:
+  - The paper recommends excluding ignore_trial rows from analysis; canonical rows retain them and mark analysis_eligible false.
+  - Shape discrimination maps convex to right and concave to left; shape detection maps either shape to right and catch/nothing to left.
+  - Response timing is aligned to the common video timebase and expressed relative to the response-window opening.
+  - Contact counts are generated only when NWB contact intervals or CSV contact-count columns are available.

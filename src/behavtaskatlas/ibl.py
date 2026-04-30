@@ -18,10 +18,23 @@ from behavtaskatlas.models import CanonicalTrial
 IBL_VISUAL_PROTOCOL_ID = "protocol.ibl-visual-decision-v1"
 MOUSE_UNBIASED_VISUAL_PROTOCOL_ID = "protocol.mouse-visual-contrast-wheel-unbiased"
 IBL_PUBLIC_BEHAVIOR_DATASET_ID = "dataset.ibl-public-behavior"
+IBL_BRAINWIDE_MAP_DATASET_ID = "dataset.ibl-brainwide-map-2025"
 DEFAULT_IBL_EID = "ebce500b-c530-47de-8cb1-963c552703ea"
+DEFAULT_IBL_BRAINWIDE_MAP_EID = DEFAULT_IBL_EID
 DEFAULT_MOUSE_UNBIASED_EID = "6a6442d1-dd7d-4717-b7b1-5874aefbd6fc"
 DEFAULT_DERIVED_DIR = Path("derived/ibl_visual_decision")
+DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR = Path("derived/ibl_brainwide_map")
 DEFAULT_MOUSE_UNBIASED_DERIVED_DIR = Path("derived/mouse_visual_contrast_unbiased")
+IBL_BRAINWIDE_MAP_RELEASE_TAG = "Brainwidemap"
+IBL_BRAINWIDE_MAP_PROJECT = "ibl_neuropixel_brainwide_01"
+IBL_BRAINWIDE_MAP_AWS_REGISTRY_URL = "https://registry.opendata.aws/ibl-brain-wide-map/"
+IBL_BRAINWIDE_MAP_AWS_BUCKET = "s3://ibl-brain-wide-map-public/"
+IBL_BRAINWIDE_MAP_DOCS_URL = (
+    "https://docs.internationalbrainlab.org/notebooks_external/"
+    "2025_data_release_brainwidemap.html"
+)
+IBL_BRAINWIDE_MAP_PAPER_DOI = "10.1038/s41586-025-09235-0"
+IBL_BRAINWIDE_MAP_PRIOR_PAPER_DOI = "10.1038/s41586-025-09226-1"
 
 IBL_REQUIRED_TRIAL_FIELDS = {
     "contrastLeft",
@@ -373,6 +386,38 @@ def analyze_ibl_visual_decision(trials: list[CanonicalTrial]) -> dict[str, Any]:
             ),
         ],
     )
+
+
+def analyze_ibl_brainwide_map_behavior(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    result = analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.ibl-brainwide-map.behavioral-psychometric",
+        protocol_id=IBL_VISUAL_PROTOCOL_ID,
+        dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+        report_title="IBL Brainwide Map Behavioral Report",
+        stimulus_label="Signed contrast",
+        stimulus_units="percent contrast, signed right positive",
+        stimulus_metric_name="contrast",
+        caveats=[
+            (
+                "This slice summarizes the behavioral trials from one Brainwide Map "
+                "ephys session; neural probe insertions, spike sorting, histology, and "
+                "video features are provenance fields or deferred outputs."
+            ),
+            (
+                "The official release tag is Brainwidemap and should be used when "
+                "selecting sessions through ONE or AWS. The exact trials table revision "
+                "loaded by ONE is recorded in provenance."
+            ),
+            (
+                "No-response trials are included in total trial counts but excluded from "
+                "the p(right) denominator."
+            ),
+        ],
+    )
+    result["one_project"] = IBL_BRAINWIDE_MAP_PROJECT
+    result["release_tag"] = IBL_BRAINWIDE_MAP_RELEASE_TAG
+    return result
 
 
 def analyze_mouse_unbiased_visual_contrast(trials: list[CanonicalTrial]) -> dict[str, Any]:
@@ -1078,6 +1123,7 @@ def provenance_payload(
     output_files: dict[str, str],
     trials: list[CanonicalTrial],
     protocol_id: str = IBL_VISUAL_PROTOCOL_ID,
+    dataset_id: str = IBL_PUBLIC_BEHAVIOR_DATASET_ID,
     source_revision_note: str | None = None,
 ) -> dict[str, Any]:
     revision_info = details.get("_behavtaskatlas_trials_revision")
@@ -1088,7 +1134,7 @@ def provenance_payload(
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "one_api_version": installed_package_version("ONE-api"),
         "protocol_id": protocol_id,
-        "dataset_id": IBL_PUBLIC_BEHAVIOR_DATASET_ID,
+        "dataset_id": dataset_id,
         "source": {
             "base_url": "https://openalyx.internationalbrainlab.org",
             "session_url": details.get("url"),
@@ -1121,6 +1167,42 @@ def provenance_payload(
             ),
         ],
     }
+
+
+def ibl_brainwide_map_provenance_payload(
+    *,
+    eid: str,
+    details: dict[str, Any],
+    output_files: dict[str, str],
+    trials: list[CanonicalTrial],
+) -> dict[str, Any]:
+    payload = provenance_payload(
+        eid=eid,
+        details=details,
+        output_files=output_files,
+        trials=trials,
+        protocol_id=IBL_VISUAL_PROTOCOL_ID,
+        dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+        source_revision_note=(
+            f"Brainwide Map behavior slice; select sessions from ONE project "
+            f"{IBL_BRAINWIDE_MAP_PROJECT!r} / release tag {IBL_BRAINWIDE_MAP_RELEASE_TAG!r}."
+        ),
+    )
+    payload["source"].update(
+        {
+            "one_project": details.get("projects") or IBL_BRAINWIDE_MAP_PROJECT,
+            "release_tag": IBL_BRAINWIDE_MAP_RELEASE_TAG,
+            "aws_registry_url": IBL_BRAINWIDE_MAP_AWS_REGISTRY_URL,
+            "aws_bucket": IBL_BRAINWIDE_MAP_AWS_BUCKET,
+            "docs_url": IBL_BRAINWIDE_MAP_DOCS_URL,
+            "paper_doi": IBL_BRAINWIDE_MAP_PAPER_DOI,
+            "prior_paper_doi": IBL_BRAINWIDE_MAP_PRIOR_PAPER_DOI,
+        }
+    )
+    payload["caveats"].append(
+        "This behavior-first slice does not download spike sorting, histology, or video features."
+    )
+    return payload
 
 
 def write_provenance_json(path: Path, payload: dict[str, Any]) -> None:

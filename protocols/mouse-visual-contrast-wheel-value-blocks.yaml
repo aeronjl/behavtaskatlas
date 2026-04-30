@@ -1,0 +1,101 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-contrast-wheel-value-blocks
+family_id: family.visual-2afc-contrast
+name: Mouse visual contrast wheel task with reward-value blocks
+aliases:
+  - mouse visual confidence and reward value task
+  - Lak visual contrast reward-value task
+  - wheel visual 2AFC with value blocks
+description: >
+  Head-fixed mice report the side of a lateralized visual contrast stimulus
+  with a response wheel while reward value differs between sides and switches
+  across blocks. This variant separates reward-value learning from the IBL
+  stimulus-prior manipulation, even though both use wheel-based visual 2AFC
+  behavior.
+species:
+  - mouse
+curation_status: literature-curated
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - stimulus side
+  evidence_type: static
+  evidence_schedule: >
+    A sinusoidal grating or similar visual stimulus appears on the left or
+    right monitor at variable contrast.
+  units:
+    - percent contrast
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel turns report the side of the visual stimulus.
+feedback:
+  feedback_type: mixed
+  reward: >
+    Water reward for correct choices; reward magnitude or value can be larger
+    on one side and switch across blocks.
+  penalty: Error feedback or timeout for incorrect choices, source-dependent.
+  notes: >
+    Reward-value block state is an operational task variable and should remain
+    separate from sensory confidence or inferred decision confidence.
+timing:
+  - name: quiescence
+    duration: protocol-specific
+    description: Mouse holds the wheel still before stimulus onset.
+  - name: stimulus_and_response
+    duration: response-limited
+    description: Visual stimulus is presented while the mouse reports with the wheel.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness and current reward-value block
+training:
+  stages:
+    - wheel shaping
+    - visual discrimination
+    - reward-value block training
+apparatus:
+  - head fixation
+  - response wheel
+  - visual displays
+  - water delivery
+expected_analyses:
+  - psychometric curve by contrast and reward-value block
+  - choice updating after rewarded and unrewarded trials
+  - reinforcement-learning model with sensory-confidence terms
+  - neural correlates of pending reward and prediction error
+interpretive_claims:
+  - label: reward-value learning under sensory uncertainty
+    source: ref.lak-2020-dopaminergic-prefrontal
+    confidence: medium
+    caveat: >
+      Sensory contrast, reward value, and inferred confidence are separable
+      quantities and should not be collapsed into a single evidence axis.
+references:
+  - id: ref.lak-2020-dopaminergic-prefrontal
+    citation: >
+      Lak A et al. Dopaminergic and prefrontal basis of learning from sensory
+      confidence and reward value. Neuron, 2020.
+    url: https://pubmed.ncbi.nlm.nih.gov/31859030/
+    doi: 10.1016/j.neuron.2019.11.018
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass to keep reward-value
+    block manipulations separate from IBL-style stimulus-prior blocks. The
+    source-availability pass narrowed this protocol to the Neuron reward-value
+    paper; Lak et al. 2020 eLife remains linked to the standard wheel protocol
+    because its mouse visual task does not add explicit value blocks.
+open_questions:
+  - Identify whether public trial-level behavioral tables exist for the Lak visual contrast reward-value studies.
+  - Decide whether the cross-species Lak eLife analyses require separate human and mouse source-specific protocol records.

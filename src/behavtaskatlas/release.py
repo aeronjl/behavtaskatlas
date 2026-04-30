@@ -85,7 +85,7 @@ def build_release_check_payload(
 
     manifest = loaded_artifacts.get("manifest")
     if isinstance(manifest, ReportManifest):
-        items.append(_slice_coverage_item(manifest))
+        items.append(_slice_coverage_item(manifest, records=validation_report.records))
         items.append(_health_source_level_item(manifest))
 
     queue = loaded_artifacts.get("curation_queue")
@@ -327,21 +327,53 @@ def _source_data_level_item(records: list[BaseModel], root: Path) -> dict[str, A
     )
 
 
-def _slice_coverage_item(manifest: ReportManifest) -> dict[str, Any]:
+def _slice_coverage_item(
+    manifest: ReportManifest,
+    *,
+    records: list[BaseModel],
+) -> dict[str, Any]:
     slices = manifest.slices
+    slice_records = {
+        record.id: record for record in records if isinstance(record, VerticalSlice)
+    }
     missing_reports = [item.id for item in slices if item.report_status != "available"]
     missing_artifacts = [item.id for item in slices if item.artifact_status != "available"]
+    blocking_missing_reports = [
+        slice_id for slice_id in missing_reports if _release_blocking_slice(slice_records, slice_id)
+    ]
+    blocking_missing_artifacts = [
+        slice_id
+        for slice_id in missing_artifacts
+        if _release_blocking_slice(slice_records, slice_id)
+    ]
+    follow_up_missing_reports = sorted(set(missing_reports) - set(blocking_missing_reports))
+    follow_up_missing_artifacts = sorted(set(missing_artifacts) - set(blocking_missing_artifacts))
     details = {
         "slices": len(slices),
         "missing_reports": missing_reports,
         "missing_artifacts": missing_artifacts,
+        "blocking_missing_reports": blocking_missing_reports,
+        "blocking_missing_artifacts": blocking_missing_artifacts,
+        "follow_up_missing_reports": follow_up_missing_reports,
+        "follow_up_missing_artifacts": follow_up_missing_artifacts,
     }
-    if missing_reports or missing_artifacts:
+    if blocking_missing_reports or blocking_missing_artifacts:
         return _item(
             "release.slice_coverage",
             "Slice report coverage",
             "error",
-            "One or more vertical slices lack a generated report or analysis artifact.",
+            (
+                "One or more release-blocking vertical slices lack a generated "
+                "report or analysis artifact."
+            ),
+            details=details,
+        )
+    if follow_up_missing_reports or follow_up_missing_artifacts:
+        return _item(
+            "release.slice_coverage",
+            "Slice report coverage",
+            "warning",
+            "Some adapter-ready follow-up slices lack generated reports or analysis artifacts.",
             details=details,
         )
     return _item(
@@ -351,6 +383,14 @@ def _slice_coverage_item(manifest: ReportManifest) -> dict[str, Any]:
         f"All {len(slices)} vertical slices have generated reports and analysis artifacts.",
         details=details,
     )
+
+
+def _release_blocking_slice(
+    slice_records: dict[str, VerticalSlice],
+    slice_id: str,
+) -> bool:
+    record = slice_records.get(slice_id)
+    return record is None or record.curation_status == "analysis-verified"
 
 
 def _health_source_level_item(manifest: ReportManifest) -> dict[str, Any]:
@@ -373,18 +413,30 @@ def _health_source_level_item(manifest: ReportManifest) -> dict[str, Any]:
 
 def _queue_item(queue: CurationQueuePayload) -> dict[str, Any]:
     open_count = int(queue.counts.get("open", 0))
+    high_priority_open = sum(
+        1 for item in queue.items if item.status == "open" and item.priority == "high"
+    )
     details = {
         "items": int(queue.counts.get("items", len(queue.items))),
         "open": open_count,
+        "high_priority_open": high_priority_open,
         "action_counts": queue.action_counts,
         "priority_counts": queue.priority_counts,
     }
-    if open_count:
+    if high_priority_open:
         return _item(
             "release.curation_queue",
             "Curation queue",
             "error",
-            f"Curation queue has {open_count} open item(s).",
+            f"Curation queue has {high_priority_open} high-priority open item(s).",
+            details=details,
+        )
+    if open_count:
+        return _item(
+            "release.curation_queue",
+            "Curation queue",
+            "warning",
+            f"Curation queue has {open_count} normal-priority open item(s).",
             details=details,
         )
     return _item(

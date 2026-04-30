@@ -1,0 +1,70 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.rodgers-whisker-object-recognition-dandi
+name: Rodgers whisker object-recognition DANDI dataset
+description: >
+  DANDI NWB release containing behavioral events, high-speed whisker video
+  links, pose/contact annotations, and neural recordings from head-fixed mice
+  performing tactile shape discrimination or shape detection tasks.
+protocol_ids:
+  - protocol.mouse-whisker-object-recognition-lick
+species:
+  - mouse
+curation_status: adapter-ready
+source_url: https://dandiarchive.org/dandiset/000231/0.220904.1554
+access_notes: >
+  Access through DANDI version 0.220904.1554. Each session has an NWB file and
+  may link to external raw video files; the adapter reads the NWB trials table
+  directly or a CSV/TSV export of the same fields, and treats video-derived
+  whisker contacts as optional rich task variables rather than required core
+  trial columns.
+source_data_level: processed-trial
+license: CC0-1.0
+data_formats:
+  - Neurodata Without Borders (NWB)
+  - external high-speed video files
+  - DANDI archive assets
+  - pose and whisker-contact annotations
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from DANDI subject folder.
+  session_id: Session name from NWB filename.
+  trial_index: Trial index from behavioral event table.
+  stimulus_value: Shape class or object-present condition.
+  stimulus_side: none; object is sampled with one whisker field and choice is reported by lick side.
+  evidence_strength: Object position or contact-feature summary, if treated as strength.
+  choice: Left or right lick response.
+  correct: Source outcome mapped to boolean correctness.
+  response_time: Lick response latency relative to response-window opening.
+  feedback: Water reward for correct choices.
+  task_variables: >
+    task rule, concave/convex/catch condition, object position, object approach
+    time, whisker identity, touch times, video frame alignment, neural recording
+    availability, and contact annotations.
+references:
+  - id: ref.rodgers-2022-dandi
+    citation: >
+      Rodgers CC. A detailed behavioral, videographic, and neural dataset on
+      object recognition in mice. DANDI Archive, 2022.
+    url: https://dandiarchive.org/dandiset/000231/0.220904.1554
+    doi: 10.48324/dandi.000231/0.220904.1554
+  - id: ref.rodgers-2022-object-recognition
+    citation: >
+      Rodgers CC. A detailed behavioral, videographic, and neural dataset on
+      object recognition in mice. Scientific Data, 2022.
+    url: https://www.nature.com/articles/s41597-022-01728-1
+    doi: 10.1038/s41597-022-01728-1
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion as a high-quality somatosensory
+    decision-making dataset with synchronized behavior, video, and neural data.
+    Promoted to adapter-ready after verifying the DANDI version metadata,
+    assets manifest, Scientific Data trial-table description, and companion
+    usage notebook.
+caveats:
+  - The dataset mixes detection and discrimination task rules that may need separate slice records.
+  - Video files are linked externally from NWB sessions, so local tests avoid requiring full video download.
+  - The DANDI record reports CC0-1.0 for the dataset release; the associated paper is separately CC-BY-4.0.

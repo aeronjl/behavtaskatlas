@@ -1,0 +1,50 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.lak-2020-reinforcement-biases-confidence
+citation: >
+  Lak A, Hueske E, Hirokawa J, Masset P, Ott T, Urai AE, Donner TH,
+  Carandini M, Tonegawa S, Uchida N, Kepecs A. Reinforcement biases
+  subsequent perceptual decisions when confidence is low, a widespread
+  behavioral phenomenon. eLife 9:e49834, 2020.
+authors:
+  - Lak, Armin
+  - Hueske, Emily
+  - Hirokawa, Junya
+  - Masset, Paul
+  - Ott, Torben
+  - Urai, Anne E.
+  - Donner, Tobias H.
+  - Carandini, Matteo
+  - Tonegawa, Susumu
+  - Uchida, Naoshige
+  - Kepecs, Adam
+year: 2020
+venue: eLife
+doi: 10.7554/eLife.49834
+url: https://elifesciences.org/articles/49834
+species:
+  - mouse
+  - human
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-unbiased
+dataset_ids: []
+finding_ids: []
+curation_status: literature-curated
+notes: >
+  Cross-species evidence that reward history biases later perceptual decisions
+  most strongly when sensory confidence is low. The mouse component uses a
+  wheel-based 2AFC visual contrast task and is the component represented in
+  this family. The human visual component is a motion task, not a contrast task,
+  and should be represented only if a human motion protocol/source record is
+  curated later. Mouse visual source data are tracked through
+  data_request.lak-2020-visual-contrast-wheel-source-data.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from eLife and Crossref
+    metadata. Corrected during source-availability curation to remove the
+    provisional human contrast link because the paper's human visual component
+    is motion, not contrast.

@@ -21,6 +21,9 @@ clicks = [
 ibl = [
     "ONE-api>=3.5.0",
 ]
+nwb = [
+    "h5py>=3.10",
+]
 rdm = [
     "scipy>=1.13",
 ]

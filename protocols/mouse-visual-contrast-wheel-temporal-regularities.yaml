@@ -1,0 +1,106 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+family_id: family.visual-2afc-contrast
+name: Mouse visual contrast wheel task with temporal regularities
+aliases:
+  - Fritsche temporal-regularities visual wheel task
+  - mouse visual choice-history regularity task
+  - wheel visual 2AFC with repeating and alternating stimulus sequences
+description: >
+  Head-fixed mice report the side of a lateralized visual grating by turning a
+  response wheel while the experiment manipulates trial-to-trial stimulus-side
+  transition probabilities across Neutral, Repeating, and Alternating
+  environments. The protocol preserves sequence regularity as an operational
+  task variable rather than treating it as an inferred history bias.
+species:
+  - mouse
+curation_status: analysis-verified
+dataset_ids:
+  - dataset.fritsche-temporal-regularities-figshare
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - contrast
+    - stimulus side
+    - stimulus-side transition probability
+    - sequence environment
+  evidence_type: static
+  evidence_schedule: >
+    A grating appears on the left or right screen at one of several contrast
+    levels. Across sessions, stimulus side follows neutral, repeating, or
+    alternating sequence statistics.
+  units:
+    - percent contrast
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel turns report the side of the visual stimulus; rare NoGo source rows
+    are mapped to no-response because they are timeout/no-turn outcomes, not a
+    rewarded third option.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct left/right choices.
+  penalty: Error sound or timeout for incorrect choices.
+  notes: >
+    Reward contingency is symmetric in the public behavior CSVs used by the
+    MVP adapter.
+timing:
+  - name: quiescence
+    duration: protocol-specific
+    description: Mouse holds the wheel still before stimulus onset.
+  - name: stimulus_and_response
+    duration: response-limited
+    description: Visual stimulus is presented while the mouse reports with the wheel.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - wheel shaping
+    - visual discrimination
+    - temporal-regularity environment exposure
+apparatus:
+  - head fixation
+  - response wheel
+  - visual display
+  - water delivery
+expected_analyses:
+  - psychometric curve by contrast and sequence environment
+  - choice-history kernels by Neutral, Repeating, and Alternating environments
+  - reinforcement-learning model with current stimulus and previous-choice memory states
+  - dopamine photometry alignment to behavior and model predictions
+interpretive_claims:
+  - label: adaptive choice-history bias under temporal regularities
+    source: ref.fritsche-2024-temporal-regularities
+    confidence: medium
+    caveat: >
+      The atlas keeps environment, previous choices, reward outcomes, and model
+      predictions separable so choice-history bias remains an analysis result,
+      not a hidden task variable.
+references:
+  - id: ref.fritsche-2024-temporal-regularities
+    citation: >
+      Fritsche M, Majumdar A, Strickland L, Liebana Garcia S, Bogacz R, Lak A.
+      Temporal regularities shape perceptual decisions and striatal dopamine
+      signals. Nature Communications, 2024.
+    url: https://www.nature.com/articles/s41467-024-51393-8
+    doi: 10.1038/s41467-024-51393-8
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual contrast depth pass after verifying a public
+    Figshare deposit with generated behavior CSVs for the temporal-regularity
+    experiments.
+open_questions:
+  - Decide whether the IBL comparison CSV in the Figshare deposit should become a separate model-comparison artifact or remain covered by existing IBL slices.
+  - Add explicit choice-history kernel extraction after the behavior-first canonical trial table is stable.

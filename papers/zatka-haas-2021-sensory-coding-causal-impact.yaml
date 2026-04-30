@@ -1,0 +1,40 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.zatka-haas-2021-sensory-coding-causal-impact
+citation: >
+  Zatka-Haas P, Steinmetz NA, Carandini M, Harris KD. Sensory coding and the
+  causal impact of mouse cortex in a visual decision. eLife 10:e63163, 2021.
+authors:
+  - Zatka-Haas, Peter
+  - Steinmetz, Nicholas A.
+  - Carandini, Matteo
+  - Harris, Kenneth D.
+year: 2021
+venue: eLife
+doi: 10.7554/eLife.63163
+url: https://elifesciences.org/articles/63163
+lab: Carandini/Harris collaboration
+species:
+  - mouse
+protocol_ids:
+  - protocol.mouse-unforced-visual-contrast-wheel
+dataset_ids:
+  - dataset.zatka-haas-visual-decision-figshare
+finding_ids: []
+curation_status: data-linked
+notes: >
+  Uses a wheel-based mouse visual contrast decision task to separate sensory
+  coding from causal cortical impact. It is linked to the unforced wheel
+  protocol because it sits in the same operational lineage as Burgess and
+  Steinmetz. The paper's Figshare archive is public but large, so the next
+  step is a manifest/code-first adapter pass before downloading every split
+  archive part.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from the eLife article
+    metadata and methods summary. Updated during source-availability curation
+    after verifying the public Figshare dataset.

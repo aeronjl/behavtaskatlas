@@ -1,0 +1,55 @@
+slice_id: slice.ibl-brainwide-map-behavior
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-brainwide-map-2025
+source_url: https://registry.opendata.aws/ibl-brain-wide-map/
+docs_url: https://docs.internationalbrainlab.org/notebooks_external/2025_data_release_brainwidemap.html
+paper_url: https://www.nature.com/articles/s41586-025-09235-0
+paper_doi: 10.1038/s41586-025-09235-0
+prior_paper_doi: 10.1038/s41586-025-09226-1
+aws_bucket: s3://ibl-brain-wide-map-public/
+one_project: ibl_neuropixel_brainwide_01
+release_tag: Brainwidemap
+source_object: IBL ALF trials table `_ibl_trials.table.pqt` loaded through ONE/OpenAlyx
+source_trial_fields:
+  required:
+    - contrastLeft
+    - contrastRight
+    - choice
+    - feedbackType
+    - response_times
+    - stimOn_times
+    - probabilityLeft
+  strongly_recommended:
+    - rewardVolume
+    - goCue_times
+    - firstMovement_times
+    - feedback_times
+    - intervals
+    - wheel_timestamps
+    - wheel_position
+  deferred_ephys_fields:
+    - probe insertion ids
+    - cluster ids and spike times
+    - channel locations
+    - atlas acronyms and histology alignment
+    - video pose features
+canonical_mapping:
+  stimulus_value: signed contrast; contrastRight positive and contrastLeft negative, expressed as percent contrast
+  stimulus_modality: visual
+  stimulus_side: left for contrastLeft, right for contrastRight, none for zero-contrast trials
+  evidence_strength: absolute signed contrast
+  choice: source choice 1 maps left, -1 maps right, 0 maps no-response
+  correct: feedbackType 1 maps true and -1 maps false
+  response_time: response_times minus stimOn_times
+  feedback: reward for feedbackType 1 and error for feedbackType -1
+  prior_context: probabilityLeft block value, formatted as p_left=<value>
+  task_variables: >
+    Base behavior adapter currently stores all source trials-table fields in
+    `source`; a future Brainwide Map neural slice should add probe insertion
+    ids, region labels, spike-sorting QC, and video/pose availability to
+    task_variables or a companion neural table.
+source_notes:
+  - The official IBL documentation identifies `Brainwidemap` as the release tag.
+  - The AWS registry records the public bucket `ibl-brain-wide-map-public` and CC-BY 4.0 license.
+  - The Nature paper reports 459 Neuropixels sessions, 699 probe insertions, and 139 subjects in the release.
+  - This slice intentionally summarizes one behavior session and does not pool across the full ephys release.

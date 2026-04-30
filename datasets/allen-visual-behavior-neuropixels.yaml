@@ -1,0 +1,74 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.allen-visual-behavior-neuropixels
+name: Allen Visual Behavior Neuropixels
+description: >
+  Open NWB-format electrophysiology and behavioral dataset from mice performing
+  the Allen visual change-detection task, with active behavior, passive replay,
+  receptive-field mapping, and optotagging epochs.
+protocol_ids:
+  - protocol.mouse-visual-change-detection-allen
+species:
+  - mouse
+curation_status: adapter-ready
+source_url: https://dandiarchive.org/dandiset/000713/0.240702.1725
+access_notes: >
+  Use AllenSDK's VisualBehaviorNeuropixelsProjectCache for normal access; the
+  DANDI record is an archival cloud release and the Allen portal provides task
+  and whitepaper documentation. The behavtaskatlas MVP adapter reads a local
+  VBN NWB /intervals/trials table directly via h5py and treats it as the
+  active visual change-detection behavior slice; neural and video side tables
+  remain deferred.
+source_data_level: raw-trial
+license: CC-BY-4.0, subject to Allen Institute terms of use.
+data_formats:
+  - Neurodata Without Borders (NWB)
+  - AllenSDK project cache
+  - DANDI archive assets
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from session metadata.
+  session_id: Allen ecephys or behavior session identifier.
+  trial_index: Trial index from the active behavior trials table.
+  stimulus_value: Categorical image-change indicator or image-pair code.
+  stimulus_side: none; visual images are centrally presented rather than lateralized.
+  evidence_strength: Not a scalar; derive d-prime or hit-rate summaries by image pair.
+  choice: Lick in response window mapped to go; withheld lick mapped to withhold.
+  correct: Trial outcome mapped from hit, miss, false alarm, or correct rejection.
+  response_time: First lick latency relative to change time where available.
+  feedback: Reward on hits; no reward on misses, false alarms, and correct rejections unless source marks otherwise.
+  task_variables: >
+    image set, pre-change image, change image, omitted flashes, active/passive
+    epoch, novelty exposure, optotagging context, lick times, and reward times.
+references:
+  - id: ref.allen-vbn-dandi
+    citation: >
+      Allen Institute for Brain Science. Allen Brain Observatory: Visual
+      Behavior Neuropixels. DANDI Archive, 2024.
+    url: https://dandiarchive.org/dandiset/000713/0.240702.1725
+    doi: 10.48324/dandi.000713/0.240702.1725
+  - id: ref.allen-vbn-portal
+    citation: >
+      Allen Institute for Brain Science. Visual Behavior Neuropixels data
+      portal.
+    url: https://portal.brain-map.org/explore/circuits/visual-behavior-neuropixels
+  - id: ref.groblewski-2020-vbo
+    citation: >
+      Groblewski PA et al. Characterization of learning, motivation, and visual
+      perception in five transgenic mouse lines. Frontiers in Behavioral
+      Neuroscience, 2020.
+    url: https://www.frontiersin.org/articles/10.3389/fnbeh.2020.00104/full
+    doi: 10.3389/fnbeh.2020.00104
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion after verifying that the Allen
+    portal and DANDI release expose Visual Behavior Neuropixels behavioral
+    events in NWB/AllenSDK form. Promoted to adapter-ready after confirming
+    the DANDI version metadata, public S3 metadata tables, AllenSDK VBN
+    behavior tutorial columns, and VBN task epoch structure.
+caveats:
+  - The archive is large; adapters should stream or cache per-session NWB assets rather than assume full local download.
+  - The current MVP adapter covers active behavior trials only and does not yet join spike, LFP, probe, channel, optotagging, passive-replay, receptive-field, or video tables.

@@ -1,0 +1,41 @@
+slice_id: slice.odoemene-visual-accumulation
+protocol_id: protocol.mouse-visual-flash-rate-accumulation
+dataset_id: dataset.odoemene-visual-evidence-accumulation-cshl
+source_url: https://repository.cshl.edu/id/eprint/38944/
+source_doi: 10.14224/1.38944
+metadata_pdf_url: https://repository.cshl.edu/38944/3/DataDescription_Odeomene2020.pdf
+storage_url: http://labshare.cshl.edu/shares/library/repository/38944/
+source_object: MATLAB 1x29 subject structure array
+source_trial_fields:
+  required:
+    - stimEventList
+    - stimRate
+    - subjectResponse
+    - correctResponse
+    - validTrial
+    - success
+    - waitTime
+    - moveTime
+    - sessionID
+  optional_subject_fields:
+    - subjectID
+    - species
+    - trainingContingency
+    - numSessions
+canonical_mapping:
+  stimulus_value: stimRate minus the 12 Hz category boundary
+  stimulus_side: high-rate category maps to right; low-rate category maps to left
+  evidence_strength: absolute distance from the 12 Hz category boundary
+  choice: subjectResponse 1 maps to left/low-rate, 2 maps to right/high-rate
+  correct: success on valid trials
+  response_time: moveTime for valid trials
+  feedback: reward for success, error for valid failure, none for invalid trials
+  prior_context: training contingency when available
+  task_variables: >
+    25-bin stimulus event list, stimulus rate, source response and correct
+    category codes, validTrial, success, waitTime, moveTime, sessionID,
+    numSessions, and canonical category-convention notes.
+source_notes:
+  - The source event stream uses 25 bins of 40 ms, spanning the 1 s visual stimulus.
+  - Canonical left/right are category labels here, not guaranteed physical port labels.
+  - Invalid trials are retained as no-response rows and excluded from p(high) denominators.

@@ -1,0 +1,87 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.fritsche-temporal-regularities
+title: Fritsche Temporal Regularities
+description: >
+  Behavior-first slice for the Fritsche et al. mouse visual decision dataset.
+  The adapter reads generated Figshare behavior CSVs, harmonizes wheel choices
+  and contrast levels, and preserves Neutral, Repeating, and Alternating
+  stimulus-side sequence environments as explicit task variables.
+curation_status: analysis-verified
+display_order: 29
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_id: dataset.fritsche-temporal-regularities-figshare
+report_path: fritsche_temporal_regularities/fritsche-temporal-regularities/report.html
+analysis_result_path: fritsche_temporal_regularities/fritsche-temporal-regularities/analysis_result.json
+primary_artifact_path: fritsche_temporal_regularities/fritsche-temporal-regularities/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/report.html
+  - label: Analysis result JSON
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/analysis_result.json
+  - label: Psychometric SVG
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/psychometric.svg
+  - label: Psychometric summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/psychometric_summary.csv
+  - label: Transition summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/transition_summary.csv
+  - label: Choice-history summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/choice_history_summary.csv
+  - label: Subject-environment summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/subject_environment_summary.csv
+  - label: Choice-history model coefficients CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/choice_history_model_coefficients.csv
+  - label: Neutral adaptation summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/neutral_adaptation_summary.csv
+  - label: Neutral adaptation session CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/neutral_adaptation_session_summary.csv
+  - label: Canonical trials CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/trials.csv
+  - label: Harmonization summary CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/summary.csv
+  - label: Provenance JSON
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/provenance.json
+  - label: Code manifest JSON
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/code_manifest.json
+  - label: Artifact provenance CSV
+    path: fritsche_temporal_regularities/fritsche-temporal-regularities/artifact_provenance.csv
+  - label: Slice notes
+    path: vertical_slices/fritsche_temporal_regularities/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/fritsche_temporal_regularities/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/fritsche_temporal_regularities.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: signed contrast
+  evidence_type: static
+  choice_type: 2afc
+  response_modality: wheel
+  source_data_level: processed-trial
+  analysis_outputs: >
+    psychometric summary by signed contrast and sequence environment, lag-1
+    stimulus-transition and choice-history summaries, subject-environment
+    replication table, logistic choice-history coefficients, neutral-session
+    adaptation summaries, source code manifest, artifact provenance table,
+    canonical trial table, SVG, and static report
+  data_scope: generated behavior CSVs from Figshare data.zip
+  canonical_axis: right contrast minus left contrast
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Slice added during visual contrast depth work after verifying the article
+    data-availability statement and Figshare API metadata. The first adapter is
+    behavior-first and defers photometry/model joins.
+notes: >
+  The generated artifacts remain under ignored derived paths. Rare source NoGo
+  rows are canonical no-response outcomes because the operational task remains
+  left/right wheel 2AFC rather than an unforced NoGo design.

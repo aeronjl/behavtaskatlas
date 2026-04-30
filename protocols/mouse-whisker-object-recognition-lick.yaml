@@ -1,0 +1,111 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-whisker-object-recognition-lick
+family_id: family.whisker-object-discrimination
+name: Mouse whisker object-recognition lick task
+aliases:
+  - Rodgers tactile shape discrimination task
+  - mouse whisker shape detection task
+description: >
+  Head-fixed mice actively sample a presented object with a trimmed row of
+  whiskers and report either object shape or object presence with left/right
+  lick responses. The linked dataset includes both shape-discrimination and
+  shape-detection task rules.
+species:
+  - mouse
+curation_status: adapter-ready
+stimulus:
+  modalities:
+    - somatosensory
+  variables:
+    - object shape
+    - object presence
+    - object position
+    - whisker contact timing
+  evidence_type: static
+  evidence_schedule: >
+    A motorized object moves into whisker range and stops at a close, medium,
+    or far position; mice actively whisk to contact the shape before choosing.
+  units:
+    - categorical shape
+    - position
+    - seconds
+choice:
+  choice_type: mixed
+  alternatives:
+    - left lick
+    - right lick
+  response_modalities:
+    - lick
+  action_mapping: >
+    In shape-discrimination sessions, lick side maps to concave versus convex
+    shape; in shape-detection sessions, lick side maps to object present versus
+    catch/no-object trials.
+feedback:
+  feedback_type: reward
+  reward: Water reward for correct lick choice.
+timing:
+  - name: object_approach
+    duration: approximately 2 s before response window
+    description: Object moves toward the whiskers.
+  - name: sampling
+    duration: protocol-specific
+    description: Mouse actively whisks and may contact the object.
+  - name: response_window
+    duration: response-limited
+    description: Mouse reports the object class with a lick response.
+training:
+  stages:
+    - shaping
+    - shape detection or discrimination
+    - neural recording sessions
+apparatus:
+  - head fixation
+  - motorized object actuator
+  - high-speed whisker video
+  - lick pipes
+  - water delivery
+software:
+  - Arduino task control
+  - Neurodata Without Borders
+dataset_ids:
+  - dataset.rodgers-whisker-object-recognition-dandi
+expected_analyses:
+  - accuracy by shape and object position
+  - hit and false-alarm rates for detection sessions
+  - touch-aligned choice and neural summaries
+  - whisker-contact feature extraction
+interpretive_claims:
+  - label: tactile object recognition
+    source: ref.rodgers-2022-object-recognition
+    confidence: high
+    caveat: >
+      Shape identity, object presence, and active-contact kinematics are
+      separable operational variables and should not be collapsed into a single
+      tactile evidence scalar prematurely.
+references:
+  - id: ref.rodgers-2022-object-recognition
+    citation: >
+      Rodgers CC. A detailed behavioral, videographic, and neural dataset on
+      object recognition in mice. Scientific Data, 2022.
+    url: https://www.nature.com/articles/s41597-022-01728-1
+    doi: 10.1038/s41597-022-01728-1
+  - id: ref.rodgers-2022-dandi
+    citation: >
+      Rodgers CC. A detailed behavioral, videographic, and neural dataset on
+      object recognition in mice. DANDI Archive, 2022.
+    url: https://dandiarchive.org/dandiset/000231/0.220904.1554
+    doi: 10.48324/dandi.000231/0.220904.1554
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Protocol added from the Scientific Data paper and DANDI release, then
+    promoted to adapter-ready with a behavior-first NWB/CSV adapter. The adapter
+    handles the dual detection/discrimination task rules and treats external
+    video/contact data as optional task variables.
+open_questions:
+  - Decide whether detection and discrimination sessions should split into two concrete protocols after multi-session curation.
+  - Extend the optional contact-count fields into a richer per-whisker kinematics schema.

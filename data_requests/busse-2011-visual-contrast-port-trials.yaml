@@ -1,0 +1,90 @@
+object_type: data_request
+schema_version: 0.1.0
+id: data_request.busse-2011-visual-contrast-port-trials
+title: Busse 2011 mouse visual contrast port-task trial data
+status: ready_to_send
+priority: high
+request_type: author_request
+paper_ids:
+  - paper.busse-2011-detection-visual-contrast
+protocol_ids:
+  - protocol.mouse-visual-contrast-port-2afc
+model_roadmap_issue_types:
+  - missing_trial_level_source
+blocker_type: author_request_raw_trials
+purpose: >-
+  Recover the classic freely moving mouse visual contrast 2AFC port-task data
+  so behavtaskatlas can compare port-based psychometrics, side bias, and recent
+  reward/history effects against head-fixed wheel contrast tasks.
+blocker_detail: >-
+  The paper and PubMed/PMC metadata identify the task and figures, but this
+  source-availability pass did not identify a public repository containing
+  reusable trial-level choices, contrasts, session identifiers, or response
+  times for the 12 mice.
+next_action: >-
+  Send the author request or locate a lab-hosted archive with the session-level
+  behavioral tables.
+requested_files:
+  - name: Busse2011_trial_level_behavior
+    description: >-
+      Per-trial behavioral table or source files with mouse id, session id,
+      trial index, signed contrast, stimulus side, chosen port, correctness,
+      reward/error outcome, and response time if available.
+    required: true
+  - name: Busse2011_session_metadata
+    description: >-
+      Session-level metadata needed to reproduce psychometric threshold, bias,
+      and history-effect analyses.
+    required: true
+contact_instructions: >-
+  Prefer the corresponding-author path listed by the Journal of Neuroscience or
+  current Carandini/Busse lab contact. Ask for redistribution constraints on
+  derived canonical trial tables and aggregate model-fit outputs.
+evidence:
+  - evidence_type: article_data_availability
+    description: >-
+      PubMed records the paper, DOI, PMCID, task summary, and figure captions,
+      but no public trial-level data archive was identified from that record.
+    url: https://pubmed.ncbi.nlm.nih.gov/21813694/
+  - evidence_type: public_archive_check
+    description: >-
+      Targeted searches for the paper title, DOI, and public data/archive terms
+      did not identify reusable behavioral source files during this pass.
+request_draft:
+  subject: Request for Busse et al. 2011 mouse visual contrast trial data
+  body: |-
+    Dear Busse / Carandini team,
+
+    I am curating behavtaskatlas, an open-science atlas of sensory-guided decision-making tasks and reusable behavioral-model fits.
+
+    I am working on the classic mouse visual contrast 2AFC task from:
+
+    Busse L et al. The detection of visual contrast in the behaving mouse. Journal of Neuroscience, 2011.
+
+    I could not find a public trial-level archive for the behavioral sessions. Would you be willing to share analyzed trial-level behavioral data, or point me to a current public location? The fields of interest are mouse id, session id, trial index, signed contrast/stimulus side, chosen port, correctness/reward outcome, and response time where available.
+
+    The goal is to build a provenance-preserving trial-level harmonizer and compare port-based contrast psychometrics and history effects against later head-fixed wheel visual contrast tasks. I would also observe any redistribution limits you specify for derived canonical trial tables and aggregate model-fit outputs.
+
+    Thank you,
+    behavtaskatlas curator
+events:
+  - event_type: drafted
+    event_date: 2026-04-30
+    actor: behavtaskatlas
+    notes: >-
+      Drafted after the visual contrast source-availability pass identified no
+      public trial-level archive for the Busse port-based task.
+    evidence_path: data_requests/busse-2011-visual-contrast-port-trials.yaml
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >-
+    Created as the source-availability tracker for the classic port-based mouse
+    contrast task.
+notes: >-
+  This request is high priority because it would give the visual contrast family
+  a non-wheel mouse 2AFC anchor with session-level psychometrics and history
+  effects.

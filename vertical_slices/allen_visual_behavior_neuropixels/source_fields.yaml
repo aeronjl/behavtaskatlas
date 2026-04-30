@@ -1,0 +1,61 @@
+slice_id: slice.allen-visual-behavior-neuropixels
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-visual-behavior-neuropixels
+source_archive: https://dandiarchive.org/dandiset/000713/0.240702.1725
+source_object: NWB /intervals/trials table read directly via h5py
+license: CC-BY-4.0, subject to Allen Institute terms of use
+access:
+  recommended_api: AllenSDK VisualBehaviorNeuropixelsProjectCache
+  dandi_url: https://dandiarchive.org/dandiset/000713/0.240702.1725
+  dandi_doi: 10.48324/dandi.000713/0.240702.1725
+  dandi_version: 0.240702.1725
+  s3_prefix: s3://visual-behavior-neuropixels-data/visual-behavior-neuropixels
+  behavior_sessions_table: https://visual-behavior-neuropixels-data.s3.us-west-2.amazonaws.com/visual-behavior-neuropixels/project_metadata/behavior_sessions.csv
+  ecephys_sessions_table: https://visual-behavior-neuropixels-data.s3.us-west-2.amazonaws.com/visual-behavior-neuropixels/project_metadata/ecephys_sessions.csv
+required_fields:
+  - go
+  - catch
+  - hit
+  - miss
+  - false_alarm
+  - correct_reject
+  - aborted
+  - auto_rewarded
+  - initial_image_name
+  - change_image_name
+  - response_latency
+  - reward_volume
+optional_fields:
+  - start_time
+  - end_time
+  - change_time
+  - change_time_no_display_delay
+  - trial_length
+  - lick_times
+  - response_time
+  - reward_time
+  - session_type
+  - image_set
+  - ecephys_session_id
+  - behavior_session_id
+canonical_mapping:
+  stimulus_value: null; image change is categorical
+  stimulus_side: always none; stimuli are presented centrally
+  evidence_strength: null; the relevant evidence is a categorical image transition
+  choice: lick within response window go, withhold no-lick, aborted no-response
+  correct: True for hit and correct_reject, False for miss and false_alarm
+  response_time: response_latency seconds after change time
+  feedback: reward when hit or auto-rewarded with positive reward_volume, otherwise none
+  reward: reward_volume in mL when present
+  task_variables.outcome: hit, miss, false_alarm, correct_reject, aborted, auto_rewarded
+  task_variables.is_change: go column
+  task_variables.is_catch: catch column
+  task_variables.initial_image_name: pre-change image name
+  task_variables.change_image_name: change image name
+  task_variables.image_pair: initial->change label
+  task_variables.change_time_in_trial: change_time_no_display_delay when available
+source_notes:
+  - The VBN release includes active behavior, passive replay, receptive-field mapping, spontaneous, flash, and optotagging epochs; this slice uses the active behavior trials table only.
+  - The same source fields appear in AllenSDK's VBN behavior-session trial tutorial, so the existing Allen change-detection harmonizer can be reused safely.
+  - Neural units, probes, channels, LFP, optotagging, video, and stimulus-presentation joins remain deferred.
+  - Aborted and auto-rewarded trials are preserved in canonical rows but excluded from hit and false-alarm rate denominators.

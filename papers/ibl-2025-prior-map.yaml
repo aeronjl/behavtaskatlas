@@ -1,0 +1,34 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.ibl-2025-prior-map
+citation: >
+  The International Brain Laboratory et al. Brain-wide representations of
+  prior information in mouse decision-making. Nature 645:192-200, 2025.
+authors:
+  - The International Brain Laboratory
+year: 2025
+venue: Nature
+doi: 10.1038/s41586-025-09226-1
+url: https://www.nature.com/articles/s41586-025-09226-1
+lab: International Brain Laboratory
+species:
+  - mouse
+protocol_ids:
+  - protocol.ibl-visual-decision-v1
+dataset_ids:
+  - dataset.ibl-brainwide-map-2025
+finding_ids: []
+curation_status: data-linked
+notes: >
+  Companion IBL Brainwide Map paper focused on block prior probability and
+  subjective prior representations. It is tracked separately from the broad
+  brain-wide map paper because prior probability is an operational variable in
+  the IBL task family, not just an interpretation.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass to represent the
+    prior-specific Brainwide Map companion analysis as a first-class paper.

@@ -69,6 +69,18 @@ interpretive_claims:
     source: ref.ibl-2021-standardized
     confidence: medium
 references:
+  - id: ref.burgess-2017-high-yield-visual-psychophysics
+    citation: >
+      Burgess CP et al. High-Yield Methods for Accurate Two-Alternative
+      Visual Psychophysics in Head-Fixed Mice. Cell Reports, 2017.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5603732/
+    doi: 10.1016/j.celrep.2017.08.047
+  - id: ref.lak-2020-reinforcement-biases-confidence
+    citation: >
+      Lak A et al. Reinforcement biases subsequent perceptual decisions when
+      confidence is low, a widespread behavioral phenomenon. eLife, 2020.
+    url: https://elifesciences.org/articles/49834
+    doi: 10.7554/eLife.49834
   - id: ref.ibl-2021-standardized
     citation: >
       The International Brain Laboratory et al. Standardized and reproducible
@@ -79,13 +91,17 @@ provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-25
+  updated: 2026-04-30
   source_notes: >
     Linked to the broad IBL public behavioral dataset because IBL public data
     include behavior acquired during the standardized training pipeline, and IBL
     tooling distinguishes `trainingChoiceWorld` from biased and ephys
     choice-world sessions. A first report-backed vertical slice now pins one
-    public trainingChoiceWorld session from that archive.
+    public trainingChoiceWorld session from that archive. Burgess et al. was
+    added as the protocol-methods anchor for head-fixed wheel visual
+    psychophysics. Lak et al. 2020 eLife was added for reward-history analysis
+    of a standard mouse visual contrast wheel task; the human component of that
+    paper is motion, not contrast, and is not represented by this protocol.
 open_questions:
   - Decide whether this should be modeled as a variant of the IBL protocol or a separate record.
   - Decide how to represent the broader multi-session training trajectory beyond the current single-session slice.

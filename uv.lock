@@ -40,6 +40,9 @@ clicks = [
 ibl = [
     { name = "one-api" },
 ]
+nwb = [
+    { name = "h5py" },
+]
 rdm = [
     { name = "scipy" },
 ]
@@ -56,6 +59,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "h5py", marker = "extra == 'allen'", specifier = ">=3.10" },
+    { name = "h5py", marker = "extra == 'nwb'", specifier = ">=3.10" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "one-api", marker = "extra == 'ibl'", specifier = ">=3.5.0" },
     { name = "pydantic", specifier = ">=2.7" },
@@ -65,7 +69,7 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'rdm'", specifier = ">=1.13" },
     { name = "scipy", marker = "extra == 'visual'", specifier = ">=1.13" },
 ]
-provides-extras = ["allen", "clicks", "ibl", "rdm", "visual"]
+provides-extras = ["allen", "clicks", "ibl", "nwb", "rdm", "visual"]
 
 [package.metadata.requires-dev]
 dev = [

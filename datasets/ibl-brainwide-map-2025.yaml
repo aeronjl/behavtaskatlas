@@ -1,0 +1,76 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.ibl-brainwide-map-2025
+name: IBL Neuropixels Brainwide Map 2025
+description: >
+  Public IBL brain-wide Neuropixels release from mice performing the
+  standardized visual decision-making task, including behavioral trials,
+  wheel movement, video-derived variables, spike sorting, and histology
+  metadata across many laboratories.
+protocol_ids:
+  - protocol.ibl-visual-decision-v1
+species:
+  - mouse
+curation_status: adapter-ready
+source_url: https://registry.opendata.aws/ibl-brain-wide-map/
+access_notes: >
+  Access through the IBL ONE API or the public AWS bucket. The existing IBL
+  behavior adapter now serves as the behavior-first slice, pinning the
+  Brainwide Map ONE project and `Brainwidemap` release tag in provenance.
+  Neural extensions should distinguish task trials, ephys sessions, probe
+  insertions, and quality-control filters.
+source_data_level: processed-trial
+license: CC-BY-4.0
+data_formats:
+  - IBL ALF objects
+  - ONE API datasets
+  - AWS S3 public bucket
+  - NumPy and Parquet-style processed arrays
+expected_trial_table_mapping:
+  subject_id: IBL subject identifier.
+  session_id: IBL eid for the brainwide-map session.
+  trial_index: Trial number within session.
+  stimulus_value: Signed contrast; contrastRight positive and contrastLeft negative.
+  stimulus_side: Source side among left, right, or zero-contrast assigned side.
+  evidence_strength: Absolute signed contrast.
+  choice: IBL choice code mapped to left, right, or no-response.
+  correct: feedbackType mapped to boolean correctness.
+  response_time: First wheel movement or response time relative to stimulus onset, with origin recorded.
+  feedback: reward or error from feedbackType and rewardVolume.
+  prior_context: probabilityLeft block value.
+  task_variables: >
+    wheel movement, go cue, stimulus onset, feedback time, block probability,
+    video-derived motion energy or pupil fields where present, probe insertion
+    ids, brain regions, and release/QC labels.
+references:
+  - id: ref.aws-ibl-brainwide-map
+    citation: >
+      International Brain Laboratory. IBL Neuropixels Brainwide Map on AWS.
+      Registry of Open Data on AWS.
+    url: https://registry.opendata.aws/ibl-brain-wide-map/
+  - id: ref.ibl-2025-brainwide-map
+    citation: >
+      International Brain Laboratory et al. A brain-wide map of neural activity
+      during complex behaviour. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09235-0
+    doi: 10.1038/s41586-025-09235-0
+  - id: ref.ibl-2025-prior-map
+    citation: >
+      International Brain Laboratory et al. Brain-wide representations of prior
+      information in mouse decision-making. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09226-1
+    doi: 10.1038/s41586-025-09226-1
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion to separate the 2025 brainwide-map
+    ephys release from the broad IBL public behavioral dataset already in the
+    atlas. Promoted to adapter-ready after verifying the IBL release
+    documentation, AWS Open Data registry entry, Nature data-availability
+    statement, and OpenAlyx project metadata.
+caveats:
+  - The behavior-first slice pins the Brainwidemap release tag, but ephys QC and neural inclusion filters remain deferred.
+  - The existing IBL behavior dataset already covers related task behavior, so comparisons must avoid double-counting sessions when both records are used.

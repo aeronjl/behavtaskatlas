@@ -1,0 +1,50 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.audiovisual-spatial-decision
+name: Audiovisual spatial decision
+aliases:
+  - audiovisual localization decision
+  - multisensory spatial choice
+description: >
+  Sensory-guided tasks in which visual and auditory cues specify spatial
+  alternatives, either alone or together, and the subject reports the inferred
+  side or location. The family keeps modality, spatial location, cue reliability,
+  and cue conflict as operational variables rather than treating multisensory
+  integration as a single latent construct.
+modalities:
+  - visual
+  - auditory
+  - multisensory
+canonical_variables:
+  - visual contrast
+  - auditory azimuth
+  - cue congruence
+  - modality condition
+common_choice_types:
+  - 2afc
+  - discrimination
+common_response_modalities:
+  - wheel
+  - lick
+  - button-press
+curation_status: literature-curated
+references:
+  - id: ref.coen-2023-audiovisual-decisions
+    citation: >
+      Coen P, Sit TPH, Wells MJ, Carandini M, Harris KD. Mouse frontal cortex
+      mediates additive multisensory decisions. Neuron, 2023.
+    url: https://www.cell.com/neuron/fulltext/S0896-6273(23)00381-1
+    doi: 10.1016/j.neuron.2023.05.008
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during the dataset coverage expansion to represent open audiovisual
+    decision datasets that remain sensory-guided but are not reducible to a
+    unisensory contrast, motion, or click-count axis.
+notes: >
+  Future harmonization should encode modality-specific evidence values and cue
+  congruence explicitly so additive and interaction models can be compared.
+

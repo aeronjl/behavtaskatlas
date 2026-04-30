@@ -1,0 +1,81 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.zatka-haas-visual-decision
+title: Zatka-Haas Visual Decision
+description: >
+  Analysis-backed slice for the Zatka-Haas et al. mouse visual decision
+  Figshare release. It uses the public code ZIP plus targeted extraction of the
+  higher-power optogenetic inactivation MATLAB table from the split archive,
+  harmonizing 10,054 processed behavioral trials before neural joins.
+curation_status: analysis-verified
+display_order: 28
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.zatka-haas-visual-decision-figshare
+report_path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/report.html
+analysis_result_path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/analysis_result.json
+primary_artifact_path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/choice_summary.svg
+primary_artifact_label: Open choice summary SVG
+artifact_links:
+  - label: Report HTML
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/report.html
+  - label: Choice summary SVG
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/choice_summary.svg
+  - label: Analysis result JSON
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/analysis_result.json
+  - label: Canonical trials CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/trials.csv
+  - label: Choice summary CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/choice_summary.csv
+  - label: Condition summary CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/condition_summary.csv
+  - label: Laser-state summary CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/laser_state_summary.csv
+  - label: Laser-region summary CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/laser_region_summary.csv
+  - label: Perturbation delta summary CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/perturbation_delta_summary.csv
+  - label: Perturbation region effect CSV
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/perturbation_region_effect_summary.csv
+  - label: Provenance JSON
+    path: zatka_haas_visual_decision/zatka-haas-inactivation-higher-power/provenance.json
+  - label: Code manifest JSON
+    path: zatka_haas_visual_decision/zatka-haas-visual-decision/code_manifest.json
+  - label: Slice notes
+    path: vertical_slices/zatka_haas_visual_decision/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/zatka_haas_visual_decision/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/zatka_haas_visual_decision.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: bilateral contrast tuple and signed contrast difference
+  evidence_type: static
+  choice_type: free-response
+  response_modality: wheel
+  source_data_level: processed-trial
+  analysis_outputs: >
+    real-trial report, choice surface, withhold rate, laser-state and
+    laser-region summaries, matched perturbation deltas, region-effect
+    summaries, source code manifest
+  data_scope: targeted higher-power inactivation behavioral table plus public code ZIP
+  canonical_axis: right contrast minus left contrast, with blank trials as zero
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Slice added during the visual contrast depth pass. A central-directory
+    range read from the split Figshare archive located
+    OptogeneticInactivation/Inactivation_HigherPower.mat near the beginning of
+    part .001, allowing behavior-first extraction and harmonization without a
+    full 19.6 GB download.
+notes: >
+  The generated artifacts remain under ignored derived paths. The current
+  report keeps the pooled choice surface while adding matched perturbation
+  comparisons against non-laser trials at the same signed contrast.

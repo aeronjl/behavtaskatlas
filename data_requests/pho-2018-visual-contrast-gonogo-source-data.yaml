@@ -1,0 +1,88 @@
+object_type: data_request
+schema_version: 0.1.0
+id: data_request.pho-2018-visual-contrast-gonogo-source-data
+title: Pho 2018 visual contrast go/no-go data and MATLAB code
+status: ready_to_send
+priority: normal
+request_type: author_request
+paper_ids:
+  - paper.pho-2018-task-dependent-parietal
+protocol_ids:
+  - protocol.mouse-visual-contrast-lick-gonogo
+model_roadmap_issue_types:
+  - missing_trial_level_source
+blocker_type: author_request_source_data
+purpose: >-
+  Recover trial-level go/no-go visual contrast behavior and analysis code so
+  the atlas can represent this boundary variant without collapsing it into
+  symmetric 2AFC wheel or port tasks.
+blocker_detail: >-
+  The Nature Communications data-availability statement says the data and
+  custom MATLAB analysis code supporting the findings are available from the
+  corresponding authors upon request, not from a public repository.
+next_action: >-
+  Send the author request after the port and reward-value wheel requests, or
+  sooner if go/no-go contrast variants become the priority comparison.
+requested_files:
+  - name: Pho2018_trial_level_behavior
+    description: >-
+      Per-trial behavior table or source files with mouse/session ids, target
+      or non-target condition, contrast, engagement/passive block, lick/no-lick
+      response, hit/miss/false-alarm/correct-reject outcome, and timing.
+    required: true
+  - name: Pho2018_custom_MATLAB_analysis_code
+    description: >-
+      MATLAB scripts needed to reproduce contrast modulation, engagement, and
+      choice-related analyses from the paper.
+    required: false
+contact_instructions: >-
+  Use the corresponding-author path in the Nature Communications article. Ask
+  for behavioral tables first and clarify whether custom MATLAB code can be
+  cited, redistributed, or only used locally.
+evidence:
+  - evidence_type: article_data_availability
+    description: >-
+      The article states that data and custom MATLAB analysis code supporting
+      the findings are available from the corresponding authors upon request.
+    url: https://www.nature.com/articles/s41467-018-05012-y
+  - evidence_type: public_archive_check
+    description: >-
+      No public trial-level archive was identified during the visual contrast
+      source-availability pass.
+request_draft:
+  subject: Request for Pho et al. 2018 visual go/no-go trial data
+  body: |-
+    Dear Pho / Goard / Sur team,
+
+    I am curating behavtaskatlas, an open-science atlas of sensory-guided decision-making tasks and reusable behavioral-model fits.
+
+    I am mapping visual contrast task variants and would like to include the go/no-go visual discrimination task from:
+
+    Pho GN et al. Task-dependent representations of stimulus and choice in mouse parietal cortex. Nature Communications, 2018.
+
+    The article data-availability statement says data and custom MATLAB analysis code are available from the corresponding authors upon request. Would you be willing to share analyzed trial-level behavioral data, or point me to a current public location? The fields of interest are mouse/session ids, target/non-target condition, contrast, engaged/passive condition, lick/no-lick response, hit/miss/false-alarm/correct-reject outcome, and event timing.
+
+    The goal is to preserve this as an explicit go/no-go contrast variant rather than forcing it into a symmetric wheel or port 2AFC schema. I would also observe any redistribution constraints you specify.
+
+    Thank you,
+    behavtaskatlas curator
+events:
+  - event_type: drafted
+    event_date: 2026-04-30
+    actor: behavtaskatlas
+    notes: >-
+      Drafted after source-availability checks confirmed the paper's
+      corresponding-author request path.
+    evidence_path: data_requests/pho-2018-visual-contrast-gonogo-source-data.yaml
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >-
+    Created during the visual contrast source-availability pass.
+notes: >-
+  Normal priority: important for operational breadth inside the contrast family,
+  but the first behavior-depth comparisons should probably start with port and
+  wheel 2AFC variants.

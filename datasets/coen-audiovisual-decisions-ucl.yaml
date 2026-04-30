@@ -1,0 +1,75 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.coen-audiovisual-decisions-ucl
+name: Coen-Sit mouse audiovisual decisions UCL dataset
+description: >
+  Preprocessed UCL Research Data Repository release containing behavioral
+  responses, trial timings, inactivation metadata, sorted spikes, and histology
+  records for mice performing an audiovisual spatial decision task.
+protocol_ids:
+  - protocol.mouse-audiovisual-spatial-wheel
+species:
+  - mouse
+curation_status: adapter-ready
+source_url: https://rdr.ucl.ac.uk/articles/dataset/Mouse_frontal_cortex_mediates_additive_multisensory_decisions/22363180
+access_notes: >
+  Download from the UCL Research Data Repository and use the linked GitHub code
+  to understand processed data structures. The behavtaskatlas adapter expects a
+  local MATLAB combined block or CSV/TSV trial export preserving the
+  spatialAnalysis trial fields. License restrictions should be kept visible
+  before redistributing derived trial tables.
+source_data_level: processed-trial
+license: CC-BY-NC-ND-4.0
+data_formats:
+  - MATLAB files
+  - Python analysis data
+  - processed spike-sorting outputs
+  - UCL Research Data Repository archive
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from processed behavioral data.
+  session_id: Behavioral or recording session identifier.
+  trial_index: Trial number within session.
+  stimulus_value: Signed audiovisual decision evidence after source-specific coding.
+  stimulus_side: Left or right stimulus location for unisensory and congruent trials.
+  evidence_strength: Visual contrast and auditory azimuth should remain separate task variables.
+  choice: Wheel-derived left or right choice.
+  correct: Source outcome where defined; conflict-trial correctness may be analysis-specific.
+  response_time: Reaction time or wheel movement onset relative to stimulus onset.
+  feedback: Reward or timeout/error feedback where available.
+  task_variables: >
+    modality condition, visual contrast, auditory azimuth, cue congruence,
+    open-loop versus closed-loop epoch, inactivation target, laser flag, spike
+    sorting unit ids, and histology records.
+references:
+  - id: ref.coen-2023-ucl-rdr
+    citation: >
+      Coen P, Carandini M, Harris K, Sit PH, Wells M. Mouse frontal cortex
+      mediates additive multisensory decisions. UCL Research Data Repository,
+      2023.
+    url: https://rdr.ucl.ac.uk/articles/dataset/Mouse_frontal_cortex_mediates_additive_multisensory_decisions/22363180
+  - id: ref.coen-2023-audiovisual-decisions
+    citation: >
+      Coen P, Sit TPH, Wells MJ, Carandini M, Harris KD. Mouse frontal cortex
+      mediates additive multisensory decisions. Neuron, 2023.
+    url: https://www.cell.com/neuron/fulltext/S0896-6273(23)00381-1
+    doi: 10.1016/j.neuron.2023.05.008
+  - id: ref.coen-2023-code-zenodo
+    citation: >
+      Coen P. Python and MATLAB code to analyze data for Mouse frontal cortex
+      mediates additive multisensory decisions. Zenodo, 2023.
+    url: https://doi.org/10.5281/zenodo.7892397
+    doi: 10.5281/zenodo.7892397
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion as an open multisensory
+    decision-making source with trial-level behavior plus processed neural and
+    perturbation metadata. Promoted to adapter-ready after verifying the UCL
+    file listing and the public analysis code's combined block fields.
+caveats:
+  - The license is non-commercial and no-derivatives, so redistributable derived products need review.
+  - Raw data are not in the public processed release and are available from the lead contact on reasonable request.
+  - Conflict-trial correctness follows the source correctResponse field in the default adapter; alternative policies should be modeled as separate analyses.

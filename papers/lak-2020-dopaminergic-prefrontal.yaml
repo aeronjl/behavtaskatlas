@@ -1,0 +1,47 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.lak-2020-dopaminergic-prefrontal
+citation: >
+  Lak A, Okun M, Moss MM, Gurnani H, Farrell K, Wells MJ, Bai Reddy C,
+  Kepecs A, Harris KD, Carandini M. Dopaminergic and prefrontal basis of
+  learning from sensory confidence and reward value. Neuron 105:700-711,
+  2020.
+authors:
+  - Lak, Armin
+  - Okun, Michael
+  - Moss, Morgane M.
+  - Gurnani, Harsha
+  - Farrell, Karolina
+  - Wells, Miles J.
+  - Bai Reddy, Charu
+  - Kepecs, Adam
+  - Harris, Kenneth D.
+  - Carandini, Matteo
+year: 2020
+venue: Neuron
+doi: 10.1016/j.neuron.2019.11.018
+url: https://pubmed.ncbi.nlm.nih.gov/31859030/
+lab: Carandini/Harris/Kepecs collaboration
+species:
+  - mouse
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-value-blocks
+dataset_ids: []
+finding_ids: []
+curation_status: literature-curated
+notes: >
+  Neural implementation paper for a wheel-based visual contrast task with
+  reward-value blocks. It is included because it makes reward value and
+  inferred sensory confidence explicit task/model dimensions rather than
+  treating contrast alone as the decision variable. Source data are tracked
+  through data_request.lak-2020-visual-contrast-wheel-source-data because the
+  public article states datasets are available from the corresponding author on
+  request.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from PubMed and DOI
+    metadata; no source-data adapter is linked yet.

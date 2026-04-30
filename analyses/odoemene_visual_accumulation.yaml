@@ -1,0 +1,38 @@
+analysis_id: analysis.odoemene-visual-accumulation.descriptive-psychometric-kernel
+protocol_id: protocol.mouse-visual-flash-rate-accumulation
+dataset_id: dataset.odoemene-visual-evidence-accumulation-cshl
+status: adapter-ready
+inputs:
+  - canonical trial table generated from the CSHL Odoemene MATLAB subject-structure file
+implemented_outputs:
+  - canonical trial table preserving valid and invalid trials
+  - signed-rate psychometric summary
+  - descriptive analysis result JSON
+  - dependency-free SVG psychometric plot
+  - 25-bin event-choice kernel summary CSV
+  - dependency-free SVG event-kernel plot
+  - static HTML report over source provenance, psychometric points, kernel, and caveats
+grouping_variables:
+  - signed flash rate relative to 12 Hz boundary
+  - training contingency
+  - subject
+  - source session
+planned_outputs:
+  - release follow-up artifact regeneration after the CSHL MATLAB source file is available locally
+  - trial count by flash-rate condition
+  - proportion high-rate choice by signed flash rate
+  - accuracy by signed flash rate
+  - median move time by signed flash rate
+  - event-choice kernel over 25 stimulus bins
+deferred_outputs:
+  - full psychophysical GLM matching the paper's temporal-kernel analyses
+  - subject-level hierarchical psychometric model
+  - brightness-manipulation split analyses
+  - optogenetic manipulation split analyses
+provenance_requirements:
+  - source CSHL DOI
+  - source MATLAB filename and hash
+  - source MATLAB variable name
+  - subject and session counts
+  - adapter version or commit hash
+  - date generated

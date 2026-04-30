@@ -1267,6 +1267,13 @@ def _slice_metrics(slice_id: str, analysis: dict[str, Any] | None) -> list[dict[
             _metric_payload("No-response trials", analysis.get("n_no_response_trials")),
             _metric_payload("Prior blocks", len(analysis.get("prior_results", []))),
         ]
+    if slice_id == "slice.ibl-brainwide-map-behavior":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+            _metric_payload("No-response trials", analysis.get("n_no_response_trials")),
+            _metric_payload("Prior blocks", len(analysis.get("prior_results", []))),
+        ]
     if slice_id == "slice.random-dot-motion":
         return [
             _metric_payload("Trials", analysis.get("n_trials")),
@@ -1280,6 +1287,41 @@ def _slice_metrics(slice_id: str, analysis: dict[str, Any] | None) -> list[dict[
             _metric_payload("Accuracy rows", analysis.get("n_accuracy_rows")),
             _metric_payload("Sure-target rows", analysis.get("n_sure_target_choice_rows")),
             _metric_payload("Confidence rows", len(analysis.get("confidence_rows", []))),
+        ]
+    if slice_id == "slice.steinmetz-visual-decision":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Choice trials", analysis.get("n_choice_trials")),
+            _metric_payload("Withhold trials", analysis.get("n_withhold_trials")),
+            _metric_payload("Contrast conditions", analysis.get("n_contrast_conditions")),
+        ]
+    if slice_id == "slice.odoemene-visual-accumulation":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+            _metric_payload("Subjects", analysis.get("n_subjects")),
+            _metric_payload("Kernel bins", len(analysis.get("event_kernel_rows", []))),
+        ]
+    if slice_id == "slice.coen-audiovisual-spatial-wheel":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Response trials", analysis.get("n_response_trials")),
+            _metric_payload("Subjects", analysis.get("n_subjects")),
+            _metric_payload("Conditions", analysis.get("n_conditions")),
+        ]
+    if slice_id == "slice.rodgers-whisker-object-recognition":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Analysis trials", analysis.get("n_analysis_trials")),
+            _metric_payload("Task rules", analysis.get("n_task_rules")),
+            _metric_payload("Conditions", len(analysis.get("condition_rows", []))),
+        ]
+    if slice_id == "slice.allen-visual-behavior-neuropixels":
+        return [
+            _metric_payload("Trials", analysis.get("n_trials")),
+            _metric_payload("Go trials", analysis.get("n_go_trials")),
+            _metric_payload("Catch trials", analysis.get("n_catch_trials")),
+            _metric_payload("Image pairs", len(analysis.get("image_pair_summary", []))),
         ]
     if "n_trials" in analysis:
         metrics = [

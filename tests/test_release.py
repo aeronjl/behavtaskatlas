@@ -40,14 +40,47 @@ def test_release_check_accepts_clean_generated_static_artifacts(tmp_path) -> Non
 
     assert not any(item["status"] == "error" for item in payload["items"])
     assert loaded["release_check_schema_version"] == "0.1.0"
-    assert payload["counts"]["vertical_slices"] == 9
-    assert payload["counts"]["reports_available"] == 9
+    assert payload["counts"]["vertical_slices"] == 17
+    assert payload["counts"]["reports_available"] == 17
     assert statuses["static.manifest"] == "ok"
     assert statuses["static.catalog"] == "ok"
-    assert statuses["release.curation_queue"] == "ok"
+    assert statuses["release.curation_queue"] == "warning"
     assert statuses["release.raw_path_links"] == "ok"
+    queue_item = next(
+        item for item in payload["items"] if item["check_id"] == "release.curation_queue"
+    )
+    assert queue_item["details"]["open"] == 6
+    assert queue_item["details"]["high_priority_open"] == 0
+    assert queue_item["details"]["action_counts"] == {
+        "needs dataset": 3,
+        "needs vertical slice": 3,
+    }
     assert "behavtaskatlas Release Check" in html
     assert "Slice report coverage" in html
+
+
+def test_release_check_warns_for_adapter_ready_follow_up_slice(tmp_path) -> None:
+    derived_dir = tmp_path / "derived"
+    _write_slice_artifacts(derived_dir)
+    odoemene_dir = (
+        derived_dir / "odoemene_visual_accumulation" / "odoemene-visual-evidence-cshl"
+    )
+    for file_name in ["report.html", "analysis_result.json", "event_kernel.svg"]:
+        (odoemene_dir / file_name).unlink(missing_ok=True)
+    _write_static_artifacts(derived_dir)
+
+    payload = build_release_check_payload(root=ROOT, derived_dir=derived_dir)
+    statuses = {item["check_id"]: item["status"] for item in payload["items"]}
+    coverage_item = next(
+        item for item in payload["items"] if item["check_id"] == "release.slice_coverage"
+    )
+
+    assert not any(item["status"] == "error" for item in payload["items"])
+    assert statuses["release.slice_coverage"] == "warning"
+    assert coverage_item["details"]["follow_up_missing_reports"] == [
+        "slice.odoemene-visual-accumulation"
+    ]
+    assert coverage_item["details"]["blocking_missing_reports"] == []
 
 
 def test_release_check_rejects_raw_data_links_in_static_payloads(tmp_path) -> None:

@@ -1,0 +1,86 @@
+slice_id: slice.zatka-haas-visual-decision
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.zatka-haas-visual-decision-figshare
+source_url: https://figshare.com/articles/dataset/Zatka-Haas_et_al_2020_dataset/13008038
+source_doi: 10.6084/m9.figshare.13008038.v1
+code_file_id: "24786170"
+code_download_url: https://ndownloader.figshare.com/files/24786170
+source_object: Processed MATLAB behavior table variable `D`
+analysis_source_file:
+  archive_member: OptogeneticInactivation/Inactivation_HigherPower.mat
+  figshare_part_file_id: "24786056"
+  part_name: Zatka-Haas_et_al_Dataset.zip.001
+  local_header_byte_range: 175685255-215937770
+  compressed_size_bytes: 40252434
+  extracted_size_bytes: 40421055
+  extracted_sha256: ec54c102f92ee7aa97ac1acdca9cf7e7b04b0003da02c6f52a03498da08ead38
+  extraction_note: >
+    Located by reading the central directory from the tail of split ZIP part
+    .004, then downloading only this local-entry range from part .001.
+source_code_files:
+  manifest_source: code.zip
+  behavioral_loader: utility/loadBehaviouralData.m
+  inactivation_preprocessing: utility/inactivation_preprocessing.m
+  widefield_preprocessing: utility/widefield_preprocessing.m
+  choice_model: utility/stanModels/Two-Level.stan
+source_data_dependencies:
+  - ../data/inactivation/Inactivation_HigherPower.mat
+  - ../data/widefield/behaviouralData.mat
+  - ../data/modelFits/fit_psych_model_with_inactivations.mat
+source_trial_fields:
+  required:
+    - stimulus
+    - response
+    - feedbackType
+  optional:
+    - RT
+    - responseTime
+    - time_stimulusOn
+    - time_goCue
+    - time_startMove
+    - time_choiceMade
+    - time_feedback
+    - sessionID
+    - subjectID
+    - repeatNum
+    - prev_stimulus
+    - prev_response
+    - prev_feedback
+    - laserType
+    - laserRegion
+    - laserCoord
+    - laserPower
+    - laserDuration
+    - laserOnset
+    - laserIdx
+canonical_mapping:
+  stimulus_value: >
+    `100 * (stimulus(:,2) - stimulus(:,1))`, preserving right-positive and
+    left-negative signed contrast difference.
+  stimulus_side: >
+    right when right contrast exceeds left, left when left exceeds right, none
+    for blank trials, and unknown for equal nonzero bilateral contrasts.
+  evidence_strength: absolute signed contrast difference in percent contrast
+  choice: >
+    `response == 1` maps to left, `response == 2` maps to right, and
+    `response == 3` maps to withhold because the source Stan models define
+    3 as NoGo.
+  correct: >
+    feedbackType greater than zero maps to correct/reward; finite values equal
+    to or below zero map to incorrect/error. The real higher-power table uses
+    1/0 feedback coding.
+  response_time: D.RT when present; otherwise responseTime minus go cue or choice time minus stimulus onset
+  feedback: feedbackType mapped to reward, error, or unknown
+  task_variables: >
+    left_contrast, right_contrast, signed_contrast_difference, no_go_condition,
+    bilateral_condition, session and subject ids, previous response/feedback,
+    repeat number, laser type, laser region, laser coordinate, laser power,
+    laser duration, laser onset, laser index, and event timings.
+source_notes:
+  - Source contrasts are proportions; canonical trial rows store percent contrast.
+  - The code ZIP contains small Neuropixels inclusion masks, but neural joins are deferred.
+  - Laser and inactivation variables are operational task variables and should remain explicit in stratified analyses.
+  - Processed behavioral MAT files may be MATLAB v7.3/HDF5; the adapter now decodes the public higher-power MATLAB table and its categorical laserRegion references.
+  - The first analysis-backed report harmonizes 10,054 higher-power inactivation trials, including 4,797 laser trials and 2,507 source NoGo/withhold trials.
+  - Stratified report outputs now include 26 laser-state signed-contrast rows and 169 laser-region signed-contrast rows.
+  - Matched perturbation outputs now include 156 laser-region by signed-contrast delta rows and 12 region-effect rows against non-laser baselines.

@@ -1,0 +1,67 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.fritsche-temporal-regularities-figshare
+name: Fritsche temporal-regularities visual decision Figshare dataset
+description: >
+  Public behavior, photometry, and analysis-code deposit for mice performing a
+  wheel-based visual contrast decision task with Neutral, Repeating, and
+  Alternating stimulus-side sequence environments.
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-temporal-regularities
+species:
+  - mouse
+curation_status: analysis-verified
+source_url: https://figshare.com/articles/dataset/_b_Temporal_regularities_shape_perceptual_decisions_and_striatal_dopamine_signals_b_/24179829
+access_notes: >
+  Figshare article 24179829 provides code.zip and data.zip under CC BY 4.0.
+  The MVP adapter downloads data.zip and reads generated behavior CSVs directly
+  from the archive without ingesting photometry traces or model-output arrays.
+source_data_level: processed-trial
+license: CC-BY-4.0
+data_formats:
+  - ZIP archive
+  - CSV behavior tables
+  - photometry CSV table
+  - analysis code ZIP
+expected_trial_table_mapping:
+  subject_id: mouseName
+  session_id: expRef
+  trial_index: trialNumber, with source row order retained in source metadata.
+  stimulus_value: 100 * (contrastRight - contrastLeft), right-positive.
+  stimulus_side: Side with higher contrast, or none for zero-contrast rows.
+  evidence_strength: Absolute signed contrast in percent contrast.
+  choice: Left/Right wheel choice; source NoGo mapped to canonical no-response.
+  correct: feedback Rewarded/Unrewarded mapped to correctness.
+  response_time: choiceStartTime minus stimulusOnsetTime, falling back to source rt.
+  feedback: feedback Rewarded/Unrewarded mapped to reward/error.
+  task_variables: >
+    Experiment key, environment, contrastLeft/contrastRight, correctResponse,
+    repeatIncorrect, repeatNumber, rewardContingency, sessionNum, timing fields,
+    altitude, source exclusion flags, and choice-history helper columns.
+references:
+  - id: ref.fritsche-figshare
+    citation: >
+      Fritsche M, Lak Lab. Temporal regularities shape perceptual decisions and
+      striatal dopamine signals. Figshare, 2024.
+    url: https://figshare.com/articles/dataset/_b_Temporal_regularities_shape_perceptual_decisions_and_striatal_dopamine_signals_b_/24179829
+    doi: 10.6084/m9.figshare.24179829.v2
+  - id: ref.fritsche-2024-temporal-regularities
+    citation: >
+      Fritsche M, Majumdar A, Strickland L, Liebana Garcia S, Bogacz R, Lak A.
+      Temporal regularities shape perceptual decisions and striatal dopamine
+      signals. Nature Communications, 2024.
+    url: https://www.nature.com/articles/s41467-024-51393-8
+    doi: 10.1038/s41467-024-51393-8
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added after checking the Nature Communications data-availability statement
+    and Figshare API metadata. The Figshare API reported data.zip file id
+    47397445, code.zip file id 47397427, CC BY 4.0 licensing, and article
+    version 2 metadata.
+caveats:
+  - Current generated report covers behavior CSVs, code.zip manifesting, and artifact-level provenance while deferring photometry traces and dopamine-model alignment.
+  - The source archive includes an IBL comparison CSV; the MVP adapter does not duplicate IBL source coverage from that table.

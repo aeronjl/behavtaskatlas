@@ -1,37 +1,159 @@
 object_type: task_family
 schema_version: 0.1.0
 id: family.visual-2afc-contrast
-name: Visual 2AFC contrast discrimination
+name: Visual contrast discrimination
 aliases:
   - visual contrast discrimination
+  - visual contrast 2AFC
+  - mouse visual contrast decision
+  - contrast psychophysics
 description: >
-  Sensory-guided two-alternative forced-choice tasks in which subjects use visual
-  contrast or contrast lateralization to choose between alternatives.
+  Sensory-guided visual contrast tasks in which subjects use contrast,
+  contrast lateralization, or contrast differences to choose between
+  alternatives. The family intentionally covers multiple operational variants:
+  port-based freely moving 2AFC, head-fixed wheel 2AFC, wheel-based unforced
+  choices with explicit no-go/no-turn outcomes, reward-value block variants,
+  and contrast go/no-go boundary cases. Those response formats must be
+  preserved separately from cognitive interpretations such as confidence,
+  bias, or sensory evidence accumulation.
 modalities:
   - visual
 canonical_variables:
   - contrast
   - stimulus side
+  - response option set
   - prior probability
+  - reward value
+  - recent outcome history
 common_choice_types:
   - 2afc
   - discrimination
+  - detection
+  - free-response
+  - go-no-go
 common_response_modalities:
   - wheel
+  - nose-poke
+  - lick
   - saccade
   - button-press
 curation_status: literature-curated
+notes: >
+  Depth work for this family should be a variant census, not a flat
+  bibliography. The first deep-pass paper map now covers classic port-based
+  mouse contrast detection, Burgess/Steinmetz wheel forced and unforced tasks,
+  reward-value/confidence wheel variants, go/no-go lick contrast variants,
+  temporal-regularity wheel variants, IBL standardized behavior, IBL Brainwide
+  Map companion analyses, and the current human prior-cue contrast slice.
+  Adjacent lever-release visual
+  change-detection contrast-threshold papers remain a boundary case until the
+  atlas adds explicit cross-family links or a contrast-detection subfamily.
+  The real-trial family summary now pools available IBL, IBL Brainwide Map,
+  Fritsche temporal-regularities, Steinmetz, and Zatka-Haas canonical outputs
+  while preserving strict 2AFC, no-response, and unforced withhold
+  distinctions. The current family report
+  includes 10 additional Brainwide Map ephysChoiceWorld sessions, giving the
+  strict 2AFC wheel side repeated sessions across MFD_05, MFD_08, NR_0029,
+  NR_0031, and PL050. The Fritsche source adds 269,168 strict-wheel trials
+  across 17 subjects, 665 sessions, and Neutral/Repeating/Alternating
+  stimulus-sequence environments. The unforced wheel side now includes all 39
+  extracted Steinmetz sessions across 10 subjects, plus the Zatka-Haas
+  higher-power table. Zatka-Haas contributes a descriptive perturbation layer with matched
+  non-laser comparisons by laser target and signed contrast, surfaced in the
+  family report as a compact region-effect CSV and SVG. The family report also
+  has protocol-normalized choice curves that separate strict 2AFC wheel rows
+  from unforced wheel rows before plotting right-choice, withhold, and
+  no-response rates, plus source-, session-, and subject-balanced curves so
+  larger trial tables and repeated sessions do not dominate the family-level
+  descriptive estimate. Session-balanced curves use canonical session ids,
+  including the 34 original sessions inside the Zatka-Haas higher-power table;
+  subject-balanced curves use dataset-qualified canonical subject ids before
+  averaging response-format bins.
 references:
+  - id: ref.busse-2011-detection-visual-contrast
+    citation: >
+      Busse L, Ayaz A, Dhruv NT, Katzner S, Saleem AB, Scholvinck ML,
+      Zaharia AD, Carandini M. The detection of visual contrast in the
+      behaving mouse. Journal of Neuroscience, 2011.
+    url: https://pubmed.ncbi.nlm.nih.gov/21813694/
+    doi: 10.1523/JNEUROSCI.6689-10.2011
+  - id: ref.burgess-2017-high-yield-visual-psychophysics
+    citation: >
+      Burgess CP et al. High-Yield Methods for Accurate Two-Alternative
+      Visual Psychophysics in Head-Fixed Mice. Cell Reports, 2017.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5603732/
+    doi: 10.1016/j.celrep.2017.08.047
+  - id: ref.pho-2018-task-dependent-parietal
+    citation: >
+      Pho GN, Goard MJ, Woodson J, Crawford B, Sur M. Task-dependent
+      representations of stimulus and choice in mouse parietal cortex.
+      Nature Communications, 2018.
+    url: https://www.nature.com/articles/s41467-018-05012-y
+    doi: 10.1038/s41467-018-05012-y
   - id: ref.ibl-2021-standardized
     citation: >
       The International Brain Laboratory et al. Standardized and reproducible
       measurement of decision-making in mice. eLife, 2021.
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8137147/
     doi: 10.7554/eLife.63711
+  - id: ref.steinmetz-2019-distributed-coding
+    citation: >
+      Steinmetz NA, Zatka-Haas P, Carandini M, Harris KD. Distributed coding of
+      choice, action and engagement across the mouse brain. Nature, 2019.
+    url: https://www.nature.com/articles/s41586-019-1787-x
+    doi: 10.1038/s41586-019-1787-x
+  - id: ref.lak-2020-reinforcement-biases-confidence
+    citation: >
+      Lak A et al. Reinforcement biases subsequent perceptual decisions when
+      confidence is low, a widespread behavioral phenomenon. eLife, 2020.
+    url: https://elifesciences.org/articles/49834
+    doi: 10.7554/eLife.49834
+  - id: ref.lak-2020-dopaminergic-prefrontal
+    citation: >
+      Lak A et al. Dopaminergic and prefrontal basis of learning from sensory
+      confidence and reward value. Neuron, 2020.
+    url: https://pubmed.ncbi.nlm.nih.gov/31859030/
+    doi: 10.1016/j.neuron.2019.11.018
+  - id: ref.fritsche-2024-temporal-regularities
+    citation: >
+      Fritsche M, Majumdar A, Strickland L, Liebana Garcia S, Bogacz R, Lak A.
+      Temporal regularities shape perceptual decisions and striatal dopamine
+      signals. Nature Communications, 2024.
+    url: https://www.nature.com/articles/s41467-024-51393-8
+    doi: 10.1038/s41467-024-51393-8
+  - id: ref.zatka-haas-2021-sensory-coding-causal-impact
+    citation: >
+      Zatka-Haas P, Steinmetz NA, Carandini M, Harris KD. Sensory coding and
+      the causal impact of mouse cortex in a visual decision. eLife, 2021.
+    url: https://elifesciences.org/articles/63163
+    doi: 10.7554/eLife.63163
+  - id: ref.ibl-2025-brainwide-map
+    citation: >
+      The International Brain Laboratory et al. A brain-wide map of neural
+      activity during complex behaviour. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09235-0
+    doi: 10.1038/s41586-025-09235-0
+  - id: ref.ibl-2025-prior-map
+    citation: >
+      The International Brain Laboratory et al. Brain-wide representations of
+      prior information in mouse decision-making. Nature, 2025.
+    url: https://www.nature.com/articles/s41586-025-09226-1
+    doi: 10.1038/s41586-025-09226-1
+  - id: ref.walsh-2024-prior-cue
+    citation: >
+      Walsh K, McGovern DP, Dully J, Kelly SP, O'Connell RG. Prior probability
+      cues bias sensory encoding with increasing task exposure. eLife, 2024.
+    url: https://elifesciences.org/articles/91135
+    doi: 10.7554/eLife.91135.3
 provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-24
-  updated: 2026-04-24
-  source_notes: Initial seed family for the MVP.
-
+  updated: 2026-04-30
+  source_notes: >
+    Initial seed family for the MVP. Expanded after dataset coverage review to
+    include lateralized visual contrast datasets with explicit no-go/no-turn
+    outcomes, while preserving the operational distinction in concrete protocol
+    records. Deepened with a first-pass notable-paper census covering
+    port-based, wheel-based, reward-value, go/no-go, IBL, and human prior-cue
+    variants.

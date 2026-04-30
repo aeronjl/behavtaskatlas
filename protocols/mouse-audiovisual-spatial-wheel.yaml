@@ -1,0 +1,115 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-audiovisual-spatial-wheel
+family_id: family.audiovisual-spatial-decision
+name: Mouse audiovisual spatial wheel task
+aliases:
+  - Coen-Sit audiovisual localization task
+  - mouse additive multisensory decision task
+description: >
+  Head-fixed mice localize visual and auditory stimuli presented across lateral
+  screens and speakers, reporting left or right by turning a wheel. Visual-only,
+  auditory-only, congruent audiovisual, and conflict audiovisual trials allow
+  modality-specific and multisensory decision variables to be separated.
+species:
+  - mouse
+curation_status: adapter-ready
+stimulus:
+  modalities:
+    - visual
+    - auditory
+    - multisensory
+  variables:
+    - visual contrast
+    - auditory azimuth
+    - modality condition
+    - cue congruence
+  evidence_type: mixed
+  evidence_schedule: >
+    Trials sample visual contrast and auditory location, including unisensory,
+    congruent multisensory, and conflict multisensory conditions.
+  units:
+    - percent contrast
+    - degrees azimuth
+choice:
+  choice_type: 2afc
+  alternatives:
+    - left
+    - right
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel movement reports the inferred side of the stimulus location.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct choices on defined unisensory or congruent trials.
+  penalty: Timeout or error feedback for incorrect choices, source-dependent.
+  notes: Correctness on conflict trials is analysis-specific and should be encoded explicitly.
+timing:
+  - name: inter_trial_interval
+    duration: 1.5-2.5 s
+    description: Delay between trials.
+  - name: wheel_quiescence
+    duration: 100-250 ms
+    description: Mouse must hold the wheel still before stimulus onset.
+  - name: open_loop_stimulus
+    duration: 500 ms
+    description: Stimuli are presented while wheel movement does not move the stimulus.
+  - name: closed_loop_response
+    duration: up to 1 s
+    description: Stimulus position is yoked to wheel movement.
+training:
+  stages:
+    - visual localization
+    - auditory localization
+    - audiovisual integration
+apparatus:
+  - head fixation
+  - response wheel
+  - visual displays
+  - speaker array
+  - water delivery
+software:
+  - Rigbox
+  - Signals
+dataset_ids:
+  - dataset.coen-audiovisual-decisions-ucl
+expected_analyses:
+  - modality-split psychometric curves
+  - additive audiovisual choice model
+  - conflict-trial weighting
+  - inactivation effects by cortical target
+  - reaction time by stimulus condition
+interpretive_claims:
+  - label: multisensory integration
+    source: ref.coen-2023-audiovisual-decisions
+    confidence: high
+    caveat: >
+      Evidence for integration depends on modeling modality-specific cue values
+      and conflict trials, not only pooled left/right accuracy.
+references:
+  - id: ref.coen-2023-audiovisual-decisions
+    citation: >
+      Coen P, Sit TPH, Wells MJ, Carandini M, Harris KD. Mouse frontal cortex
+      mediates additive multisensory decisions. Neuron, 2023.
+    url: https://www.cell.com/neuron/fulltext/S0896-6273(23)00381-1
+    doi: 10.1016/j.neuron.2023.05.008
+  - id: ref.coen-2023-ucl-rdr
+    citation: >
+      Coen P, Carandini M, Harris K, Sit PH, Wells M. Mouse frontal cortex
+      mediates additive multisensory decisions. UCL Research Data Repository,
+      2023.
+    url: https://rdr.ucl.ac.uk/articles/dataset/Mouse_frontal_cortex_mediates_additive_multisensory_decisions/22363180
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Protocol added from the UCL data record and Neuron resource table, then
+    promoted to adapter-ready after confirming the public code's processed
+    trial fields for visual evidence, auditory evidence, response, reaction
+    time, trial type, and inactivation metadata.
+open_questions:
+  - Verify a full local source export against the default adapter once BehaviorData.zip is downloaded.
+  - Add a paper-matched additive audiovisual GLM and inactivation-effect analysis.

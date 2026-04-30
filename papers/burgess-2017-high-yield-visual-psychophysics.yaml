@@ -1,0 +1,54 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.burgess-2017-high-yield-visual-psychophysics
+citation: >
+  Burgess CP, Lak A, Steinmetz NA, Zatka-Haas P, Bai Reddy C, Jacobs EAK,
+  Linden JF, Paton JJ, Ranson A, Schroder S, Soares S, Wells MJ, Wool LE,
+  Harris KD, Carandini M. High-Yield Methods for Accurate Two-Alternative
+  Visual Psychophysics in Head-Fixed Mice. Cell Reports 20:2513-2524, 2017.
+authors:
+  - Burgess, Christopher P.
+  - Lak, Armin
+  - Steinmetz, Nicholas A.
+  - Zatka-Haas, Peter
+  - Bai Reddy, Charu
+  - Jacobs, Elina A. K.
+  - Linden, Jennifer F.
+  - Paton, Joseph J.
+  - Ranson, Adam
+  - Schroder, Sylvia
+  - Soares, Sofia
+  - Wells, Miles J.
+  - Wool, Lauren E.
+  - Harris, Kenneth D.
+  - Carandini, Matteo
+year: 2017
+venue: Cell Reports
+doi: 10.1016/j.celrep.2017.08.047
+url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5603732/
+lab: Carandini/Harris collaboration
+species:
+  - mouse
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-unbiased
+  - protocol.mouse-unforced-visual-contrast-wheel
+dataset_ids: []
+finding_ids: []
+curation_status: literature-curated
+notes: >
+  Foundational head-fixed wheel implementation for mouse visual contrast
+  psychophysics. It covers both forced two-alternative wheel choices and the
+  two-alternative unforced/no-go extension that later underlies Steinmetz-style
+  contrast decision datasets. No dedicated public trial-level archive was
+  identified for the methods-paper figures; the normal-priority request tracker
+  is data_request.burgess-2017-visual-psychophysics-source-data, but later
+  public Steinmetz, Zatka-Haas, and IBL releases are likely the first adapter
+  targets.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from Cell Reports/PMC and
+    DOI metadata; no source-data adapter is linked yet.

@@ -1,0 +1,67 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.odoemene-visual-accumulation
+title: Odoemene Visual Evidence Accumulation
+description: >
+  Adapter-backed slice contract for the Odoemene et al. mouse visual
+  flash-rate accumulation dataset. The harmonizer reads the CSHL MATLAB
+  subject-structure file, preserves 25-bin stimulus-event streams, and maps
+  low-rate/high-rate category responses onto canonical left/right choices.
+curation_status: adapter-ready
+display_order: 45
+family_id: family.visual-pulse-evidence-accumulation
+protocol_id: protocol.mouse-visual-flash-rate-accumulation
+dataset_id: dataset.odoemene-visual-evidence-accumulation-cshl
+report_path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/report.html
+analysis_result_path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/analysis_result.json
+primary_artifact_path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/event_kernel.svg
+primary_artifact_label: Open event-kernel SVG
+artifact_links:
+  - label: Report HTML
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/report.html
+  - label: Analysis result JSON
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/analysis_result.json
+  - label: Event-kernel SVG
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/event_kernel.svg
+  - label: Psychometric SVG
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/psychometric.svg
+  - label: Event-kernel CSV
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/event_kernel.csv
+  - label: Canonical trials CSV
+    path: odoemene_visual_accumulation/odoemene-visual-evidence-cshl/trials.csv
+  - label: Slice notes
+    path: vertical_slices/odoemene_visual_accumulation/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/odoemene_visual_accumulation/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/odoemene_visual_accumulation.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: signed flash rate relative to 12 Hz boundary
+  evidence_type: pulse-train
+  choice_type: 2afc
+  response_modality: nose-poke
+  source_data_level: raw-trial
+  analysis_outputs: psychometric curve and 25-bin event-choice kernel
+  data_scope: CSHL MATLAB subject-structure file with raw trial-wise choice data
+  canonical_axis: high-rate response positive, low-rate response negative
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-30
+  source_notes: >
+    Slice added after the Odoemene CSHL metadata confirmed a compact MATLAB
+    subject-structure file with raw trial-wise choice data and 25-bin stimulus
+    event lists. It remains adapter-ready until the full source file is
+    downloaded locally and report metrics are verified. Marked as a follow-up
+    slice for the current public artifact release rather than a release blocker.
+notes: >
+  The CSHL repository points to an external storage area. The adapter expects
+  the MATLAB file to be downloaded manually into ignored raw-data storage, so
+  this slice remains visible as adapter-ready follow-up until the source file
+  and report artifacts are regenerated.

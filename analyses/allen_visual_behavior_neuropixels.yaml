@@ -1,0 +1,42 @@
+analysis_id: analysis.allen-vbn.change-detection
+protocol_id: protocol.mouse-visual-change-detection-allen
+dataset_id: dataset.allen-visual-behavior-neuropixels
+status: adapter-ready
+inputs:
+  - canonical trial table generated from one Allen Visual Behavior Neuropixels NWB /intervals/trials table
+implemented_outputs:
+  - canonical trial table preserving go/catch, outcome, image pair, lick latency, reward volume, and trial flags
+  - outcome-count summary CSV
+  - per-image-pair hit-rate and median-latency CSV
+  - dependency-free SVG hit lick-latency histogram
+  - static HTML report over behavioral summary, image-pair table, caveats, and provenance
+grouping_variables:
+  - initial image
+  - change image
+  - image set from session metadata when available
+  - subject
+  - behavior session
+  - ecephys session when available
+planned_outputs:
+  - hit rate and false-alarm rate for one active behavior session
+  - d-prime for one active behavior session
+  - hit latency distribution
+  - per-image-pair hit-rate table
+deferred_outputs:
+  - multi-session familiar vs novel image-set aggregation
+  - spike, LFP, unit, probe, channel, and brain-region joins
+  - passive replay and receptive-field mapping alignment
+  - optotagging epoch summaries
+  - video-derived movement, pupil, and running-speed joins
+provenance_requirements:
+  - DANDI source DOI and version
+  - Allen VBN portal URL
+  - public S3 prefix and metadata-table URLs
+  - NWB filename or local path and hash
+  - behavior session id
+  - ecephys session id when present
+  - subject id
+  - session type and image set when present
+  - h5py version when reading NWB directly
+  - adapter version or commit hash
+  - date generated

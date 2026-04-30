@@ -1,0 +1,44 @@
+slice_id: slice.steinmetz-visual-decision
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.steinmetz-visual-decision-figshare
+source_url: https://figshare.com/articles/dataset/Distributed_coding_of_choice_action_and_engagement_across_the_mouse_brain/9974357
+source_doi: 10.6084/m9.figshare.9974357.v3
+data_dictionary_url: https://github.com/nsteinme/steinmetz-et-al-2019/wiki/data-files
+source_object: Extracted Steinmetz ALF trials object
+source_trial_files:
+  required:
+    - trials.feedbackType.npy
+    - trials.response_choice.npy
+    - trials.response_times.npy
+    - trials.visualStim_contrastLeft.npy
+    - trials.visualStim_contrastRight.npy
+    - trials.visualStim_times.npy
+  optional:
+    - trials.feedback_times.npy
+    - trials.goCue_times.npy
+    - trials.included.npy
+    - trials.intervals.npy
+    - trials.repNum.npy
+canonical_mapping:
+  stimulus_value: >
+    `100 * (visualStim_contrastRight - visualStim_contrastLeft)`, preserving
+    right-positive and left-negative signed contrast difference.
+  stimulus_side: >
+    right when right contrast exceeds left, left when left exceeds right, none
+    for blank trials, and unknown for equal nonzero bilateral contrasts.
+  evidence_strength: absolute signed contrast difference in percent contrast
+  choice: >
+    `response_choice == -1` maps to right, `+1` maps to left, and `0` maps to
+    withhold because NoGo is a valid source outcome.
+  correct: feedbackType mapped to boolean correctness
+  response_time: response_times minus visualStim_times
+  feedback: feedbackType mapped to reward, error, or none
+  task_variables: >
+    left_contrast, right_contrast, signed_contrast_difference, no_go_condition,
+    bilateral_condition, go cue time, feedback time, source included flag,
+    repetition number, trial interval, source response code, and feedback code.
+source_notes:
+  - Source contrasts are proportions; canonical trial rows store percent contrast.
+  - Withhold choices are included in trial totals and withhold-rate summaries.
+  - The convenience binary psychometric fit excludes withhold choices and should not be read as a full multinomial task model.
+  - The current local visual-family batch was extracted by reading the Figshare ZIP central directory with HTTP range requests, then downloading only the required `trials.*.npy` members for 39 complete sessions.

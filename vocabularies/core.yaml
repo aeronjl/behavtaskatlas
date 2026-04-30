@@ -17,6 +17,7 @@ choice_types:
   - go-no-go
   - detection
   - discrimination
+  - mixed
   - confidence-report
   - wagering
   - rating
@@ -59,6 +60,7 @@ curation_statuses:
   - literature-curated
   - schema-complete
   - data-linked
+  - adapter-ready
   - harmonized
   - analysis-verified
   - expert-reviewed

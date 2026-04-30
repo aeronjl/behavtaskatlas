@@ -1,0 +1,57 @@
+slice_id: slice.coen-audiovisual-spatial-wheel
+protocol_id: protocol.mouse-audiovisual-spatial-wheel
+dataset_id: dataset.coen-audiovisual-decisions-ucl
+source_url: https://rdr.ucl.ac.uk/articles/dataset/Mouse_frontal_cortex_mediates_additive_multisensory_decisions/22363180
+source_doi: 10.5522/04/22363180.v1
+code_url: https://github.com/pipcoen/2023_CoenSit
+code_doi: 10.5281/zenodo.7892397
+source_object: MATLAB spatialAnalysis combined block or exported CSV/TSV trial table
+source_trial_fields:
+  required:
+    - tri.stim.visDiff
+    - tri.stim.audDiff
+    - tri.outcome.responseCalc
+  strongly_recommended:
+    - tri.stim.correctResponse
+    - tri.outcome.reactionTime
+    - tri.outcome.responseRecorded
+    - tri.outcome.timeToFeedback
+    - tri.trialType.validTrial
+    - tri.trialType.repeatNum
+    - tri.trialType.visual
+    - tri.trialType.auditory
+    - tri.trialType.coherent
+    - tri.trialType.conflict
+    - tri.trialType.blank
+    - tri.inactivation.laserType
+    - tri.inactivation.galvoPosition
+    - tri.inactivation.laserOnsetDelay
+    - tri.expRef
+    - tri.subjectRef
+    - exp.subject
+    - exp.expDate
+    - exp.expNum
+canonical_mapping:
+  stimulus_value: >
+    Descriptive scalar `visDiff + audDiff`, with rightward evidence positive.
+    This supports a quick psychometric proxy but is not treated as the primary
+    operational representation.
+  stimulus_modality: >
+    visual, auditory, multisensory, or none, derived from trialType flags when
+    present and otherwise from nonzero visDiff/audDiff values.
+  stimulus_side: right for positive scalar evidence, left for negative evidence, none for zero.
+  evidence_strength: absolute value of the descriptive scalar evidence proxy
+  choice: source responseCalc 1 maps to left and 2 maps to right
+  correct: responseCalc equals source correctResponse where correctResponse is available
+  response_time: source outcome.reactionTime for left/right response trials
+  feedback: reward for correct response, error for incorrect response, none for no-response or invalid trials
+  prior_context: modality condition, so psychometric summaries split visual, auditory, and multisensory trials
+  task_variables: >
+    visDiff, audDiff, visual contrast, source response and correct-response
+    codes, responseRecorded, validTrial, repeatNum, timeToFeedback, condition
+    label, modality condition, trial class, cue congruence, visual and auditory
+    sides, laserType, laser_on, galvoPosition, and laserOnsetDelay.
+source_notes:
+  - Positive visDiff/audDiff are treated as rightward evidence, matching the public GLM code.
+  - Conflict trials preserve visual and auditory sides separately; correctness follows source correctResponse only.
+  - No-response rows are retained in canonical trials and condition summaries but excluded from the descriptive psychometric proxy.

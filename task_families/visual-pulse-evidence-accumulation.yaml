@@ -1,0 +1,50 @@
+object_type: task_family
+schema_version: 0.1.0
+id: family.visual-pulse-evidence-accumulation
+name: Visual pulse evidence accumulation
+aliases:
+  - visual flash accumulation
+  - visual rate discrimination
+description: >
+  Sensory-guided tasks in which subjects accumulate temporally distributed
+  visual pulses, flashes, or momentary samples and report which stimulus class
+  generated the sequence. This family is the visual analogue of auditory click
+  accumulation, but the operational variables include flash rate, pulse timing,
+  and brightness rather than acoustic click count.
+modalities:
+  - visual
+canonical_variables:
+  - flash rate
+  - pulse timing
+  - pulse brightness
+  - stimulus duration
+common_choice_types:
+  - 2afc
+  - discrimination
+common_response_modalities:
+  - nose-poke
+  - lick
+  - wheel
+curation_status: literature-curated
+references:
+  - id: ref.odoemene-2018-visual-accumulation
+    citation: >
+      Odoemene O, Pisupati S, Nguyen H, Churchland AK. Visual evidence
+      accumulation guides decision-making in unrestrained mice. Journal of
+      Neuroscience, 2018.
+    url: https://www.jneurosci.org/content/38/47/10143
+    doi: 10.1523/JNEUROSCI.3478-17.2018
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during the dataset coverage expansion so dynamic visual accumulation
+    datasets can be represented without forcing them into static contrast or
+    auditory-click families.
+notes: >
+  Preserve flash timing and brightness as operational variables; do not collapse
+  the task to a single cognitive label such as accumulation until the trial
+  table supports temporal-kernel or accumulation-model analyses.
+

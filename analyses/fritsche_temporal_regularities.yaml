@@ -1,0 +1,43 @@
+analysis_id: analysis.fritsche-temporal-regularities.descriptive-psychometric
+protocol_id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_id: dataset.fritsche-temporal-regularities-figshare
+status: analysis-verified
+inputs:
+  - Figshare data.zip generated behavior CSVs for exp1, exp2, and exp3 behavior
+  - canonical trial table preserving expRef session ids and environment labels
+implemented_outputs:
+  - source ZIP loader for generated behavior CSVs
+  - canonical trial table preserving choice, correctness, timing, contrast, and sequence environment
+  - psychometric summary grouped by signed contrast and environment
+  - descriptive analysis result JSON
+  - dependency-free SVG psychometric plot
+  - lag-1 stimulus-transition summary by experiment, environment, and previous/current side
+  - lag-1 choice/outcome-history summary by experiment, environment, previous choice, previous feedback, and previous side
+  - subject-by-environment replication summary with transition and choice-repeat rates
+  - logistic choice-history model coefficients by environment and experiment-environment scope
+  - neutral-session adaptation annotations by subject session order after the previous non-neutral sequence environment
+  - day-by-day neutral-session summaries after Repeating and Alternating exposure
+  - Figshare code.zip manifest with script hashes, source data dependency mentions, and atlas reuse/defer decisions
+  - artifact provenance table linking generated outputs to source data files, fields, scripts, and scope decisions
+  - static HTML behavior-first report with provenance, environment, transition/history summaries, and artifact links
+  - pooled-family-ready real-trial summary for the visual contrast family
+grouping_variables:
+  - signed contrast
+  - environment
+  - experiment
+  - subject
+  - session
+  - previous stimulus side
+  - previous choice
+  - previous feedback
+planned_outputs: []
+deferred_outputs:
+  - photometry trace joins
+  - dopamine model-prediction alignment
+  - full reinforcement-learning model refit
+provenance_requirements:
+  - Figshare data ZIP URL, file id, SHA-256, and source member paths
+  - source field list
+  - trial count, subject count, session count, and no-response count
+  - date generated
+  - adapter version or commit hash

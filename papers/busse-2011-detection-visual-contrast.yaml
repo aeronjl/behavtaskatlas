@@ -1,0 +1,44 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.busse-2011-detection-visual-contrast
+citation: >
+  Busse L, Ayaz A, Dhruv NT, Katzner S, Saleem AB, Scholvinck ML,
+  Zaharia AD, Carandini M. The detection of visual contrast in the
+  behaving mouse. Journal of Neuroscience 31:11351-11361, 2011.
+authors:
+  - Busse, Laura
+  - Ayaz, Asli
+  - Dhruv, Neel T.
+  - Katzner, Steffen
+  - Saleem, Aman B.
+  - Scholvinck, Marieke L.
+  - Zaharia, Andrew D.
+  - Carandini, Matteo
+year: 2011
+venue: Journal of Neuroscience
+doi: 10.1523/JNEUROSCI.6689-10.2011
+url: https://pubmed.ncbi.nlm.nih.gov/21813694/
+lab: Carandini lab
+species:
+  - mouse
+n_subjects: 12
+protocol_ids:
+  - protocol.mouse-visual-contrast-port-2afc
+dataset_ids: []
+finding_ids: []
+curation_status: literature-curated
+notes: >
+  Classic port-based mouse visual contrast 2AFC paper. The behavioral model
+  includes visual contrast, overall port bias, and recent success/failure
+  history, making it a key source for separating sensory evidence from reward
+  and history effects in the family taxonomy. No public trial-level archive was
+  identified in the first source-availability pass; the gap is tracked by
+  data_request.busse-2011-visual-contrast-port-trials.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from PubMed and DOI
+    metadata; no source-data adapter is linked yet.

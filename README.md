@@ -16,12 +16,20 @@ metadata lives in `.zenodo.json` and `CITATION.cff` (see
 - Human-authored YAML records for task families, protocols, datasets, and related artifacts.
 - Controlled vocabularies for core comparative fields.
 - Python validation tooling for schema and cross-reference checks.
-- Three seed task families and protocols:
+- Seven task family records covering visual, auditory, audiovisual, and
+  somatosensory sensory-guided decisions:
   - IBL visual decision task.
   - Random-dot motion discrimination.
   - Auditory click evidence accumulation.
-- Nine current protocol records: one abstract template and eight report-backed
-  concrete protocols.
+  - Visual change detection.
+  - Visual pulse evidence accumulation.
+  - Audiovisual spatial decisions.
+  - Whisker object discrimination.
+- Eighteen current protocol records: one abstract template and seventeen concrete
+  protocols, with sixteen reports currently generated and one adapter-ready
+  expansion slice awaiting local source artifacts for report generation.
+- Sixteen linked dataset records, including seven adapter-ready expansion
+  sources beyond the original MVP slice set.
 
 ## Local Workflow
 
@@ -60,6 +68,48 @@ uv run behavtaskatlas ibl-harmonize
 uv run behavtaskatlas ibl-analyze
 uv run behavtaskatlas ibl-report
 ```
+
+Generate the IBL Brainwide Map behavior slice from a pinned OpenAlyx
+Neuropixels session:
+
+```bash
+uv run --extra ibl behavtaskatlas ibl-brainwide-harmonize \
+  --cache-dir data/raw/openalyx-cache
+uv run behavtaskatlas ibl-brainwide-analyze
+uv run behavtaskatlas ibl-brainwide-report
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/`. It reuses
+the IBL behavioral trial adapter while stamping rows and provenance with the
+Brainwide Map dataset id, ONE project `ibl_neuropixel_brainwide_01`, release
+tag `Brainwidemap`, and AWS registry details.
+
+Run the Fritsche et al. temporal-regularities mouse visual contrast slice from
+the public Figshare data ZIP:
+
+```bash
+uv run behavtaskatlas fritsche-download
+uv run behavtaskatlas fritsche-code-download
+uv run behavtaskatlas fritsche-harmonize
+uv run behavtaskatlas fritsche-analyze
+uv run behavtaskatlas fritsche-code-manifest
+uv run behavtaskatlas fritsche-report
+uv run behavtaskatlas visual-contrast-family-summary
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/fritsche_temporal_regularities/fritsche-temporal-regularities/`. The
+adapter reads generated behavior CSVs from Figshare `data.zip`, maps visual
+contrast to a right-positive signed axis, preserves Neutral/Repeating/Alternating
+sequence environments as operational task variables, emits lag-1 transition and
+choice-history summaries plus fitted choice-history logistic coefficients,
+adds Neutral-session summaries after Repeating or Alternating exposure, and maps
+rare source NoGo rows to canonical `no-response`. The Fritsche code manifest
+command also writes an artifact provenance table connecting each generated
+output to its source files, fields, and reused source scripts.
 
 Generated trial tables, summaries, analysis results, plots, and provenance files are written under `derived/`, which is ignored until data release policy is settled.
 The default IBL session loader selects the OpenAlyx default `_ibl_trials.table.pqt` revision and records the selected revision, dataset id, hash, and QC state in provenance.
@@ -200,6 +250,83 @@ This writes ignored local artifacts under
 It reuses the IBL canonical trial adapter while stamping trials with the
 mouse-unbiased protocol id.
 
+Run the Steinmetz et al. mouse visual decision slice from one extracted ALF
+session directory:
+
+```bash
+uv run behavtaskatlas steinmetz-harmonize \
+  --session-dir data/raw/steinmetz_visual_decision/Cori-2016-12-14-001 \
+  --session-id Cori-2016-12-14-001 \
+  --subject-id Cori
+uv run behavtaskatlas steinmetz-analyze --session-id Cori-2016-12-14-001
+uv run behavtaskatlas steinmetz-report --session-id Cori-2016-12-14-001
+uv run behavtaskatlas steinmetz-aggregate
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/steinmetz_visual_decision/Cori-2016-12-14-001/` and aggregate artifacts
+under `derived/steinmetz_visual_decision/aggregate/`. The adapter reads
+`trials.*.npy` files from extracted Figshare sessions, preserves bilateral
+contrast variables, and maps source NoGo responses to canonical `withhold`
+choices rather than missing responses. Pass `--session-id` to the per-session
+commands when using a real extracted session directory name; the aggregate
+command scans generated session directories unless restricted with repeated
+`--session-id` flags.
+
+Run the Odoemene et al. mouse visual evidence accumulation slice from the CSHL
+MATLAB subject-structure file:
+
+```bash
+uv run behavtaskatlas odoemene-harmonize \
+  --mat-file data/raw/odoemene_visual_accumulation/Odoemene2020.mat
+uv run behavtaskatlas odoemene-analyze
+uv run behavtaskatlas odoemene-report
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/odoemene_visual_accumulation/odoemene-visual-evidence-cshl/`. The
+adapter reads raw trial-wise choice fields from the CSHL `.mat` file, keeps
+invalid trials as canonical `no-response`, and emits both a signed-rate
+psychometric summary and a descriptive 25-bin event-choice kernel.
+
+Run the Coen et al. mouse audiovisual spatial wheel slice from a UCL processed
+MATLAB block export or equivalent CSV/TSV trial table:
+
+```bash
+uv run behavtaskatlas coen-harmonize \
+  --source-file data/raw/coen_audiovisual_decisions/coen_behavior_export.mat
+uv run behavtaskatlas coen-analyze
+uv run behavtaskatlas coen-report
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/`. The
+adapter preserves signed visual evidence, signed auditory evidence, modality
+and congruence flags, wheel choice, reaction time, source correctness, and
+inactivation metadata. The source UCL release is large and CC BY-NC-ND 4.0, so
+local source files stay under ignored raw-data storage.
+
+Run the Rodgers mouse whisker object-recognition slice from a DANDI NWB session
+or equivalent CSV/TSV trials-table export:
+
+```bash
+uv run --extra nwb behavtaskatlas rodgers-harmonize \
+  --source-file data/raw/rodgers_whisker_object_recognition/rodgers_session.nwb
+uv run behavtaskatlas rodgers-analyze
+uv run behavtaskatlas rodgers-report
+uv run behavtaskatlas site-index
+```
+
+This writes ignored local artifacts under
+`derived/rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/`.
+The adapter preserves shape stimulus, object position, task rule, lick choice,
+rewarded side, ignore-trial policy, response latency, and optional
+whisker-contact counts. The complete DANDI release is multi-terabyte, so source
+NWB and video files stay under ignored raw-data storage.
+
 Download and run the Walsh et al. human visual contrast prior-cue slice from
 OSF:
 
@@ -239,6 +366,27 @@ choice values, an outcome-count summary, a per-image-pair hit-rate table, a
 hit lick-latency SVG histogram, and a static report. The adapter reads the
 NWB trials table with `h5py` rather than `allensdk`, because allensdk pins
 `scipy<1.11` and conflicts with the project's other scipy-dependent extras.
+
+Run the Allen Visual Behavior Neuropixels behavior-first slice from a local
+VBN NWB file:
+
+```bash
+uv sync --extra allen
+uv run --extra allen behavtaskatlas allen-vbn-download \
+  --nwb-url https://visual-behavior-neuropixels-data.s3.us-west-2.amazonaws.com/<key>.nwb \
+  --out-file data/raw/allen_visual_behavior_neuropixels/session.nwb
+uv run --extra allen behavtaskatlas allen-vbn-harmonize \
+  --nwb-file data/raw/allen_visual_behavior_neuropixels/session.nwb
+uv run behavtaskatlas allen-vbn-analyze
+uv run behavtaskatlas allen-vbn-report
+uv run behavtaskatlas site-index
+```
+
+The VBN slice writes ignored local artifacts under
+`derived/allen_visual_behavior_neuropixels/`. It uses the same operational
+go/no-go change-detection mapping as the Allen 2P behavior slice but records
+VBN-specific provenance, including DANDI version, S3 metadata tables, and the
+fact that neural/probe/video joins are deferred.
 
 Build the local static report index:
 

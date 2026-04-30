@@ -21,12 +21,30 @@ from behavtaskatlas.models import CanonicalTrial
 
 ALLEN_VISUAL_BEHAVIOR_PROTOCOL_ID = "protocol.mouse-visual-change-detection-allen"
 ALLEN_VISUAL_BEHAVIOR_DATASET_ID = "dataset.allen-brain-observatory-visual-behavior"
+ALLEN_VBN_DATASET_ID = "dataset.allen-visual-behavior-neuropixels"
 DEFAULT_ALLEN_VISUAL_BEHAVIOR_RAW_DIR = Path("data/raw/allen_visual_behavior")
 DEFAULT_ALLEN_VISUAL_BEHAVIOR_DERIVED_DIR = Path("derived/allen_visual_behavior")
+DEFAULT_ALLEN_VBN_RAW_DIR = Path("data/raw/allen_visual_behavior_neuropixels")
+DEFAULT_ALLEN_VBN_DERIVED_DIR = Path("derived/allen_visual_behavior_neuropixels")
 ALLEN_VISUAL_BEHAVIOR_PORTAL_URL = (
     "https://portal.brain-map.org/explore/circuits/visual-behavior-2p"
 )
 ALLEN_VISUAL_BEHAVIOR_S3_PREFIX = "s3://visual-behavior-ophys-data"
+ALLEN_VBN_PORTAL_URL = (
+    "https://portal.brain-map.org/explore/circuits/visual-behavior-neuropixels"
+)
+ALLEN_VBN_DANDI_URL = "https://dandiarchive.org/dandiset/000713/0.240702.1725"
+ALLEN_VBN_DANDI_DOI = "10.48324/dandi.000713/0.240702.1725"
+ALLEN_VBN_DANDI_VERSION = "0.240702.1725"
+ALLEN_VBN_S3_PREFIX = "s3://visual-behavior-neuropixels-data/visual-behavior-neuropixels"
+ALLEN_VBN_BEHAVIOR_SESSIONS_URL = (
+    "https://visual-behavior-neuropixels-data.s3.us-west-2.amazonaws.com/"
+    "visual-behavior-neuropixels/project_metadata/behavior_sessions.csv"
+)
+ALLEN_VBN_ECEPHYS_SESSIONS_URL = (
+    "https://visual-behavior-neuropixels-data.s3.us-west-2.amazonaws.com/"
+    "visual-behavior-neuropixels/project_metadata/ecephys_sessions.csv"
+)
 
 ALLEN_REQUIRED_TRIAL_FIELDS = (
     "go",
@@ -39,7 +57,6 @@ ALLEN_REQUIRED_TRIAL_FIELDS = (
     "auto_rewarded",
     "initial_image_name",
     "change_image_name",
-    "response_latency",
     "reward_volume",
 )
 
@@ -98,6 +115,8 @@ def harmonize_allen_change_detection_row(
     missing = sorted(
         field for field in ALLEN_REQUIRED_TRIAL_FIELDS if field not in source
     )
+    if "response_latency" not in source and "response_time" not in source:
+        missing.append("response_latency or response_time")
     if missing:
         joined = ", ".join(missing)
         raise ValueError(f"Missing required Allen Visual Behavior trial fields: {joined}")
@@ -123,7 +142,7 @@ def harmonize_allen_change_detection_row(
     choice = _outcome_choice(outcome)
     correct = _outcome_correct(outcome)
     feedback = _outcome_feedback(outcome, reward_volume=source["reward_volume"])
-    response_time = _finite_or_none(source["response_latency"])
+    response_time, response_time_origin = _allen_response_latency(source)
     reward = _finite_or_none(source["reward_volume"])
     initial_image = _string_or_none(source["initial_image_name"])
     change_image = _string_or_none(source["change_image_name"])
@@ -143,7 +162,7 @@ def harmonize_allen_change_detection_row(
         choice=choice,
         correct=correct,
         response_time=response_time,
-        response_time_origin="response_latency seconds after change time",
+        response_time_origin=response_time_origin,
         feedback=feedback,
         reward=reward,
         reward_units="mL" if reward is not None else None,
@@ -160,6 +179,9 @@ def harmonize_allen_change_detection_row(
             "change_time_in_trial": _finite_or_none(source.get("change_time_no_display_delay")),
             "trial_length": _finite_or_none(source.get("trial_length")),
             "n_lick_times": _lick_count(source.get("lick_times")),
+            "source_response_time_field": (
+                "response_latency" if "response_latency" in source else "response_time"
+            ),
             "canonical_choice_convention": (
                 "go=lick within response window; withhold=no lick on change or catch trial; "
                 "no-response=aborted (lick before change window)"
@@ -175,6 +197,8 @@ def harmonize_allen_change_detection_rows(
     session_id: str,
     subject_id: str | None = None,
     limit: int | None = None,
+    dataset_id: str = ALLEN_VISUAL_BEHAVIOR_DATASET_ID,
+    protocol_id: str = ALLEN_VISUAL_BEHAVIOR_PROTOCOL_ID,
 ) -> list[CanonicalTrial]:
     sequence = _row_sequence(rows)
     n_rows = len(sequence)
@@ -186,6 +210,8 @@ def harmonize_allen_change_detection_rows(
             session_id=session_id,
             subject_id=subject_id,
             trial_index=index,
+            dataset_id=dataset_id,
+            protocol_id=protocol_id,
         )
         for index in range(n_rows)
     ]
@@ -195,6 +221,7 @@ def load_allen_visual_behavior_session(
     *,
     nwb_file: Path,
     limit: int | None = None,
+    dataset_id: str = ALLEN_VISUAL_BEHAVIOR_DATASET_ID,
 ) -> tuple[list[CanonicalTrial], dict[str, Any]]:
     rows, nwb_meta = read_visual_behavior_nwb(nwb_file)
     behavior_session_id = nwb_meta.get("behavior_session_id")
@@ -207,6 +234,7 @@ def load_allen_visual_behavior_session(
         session_id=session_id,
         subject_id=subject_id,
         limit=limit,
+        dataset_id=dataset_id,
     )
     details = {
         "behavior_session_id": behavior_session_id,
@@ -223,6 +251,21 @@ def load_allen_visual_behavior_session(
         "nwb_file_bytes": nwb_meta.get("nwb_file_bytes"),
     }
     return canonical, details
+
+
+def load_allen_vbn_session(
+    *,
+    nwb_file: Path,
+    limit: int | None = None,
+) -> tuple[list[CanonicalTrial], dict[str, Any]]:
+    trials, details = load_allen_visual_behavior_session(
+        nwb_file=nwb_file,
+        limit=limit,
+        dataset_id=ALLEN_VBN_DATASET_ID,
+    )
+    details = dict(details)
+    details["source_dataset"] = "Allen Visual Behavior Neuropixels"
+    return trials, details
 
 
 def download_allen_visual_behavior_session(
@@ -349,6 +392,30 @@ def analyze_allen_change_detection(
             ),
         ],
     }
+
+
+def analyze_allen_vbn_change_detection(trials: list[CanonicalTrial]) -> dict[str, Any]:
+    result = analyze_allen_change_detection(
+        trials,
+        analysis_id="analysis.allen-vbn.change-detection",
+        dataset_id=ALLEN_VBN_DATASET_ID,
+        report_title="Allen Visual Behavior Neuropixels Change Detection Report",
+    )
+    result["source_dataset"] = "Allen Visual Behavior Neuropixels"
+    result["caveats"] = [
+        *result["caveats"],
+        (
+            "This behavior-first VBN slice summarizes the active change-detection "
+            "trials table only; spike, LFP, probe, channel, optotagging, receptive-field, "
+            "passive replay, and video joins are deferred."
+        ),
+        (
+            "VBN sessions include familiar and novel image-set contexts; this MVP "
+            "preserves image names and session metadata but does not yet aggregate "
+            "novelty effects across sessions."
+        ),
+    ]
+    return result
 
 
 def write_canonical_trials_csv(path: Path, trials: list[CanonicalTrial]) -> None:
@@ -594,35 +661,44 @@ def allen_visual_behavior_provenance_payload(
     details: dict[str, Any],
     output_files: dict[str, str],
     trials: list[CanonicalTrial],
+    dataset_id: str = ALLEN_VISUAL_BEHAVIOR_DATASET_ID,
+    portal_url: str = ALLEN_VISUAL_BEHAVIOR_PORTAL_URL,
+    s3_prefix: str = ALLEN_VISUAL_BEHAVIOR_S3_PREFIX,
+    source_extra: dict[str, Any] | None = None,
+    caveats: list[str] | None = None,
 ) -> dict[str, Any]:
     outcome_counts = _count_outcomes(trials)
+    source = {
+        "portal_url": portal_url,
+        "s3_prefix": s3_prefix,
+        "behavior_session_id": details.get("behavior_session_id"),
+        "behavior_session_uuid": details.get("behavior_session_uuid"),
+        "subject_id": details.get("subject_id"),
+        "session_type": details.get("session_type"),
+        "project_code": details.get("project_code"),
+        "equipment_name": details.get("equipment_name"),
+        "stimulus_frame_rate": details.get("stimulus_frame_rate"),
+        "nwb_file": details.get("nwb_file"),
+        "nwb_file_sha256": details.get("nwb_file_sha256"),
+        "nwb_file_bytes": details.get("nwb_file_bytes"),
+    }
+    if source_extra:
+        source.update(source_extra)
     return {
         "protocol_id": ALLEN_VISUAL_BEHAVIOR_PROTOCOL_ID,
-        "dataset_id": ALLEN_VISUAL_BEHAVIOR_DATASET_ID,
+        "dataset_id": dataset_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "behavtaskatlas_commit": current_git_commit(),
         "behavtaskatlas_git_dirty": current_git_dirty(),
         "allensdk_version": installed_package_version("allensdk"),
-        "source": {
-            "portal_url": ALLEN_VISUAL_BEHAVIOR_PORTAL_URL,
-            "s3_prefix": ALLEN_VISUAL_BEHAVIOR_S3_PREFIX,
-            "behavior_session_id": details.get("behavior_session_id"),
-            "behavior_session_uuid": details.get("behavior_session_uuid"),
-            "subject_id": details.get("subject_id"),
-            "session_type": details.get("session_type"),
-            "project_code": details.get("project_code"),
-            "equipment_name": details.get("equipment_name"),
-            "stimulus_frame_rate": details.get("stimulus_frame_rate"),
-            "nwb_file": details.get("nwb_file"),
-            "nwb_file_sha256": details.get("nwb_file_sha256"),
-            "nwb_file_bytes": details.get("nwb_file_bytes"),
-        },
+        "source": source,
         "source_fields": list(ALLEN_REQUIRED_TRIAL_FIELDS),
         "response_time_origin": "response_latency seconds after change time",
         "n_trials": len(trials),
         "outcome_counts": outcome_counts,
         "outputs": output_files,
-        "caveats": [
+        "caveats": caveats
+        or [
             (
                 "Generated artifacts are ignored by git until dataset licensing and "
                 "release policy are confirmed."
@@ -633,6 +709,45 @@ def allen_visual_behavior_provenance_payload(
             ),
         ],
     }
+
+
+def allen_vbn_provenance_payload(
+    *,
+    details: dict[str, Any],
+    output_files: dict[str, str],
+    trials: list[CanonicalTrial],
+) -> dict[str, Any]:
+    return allen_visual_behavior_provenance_payload(
+        details=details,
+        output_files=output_files,
+        trials=trials,
+        dataset_id=ALLEN_VBN_DATASET_ID,
+        portal_url=ALLEN_VBN_PORTAL_URL,
+        s3_prefix=ALLEN_VBN_S3_PREFIX,
+        source_extra={
+            "dandi_url": ALLEN_VBN_DANDI_URL,
+            "dandi_doi": ALLEN_VBN_DANDI_DOI,
+            "dandi_version": ALLEN_VBN_DANDI_VERSION,
+            "behavior_sessions_table": ALLEN_VBN_BEHAVIOR_SESSIONS_URL,
+            "ecephys_sessions_table": ALLEN_VBN_ECEPHYS_SESSIONS_URL,
+            "source_dataset": details.get("source_dataset"),
+        },
+        caveats=[
+            (
+                "Generated artifacts are ignored by git until dataset licensing and "
+                "release policy are confirmed."
+            ),
+            (
+                "The slice reads one VBN NWB trials table and stamps canonical rows "
+                "with the VBN dataset id; it does not bundle the multi-terabyte "
+                "archive or neural side tables."
+            ),
+            (
+                "Passive replay, receptive-field mapping, optotagging, spike, LFP, "
+                "probe, channel, and video-derived variables are deferred."
+            ),
+        ],
+    )
 
 
 # Helpers
@@ -855,6 +970,20 @@ def _outcome_feedback(outcome: str, *, reward_volume: Any) -> str:
         volume = _finite_or_none(reward_volume)
         return "reward" if volume and volume > 0 else "none"
     return "none"
+
+
+def _allen_response_latency(source: dict[str, Any]) -> tuple[float | None, str]:
+    latency = _finite_or_none(source.get("response_latency"))
+    if latency is not None or "response_latency" in source:
+        return latency, "response_latency seconds after change time"
+
+    response_time = _finite_or_none(source.get("response_time"))
+    change_time = _finite_or_none(source.get("change_time_no_display_delay"))
+    if response_time is None:
+        return None, "response_time unavailable"
+    if change_time is None:
+        return response_time, "response_time seconds from session start"
+    return response_time - change_time, "response_time minus change_time_no_display_delay"
 
 
 def _count_outcomes(trials: list[CanonicalTrial]) -> dict[str, int]:

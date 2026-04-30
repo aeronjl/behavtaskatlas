@@ -1,0 +1,75 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.steinmetz-visual-decision
+title: Steinmetz Visual Decision
+description: >
+  Adapter-backed slice contract for the Steinmetz et al. mouse visual
+  discrimination dataset. The harmonizer reads extracted ALF session
+  directories, preserves bilateral left/right contrast variables, and maps
+  source NoGo responses to canonical withhold choices instead of treating them
+  as missing.
+curation_status: analysis-verified
+display_order: 27
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.steinmetz-visual-decision-figshare
+report_path: steinmetz_visual_decision/aggregate/report.html
+analysis_result_path: steinmetz_visual_decision/aggregate/aggregate_result.json
+primary_artifact_path: steinmetz_visual_decision/aggregate/aggregate_choice_summary.svg
+primary_artifact_label: Open aggregate choice summary SVG
+artifact_links:
+  - label: Aggregate report HTML
+    path: steinmetz_visual_decision/aggregate/report.html
+  - label: Aggregate result JSON
+    path: steinmetz_visual_decision/aggregate/aggregate_result.json
+  - label: Aggregate choice summary SVG
+    path: steinmetz_visual_decision/aggregate/aggregate_choice_summary.svg
+  - label: Aggregate session summary CSV
+    path: steinmetz_visual_decision/aggregate/aggregate_session_summary.csv
+  - label: Aggregate subject summary CSV
+    path: steinmetz_visual_decision/aggregate/aggregate_subject_summary.csv
+  - label: Aggregate signed contrast summary CSV
+    path: steinmetz_visual_decision/aggregate/aggregate_signed_contrast_summary.csv
+  - label: Representative session report HTML
+    path: steinmetz_visual_decision/Cori-2016-12-14-001/report.html
+  - label: Representative canonical trials CSV
+    path: steinmetz_visual_decision/Cori-2016-12-14-001/trials.csv
+  - label: Slice notes
+    path: vertical_slices/steinmetz_visual_decision/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/steinmetz_visual_decision/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/steinmetz_visual_decision.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: bilateral contrast tuple and signed contrast difference
+  evidence_type: static
+  choice_type: free-response
+  response_modality: wheel
+  source_data_level: processed-trial
+  analysis_outputs: >
+    across-session choice surface, session and subject summaries, withhold rate,
+    and binary movement psychometric comparison columns
+  data_scope: all 39 extracted Steinmetz ALF behavior sessions for family aggregation
+  canonical_axis: right contrast minus left contrast, with blank trials as zero
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-30
+  source_notes: >
+    Slice added after expanding dataset coverage. The primary generated report
+    now points at an across-session aggregate over all 39 extracted Steinmetz
+    sessions, with a representative Cori session retained as a linked
+    per-session example. Source NoGo is preserved as canonical withhold.
+notes: >
+  The source Figshare archive is large, so the atlas does not auto-download it
+  during tests or CI. The adapter works from extracted session directories
+  containing trials.*.npy ALF files; the local visual-family batch currently
+  covers 39 sessions, 10 subjects, and 10,050 Steinmetz trials, and the slice
+  aggregate exposes pooled, session-balanced, and subject-balanced signed
+  contrast summaries.

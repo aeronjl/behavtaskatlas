@@ -1,0 +1,54 @@
+slice_id: slice.fritsche-temporal-regularities
+protocol_id: protocol.mouse-visual-contrast-wheel-temporal-regularities
+dataset_id: dataset.fritsche-temporal-regularities-figshare
+source_url: https://figshare.com/articles/dataset/_b_Temporal_regularities_shape_perceptual_decisions_and_striatal_dopamine_signals_b_/24179829
+source_doi: 10.6084/m9.figshare.24179829.v2
+article_url: https://www.nature.com/articles/s41467-024-51393-8
+article_doi: 10.1038/s41467-024-51393-8
+source_object: Figshare data.zip behavior CSV files
+source_code_object: Figshare code.zip analysis scripts
+source_trial_files:
+  included:
+    - data/data_exp1_transitional_regularities.csv
+    - data/data_exp2_adaptation_test.csv
+    - data/data_exp3_photometry_behavior.csv
+  deferred:
+    - data/data_exp3_photometry_dopamine.csv
+    - data/data_ibl.csv
+canonical_mapping:
+  stimulus_value: >
+    `100 * (contrastRight - contrastLeft)`, preserving right-positive signed
+    contrast.
+  stimulus_side: >
+    right when right contrast exceeds left, left when left exceeds right, none
+    for zero-contrast trials, and unknown for equal nonzero bilateral contrasts.
+  evidence_strength: absolute signed contrast in percent contrast
+  choice: >
+    Source `Right` and `Left` map to canonical right and left choices; source
+    `NoGo` maps to canonical no-response because it is a timeout/no-turn
+    outcome in a 2AFC wheel task.
+  correct: feedback Rewarded/Unrewarded mapped to boolean correctness
+  response_time: source `rt` when present, otherwise choiceStartTime minus stimulusOnsetTime
+  feedback: feedback Rewarded/Unrewarded mapped to reward/error
+  prior_context: source environment, preserving Neutral, Repeating, and Alternating sequence regimes
+  task_variables: >
+    experiment, environment, left/right contrast, source contrast proportions,
+    correctResponse, repeatIncorrect, repeatNumber, rewardContingency,
+    sessionNum, source timing fields, altitude, source exclusion flags, and
+    choice-history helper columns.
+derived_operational_fields:
+  neutral_adaptation: >
+    Neutral-session adaptation rows infer `previous_non_neutral_environment`
+    from subject-level source session order, using the most recent preceding
+    Repeating or Alternating session when present.
+  artifact_provenance: >
+    The generated `artifact_provenance.csv` records one row per atlas artifact,
+    linking outputs to source trial files, source fields, source scripts, code
+    manifest paths, and behavior-first reuse/defer decisions.
+source_notes:
+  - Source contrasts are proportions; canonical trial rows store percent contrast.
+  - Environment is an operational sequence-regime variable, not an inferred cognitive state.
+  - Fitted choice-history coefficients use operational lag-1 fields and should not be read as a full reinforcement-learning model.
+  - Code manifest script statuses are atlas reuse decisions, not claims about the source authors' intended module boundaries.
+  - The source archive's IBL comparison table is deferred because IBL behavior is already represented by dedicated atlas slices.
+  - Photometry and reinforcement-learning model joins are deferred until the behavior-first slice is stable.

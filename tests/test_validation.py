@@ -9,5 +9,5 @@ def test_seed_records_validate() -> None:
     report = validate_repository(root)
     assert report.ok, [f"{issue.path}: {issue.message}" for issue in report.issues]
     assert len(report.records) >= 18
-    assert sum(isinstance(record, VerticalSlice) for record in report.records) == 9
-    assert sum(isinstance(record, DataRequest) for record in report.records) == 1
+    assert sum(isinstance(record, VerticalSlice) for record in report.records) == 17
+    assert sum(isinstance(record, DataRequest) for record in report.records) == 5

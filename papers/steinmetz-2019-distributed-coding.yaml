@@ -1,0 +1,37 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.steinmetz-2019-distributed-coding
+citation: >
+  Steinmetz NA, Zatka-Haas P, Carandini M, Harris KD. Distributed coding of
+  choice, action and engagement across the mouse brain. Nature 576:266-273,
+  2019.
+authors:
+  - Steinmetz, Nicholas A.
+  - Zatka-Haas, Peter
+  - Carandini, Matteo
+  - Harris, Kenneth D.
+year: 2019
+venue: Nature
+doi: 10.1038/s41586-019-1787-x
+url: https://www.nature.com/articles/s41586-019-1787-x
+lab: Carandini/Harris collaboration
+species:
+  - mouse
+protocol_ids:
+  - protocol.mouse-unforced-visual-contrast-wheel
+dataset_ids:
+  - dataset.steinmetz-visual-decision-figshare
+finding_ids: []
+curation_status: data-linked
+notes: >
+  Source paper for the Steinmetz mouse visual decision Figshare/ONE dataset.
+  The task is not a strict 2AFC record because no-go/no-turn trials are valid
+  outcomes; that distinction is preserved in the linked protocol and adapter.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass to close the missing paper
+    record for the already report-backed Steinmetz dataset.

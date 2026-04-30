@@ -1,0 +1,70 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.coen-audiovisual-spatial-wheel
+title: Coen Audiovisual Spatial Wheel
+description: >
+  Adapter-backed slice contract for the Coen et al. mouse audiovisual spatial
+  decision dataset. The harmonizer reads an exported trial table or MATLAB
+  combined block from the UCL processed release, preserving visual evidence,
+  auditory evidence, cue congruence, wheel choice, reaction time, correctness,
+  and inactivation metadata.
+curation_status: adapter-ready
+display_order: 60
+family_id: family.audiovisual-spatial-decision
+protocol_id: protocol.mouse-audiovisual-spatial-wheel
+dataset_id: dataset.coen-audiovisual-decisions-ucl
+report_path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/report.html
+analysis_result_path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/analysis_result.json
+primary_artifact_path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/condition_summary.svg
+primary_artifact_label: Open condition-surface SVG
+artifact_links:
+  - label: Report HTML
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/report.html
+  - label: Analysis result JSON
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/analysis_result.json
+  - label: Condition-surface SVG
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/condition_summary.svg
+  - label: Psychometric SVG
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/psychometric.svg
+  - label: Condition summary CSV
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/condition_summary.csv
+  - label: Modality summary CSV
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/modality_summary.csv
+  - label: Conflict summary CSV
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/conflict_summary.csv
+  - label: Canonical trials CSV
+    path: coen_audiovisual_decisions/coen-audiovisual-spatial-wheel-ucl/trials.csv
+  - label: Slice notes
+    path: vertical_slices/coen_audiovisual_decisions/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/coen_audiovisual_decisions/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/coen_audiovisual_decisions.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: multisensory
+  stimulus_metric: signed visual evidence, signed auditory evidence, and cue congruence
+  evidence_type: mixed
+  choice_type: 2afc
+  response_modality: wheel
+  source_data_level: processed-trial
+  analysis_outputs: modality summary, audiovisual condition surface, and conflict choice summary
+  data_scope: UCL processed behavioral block or exported trial table
+  canonical_axis: rightward evidence positive for both visual and auditory source variables
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Slice added after verifying the UCL file listing and the pipcoen/2023_CoenSit
+    code path. The adapter targets the combined spatialAnalysis block fields
+    used by the public analysis code, while allowing CSV exports of the same
+    trial fields to avoid loading the full multi-gigabyte release in CI.
+notes: >
+  The UCL release is large and CC BY-NC-ND 4.0, so source files stay in ignored
+  local storage. The default scalar psychometric axis is descriptive only;
+  modality-specific evidence variables remain explicit in the canonical rows.

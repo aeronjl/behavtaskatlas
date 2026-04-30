@@ -1,0 +1,65 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.ibl-brainwide-map-behavior
+title: IBL Brainwide Map Behavior
+description: >
+  Adapter-backed behavior slice for one IBL Brainwide Map Neuropixels session.
+  The harmonizer uses the existing IBL trials-table adapter while stamping the
+  canonical rows with the Brainwide Map dataset id and provenance for the
+  `Brainwidemap` release tag, AWS registry entry, ONE project, and selected
+  trials-table revision.
+curation_status: adapter-ready
+display_order: 15
+family_id: family.visual-2afc-contrast
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-brainwide-map-2025
+report_path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/report.html
+analysis_result_path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/analysis_result.json
+primary_artifact_path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/psychometric.svg
+primary_artifact_label: Open psychometric SVG
+artifact_links:
+  - label: Report HTML
+    path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/report.html
+  - label: Analysis result JSON
+    path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/analysis_result.json
+  - label: Psychometric SVG
+    path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/psychometric.svg
+  - label: Psychometric summary CSV
+    path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/psychometric_summary.csv
+  - label: Canonical trials CSV
+    path: ibl_brainwide_map/ebce500b-c530-47de-8cb1-963c552703ea/trials.csv
+  - label: Slice notes
+    path: vertical_slices/ibl_brainwide_map/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/ibl_brainwide_map/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/ibl_brainwide_map.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: visual
+  stimulus_metric: signed contrast and block prior probability
+  evidence_type: mixed
+  choice_type: 2afc
+  response_modality: wheel
+  source_data_level: processed-trial
+  analysis_outputs: behavioral psychometric curve by prior block
+  data_scope: one IBL Brainwide Map Neuropixels session
+  canonical_axis: signed contrast percent, right positive
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Slice added after verifying the IBL Brainwide Map documentation, AWS Open
+    Data registry entry, Nature data-availability statement, and ONE project
+    metadata. The default EID is a public Brainwide Map ephysChoiceWorld
+    session already supported by the IBL trials-table adapter.
+notes: >
+  This is a behavior-first Brainwide Map slice. Neural probe insertions, spike
+  sorting, histology, and video pose features remain deferred outputs, but the
+  behavioral provenance explicitly identifies the ephys release rather than the
+  broad IBL public behavior archive.

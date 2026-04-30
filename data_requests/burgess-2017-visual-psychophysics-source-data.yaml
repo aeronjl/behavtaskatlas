@@ -1,0 +1,91 @@
+object_type: data_request
+schema_version: 0.1.0
+id: data_request.burgess-2017-visual-psychophysics-source-data
+title: Burgess 2017 high-yield visual psychophysics source data
+status: draft
+priority: normal
+request_type: author_request
+paper_ids:
+  - paper.burgess-2017-high-yield-visual-psychophysics
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-unbiased
+  - protocol.mouse-unforced-visual-contrast-wheel
+model_roadmap_issue_types:
+  - missing_trial_level_source
+blocker_type: author_request_source_data
+purpose: >-
+  Recover the methods-paper behavioral source data for forced and unforced
+  head-fixed wheel visual psychophysics, if it is not already superseded by
+  later public Steinmetz and IBL releases.
+blocker_detail: >-
+  The open Cell Reports/PMC article describes the wheel task and analyses, but
+  this pass did not identify a dedicated public repository for the per-trial
+  behavioral data behind the methods paper figures.
+next_action: >-
+  Defer until after Zatka-Haas, Steinmetz, and IBL datasets are fully mined;
+  then decide whether the Burgess methods-paper trials add unique task variants
+  not covered by those public releases.
+requested_files:
+  - name: Burgess2017_trial_level_behavior
+    description: >-
+      Per-trial behavioral data for forced 2AFC and two-alternative unforced
+      wheel sessions, including contrasts, choices, no-go outcomes, correctness,
+      reward outcomes, and response times.
+    required: true
+  - name: Burgess2017_session_metadata
+    description: >-
+      Subject/session metadata needed to reproduce learning, threshold, no-go,
+      and inactivation analyses.
+    required: false
+contact_instructions: >-
+  Revisit after public wheel-task descendants are mined. If needed, contact the
+  corresponding author and ask whether the original methods-paper trial data
+  can be shared or whether later public releases should be used instead.
+evidence:
+  - evidence_type: article_data_availability
+    description: >-
+      The PMC article gives the task, DOI, and methods details, but this pass
+      did not find a dedicated data-availability statement or public source
+      archive for the methods-paper behavioral tables.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5603732/
+  - evidence_type: public_archive_check
+    description: >-
+      Targeted searches for the paper title, DOI, Figshare, and data-archive
+      terms did not identify a reusable Burgess-specific trial-level archive.
+request_draft:
+  subject: Request for Burgess et al. 2017 visual psychophysics trial data
+  body: |-
+    Dear Burgess / Carandini / Harris team,
+
+    I am curating behavtaskatlas, an open-science atlas of sensory-guided decision-making tasks and reusable behavioral-model fits.
+
+    I am mapping the head-fixed mouse visual contrast wheel-task lineage from:
+
+    Burgess CP et al. High-Yield Methods for Accurate Two-Alternative Visual Psychophysics in Head-Fixed Mice. Cell Reports, 2017.
+
+    I could not find a dedicated public trial-level archive for the behavioral sessions behind the methods-paper figures. If these data are available, would you be willing to share them or point me to the preferred public successor dataset? The fields of interest are mouse id, session id, trial index, left/right contrast, choice, no-go outcome where applicable, correctness/reward outcome, and response time.
+
+    The goal is to preserve the operational distinctions between forced wheel 2AFC, unforced/no-go variants, and later IBL/Steinmetz implementations.
+
+    Thank you,
+    behavtaskatlas curator
+events:
+  - event_type: drafted
+    event_date: 2026-04-30
+    actor: behavtaskatlas
+    notes: >-
+      Drafted as a normal-priority source-availability tracker; not currently
+      the highest-priority request because later public wheel datasets already
+      cover much of the operational lineage.
+    evidence_path: data_requests/burgess-2017-visual-psychophysics-source-data.yaml
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >-
+    Created during the visual contrast source-availability pass.
+notes: >-
+  Keep as draft until the public Zatka-Haas, Steinmetz, and IBL archives have
+  been mined for equivalent forced/unforced wheel-task coverage.

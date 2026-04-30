@@ -1,0 +1,42 @@
+analysis_id: analysis.coen-audiovisual-spatial-wheel.descriptive-multisensory
+protocol_id: protocol.mouse-audiovisual-spatial-wheel
+dataset_id: dataset.coen-audiovisual-decisions-ucl
+status: adapter-ready
+inputs:
+  - canonical trial table generated from a UCL Coen processed MATLAB block or exported trial CSV/TSV
+implemented_outputs:
+  - canonical trial table preserving response, stimulus, cue-congruence, and inactivation variables
+  - descriptive rightward-evidence psychometric proxy split by modality
+  - modality summary CSV
+  - audiovisual condition summary CSV
+  - conflict choice summary CSV
+  - dependency-free SVG psychometric proxy plot
+  - dependency-free SVG audiovisual condition-surface plot
+  - static HTML report over source provenance, modality summaries, condition surface, conflict choices, and caveats
+grouping_variables:
+  - modality condition
+  - trial class
+  - cue congruence
+  - signed visual evidence
+  - signed auditory evidence
+  - subject
+  - session
+  - laser/inactivation flag
+planned_outputs:
+  - p(right) by visual and auditory evidence condition
+  - accuracy by modality and cue congruence
+  - median reaction time by condition
+  - conflict-trial visual-choice and auditory-choice fractions
+deferred_outputs:
+  - paper-matched additive audiovisual GLM
+  - inactivation effect model by galvo position and timing
+  - per-mouse hierarchical psychometric/additivity model
+  - neural/spike analyses from the processed release
+provenance_requirements:
+  - UCL source DOI
+  - source filename and hash
+  - MATLAB variable or CSV source kind
+  - code repository and Zenodo archive
+  - subject and session counts
+  - adapter version or commit hash
+  - date generated

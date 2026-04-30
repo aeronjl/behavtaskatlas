@@ -1,0 +1,65 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.zatka-haas-visual-decision-figshare
+name: Zatka-Haas mouse visual decision Figshare dataset
+description: >
+  Public widefield calcium imaging, Neuropixels, optogenetic inactivation,
+  model-fit, code, and associated behavioral data from mice performing a
+  wheel-based visual contrast decision task.
+protocol_ids:
+  - protocol.mouse-unforced-visual-contrast-wheel
+species:
+  - mouse
+curation_status: analysis-verified
+source_url: https://figshare.com/articles/dataset/Zatka-Haas_et_al_2020_dataset/13008038
+access_notes: >
+  Figshare article 13008038 is a 19.6 GB split ZIP archive plus a smaller code
+  ZIP. The first analysis-backed adapter inspects the code ZIP and uses a
+  targeted HTTP range extraction of
+  OptogeneticInactivation/Inactivation_HigherPower.mat from split archive part
+  .001, avoiding a full neural-heavy archive download for the MVP.
+source_data_level: processed-trial
+license: CC-BY-4.0
+data_formats:
+  - split ZIP archive
+  - code ZIP
+  - behavioral and neural analysis files
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from behavioral or analysis metadata.
+  session_id: Session identifier from source behavioral files.
+  trial_index: Trial number within session.
+  stimulus_value: Signed visual contrast or contrast difference.
+  stimulus_side: Side with visual evidence, or none/no-go where applicable.
+  evidence_strength: Absolute contrast or source-specific bilateral contrast tuple.
+  choice: Wheel-derived left, right, or no-go/miss outcome.
+  correct: Source reward or outcome label mapped to correctness.
+  response_time: Wheel movement onset or response time relative to stimulus onset.
+  feedback: Reward, error, or no-reward outcome.
+  task_variables: >
+    left contrast, right contrast, wheel movement, open-loop delay, go cue,
+    inactivation condition, neural recording modality, and model-fit condition.
+references:
+  - id: ref.zatka-haas-figshare
+    citation: >
+      Zatka-Haas P, Steinmetz NA, Carandini M, Harris KD. Zatka-Haas et al
+      2020 dataset. Figshare, 2020.
+    url: https://figshare.com/articles/dataset/Zatka-Haas_et_al_2020_dataset/13008038
+    doi: 10.6084/m9.figshare.13008038.v1
+  - id: ref.zatka-haas-2021-sensory-coding-causal-impact
+    citation: >
+      Zatka-Haas P, Steinmetz NA, Carandini M, Harris KD. Sensory coding and
+      the causal impact of mouse cortex in a visual decision. eLife, 2021.
+    url: https://elifesciences.org/articles/63163
+    doi: 10.7554/eLife.63163
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast source-availability pass after
+    verifying the eLife data-availability statement and Figshare article
+    metadata through the Figshare API.
+caveats:
+  - Current generated report covers the higher-power optogenetic inactivation table and pools laser/non-laser trials for the first choice surface.
+  - Widefield, Neuropixels, and model-fit joins remain deferred; laser-region stratified behavior summaries should come before neural joins.

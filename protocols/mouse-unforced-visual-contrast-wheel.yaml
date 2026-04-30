@@ -1,0 +1,129 @@
+object_type: protocol
+schema_version: 0.1.0
+id: protocol.mouse-unforced-visual-contrast-wheel
+family_id: family.visual-2afc-contrast
+name: Mouse unforced visual contrast wheel task
+aliases:
+  - Steinmetz visual discrimination task
+  - mouse two-alternative unforced visual choice
+description: >
+  Head-fixed mice view one or two Gabor patches on lateral screens and use a
+  wheel to report the side with visual evidence, while trials with no visible
+  stimulus can be rewarded for withholding movement. The protocol distinguishes
+  visual stimulus coding, action initiation, and left/right choice because
+  no-go/no-turn trials are valid behavioral outcomes rather than missing data.
+species:
+  - mouse
+curation_status: data-linked
+stimulus:
+  modalities:
+    - visual
+  variables:
+    - left contrast
+    - right contrast
+    - bilateral contrast combination
+    - stimulus side
+  evidence_type: static
+  evidence_schedule: >
+    Gabor stimuli are presented on the left screen, right screen, both screens,
+    or neither screen with contrast sampled from a small fixed set.
+  units:
+    - percent contrast
+choice:
+  choice_type: free-response
+  alternatives:
+    - left
+    - right
+    - no-go
+  response_modalities:
+    - wheel
+  action_mapping: >
+    Wheel turns report leftward or rightward choices; withholding movement can
+    be rewarded on no-stimulus trials.
+feedback:
+  feedback_type: mixed
+  reward: Water reward for correct side choices or correct no-go outcomes.
+  penalty: Error feedback for incorrect movement or missed stimulus reports.
+timing:
+  - name: trial_initiation
+    duration: protocol-specific
+    description: Mouse holds the wheel before stimulus onset.
+  - name: visual_stimulus
+    duration: response-dependent
+    description: Lateralized Gabor stimuli are shown.
+  - name: movement_or_withhold
+    duration: response-limited
+    description: Mouse turns the wheel or withholds movement.
+  - name: feedback
+    duration: outcome-dependent
+    contingent_on: choice correctness
+training:
+  stages:
+    - wheel handling
+    - contrast discrimination
+    - no-go trials
+apparatus:
+  - head fixation
+  - response wheel
+  - three-screen visual display
+  - lick spout
+  - water delivery
+software:
+  - ONE-compatible data export
+dataset_ids:
+  - dataset.steinmetz-visual-decision-figshare
+  - dataset.zatka-haas-visual-decision-figshare
+expected_analyses:
+  - choice surface by left and right contrast
+  - no-go rate by zero-contrast condition
+  - reaction time by contrast combination
+  - stimulus, action, and choice encoding by trial condition
+interpretive_claims:
+  - label: perceptual decision-making
+    source: ref.steinmetz-2019-distributed-coding
+    confidence: high
+    caveat: >
+      The task is not a strict 2AFC design because no-go/no-turn responses are
+      meaningful and must remain explicit in model comparisons.
+references:
+  - id: ref.burgess-2017-high-yield-visual-psychophysics
+    citation: >
+      Burgess CP et al. High-Yield Methods for Accurate Two-Alternative
+      Visual Psychophysics in Head-Fixed Mice. Cell Reports, 2017.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5603732/
+    doi: 10.1016/j.celrep.2017.08.047
+  - id: ref.steinmetz-2019-distributed-coding
+    citation: >
+      Steinmetz NA, Zatka-Haas P, Carandini M, Harris KD. Distributed coding of
+      choice, action and engagement across the mouse brain. Nature, 2019.
+    url: https://www.nature.com/articles/s41586-019-1787-x
+    doi: 10.1038/s41586-019-1787-x
+  - id: ref.steinmetz-figshare-one
+    citation: >
+      Steinmetz N, Zatka-Haas P, Carandini M, Harris K, Rossant C. Distributed
+      coding of choice, action, and engagement across the mouse brain. Figshare,
+      version 3, 2021.
+    url: https://figshare.com/articles/dataset/Distributed_coding_of_choice_action_and_engagement_across_the_mouse_brain/9974357
+    doi: 10.6084/m9.figshare.9974357.v3
+  - id: ref.zatka-haas-2021-sensory-coding-causal-impact
+    citation: >
+      Zatka-Haas P, Steinmetz NA, Carandini M, Harris KD. Sensory coding and
+      the causal impact of mouse cortex in a visual decision. eLife, 2021.
+    url: https://elifesciences.org/articles/63163
+    doi: 10.7554/eLife.63163
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-30
+  source_notes: >
+    Catalog-only protocol added from the public Steinmetz et al. 2019 Figshare
+    release and paper methods. Updated with an adapter-backed vertical slice
+    contract that verifies trial field names and source choice coding from the
+    Steinmetz ALF data dictionary. Burgess and Zatka-Haas references were added
+    during the visual contrast family-depth pass to connect the unforced wheel
+    task lineage; the Zatka-Haas Figshare archive was then added as a public
+    source for deeper behavior/neural curation.
+open_questions:
+  - Decide whether no-go trials should be modeled as a third choice or as a censored action state for each analysis.
+  - Verify one named extracted session end-to-end and record its subject, trial count, and generated report metrics.

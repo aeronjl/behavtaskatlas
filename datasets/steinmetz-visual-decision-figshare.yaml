@@ -1,0 +1,67 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.steinmetz-visual-decision-figshare
+name: Steinmetz mouse visual decision Figshare/ONE dataset
+description: >
+  Public behavioral and Neuropixels dataset from ten mice performing a
+  lateralized visual contrast decision task designed to separate visual
+  stimulus, action, choice, and engagement variables.
+protocol_ids:
+  - protocol.mouse-unforced-visual-contrast-wheel
+species:
+  - mouse
+curation_status: analysis-verified
+source_url: https://figshare.com/articles/dataset/Distributed_coding_of_choice_action_and_engagement_across_the_mouse_brain/9974357
+access_notes: >
+  Download from Figshare and extract one session directory locally. The atlas
+  Steinmetz adapter reads `trials.*.npy` ALF files from that extracted directory
+  and keeps no-go/no-turn outcomes explicit as canonical withhold choices.
+source_data_level: processed-trial
+license: CC-BY-4.0
+data_formats:
+  - ONE-compatible ALF objects
+  - NumPy arrays
+  - Figshare archive
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from session metadata or subject folder.
+  session_id: ONE session identifier.
+  trial_index: Trial number within the trials object.
+  stimulus_value: Signed contrast difference, preferably right contrast minus left contrast.
+  stimulus_side: Side with positive visual evidence, or none for no-stimulus trials.
+  evidence_strength: Absolute contrast difference or source-specific bilateral contrast tuple.
+  choice: Wheel-derived left, right, or no-go/no-turn outcome.
+  correct: Source feedback or reward outcome mapped to correctness.
+  response_time: Movement onset or response time relative to stimulus onset.
+  feedback: Reward or error feedback from source trial fields.
+  task_variables: >
+    left contrast, right contrast, go cue, stimulus onset, wheel movement,
+    no-go condition, reward volume or feedback, passive replay flag, and neural
+    probe/session metadata.
+references:
+  - id: ref.steinmetz-figshare-one
+    citation: >
+      Steinmetz N, Zatka-Haas P, Carandini M, Harris K, Rossant C. Distributed
+      coding of choice, action, and engagement across the mouse brain. Figshare,
+      version 3, 2021.
+    url: https://figshare.com/articles/dataset/Distributed_coding_of_choice_action_and_engagement_across_the_mouse_brain/9974357
+    doi: 10.6084/m9.figshare.9974357.v3
+  - id: ref.steinmetz-2019-distributed-coding
+    citation: >
+      Steinmetz NA, Zatka-Haas P, Carandini M, Harris KD. Distributed coding of
+      choice, action and engagement across the mouse brain. Nature, 2019.
+    url: https://www.nature.com/articles/s41586-019-1787-x
+    doi: 10.1038/s41586-019-1787-x
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion as a high-value visual
+    decision-making dataset with public trial and ephys data. Updated with an
+    adapter-backed vertical slice contract for extracted ALF session directories,
+    then promoted after harmonizing one local Cori session into a report-backed
+    214-trial slice.
+caveats:
+  - The task is not a strict 2AFC dataset because no-go/no-turn outcomes are valid.
+  - Trial-level comparisons with IBL visual decision records require an explicit mapping from bilateral contrast combinations to the canonical stimulus axis.

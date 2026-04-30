@@ -1,0 +1,66 @@
+object_type: dataset
+schema_version: 0.1.0
+id: dataset.odoemene-visual-evidence-accumulation-cshl
+name: Odoemene visual evidence accumulation CSHL dataset
+description: >
+  Public CSHL repository dataset for unrestrained mice judging visual flash-rate
+  sequences, including raw trial-wise choice data for the large behavioral
+  cohort and manipulation sessions.
+protocol_ids:
+  - protocol.mouse-visual-flash-rate-accumulation
+species:
+  - mouse
+curation_status: adapter-ready
+source_url: https://repository.cshl.edu/id/eprint/38944/
+access_notes: >
+  The repository record exposes metadata and a dataset storage-area link. The
+  atlas adapter expects the MATLAB file to be downloaded locally and preserves
+  the 25-bin stimulus event lists for descriptive event-kernel analyses.
+source_data_level: raw-trial
+license: CC-BY-4.0
+data_formats:
+  - MATLAB structures
+  - repository metadata PDFs
+  - raw trial-wise choice data
+expected_trial_table_mapping:
+  subject_id: Mouse identifier from raw choice data.
+  session_id: Behavioral session or manipulation-session identifier.
+  trial_index: Trial number within session.
+  stimulus_value: Flash rate or signed high-minus-low evidence code.
+  stimulus_side: Response contingency side for high-rate choice where available.
+  evidence_strength: Distance from category boundary in flashes per second.
+  choice: Left or right port choice mapped to low-rate or high-rate category.
+  correct: Source outcome mapped to boolean correctness.
+  response_time: Port response latency relative to go tone or stimulus end.
+  feedback: Reward or timeout outcome.
+  task_variables: >
+    flash times, flash rate, brightness condition, stimulus duration, go tone,
+    previous choice/outcome, optogenetic manipulation flag, and contingency group.
+references:
+  - id: ref.odoemene-2020-cshl-dataset
+    citation: >
+      Odoemene O, Pisupati S, Nguyen H, Churchland AK. Dataset from: Visual
+      evidence accumulation guides decision-making in unrestrained mice. CSHL
+      Scientific Digital Repository, 2020.
+    url: https://repository.cshl.edu/id/eprint/38944/
+    doi: 10.14224/1.38944
+  - id: ref.odoemene-2018-visual-accumulation
+    citation: >
+      Odoemene O, Pisupati S, Nguyen H, Churchland AK. Visual evidence
+      accumulation guides decision-making in unrestrained mice. Journal of
+      Neuroscience, 2018.
+    url: https://www.jneurosci.org/content/38/47/10143
+    doi: 10.1523/JNEUROSCI.3478-17.2018
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Added during dataset coverage expansion after verifying the CSHL dataset
+    record, DOI, license, and abstract-level trial scope. Updated with an
+    adapter-backed vertical slice contract after verifying the metadata PDF's
+    raw trial field list.
+caveats:
+  - The storage link is indirect through a repository PDF, so automated download needs a small resolver.
+  - The public metadata describes 25-bin event indicators rather than exact continuous flash timestamps.

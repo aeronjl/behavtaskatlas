@@ -3,10 +3,13 @@ import math
 import pytest
 
 from behavtaskatlas.allen import (
+    ALLEN_VBN_DATASET_ID,
     ALLEN_VISUAL_BEHAVIOR_DATASET_ID,
     ALLEN_VISUAL_BEHAVIOR_PROTOCOL_ID,
+    allen_vbn_provenance_payload,
     allen_visual_behavior_provenance_payload,
     analyze_allen_change_detection,
+    analyze_allen_vbn_change_detection,
     harmonize_allen_change_detection_row,
     harmonize_allen_change_detection_rows,
 )
@@ -57,6 +60,22 @@ def test_harmonize_hit_row_yields_go_choice_with_reward() -> None:
     assert trial.task_variables["outcome"] == "hit"
     assert trial.task_variables["is_change"] is True
     assert trial.task_variables["image_pair"] == "im000->im001"
+
+
+def test_harmonize_vbn_response_time_yields_latency() -> None:
+    row = _trial_row(response_time=77.37, change_time_no_display_delay=77.05)
+    row.pop("response_latency")
+
+    trial = harmonize_allen_change_detection_row(
+        row,
+        session_id="session-1",
+        trial_index=0,
+        dataset_id=ALLEN_VBN_DATASET_ID,
+    )
+
+    assert trial.response_time == pytest.approx(0.32)
+    assert trial.response_time_origin == "response_time minus change_time_no_display_delay"
+    assert trial.task_variables["source_response_time_field"] == "response_time"
 
 
 def test_harmonize_correct_reject_yields_withhold_no_reward() -> None:
@@ -185,6 +204,50 @@ def test_provenance_payload_records_outcome_counts_and_session() -> None:
     assert payload["source"]["session_type"] == "OPHYS_1_images_A"
     assert payload["outcome_counts"]["hit"] == 1
     assert payload["n_trials"] == 1
+
+
+def test_vbn_harmonizer_stamps_dataset_id() -> None:
+    trials = harmonize_allen_change_detection_rows(
+        [_trial_row()],
+        session_id="1043752325",
+        subject_id="506940",
+        dataset_id=ALLEN_VBN_DATASET_ID,
+    )
+
+    assert trials[0].protocol_id == ALLEN_VISUAL_BEHAVIOR_PROTOCOL_ID
+    assert trials[0].dataset_id == ALLEN_VBN_DATASET_ID
+    assert trials[0].task_variables["outcome"] == "hit"
+
+
+def test_vbn_analysis_and_provenance_record_vbn_source() -> None:
+    trials = harmonize_allen_change_detection_rows(
+        [_trial_row()],
+        session_id="1043752325",
+        subject_id="506940",
+        dataset_id=ALLEN_VBN_DATASET_ID,
+    )
+
+    result = analyze_allen_vbn_change_detection(trials)
+    payload = allen_vbn_provenance_payload(
+        details={
+            "behavior_session_id": 1043788445,
+            "subject_id": "506940",
+            "session_type": "EPHYS_1_images_G_5uL_reward",
+            "project_code": "NeuropixelVisualBehavior",
+            "source_dataset": "Allen Visual Behavior Neuropixels",
+        },
+        output_files={"trials": "derived/allen_visual_behavior_neuropixels/trials.csv"},
+        trials=trials,
+    )
+
+    assert result["analysis_id"] == "analysis.allen-vbn.change-detection"
+    assert result["dataset_id"] == ALLEN_VBN_DATASET_ID
+    assert result["report_title"] == "Allen Visual Behavior Neuropixels Change Detection Report"
+    assert any("spike" in caveat for caveat in result["caveats"])
+    assert payload["dataset_id"] == ALLEN_VBN_DATASET_ID
+    assert payload["source"]["dandi_doi"] == "10.48324/dandi.000713/0.240702.1725"
+    assert payload["source"]["s3_prefix"].endswith("visual-behavior-neuropixels")
+    assert payload["outcome_counts"]["hit"] == 1
 
 
 def test_d_prime_is_finite_with_extreme_rates() -> None:

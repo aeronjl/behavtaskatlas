@@ -15,7 +15,7 @@ description: >
   Visual Behavior 2P and Visual Behavior Neuropixels datasets.
 species:
   - mouse
-curation_status: data-linked
+curation_status: adapter-ready
 stimulus:
   modalities:
     - visual
@@ -85,6 +85,7 @@ software:
   - Allen Institute behavior task control
 dataset_ids:
   - dataset.allen-brain-observatory-visual-behavior
+  - dataset.allen-visual-behavior-neuropixels
 expected_analyses:
   - hit rate, miss rate, false-alarm rate, correct-rejection rate
   - d-prime by image change pair
@@ -117,10 +118,14 @@ provenance:
   curators:
     - behavtaskatlas
   created: 2026-04-27
-  updated: 2026-04-27
+  updated: 2026-04-29
   source_notes: >
     Initial concrete protocol record for the Allen Visual Behavior change
     detection task; harmonized via the Allen SDK BehaviorSession trial table.
+    The protocol now has adapter-backed behavioral slices for both the Allen
+    Visual Behavior 2P NWB source and the Visual Behavior Neuropixels NWB
+    release, while neural and video joins remain future work.
 open_questions:
   - Capture image-set membership (training vs. novel) in slice-level analyses.
   - Decide whether auto-rewarded trials should be retained or filtered in canonical rows.
+  - Add explicit VBN neural/probe/channel/unit joins without mixing them into behavioral trial harmonization.

@@ -1,0 +1,69 @@
+object_type: vertical_slice
+schema_version: 0.1.0
+id: slice.rodgers-whisker-object-recognition
+title: Rodgers Whisker Object Recognition
+description: >
+  Adapter-backed slice contract for the Rodgers DANDI mouse tactile object
+  recognition dataset. The harmonizer reads a DANDI NWB session or exported
+  trials table, preserving shape stimulus, object position, task rule, lick
+  choice, rewarded side, ignore-trial policy, response-window timing, and
+  optional whisker-contact counts.
+curation_status: adapter-ready
+display_order: 70
+family_id: family.whisker-object-discrimination
+protocol_id: protocol.mouse-whisker-object-recognition-lick
+dataset_id: dataset.rodgers-whisker-object-recognition-dandi
+report_path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/report.html
+analysis_result_path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/analysis_result.json
+primary_artifact_path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/accuracy.svg
+primary_artifact_label: Open accuracy SVG
+artifact_links:
+  - label: Report HTML
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/report.html
+  - label: Analysis result JSON
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/analysis_result.json
+  - label: Accuracy SVG
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/accuracy.svg
+  - label: Task-rule summary CSV
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/task_rule_summary.csv
+  - label: Condition summary CSV
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/condition_summary.csv
+  - label: Detection summary CSV
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/detection_summary.csv
+  - label: Canonical trials CSV
+    path: rodgers_whisker_object_recognition/rodgers-whisker-object-recognition-dandi/trials.csv
+  - label: Slice notes
+    path: vertical_slices/rodgers_whisker_object_recognition/README.md
+    path_type: repository
+  - label: Source field mapping
+    path: vertical_slices/rodgers_whisker_object_recognition/source_fields.yaml
+    path_type: repository
+  - label: Analysis record
+    path: analyses/rodgers_whisker_object_recognition.yaml
+    path_type: repository
+comparison:
+  species: mouse
+  modality: somatosensory
+  stimulus_metric: object shape, object presence, servo position, and optional whisker-contact counts
+  evidence_type: static
+  choice_type: mixed
+  response_modality: lick
+  source_data_level: processed-trial
+  analysis_outputs: task-rule summary, condition accuracy, detection hit/false-alarm summary
+  data_scope: one DANDI NWB session or exported trial table
+  canonical_axis: categorical shape/presence and object position; no scalar evidence axis is imposed
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-29
+  updated: 2026-04-29
+  source_notes: >
+    Slice added after verifying the Scientific Data methods, DANDI version
+    metadata, assets manifest, and companion usage notebook. The adapter targets
+    the NWB trials table documented in the paper and can also read CSV/TSV
+    exports of the same fields for lightweight local testing.
+notes: >
+  The DANDI release is multi-terabyte and contains large video assets, so raw
+  NWB/video files stay in ignored local storage. The base slice treats
+  video-derived contact counts as optional task variables while keeping the
+  behavioral trial table sufficient for MVP reports.

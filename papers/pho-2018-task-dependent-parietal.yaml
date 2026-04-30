@@ -1,0 +1,41 @@
+object_type: paper
+schema_version: 0.1.0
+id: paper.pho-2018-task-dependent-parietal
+citation: >
+  Pho GN, Goard MJ, Woodson J, Crawford B, Sur M. Task-dependent
+  representations of stimulus and choice in mouse parietal cortex.
+  Nature Communications 9:2596, 2018.
+authors:
+  - Pho, Gerald N.
+  - Goard, Michael J.
+  - Woodson, Jonathan
+  - Crawford, Benjamin
+  - Sur, Mriganka
+year: 2018
+venue: Nature Communications
+doi: 10.1038/s41467-018-05012-y
+url: https://www.nature.com/articles/s41467-018-05012-y
+lab: Sur lab
+species:
+  - mouse
+n_subjects: 15
+protocol_ids:
+  - protocol.mouse-visual-contrast-lick-gonogo
+dataset_ids: []
+finding_ids: []
+curation_status: literature-curated
+notes: >
+  Go/no-go lick-based visual discrimination task with variable-contrast
+  analyses and passive-viewing controls. It is included as a contrast-family
+  boundary case because the evidence axis overlaps with 2AFC contrast tasks but
+  the response structure is asymmetric. The article states data and custom
+  MATLAB code are available from the corresponding authors upon request, tracked
+  by data_request.pho-2018-visual-contrast-gonogo-source-data.
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >
+    Added during the visual 2AFC/contrast depth pass from Nature
+    Communications and DOI metadata; no source-data adapter is linked yet.

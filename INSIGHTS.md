@@ -2,6 +2,369 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 12:52:28 BST - Made Odoemene a non-blocking release follow-up
+
+Marked the Odoemene visual evidence accumulation slice as adapter-ready
+follow-up for the current public artifact release and changed release coverage
+so missing reports block only analysis-verified slices. Adapter-ready missing
+artifacts now surface as release warnings rather than errors. Immediate MVP
+implication: the atlas can publish the new visual-contrast depth while keeping
+Odoemene visible as a source-acquisition/regeneration follow-up instead of
+hiding or rushing an unverified report.
+
+## 2026-04-30 12:42:09 BST - Added Fritsche artifact-level provenance table
+
+Added a regenerable `artifact_provenance.csv` for the Fritsche temporal-regularities
+slice, emitted beside `code_manifest.json` with 15 artifact rows. Each row links
+a generated atlas output to source behavior/code files, source fields, reused
+source scripts, code-manifest paths, transformation intent, and deferred scope.
+Immediate MVP implication: the deep visual contrast slice now supports
+artifact-by-artifact provenance audits rather than relying on pooled prose
+summaries or a code manifest alone.
+
+## 2026-04-30 12:20:57 BST - Added Fritsche code.zip manifest provenance
+
+Added a regenerable Fritsche Figshare `code.zip` manifest with ZIP inventory,
+SHA-256 hashes for 36 source/config members, 21 source-data dependency mentions,
+and explicit atlas reuse/defer decisions. The manifest marks
+`1_behavioral_analysis.r` and `5_adaptation_analysis.r` as reused reference
+scripts for the behavior-first slice, while deferring GLM-HMM, POMDP/RL,
+photometry, and IBL-comparison code. Immediate MVP implication: the deep
+visual contrast slice now has source-analysis provenance, not just behavior CSV
+provenance, without committing the MVP to reproduce every source model.
+
+## 2026-04-30 12:13:51 BST - Added Fritsche Neutral-session adaptation summaries
+
+Added an atlas-derived session-order layer for Fritsche Neutral sessions:
+each Neutral session is annotated with the most recent preceding non-Neutral
+sequence environment for that subject, then summarized by Repeating vs
+Alternating exposure and neutral-day index. The generated artifacts now include
+448 Neutral-session annotation rows, 140 sessions following Repeating or
+Alternating exposure, and 30 day-by-day aggregate rows. Immediate MVP
+implication: the deep visual contrast track now shows within-subject
+carryover/adaptation structure across sessions without treating the annotation
+as an inferred latent state.
+
+## 2026-04-30 12:02:20 BST - Added Fritsche fitted choice-history coefficients
+
+Added a compact logistic model layer for the Fritsche temporal-regularities
+slice, predicting current right/left choice from current signed contrast,
+previous choice, previous stimulus side, previous outcome, and the
+previous-choice-by-outcome interaction. The generated full-slice artifact now
+contains 8 successful environment and experiment-environment fits with 48
+coefficient rows; pooled previous-choice coefficients are positive in
+Alternating, Neutral, and Repeating environments. Immediate MVP implication:
+the atlas now shows both descriptive lag-1 summaries and explicit fitted
+history terms for a deep visual contrast dataset, while keeping those terms
+separate from the source paper's richer reinforcement-learning models.
+
+## 2026-04-30 11:22:53 BST - Added Fritsche lag-1 transition/history depth
+
+Extended the Fritsche temporal-regularities slice beyond pooled psychometrics
+with within-session lag-1 stimulus-transition, lag-1 choice/outcome-history,
+and subject-by-environment replication summaries. The generated analysis now
+covers 268,503 lagged trials, 45 transition rows, 54 choice-history rows, and
+41 subject-environment rows. Immediate MVP implication: the visual contrast
+depth track can now expose operational sequence regularities and repeated
+subject-level variation within a notable public dataset, while keeping those
+summaries distinct from model-fitted cognitive history weights.
+
+## 2026-04-30 11:04:24 BST - Added Fritsche temporal-regularity visual contrast depth
+
+Verified the Fritsche et al. 2024 Nature Communications data-availability path
+to a CC BY 4.0 Figshare deposit, added a behavior-first adapter for the
+generated CSVs, and harmonized 269,168 visual wheel trials across 17 subjects,
+665 sessions, and Neutral/Repeating/Alternating sequence environments. The
+visual contrast family now spans 53 sources, 296,520 trials, 750 sessions, and
+40 dataset-qualified subjects. Immediate MVP implication: strict-wheel visual
+contrast depth now includes a large public history/temporal-regularity variant,
+not only IBL-style prior blocks and unforced wheel datasets.
+
+## 2026-04-30 10:47:25 BST - Promoted Steinmetz to a dedicated across-session aggregate
+
+Added a Steinmetz aggregate workflow that reads generated canonical session
+CSVs and emits aggregate result JSON, session-level CSV, subject-level CSV,
+signed-contrast CSV, SVG, and HTML report. The aggregate currently covers all
+39 extracted sessions, 10 subjects, 10,050 trials, and 3,305 withhold choices.
+Immediate MVP implication: the Steinmetz slice now has within-dataset depth and
+replication summaries directly in its primary report, not only through the
+broader visual contrast family summary.
+
+## 2026-04-30 10:27:45 BST - Added all extracted Steinmetz sessions to visual contrast depth
+
+Used HTTP range reads against the Steinmetz Figshare ZIP central directory to
+extract only the required `trials.*.npy` members for 39 complete sessions,
+then harmonized, analyzed, and reported every session. The visual contrast
+family now spans 52 sources, 27,352 trials, 85 canonical sessions, and 23
+dataset-qualified subjects; the unforced-wheel side now has 40 sources and
+20,104 trials. Immediate MVP implication: unforced visual contrast behavior
+now has real across-session and across-subject replication depth on the
+Steinmetz side, not just the pooled Zatka-Haas higher-power table.
+
+## 2026-04-30 10:16:01 BST - Added subject-balanced visual contrast family estimates
+
+Added subject-balanced protocol-normalized summaries and SVGs to the visual
+contrast family report. The current family spans 14 sources, 17,516 trials, 47
+canonical sessions, and 14 dataset-qualified subjects; at zero contrast the
+unforced-wheel withhold estimate is 0.420 trial-weighted, 0.428
+session-balanced, and 0.447 subject-balanced. Immediate MVP implication:
+repeated public IBL sessions and multi-session Zatka-Haas subjects can now
+contribute replication depth without letting subjects with more sessions
+dominate the descriptive family curves.
+
+## 2026-04-30 09:55:07 BST - Added multi-session IBL Brainwide Map visual contrast coverage
+
+Added 10 public IBL Brainwide Map ephysChoiceWorld sessions to the visual
+contrast family source list and regenerated the family report. The family now
+spans 14 sources, 17,516 trials, and 47 canonical sessions; the strict 2AFC
+wheel group alone now has 12 sources and 7,248 trials across repeated sessions
+from MFD_05, MFD_08, NR_0029, NR_0031, and PL050. Immediate MVP implication:
+the visual contrast atlas has more within-protocol replication depth on the
+IBL side instead of relying on one strict-wheel session opposite the larger
+Zatka-Haas unforced-wheel table.
+
+## 2026-04-30 09:42:26 BST - Added session-balanced visual contrast family estimates
+
+Extended the visual contrast family report from source-balanced to
+session-balanced protocol-normalized estimates. The current four real-trial
+sources contain 37 canonical sessions: one IBL visual decision session, one IBL
+trainingChoiceWorld session, one Steinmetz session, and 34 original Zatka-Haas
+higher-power sessions. Immediate MVP implication: the family report can now
+show trial-weighted, source-balanced, and session-balanced behavioral curves,
+making session-level replication visible before adding more public sessions.
+
+## 2026-04-30 09:10:48 BST - Added source-balanced visual contrast family estimates
+
+Added a source-balanced protocol-normalized layer to the visual contrast family
+analysis. The report now keeps the trial-weighted response-format curves while
+also averaging one estimate per source within each response-format and
+signed-contrast bin. This matters most for the unforced wheel group, where the
+large Zatka-Haas table can otherwise dominate Steinmetz in trial-weighted
+descriptives. Immediate MVP implication: family-level variation can be viewed
+as both trial-weighted behavior and source-balanced replication evidence.
+
+## 2026-04-30 09:05:49 BST - Added protocol-normalized visual contrast plots
+
+Added response-format grouping to the visual contrast family analysis so strict
+2AFC wheel sources and unforced wheel sources are summarized and plotted
+separately. The regenerated family report now includes response-format summary
+CSV, protocol-normalized signed-contrast CSV, and an SVG showing right-choice,
+withhold, and no-response curves without collapsing the two operational
+formats. Immediate MVP implication: within-family replication can now be shown
+without letting task-format differences masquerade as behavioral variation.
+
+## 2026-04-30 02:19:47 BST - Surfaced perturbation effects in the visual contrast family report
+
+Joined the Zatka-Haas perturbation region-effect summary into the visual 2AFC
+family analysis and regenerated the family report with a compact SVG comparing
+weighted deltas for right choices, withholds, and correctness. The family view
+still preserves strict 2AFC, no-response, and unforced withhold differences,
+but now adds a perturbation-specific layer sourced from matched non-laser
+baselines. Immediate MVP implication: behavtaskatlas can show both replication
+across task variants and within-family causal-manipulation depth in one report.
+
+## 2026-04-30 02:09:28 BST - Added matched Zatka-Haas perturbation comparisons
+
+Extended the higher-power Zatka-Haas report from laser-region stratification to
+matched perturbation deltas: 156 region-by-signed-contrast rows compare laser
+trials against non-laser trials at the same stimulus value, and 12 compact
+region-effect rows summarize left/right VIS, M2, S1, RSP, M1, and front-outside
+controls. Immediate MVP implication: visual contrast depth now has a
+behavior-first perturbation layer that preserves operational laser targets,
+withholds, accuracy, choice bias, and response-time shifts before any
+paper-matched causal model fit.
+
+## 2026-04-30 01:52:02 BST - Added visual contrast family real-trial summaries
+
+Added Zatka-Haas laser-state and laser-region signed-contrast summaries, fixed
+Steinmetz singleton ALF row decoding, and generated a family-level real-trial
+summary over four available visual contrast sources: IBL visual decision, IBL
+trainingChoiceWorld, Steinmetz Cori, and Zatka-Haas higher-power inactivation.
+The pooled family report covers 11,483 trials while preserving strict 2AFC
+no-response outcomes separately from unforced wheel withhold choices. Immediate
+MVP implication: behavtaskatlas can now show within-family replication and
+variation from real canonical trial tables, not just paper- or slice-level
+metadata.
+
+## 2026-04-30 01:36:14 BST - Promoted Zatka-Haas to a real trial-level slice
+
+Used the split ZIP central directory to locate
+`OptogeneticInactivation/Inactivation_HigherPower.mat` and extract only its
+38 MB local-entry range from part `.001`, avoiding the full 19.6 GB archive.
+Added MATLAB v7.3 table decoding and generated a report-backed harmonization of
+10,054 trials, including 4,797 laser trials and 2,507 NoGo/withhold choices.
+Immediate MVP implication: visual contrast depth now has another real
+processed-trial mouse wheel dataset for pooled family summaries; the next
+useful step is laser/non-laser and region-stratified Zatka-Haas summaries.
+
+## 2026-04-30 01:10:36 BST - Made Zatka-Haas adapter-ready without the full archive
+
+Inspected the public Zatka-Haas Figshare code ZIP and added a manifest-first
+adapter plus a processed MATLAB `D`-struct harmonizer for behavior fields. The
+code establishes that source choices use 1=left, 2=right, and 3=NoGo, so the
+atlas maps NoGo to canonical withhold and keeps laser/inactivation variables
+explicit. Immediate MVP implication: Zatka-Haas now has a vertical slice
+contract and adapter tests before any 19.6 GB split-archive download, with the
+next step being one real processed MAT extraction and report generation.
+
+## 2026-04-30 00:56:01 BST - Added source-availability status for visual contrast depth
+
+Converted the visual 2AFC/contrast paper census into actionable source
+tracking: Zatka-Haas has a public Figshare archive and Busse, Burgess, Lak, and
+Pho now have explicit data-request records with evidence and draft asks. This
+matters because family depth now distinguishes public adapter targets from
+author-request blockers instead of treating all notable papers equally.
+Immediate MVP implication: the next implementation target should be a
+manifest/code-first Zatka-Haas adapter, while outbound author requests should
+prioritize Busse port-task and Lak reward-value/history data.
+
+## 2026-04-30 00:46:35 BST - Started deep visual contrast family coverage
+
+Added first-class visual 2AFC/contrast depth records for classic port-based
+mouse contrast detection, head-fixed wheel forced/unforced psychophysics,
+reward-value/confidence wheel variants, and lick go/no-go contrast boundary
+tasks. This matters because behavtaskatlas now treats visual contrast as a
+family of operational variants rather than an IBL-only bibliography. Immediate
+MVP implication: the next depth step should add dataset/source-availability
+status and extracted finding summaries for the newly mapped notable papers.
+
+## 2026-04-30 00:33:52 BST - Added literature exhaustiveness to family depth
+
+Clarified that within-family depth means exhaustive coverage of notable papers
+as well as pooled trial/session summaries. For visual 2AFC/contrast, IBL should
+be treated as one anchor dataset rather than the family boundary. Immediate MVP
+implication: the next family-depth milestone needs a paper map, inclusion
+criteria, protocol-variant taxonomy, and source availability status for notable
+mouse, primate, and human visual contrast/2AFC studies.
+
+## 2026-04-30 00:32:24 BST - Reoriented the roadmap toward within-family depth
+
+Paused the Odoemene source-acquisition push and clarified that behavtaskatlas
+should prioritize detailed variation and replication within a task class, not
+just broad dataset coverage. Immediate MVP implication: the next work should
+pick one sensory-guided family, likely visual change detection or visual 2AFC,
+and deepen it with multiple sessions, condition-level comparisons, protocol
+variants, and replication summaries before adding more breadth.
+
+## 2026-04-30 00:20:16 BST - Generated the Allen VBN behavior report
+
+Downloaded the smallest full Allen Visual Behavior Neuropixels DANDI session
+NWB (1.4 GB) and generated the behavior-first VBN report from 732 active
+change-detection trials. The adapter now handles VBN `response_time` columns by
+subtracting `change_time_no_display_delay` to recover response latency, while
+keeping the older Allen `response_latency` mapping intact. Immediate MVP
+implication: report coverage is 14 of 15 slices, and the only remaining report
+gap is Odoemene because the CSHL labshare storage URL currently returns 404.
+
+## 2026-04-30 00:07:14 BST - Raised report coverage to 13 of 15 slices
+
+Used byte-range extraction against the Steinmetz Figshare ZIP and Coen UCL
+BehaviorData ZIP to generate local reports without downloading full 8.86 GB and
+6.8 GB archives. Steinmetz now runs from one extracted ALF session, and Coen now
+ingests native `blk` procedure MAT files in addition to combined blocks and
+trial-table exports. Immediate MVP implication: only Allen VBN and Odoemene
+remain as report gaps, while Coen no longer requires a separate processed
+export step.
+
+## 2026-04-29 23:51:29 BST - Raised report coverage to 11 of 15 slices
+
+Generated real local reports for the IBL Brainwide Map behavior slice and a
+single Rodgers DANDI whisker-object session, raising report coverage from
+9/15 to 11/15 while keeping the curation queue empty. The remaining missing
+reports are not adapter-code blockers: Allen VBN active ecephys NWBs are
+multi-GB per session, Steinmetz and Coen are exposed as 8.86 GB and 6.8 GB
+archives, and the Odoemene CSHL data link currently redirects to an unavailable
+labshare endpoint or auth-protected paths. Immediate MVP implication: the next
+roadmap work should focus on targeted source acquisition/extraction strategies
+for the four remaining report gaps.
+
+## 2026-04-29 23:36:56 BST - Promoted Allen Visual Behavior Neuropixels to adapter-ready
+
+Added a behavior-first VBN slice after verifying DANDI 000713 version metadata,
+AllenSDK VBN behavior-session trial fields, public S3 metadata tables, and the
+Allen VBN task epoch structure. The adapter reuses the Allen change-detection
+harmonizer but stamps canonical trials, analysis, CLI commands, and provenance
+with the VBN dataset id and DANDI/S3 source identifiers. Immediate MVP
+implication: every currently cataloged dataset now has a vertical slice and the
+curation queue is empty, while neural unit/probe/LFP/video/passive-replay joins
+remain explicit follow-on work.
+
+## 2026-04-29 23:22:15 BST - Promoted IBL Brainwide Map behavior to adapter-ready
+
+Added a behavior-first IBL Brainwide Map slice after verifying the official IBL
+release page, AWS Open Data registry entry, Nature data-availability statement,
+and OpenAlyx project metadata. The adapter reuses the standard IBL trials-table
+harmonizer but stamps canonical rows, analysis, and provenance with the
+Brainwide Map dataset id, ONE project `ibl_neuropixel_brainwide_01`, and
+release tag `Brainwidemap`. Immediate MVP implication: the 2025 Neuropixels
+release is now represented without double-counting it as generic IBL behavior,
+while neural probe, histology, spike, and video joins remain explicit deferred
+work.
+
+## 2026-04-29 23:08:54 BST - Promoted Rodgers whisker object recognition to adapter-ready
+
+Added a Rodgers DANDI/NWB tactile object-recognition adapter after verifying the
+DANDI version metadata, assets manifest, Scientific Data trial-table fields,
+and companion usage notebook. The slice reads NWB or CSV/TSV trial tables,
+keeps detection and discrimination task rules explicit, excludes source
+`ignore_trial` rows from analysis rates without dropping them, and treats
+video-derived whisker contacts as optional task variables. Immediate MVP
+implication: behavtaskatlas now covers a somatosensory decision task at
+processed-trial level without forcing shape identity or active touch into a
+single evidence scalar.
+
+## 2026-04-29 22:44:29 BST - Promoted Coen audiovisual decisions to adapter-ready
+
+Added a Coen audiovisual spatial wheel adapter path after verifying the UCL
+processed release and public `pipcoen/2023_CoenSit` code fields. The slice
+targets MATLAB `spatialAnalysis` combined blocks or CSV/TSV exports with
+`visDiff`, `audDiff`, `responseCalc`, `reactionTime`, trial-type flags, and
+inactivation metadata, then emits modality, condition-surface, and
+conflict-choice summaries. Immediate MVP implication: behavtaskatlas now has a
+multisensory vertical slice that keeps visual and auditory evidence separate
+while still offering a descriptive rightward-choice psychometric proxy.
+
+## 2026-04-29 22:22:57 BST - Promoted Odoemene visual accumulation to adapter-ready
+
+Added an Odoemene visual flash-rate evidence accumulation adapter path using
+the CSHL MATLAB source structure as the expected local raw input. The slice
+harmonizes per-trial stimulus rates, 25-bin visual event indicators, low/high
+category choices, validity, feedback, and movement timing into canonical
+trials, then reports psychometric summaries plus an event-choice kernel. This
+matters because the MVP now covers a pulse-train accumulation task at raw-trial
+level, extending beyond contrast and motion evidence while preserving
+operational variables separately from cognitive interpretation.
+
+## 2026-04-29 22:03:04 BST - Made Steinmetz the next adapter-backed slice
+
+Implemented a Steinmetz visual decision adapter path rather than adding more
+catalog-only metadata: extracted ALF `trials.*.npy` sessions can now be
+harmonized into canonical trials, summarized by signed contrast and bilateral
+contrast tuple, rendered as a local report, and indexed as a vertical slice
+contract. The key operational decision is to map source `response_choice == 0`
+to canonical `withhold`, because the Steinmetz data dictionary defines it as a
+valid NoGo outcome. Immediate MVP implication: the atlas now has a concrete
+bridge from 2AFC visual contrast slices to a free-response/no-go mouse task,
+while leaving the full multinomial and all-session aggregation analyses
+explicitly deferred.
+
+## 2026-04-29 21:34:31 BST - Expanded dataset coverage ambitiously
+
+Added six catalog-only dataset records and the ontology scaffolding needed to
+keep them operationally distinct: Allen Visual Behavior Neuropixels, IBL
+Brainwide Map 2025, Steinmetz mouse visual contrast/no-go choice, Odoemene
+visual pulse accumulation, Coen audiovisual spatial decisions, and Rodgers
+whisker object recognition. This expands the atlas from 8 to 14 linked
+datasets, 10 to 14 protocols, and 4 to 7 task families while staying within
+sensory-guided decision-making.
+
+The expansion intentionally creates 10 normal-priority curation queue items
+for future vertical slices (6 datasets and 4 protocols without report-backed
+slices). Release checks now treat normal-priority queue work as a warning while
+still failing high-priority graph issues. Immediate MVP implication: dataset
+coverage can grow ahead of harmonizers without blocking releases, but every new
+source remains visible as concrete slice work rather than passive bibliography.
+
 ## 2026-04-29 18:02:38 BST - Added model-selection comparability layer
 
 The Khalvati raw-behavior author request is paused durably as a blocked

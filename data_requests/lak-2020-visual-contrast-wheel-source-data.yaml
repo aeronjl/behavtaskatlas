@@ -1,0 +1,109 @@
+object_type: data_request
+schema_version: 0.1.0
+id: data_request.lak-2020-visual-contrast-wheel-source-data
+title: Lak 2020 mouse visual contrast wheel behavior and value-block data
+status: ready_to_send
+priority: high
+request_type: author_request
+paper_ids:
+  - paper.lak-2020-reinforcement-biases-confidence
+  - paper.lak-2020-dopaminergic-prefrontal
+protocol_ids:
+  - protocol.mouse-visual-contrast-wheel-unbiased
+  - protocol.mouse-visual-contrast-wheel-value-blocks
+model_roadmap_issue_types:
+  - missing_trial_level_source
+blocker_type: author_request_raw_trials
+purpose: >-
+  Recover mouse visual contrast wheel-task data for reward-history and
+  reward-value analyses, enabling behavtaskatlas to model contrast, choice
+  history, reward value, and inferred confidence as separable variables.
+blocker_detail: >-
+  The eLife paper makes the mouse visual 2AFC task explicit but its public
+  data-availability text surfaced only a human Figshare dataset in this pass.
+  The Neuron paper's data-availability statement says datasets were not
+  deposited publicly because of large file size and are available from the
+  corresponding author on request.
+next_action: >-
+  Send the author request for mouse visual behavioral tables first; request
+  neural tables only after a behavior-first slice contract is agreed.
+requested_files:
+  - name: Lak2020_eLife_mouse_visual_behavior
+    description: >-
+      Trial-level mouse visual 2AFC data from the eLife reinforcement-biases
+      paper: mouse/session/trial ids, contrast, stimulus side, choice,
+      correctness, reward/error outcome, previous-trial variables, and response
+      time if available.
+    required: true
+  - name: Lak2020_Neuron_reward_value_behavior
+    description: >-
+      Trial-level reward-value block visual contrast data from the Neuron paper:
+      contrast, stimulus side, choice, reward magnitude/value block, outcome,
+      response timing, and session metadata.
+    required: true
+  - name: Lak2020_Neuron_neural_summary_tables
+    description: >-
+      Optional neural or model-summary tables sufficient to align behavior with
+      dopamine/prefrontal analyses after the behavior-first adapter exists.
+    required: false
+contact_instructions: >-
+  Contact the corresponding authors listed by the Neuron and eLife papers.
+  Ask first for analyzed behavioral tables and license/redistribution terms for
+  derived canonical trial tables.
+evidence:
+  - evidence_type: article_data_availability
+    description: >-
+      The Neuron paper states the datasets were not deposited publicly because
+      of large file size but are available from the corresponding author on
+      request.
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC7031700/
+  - evidence_type: article_data_availability
+    description: >-
+      The eLife paper describes the mouse visual 2AFC task; the data-availability
+      text identified during this pass surfaced a human Figshare dataset but no
+      public mouse visual behavior archive.
+    url: https://elifesciences.org/articles/49834
+  - evidence_type: public_archive_check
+    description: >-
+      Targeted searches for Lak 2020 visual contrast source data, Figshare, and
+      GitHub terms did not identify a reusable mouse visual trial-level archive.
+request_draft:
+  subject: Request for Lak et al. 2020 mouse visual contrast trial data
+  body: |-
+    Dear Lak / Carandini / Harris / Kepecs team,
+
+    I am curating behavtaskatlas, an open-science atlas of sensory-guided decision-making tasks and reusable behavioral-model fits.
+
+    I am mapping mouse visual contrast wheel-task variants in:
+
+    Lak A et al. Reinforcement biases subsequent perceptual decisions when confidence is low. eLife, 2020.
+    Lak A et al. Dopaminergic and prefrontal basis of learning from sensory confidence and reward value. Neuron, 2020.
+
+    I could not find public mouse visual trial-level behavioral files for these analyses. Would you be willing to share analyzed behavioral tables, or point me to their current public location? The fields of interest are mouse id, session id, trial index, contrast, stimulus side, choice, correctness/reward outcome, response time, previous-trial variables, and for the Neuron task the reward-value block or reward magnitude variables.
+
+    The immediate goal is behavior-first: preserve contrast, reward value, choice history, and inferred confidence as separate variables before any neural joins. I would also observe any redistribution constraints you specify for derived canonical trial tables and aggregate model-fit outputs.
+
+    Thank you,
+    behavtaskatlas curator
+events:
+  - event_type: drafted
+    event_date: 2026-04-30
+    actor: behavtaskatlas
+    notes: >-
+      Drafted after source-availability checks found no public mouse visual
+      trial-level archive and the Neuron paper pointed readers to author
+      request for datasets.
+    evidence_path: data_requests/lak-2020-visual-contrast-wheel-source-data.yaml
+curation_status: literature-curated
+provenance:
+  curators:
+    - behavtaskatlas
+  created: 2026-04-30
+  updated: 2026-04-30
+  source_notes: >-
+    Created during the visual contrast source-availability pass to track the
+    reward-history and reward-value wheel-task data gap.
+notes: >-
+  High priority because this is the clearest route to depth on contrast,
+  history, reward value, and confidence without broadening beyond the visual
+  contrast family.

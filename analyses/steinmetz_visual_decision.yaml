@@ -1,0 +1,37 @@
+analysis_id: analysis.steinmetz-visual-decision.session-aggregate
+protocol_id: protocol.mouse-unforced-visual-contrast-wheel
+dataset_id: dataset.steinmetz-visual-decision-figshare
+status: analysis-verified
+inputs:
+  - 39 canonical trial tables generated from extracted Steinmetz ALF session directories
+  - per-session signed-contrast and contrast-pair summaries
+implemented_outputs:
+  - canonical trial tables preserving left/right/withhold choices for each extracted session
+  - per-session signed-contrast choice summaries
+  - per-session left/right contrast-pair condition summaries
+  - across-session aggregate analysis result JSON
+  - session-level summary CSV over trials, choices, correctness, and contrast coverage
+  - subject-level summary CSV over trials, choices, correctness, and contrast coverage
+  - signed-contrast aggregate CSV with pooled, session-balanced, and subject-balanced columns
+  - dependency-free SVG aggregate choice summary plot
+  - static HTML aggregate report over source provenance, summaries, caveats, and artifact links
+  - pooled-family-ready real-trial summaries for all extracted Steinmetz sessions
+grouping_variables:
+  - signed contrast difference
+  - left contrast
+  - right contrast
+  - subject
+  - session
+planned_outputs:
+  - binary movement psychometric fit for comparison with 2AFC slices
+deferred_outputs:
+  - full multinomial model matching the published left/right/NoGo analysis
+  - ephys-linked stimulus, action, choice, and engagement encoding summaries
+provenance_requirements:
+  - extracted session directory
+  - source Figshare DOI
+  - source field dictionary URL
+  - source file list
+  - trial counts and excluded/missing field counts
+  - date generated
+  - adapter version or commit hash
