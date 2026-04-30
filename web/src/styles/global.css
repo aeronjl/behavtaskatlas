@@ -151,6 +151,14 @@
   --color-encoding-model-click: #f59e0b;      /* amber-500 */
   --color-encoding-model-bernoulli: #64748b;  /* slate-500 */
   --color-encoding-model-chronometric: #14b8a6;
+
+  /* Node types (the four catalog axes shown on /graph). Held to the
+   * same hex values they had as inline literals so the relationship
+   * graph reads identically; future palette tweaks can land here once. */
+  --color-encoding-node-task-family: #7c3aed;
+  --color-encoding-node-protocol: #2b5ea0;
+  --color-encoding-node-dataset: #246b3b;
+  --color-encoding-node-slice: #b35c00;
 }
 
 html {

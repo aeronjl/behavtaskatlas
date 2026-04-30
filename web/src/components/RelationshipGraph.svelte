@@ -8,6 +8,7 @@
     forceX,
     forceY,
   } from "d3-force";
+  import { chartChrome, nodeColors } from "../lib/encoding";
 
   type GraphNode = {
     node_id: string;
@@ -54,12 +55,15 @@
     dataset: "Dataset",
     vertical_slice: "Slice",
   };
-  const TYPE_COLORS: Record<string, string> = {
-    task_family: "#7c3aed",
-    protocol: "#2b5ea0",
-    dataset: "#246b3b",
-    vertical_slice: "#b35c00",
-  };
+  // SSR fallbacks; refreshed on client mount via $effect so the live
+  // CSS-variable values flow into rendered SVG attributes.
+  let chrome = $state(chartChrome());
+  let typeColors = $state(nodeColors());
+
+  $effect(() => {
+    chrome = chartChrome();
+    typeColors = nodeColors();
+  });
 
   let containerEl: HTMLDivElement | null = $state(null);
   let width = $state(900);
@@ -219,7 +223,7 @@
       >
         <span
           class="inline-block h-2 w-2 rounded-full"
-          style={`background-color: ${TYPE_COLORS[type]}`}
+          style={`background-color: ${typeColors[type] ?? chrome.mutedFg}`}
           aria-hidden="true"
         ></span>
         {TYPE_LABELS[type]}
@@ -248,7 +252,7 @@
               y1={clamp(edge.source.y, padding, height - padding)}
               x2={clamp(edge.target.x, padding, width - padding)}
               y2={clamp(edge.target.y, padding, height - padding)}
-              stroke={dimEdge(edge) ? "#e2e8f0" : "#94a3b8"}
+              stroke={dimEdge(edge) ? chrome.gridColor : chrome.subtleFg}
               stroke-width={dimEdge(edge) ? 0.8 : 1.2}
               opacity={dimEdge(edge) ? 0.4 : 0.9}
             />
@@ -259,7 +263,7 @@
             {@const cx = clamp(node.x, padding, width - padding)}
             {@const cy = clamp(node.y, padding, height - padding)}
             {@const dim = dimNode(node)}
-            {@const color = TYPE_COLORS[node.node_type] ?? "#64748b"}
+            {@const color = typeColors[node.node_type] ?? chrome.mutedFg}
             <g
               transform={`translate(${cx}, ${cy})`}
               opacity={dim ? 0.25 : 1}
@@ -293,7 +297,7 @@
                   x={nodeRadius(node) + 5}
                   y="4"
                   font-size="10"
-                  fill="#0f172a"
+                  fill={chrome.titleColor}
                   font-family="-apple-system, BlinkMacSystemFont, sans-serif"
                 >
                   {node.label.length > 28 ? node.label.slice(0, 27) + "…" : node.label}

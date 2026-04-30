@@ -56,6 +56,15 @@ export function curveColors(): Record<string, string> {
   };
 }
 
+export function nodeColors(): Record<string, string> {
+  return {
+    task_family: readVar("--color-encoding-node-task-family", "#7c3aed"),
+    protocol: readVar("--color-encoding-node-protocol", "#2b5ea0"),
+    dataset: readVar("--color-encoding-node-dataset", "#246b3b"),
+    vertical_slice: readVar("--color-encoding-node-slice", "#b35c00"),
+  };
+}
+
 export function modelColors(): Record<string, string> {
   return {
     sdt: readVar("--color-encoding-model-sdt", "#0ea5e9"),
