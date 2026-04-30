@@ -2,6 +2,15 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:12:25 BST - Added explicit clean-checkout provenance for Vercel builds
+
+Added a `BEHAVTASKATLAS_ASSUME_CLEAN` override and set it only in the Vercel
+build path after repository validation. Local `release-check` still reads real
+`git status`, while Vercel can stamp the public manifest clean despite
+build-time dependency/artifact extraction side effects. Immediate MVP
+implication: the public release footer can distinguish source provenance from
+deploy assembly noise.
+
 ## 2026-04-30 13:09:07 BST - Kept Vercel release assets out of dirty-build status
 
 Ignored generated files under `web/public/` while keeping the hand-authored

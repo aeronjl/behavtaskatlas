@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import re
 import statistics
 from collections import defaultdict
@@ -1229,6 +1230,12 @@ def current_git_commit() -> str | None:
 
 
 def current_git_dirty() -> bool | None:
+    if os.environ.get("BEHAVTASKATLAS_ASSUME_CLEAN", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
+        return False
     try:
         return bool(check_output(["git", "status", "--porcelain"], text=True).strip())
     except (CalledProcessError, FileNotFoundError):

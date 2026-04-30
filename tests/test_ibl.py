@@ -9,6 +9,7 @@ from behavtaskatlas.ibl import (
     analyze_ibl_visual_decision,
     analyze_ibl_visual_protocol,
     choice_label,
+    current_git_dirty,
     feedback_label,
     harmonize_ibl_visual_trial,
     harmonize_ibl_visual_trials,
@@ -44,6 +45,11 @@ def test_ibl_labels() -> None:
 def test_response_time_seconds() -> None:
     assert response_time_seconds(10.0, 10.42) == pytest.approx(0.42)
     assert response_time_seconds(math.nan, 10.42) is None
+
+
+def test_current_git_dirty_can_assume_clean_for_deploys(monkeypatch) -> None:
+    monkeypatch.setenv("BEHAVTASKATLAS_ASSUME_CLEAN", "1")
+    assert current_git_dirty() is False
 
 
 def test_harmonize_ibl_visual_trial() -> None:

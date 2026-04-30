@@ -32,6 +32,7 @@ uv sync
 
 echo "▶ Validating records"
 uv run behavtaskatlas validate
+export BEHAVTASKATLAS_ASSUME_CLEAN=1
 
 echo "▶ Fetching latest slice-artifacts release"
 PUBLIC_DIR="web/public"
