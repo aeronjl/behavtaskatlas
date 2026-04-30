@@ -2,6 +2,17 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:40:09 BST - Made paper coverage generated-index driven
+
+Moved `/papers`, paper detail routes, and headline paper counts onto the
+generated paper index instead of rebuilding visible paper coverage from
+finding rows. The paper index now carries coverage status, linked protocols,
+datasets, slices, source levels, and finding counts; the findings index also
+separates finding-backed papers from total curated papers. Immediate MVP
+implication: expanding bibliography breadth no longer requires manual
+front-end propagation, and papers without extracted curves remain visible with
+explicit empty states.
+
 ## 2026-04-30 13:12:25 BST - Added explicit clean-checkout provenance for Vercel builds
 
 Added a `BEHAVTASKATLAS_ASSUME_CLEAN` override and set it only in the Vercel

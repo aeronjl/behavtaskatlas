@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
-import { manifest } from "../lib/data";
+import { manifest, papers } from "../lib/data";
 import {
   comparisons,
   findings,
@@ -34,7 +34,7 @@ const entryPoints = [
     href: "/papers",
     title: "Papers",
     description:
-      "Per-paper detail with citation, lab, species, source-data level, and the findings table backing each curve in the atlas.",
+      "Generated bibliography with per-paper citation exports, linked protocols, source coverage, and finding tables where standardized curves exist.",
   },
 ];
 
@@ -135,7 +135,7 @@ function fmt(value: number | null, digits = 2): string {
 const generated = manifest.generated_at?.slice(0, 10) ?? "";
 
 const summaryStats = [
-  { label: "Papers", value: findingsCounts.papers ?? 0 },
+  { label: "Papers", value: papers.counts.papers ?? 0 },
   { label: "Findings", value: findingsCounts.findings ?? 0 },
   { label: "Comparisons", value: comparisonsCounts.comparisons ?? 0 },
   { label: "Slices", value: sliceCount },

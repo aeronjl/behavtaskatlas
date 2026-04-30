@@ -998,6 +998,7 @@ def build_findings_index(
 
     counts = {
         "papers": len(paper_by_id),
+        "finding_papers": len({e.paper_id for e in entries}),
         "findings": len(entries),
         "psychometric": sum(1 for e in entries if e.curve_type == "psychometric"),
         "chronometric": sum(1 for e in entries if e.curve_type == "chronometric"),

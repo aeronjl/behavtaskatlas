@@ -381,6 +381,7 @@ def test_build_findings_index_denormalizes_paper_and_protocol() -> None:
     )
 
     assert payload["counts"]["papers"] == 1
+    assert payload["counts"]["finding_papers"] == 1
     assert payload["counts"]["findings"] == 1
     assert payload["counts"]["psychometric"] == 1
     entry = payload["findings"][0]

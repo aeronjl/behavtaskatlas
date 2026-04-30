@@ -14,7 +14,14 @@ from behavtaskatlas.citations import (
     render_ris_entry,
     slug_for_paper_id,
 )
-from behavtaskatlas.models import Paper, Provenance
+from behavtaskatlas.models import (
+    CurvePoint,
+    Finding,
+    Paper,
+    Provenance,
+    ResultCurve,
+    StratificationKey,
+)
 
 
 def _make_paper(**overrides) -> Paper:
@@ -48,6 +55,41 @@ def _make_paper(**overrides) -> Paper:
     }
     base.update(overrides)
     return Paper(**base)
+
+
+def _make_finding(**overrides) -> Finding:
+    base = {
+        "object_type": "finding",
+        "schema_version": "0.1.0",
+        "id": "finding.roitman-shadlen-2002.psychometric",
+        "paper_id": "paper.roitman-shadlen-2002",
+        "protocol_id": "protocol.x",
+        "dataset_id": "dataset.x",
+        "slice_id": "slice.x",
+        "source_data_level": "processed-trial",
+        "n_trials": 1200,
+        "n_subjects": 2,
+        "stratification": StratificationKey(species="non-human-primate"),
+        "curve": ResultCurve(
+            curve_type="psychometric",
+            x_label="Signed coherence",
+            x_units="percent",
+            y_label="p_right",
+            points=[
+                CurvePoint(x=-50.0, n=100, y=0.05),
+                CurvePoint(x=0.0, n=100, y=0.5),
+                CurvePoint(x=50.0, n=100, y=0.95),
+            ],
+        ),
+        "extraction_method": "harmonized-pipeline",
+        "provenance": Provenance(
+            curators=["behavtaskatlas"],
+            created=date(2026, 4, 28),
+            updated=date(2026, 4, 28),
+        ),
+    }
+    base.update(overrides)
+    return Finding(**base)
 
 
 def test_bibtex_entry_strips_authors_from_title() -> None:
@@ -155,6 +197,37 @@ def test_build_papers_index_is_sorted_and_includes_strings() -> None:
     assert "TY  - JOUR" in index["papers"][0]["ris"]
     assert "@article{Walsh2024," in index["atlas_bibtex"]
     assert index["atlas_ris"].count("ER  - ") == 2
+
+
+def test_build_papers_index_includes_papers_without_findings() -> None:
+    p_with_finding = _make_paper()
+    p_without_finding = _make_paper(
+        id="paper.busse-2011",
+        citation="Busse L. Visual contrast. Journal of Neuroscience, 2011.",
+        authors=["Busse, Laura"],
+        year=2011,
+        protocol_ids=["protocol.visual-contrast"],
+        dataset_ids=[],
+        finding_ids=[],
+        curation_status="literature-curated",
+    )
+    finding = _make_finding()
+
+    index = build_papers_index([p_with_finding, p_without_finding], findings=[finding])
+    by_id = {paper["id"]: paper for paper in index["papers"]}
+
+    assert set(by_id) == {p_with_finding.id, p_without_finding.id}
+    assert by_id[p_with_finding.id]["finding_count"] == 1
+    assert by_id[p_with_finding.id]["has_findings"] is True
+    assert by_id[p_with_finding.id]["coverage_status"] == "findings"
+    assert by_id[p_with_finding.id]["curve_types"] == ["psychometric"]
+    assert by_id[p_with_finding.id]["source_data_levels"] == ["processed-trial"]
+    assert by_id[p_with_finding.id]["total_n_trials"] == 1200
+    assert by_id[p_without_finding.id]["finding_count"] == 0
+    assert by_id[p_without_finding.id]["has_findings"] is False
+    assert by_id[p_without_finding.id]["coverage_status"] == "protocol-linked"
+    assert by_id[p_without_finding.id]["curve_types"] == []
+    assert by_id[p_without_finding.id]["source_data_levels"] == []
 
 
 @pytest.mark.parametrize(

@@ -5,6 +5,7 @@ import { findings } from "../lib/findings";
 import { hrefForFinding } from "../lib/data";
 
 const counts = findings.counts as Record<string, number>;
+const findingPaperCount = counts.finding_papers ?? counts.papers ?? 0;
 const findingsList = findings.findings as Array<{
   finding_id: string;
   paper_citation: string;
@@ -24,10 +25,12 @@ const findingsList = findings.findings as Array<{
   <header class="mb-6">
     <h1 class="text-3xl">Cross-paper findings</h1>
     <p class="mt-2 max-w-3xl text-sm text-slate-600">
-      Behavioural curves from {counts.papers ?? 0} papers, plotted on shared
-      signed-evidence axes. Pick a curve type to switch view; use a preset
-      to compare a slice of the literature; toggle Fit + aggregate to refit
-      every curve interactively in your browser.
+      Behavioural curves from {findingPaperCount} papers with extracted
+      findings, plotted on shared signed-evidence axes. The generated
+      bibliography tracks {counts.papers ?? findingPaperCount} curated papers
+      overall. Pick a curve type to switch view; use a preset to compare a
+      slice of the literature; toggle Fit + aggregate to refit every curve
+      interactively in your browser.
     </p>
   </header>
 

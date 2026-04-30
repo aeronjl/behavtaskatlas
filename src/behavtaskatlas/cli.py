@@ -6180,13 +6180,27 @@ def _site_index(
     findings_path = derived_dir / "findings.json"
     comparisons_path = derived_dir / "comparisons.json"
     records = load_repository_records(Path("."))
-    from behavtaskatlas.models import Comparison, Finding, Paper, Protocol, TaskFamily
+    from behavtaskatlas.models import (
+        Comparison,
+        DataRequest,
+        Dataset,
+        Finding,
+        Paper,
+        Protocol,
+        TaskFamily,
+        VerticalSlice,
+    )
     from behavtaskatlas.models import ModelFit as _ModelFit
     from behavtaskatlas.models import ModelVariant as _ModelVariant
+    paper_records = [r for r in records if isinstance(r, Paper)]
+    finding_records = [r for r in records if isinstance(r, Finding)]
+    protocol_records = [r for r in records if isinstance(r, Protocol)]
+    dataset_records = [r for r in records if isinstance(r, Dataset)]
+    slice_records = [r for r in records if isinstance(r, VerticalSlice)]
     findings_payload = build_findings_index(
-        papers=[r for r in records if isinstance(r, Paper)],
-        findings=[r for r in records if isinstance(r, Finding)],
-        protocols=[r for r in records if isinstance(r, Protocol)],
+        papers=paper_records,
+        findings=finding_records,
+        protocols=protocol_records,
         families=[r for r in records if isinstance(r, TaskFamily)],
         fits=[r for r in records if isinstance(r, _ModelFit)],
         variants=[r for r in records if isinstance(r, _ModelVariant)],
@@ -6206,14 +6220,18 @@ def _site_index(
     )
 
     from behavtaskatlas.citations import build_papers_index, write_citation_files
-    from behavtaskatlas.models import DataRequest, Dataset, VerticalSlice
     from behavtaskatlas.search import build_search_index
 
     citations_dir = derived_dir / "citations"
-    paper_records = [r for r in records if isinstance(r, Paper)]
     citation_counts = write_citation_files(paper_records, citations_dir)
     papers_index_path = derived_dir / "papers.json"
-    papers_payload = build_papers_index(paper_records)
+    papers_payload = build_papers_index(
+        paper_records,
+        findings=finding_records,
+        protocols=protocol_records,
+        datasets=dataset_records,
+        slices=slice_records,
+    )
     papers_index_path.write_text(
         json.dumps(papers_payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -6221,10 +6239,10 @@ def _site_index(
     search_payload = build_search_index(
         papers=paper_records,
         families=[r for r in records if isinstance(r, TaskFamily)],
-        protocols=[r for r in records if isinstance(r, Protocol)],
-        datasets=[r for r in records if isinstance(r, Dataset)],
-        slices=[r for r in records if isinstance(r, VerticalSlice)],
-        findings=[r for r in records if isinstance(r, Finding)],
+        protocols=protocol_records,
+        datasets=dataset_records,
+        slices=slice_records,
+        findings=finding_records,
         comparisons=[r for r in records if isinstance(r, Comparison)],
     )
     search_path = derived_dir / "search.json"
@@ -6235,7 +6253,6 @@ def _site_index(
 
     from behavtaskatlas.audit import audit_pooled_vs_by_subject
 
-    finding_records = [r for r in records if isinstance(r, Finding)]
     audit_payload = audit_pooled_vs_by_subject(finding_records)
     audit_path = derived_dir / "audit.json"
     audit_path.write_text(
@@ -6249,7 +6266,6 @@ def _site_index(
     )
 
     data_request_records = [r for r in records if isinstance(r, DataRequest)]
-    dataset_records = [r for r in records if isinstance(r, Dataset)]
     data_requests_payload = build_data_requests_index(
         requests=data_request_records,
         datasets=dataset_records,
@@ -6278,7 +6294,7 @@ def _site_index(
         families=[r for r in records if isinstance(r, ModelFamily)],
         variants=[r for r in records if isinstance(r, ModelVariant)],
         fits=[r for r in records if isinstance(r, ModelFit)],
-        slices=[r for r in records if isinstance(r, VerticalSlice)],
+        slices=slice_records,
         derived_dir=derived_dir,
         findings=finding_records,
     )
@@ -6358,8 +6374,12 @@ def _site_index(
     print(f"Indexed {len(payload['slices'])} vertical slices; {available} report available")
     n_findings = findings_payload["counts"]["findings"]
     n_papers = findings_payload["counts"]["papers"]
+    n_finding_papers = findings_payload["counts"].get("finding_papers", n_papers)
     n_comparisons = comparisons_payload["counts"]["comparisons"]
-    print(f"Indexed {n_findings} findings across {n_papers} papers")
+    print(
+        f"Indexed {n_findings} findings across {n_finding_papers} "
+        f"finding-backed papers ({n_papers} curated papers)"
+    )
     print(f"Indexed {n_comparisons} curated comparisons")
     return 0
 

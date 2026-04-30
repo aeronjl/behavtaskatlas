@@ -5,7 +5,13 @@ import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import CitationDownloads from "../../components/CitationDownloads.astro";
 import RecordChip from "../../components/RecordChip.astro";
 import { findings } from "../../lib/findings";
-import { hrefForFinding, slugForId, getPaper } from "../../lib/data";
+import {
+  hrefForFinding,
+  slugForId,
+  getPaper,
+  papers,
+  type PaperEntry,
+} from "../../lib/data";
 
 type Entry = (typeof findings.findings)[number];
 
@@ -16,11 +22,9 @@ for (const entry of findings.findings as Entry[]) {
 }
 
 export function getStaticPaths() {
-  const ids = new Set<string>();
-  for (const entry of (findings.findings as Entry[])) ids.add(entry.paper_id);
-  return Array.from(ids).map((id) => ({
-    params: { id: id.replace(/^paper\./, "") },
-    props: { paperId: id },
+  return (papers.papers as PaperEntry[]).map((paper) => ({
+    params: { id: paper.slug },
+    props: { paperId: paper.id },
   }));
 }
 
@@ -32,6 +36,13 @@ const { paperId } = Astro.props as Props;
 const paperEntries = findingsByPaper.get(paperId) ?? [];
 const first = paperEntries[0];
 const paperRecord = getPaper(paperId);
+const paperTitle = paperRecord?.citation ?? first?.paper_citation ?? paperId;
+const paperDoi = paperRecord?.doi ?? first?.paper_doi ?? null;
+const paperFindingCount = paperRecord?.finding_count ?? paperEntries.length;
+const paperDescription =
+  paperFindingCount > 0
+    ? `${paperFindingCount} standardized findings from ${paperTitle}`
+    : `Curated paper record for ${paperTitle}`;
 
 type FitSummary = {
   variant_id: string;
@@ -50,25 +61,44 @@ function paramRow(params: Record<string, number>): string {
     })
     .join(" · ");
 }
-const protocolEntries = Array.from(
-  new Set(paperEntries.map((e) => e.protocol_id)),
-).map((id) => ({
-  protocol_id: id,
-  protocol_name:
-    paperEntries.find((e) => e.protocol_id === id)?.protocol_name ?? id,
-}));
+const protocolEntries = paperRecord
+  ? paperRecord.protocols.map((protocol) => ({
+      protocol_id: protocol.protocol_id,
+      protocol_name: protocol.name,
+    }))
+  : Array.from(new Set(paperEntries.map((e) => e.protocol_id))).map((id) => ({
+      protocol_id: id,
+      protocol_name:
+        paperEntries.find((e) => e.protocol_id === id)?.protocol_name ?? id,
+    }));
+
+const datasetEntries = paperRecord?.datasets ?? [];
+const sliceEntries = paperRecord?.vertical_slices ?? [];
+const coverageLabels: Record<string, string> = {
+  findings: "Findings extracted",
+  "analysis-linked": "Analysis linked",
+  "data-linked": "Dataset linked",
+  "protocol-linked": "Protocol curated",
+  "bibliography-only": "Bibliography only",
+};
+
+function listText(values: readonly string[] | undefined): string {
+  return values && values.length > 0 ? values.join(", ") : "—";
+}
+
+function coverageLabel(status: string | undefined): string {
+  return status ? coverageLabels[status] ?? status : "—";
+}
 ---
 
 <BaseLayout
-  title={first ? `${first.paper_citation} · Paper` : "Paper · behavtaskatlas"}
-  description={first
-    ? `${paperEntries.length} curated findings from ${first.paper_citation}.`
-    : "Paper detail page"}
+  title={`${paperTitle} · Paper`}
+  description={paperDescription}
 >
   <Breadcrumbs
     crumbs={[
       { label: "Papers", href: "/papers" },
-      { label: first?.paper_citation ?? paperId },
+      { label: paperTitle },
     ]}
   />
 
@@ -76,7 +106,7 @@ const protocolEntries = Array.from(
     <p class="text-xs uppercase tracking-wide text-slate-500">Paper</p>
     <div class="mt-1 flex flex-wrap items-baseline justify-between gap-3">
       <h1 class="text-3xl">
-        {first?.paper_citation ?? paperId}
+        {paperTitle}
       </h1>
       {paperRecord ? (
         <div class="shrink-0">
@@ -91,12 +121,12 @@ const protocolEntries = Array.from(
     </div>
     <p class="mt-2 font-mono text-xs text-slate-500">{paperId}</p>
     <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      {first?.paper_doi ? (
+      {paperDoi ? (
         <a
           class="rounded border border-slate-200 bg-white px-2 py-0.5 text-slate-700 no-underline hover:border-accent hover:text-accent"
-          href={`https://doi.org/${first.paper_doi}`}
+          href={`https://doi.org/${paperDoi}`}
         >
-          <span class="text-slate-500">doi</span>{" "}<span>{first.paper_doi}</span>
+          <span class="text-slate-500">doi</span>{" "}<span>{paperDoi}</span>
         </a>
       ) : null}
       {protocolEntries.map((p) => (
@@ -106,8 +136,76 @@ const protocolEntries = Array.from(
           href={`/protocols/${slugForId(p.protocol_id)}`}
         />
       ))}
+      {datasetEntries.map((dataset) => (
+        <RecordChip
+          type="dataset"
+          label={dataset.name}
+          href={`/datasets/${slugForId(dataset.dataset_id)}`}
+        />
+      ))}
+      {sliceEntries.map((slice) => (
+        <RecordChip
+          type="slice"
+          label={slice.title}
+          href={`/slices/${slugForId(slice.slice_id)}`}
+        />
+      ))}
     </div>
   </header>
+
+  {paperRecord ? (
+    <section class="mb-8 rounded-md border border-slate-200 bg-white p-4">
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm md:grid-cols-4">
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Year</dt>
+          <dd class="mt-0.5 text-slate-900">{paperRecord.year}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Coverage</dt>
+          <dd class="mt-0.5 text-slate-900">
+            {coverageLabel(paperRecord.coverage_status)}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Species</dt>
+          <dd class="mt-0.5 text-slate-900">{listText(paperRecord.species)}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Findings</dt>
+          <dd class="mt-0.5 font-mono text-slate-900">
+            {paperRecord.finding_count}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Lab</dt>
+          <dd class="mt-0.5 text-slate-900">{paperRecord.lab ?? "—"}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Venue</dt>
+          <dd class="mt-0.5 text-slate-900">{paperRecord.venue ?? "—"}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Source Levels</dt>
+          <dd class="mt-0.5 text-slate-900">
+            {listText(paperRecord.source_data_levels)}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Trials</dt>
+          <dd class="mt-0.5 font-mono text-slate-900">
+            {paperRecord.total_n_trials > 0
+              ? paperRecord.total_n_trials.toLocaleString()
+              : "—"}
+          </dd>
+        </div>
+      </dl>
+      {paperRecord.notes ? (
+        <p class="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-700">
+          {paperRecord.notes}
+        </p>
+      ) : null}
+    </section>
+  ) : null}
 
   {
     paperEntries.length > 0 ? (
@@ -129,67 +227,79 @@ const protocolEntries = Array.from(
     ) : null
   }
 
-  <section>
-    <h2 class="mb-2 text-sm font-semibold text-slate-700">Findings</h2>
-    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="px-3 py-2">Finding</th>
-            <th class="px-3 py-2">Curve</th>
-            <th class="px-3 py-2">Species</th>
-            <th class="px-3 py-2">Source level</th>
-            <th class="px-3 py-2">Stratification</th>
-            <th class="px-3 py-2 text-right">Points</th>
-            <th class="px-3 py-2">Fits</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200">
-          {
-            paperEntries.map((e) => {
-              const fits = fitsOf(e);
-              return (
-                <tr>
-                  <td class="px-3 py-2 font-mono text-xs">
-                    <a href={hrefForFinding(e.finding_id)}>
-                      {e.finding_id}
-                    </a>
-                  </td>
-                  <td class="px-3 py-2">{e.curve_type}</td>
-                  <td class="px-3 py-2">{e.species ?? "—"}</td>
-                  <td class="px-3 py-2">{e.source_data_level}</td>
-                  <td class="px-3 py-2 text-xs text-slate-600">
-                    {e.stratification.condition ?? "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">{e.points.length}</td>
-                  <td class="px-3 py-2">
-                    {fits.length === 0 ? (
-                      <span class="text-xs text-slate-500">—</span>
-                    ) : (
-                      <ul class="space-y-0.5 text-[11px]">
-                        {fits.map((f) => (
-                          <li class="font-mono">
-                            <span class="text-slate-700">
-                              {f.variant_id.replace("model_variant.", "")}
-                            </span>
-                            {f.quality?.aic !== undefined ? (
-                              <span class="ml-1 text-slate-500">
-                                AIC={f.quality.aic.toFixed(1)}
+  {paperEntries.length > 0 ? (
+    <section>
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Findings</h2>
+      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-3 py-2">Finding</th>
+              <th class="px-3 py-2">Curve</th>
+              <th class="px-3 py-2">Species</th>
+              <th class="px-3 py-2">Source level</th>
+              <th class="px-3 py-2">Stratification</th>
+              <th class="px-3 py-2 text-right">Points</th>
+              <th class="px-3 py-2">Fits</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {
+              paperEntries.map((e) => {
+                const fits = fitsOf(e);
+                return (
+                  <tr>
+                    <td class="px-3 py-2 font-mono text-xs">
+                      <a href={hrefForFinding(e.finding_id)}>
+                        {e.finding_id}
+                      </a>
+                    </td>
+                    <td class="px-3 py-2">{e.curve_type}</td>
+                    <td class="px-3 py-2">{e.species ?? "—"}</td>
+                    <td class="px-3 py-2">{e.source_data_level}</td>
+                    <td class="px-3 py-2 text-xs text-slate-600">
+                      {e.stratification.condition ?? "—"}
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono">{e.points.length}</td>
+                    <td class="px-3 py-2">
+                      {fits.length === 0 ? (
+                        <span class="text-xs text-slate-500">—</span>
+                      ) : (
+                        <ul class="space-y-0.5 text-[11px]">
+                          {fits.map((f) => (
+                            <li class="font-mono">
+                              <span class="text-slate-700">
+                                {f.variant_id.replace("model_variant.", "")}
                               </span>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                </tr>
-              );
-            })
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
+                              {f.quality?.aic !== undefined ? (
+                                <span class="ml-1 text-slate-500">
+                                  AIC={f.quality.aic.toFixed(1)}
+                                </span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ) : (
+    <section>
+      <h2 class="mb-2 text-sm font-semibold text-slate-700">Findings</h2>
+      <div class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        No standardized finding curves have been extracted for this paper yet.
+        The paper remains part of the curated bibliography and linked task
+        coverage, so it will appear here as soon as extraction adds finding
+        records.
+      </div>
+    </section>
+  )}
 
   {paperEntries.some((e) => fitsOf(e).length > 0) ? (
     <section class="mt-10">
