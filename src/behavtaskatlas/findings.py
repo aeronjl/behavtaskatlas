@@ -98,10 +98,13 @@ def extract_psychometric_findings_for_slice(
     x_label: str,
     x_units: str,
     summary_filename: str = "psychometric_summary.csv",
+    summary_csv: Path | None = None,
     condition_column: str = "prior_context",
     y_column: str = "p_right",
     y_label: str = "p_right",
     n_column: str | None = None,
+    n_subjects: int | None = None,
+    extraction_notes: str | None = None,
 ) -> list[Finding]:
     """Build one Finding per condition group from a slice summary CSV.
     If the condition column is absent or empty everywhere, return a single
@@ -111,7 +114,9 @@ def extract_psychometric_findings_for_slice(
     findings inherit those plus the slice's source_data_level so the
     cross-ref validator passes.
     """
-    summary_path = _slice_derived_dir(slice_record, derived_dir) / summary_filename
+    summary_path = summary_csv or (
+        _slice_derived_dir(slice_record, derived_dir) / summary_filename
+    )
     if not summary_path.exists():
         raise FileNotFoundError(f"summary CSV not found at {summary_path}")
 
@@ -147,6 +152,16 @@ def extract_psychometric_findings_for_slice(
         else:
             condition = None
             finding_id = finding_id_prefix
+        if extraction_notes is None:
+            notes = (
+                f"Aggregated from {summary_path.name} for "
+                f"{condition_column}={ctx or 'all'!r}; y_column={y_column!r}, "
+                f"n_column={n_column or 'n_response|n_trials'!r}."
+            )
+        elif ctx:
+            notes = f"{extraction_notes} Condition group: {condition_column}={ctx!r}."
+        else:
+            notes = extraction_notes
         finding = Finding(
             object_type="finding",
             schema_version="0.1.0",
@@ -157,7 +172,7 @@ def extract_psychometric_findings_for_slice(
             slice_id=slice_record.id,
             source_data_level=slice_record.comparison.source_data_level,
             n_trials=n_trials_total,
-            n_subjects=None,
+            n_subjects=n_subjects,
             stratification=StratificationKey(condition=condition),
             curve=ResultCurve(
                 curve_type="psychometric",
@@ -167,11 +182,7 @@ def extract_psychometric_findings_for_slice(
                 points=points,
             ),
             extraction_method="harmonized-pipeline",
-            extraction_notes=(
-                f"Aggregated from {summary_path.name} for "
-                f"{condition_column}={ctx or 'all'!r}; y_column={y_column!r}, "
-                f"n_column={n_column or 'n_response|n_trials'!r}."
-            ),
+            extraction_notes=notes,
             provenance=_today_provenance(),
         )
         findings.append(finding)

@@ -2,6 +2,18 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 14:07:20 BST - Added multi-session IBL Brainwide Map findings
+
+Built a reproducible IBL Brainwide aggregate over the ten selected public
+Brainwide Map ephysChoiceWorld sessions already used by the visual-contrast
+family depth pass, covering 6,033 trials from 5 subjects. The broad 2025
+Brainwide Map paper now has one pooled processed-trial psychometric finding,
+and the prior-map companion paper has three prior-block psychometric findings
+for `p_left=0.2`, `p_left=0.5`, and `p_left=0.8`. Immediate MVP implication:
+all data-linked visual-contrast depth papers now have standardized findings;
+the remaining zero-finding papers are source-access/request tasks rather than
+promotion-ready slice artifacts.
+
 ## 2026-04-30 13:53:53 BST - Promoted three visual-contrast papers into findings
 
 Converted Fritsche, Steinmetz, and Zatka-Haas data-linked slice outputs into

@@ -1,0 +1,57 @@
+object_type: finding
+schema_version: 0.1.0
+id: finding.ibl-2025-prior-map.multi-session-psychometric.p_left-0.5
+paper_id: paper.ibl-2025-prior-map
+protocol_id: protocol.ibl-visual-decision-v1
+dataset_id: dataset.ibl-brainwide-map-2025
+slice_id: slice.ibl-brainwide-map-behavior
+source_data_level: processed-trial
+n_trials: 899
+n_subjects: 5
+stratification:
+  condition: p_left=0.5
+curve:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 100
+    y: 0.04
+  - x: -25.0
+    n: 100
+    y: 0.12
+  - x: -12.5
+    n: 99
+    y: 0.3434343434343434
+  - x: -6.25
+    n: 100
+    y: 0.44
+  - x: 0.0
+    n: 100
+    y: 0.48
+  - x: 6.25
+    n: 100
+    y: 0.72
+  - x: 12.5
+    n: 100
+    y: 0.89
+  - x: 25.0
+    n: 100
+    y: 0.97
+  - x: 100.0
+    n: 100
+    y: 1.0
+interpretation_claims: []
+extraction_method: harmonized-pipeline
+extraction_notes: 'Aggregated from derived/ibl_brainwide_map/aggregate/psychometric_summary.csv
+  over 10 selected IBL Brainwide Map ephysChoiceWorld sessions (5 subjects, 6033 trials);
+  grouped by prior block probabilityLeft and p_right denominator is response trials.
+  Condition group: prior_context=''p_left=0.5''.'
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  source_notes: Extracted from a vertical-slice psychometric summary by behavtaskatlas.findings.extract_psychometric_findings_for_slice.

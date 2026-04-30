@@ -6,6 +6,7 @@ from behavtaskatlas.ibl import (
     IBL_BRAINWIDE_MAP_DATASET_ID,
     MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
     analyze_ibl_brainwide_map_behavior,
+    analyze_ibl_brainwide_map_behavior_aggregate,
     analyze_ibl_visual_decision,
     analyze_ibl_visual_protocol,
     choice_label,
@@ -22,6 +23,7 @@ from behavtaskatlas.ibl import (
     signed_contrast_percent,
     stimulus_side,
     summarize_canonical_trials,
+    summarize_canonical_trials_pooled_prior,
     write_canonical_trials_csv,
 )
 
@@ -146,6 +148,29 @@ def test_harmonize_ibl_visual_trials_and_summary() -> None:
             "median_response_time": pytest.approx(0.5),
         },
     ]
+
+
+def test_summarize_canonical_trials_pooled_prior_collapses_block_contexts() -> None:
+    source = {
+        "contrastLeft": [0.25, 0.25, math.nan],
+        "contrastRight": [math.nan, math.nan, 0.25],
+        "choice": [1, -1, -1],
+        "feedbackType": [1, -1, 1],
+        "response_times": [10.5, 12.4, 14.2],
+        "stimOn_times": [10.0, 12.0, 14.0],
+        "probabilityLeft": [0.2, 0.8, 0.8],
+        "rewardVolume": [1.5, 0.0, 1.5],
+    }
+    trials = harmonize_ibl_visual_trials(source, session_id="session")
+
+    summary = summarize_canonical_trials_pooled_prior(trials)
+
+    assert len(summary) == 2
+    left_contrast = next(row for row in summary if row["stimulus_value"] == -25.0)
+    assert left_contrast["prior_context"] is None
+    assert left_contrast["n_response"] == 2
+    assert left_contrast["n_right"] == 1
+    assert left_contrast["p_right"] == 0.5
 
 
 def test_provenance_payload_counts_exclusions() -> None:
@@ -293,6 +318,52 @@ def test_ibl_brainwide_map_analysis_uses_dataset_specific_provenance() -> None:
     assert provenance["dataset_id"] == IBL_BRAINWIDE_MAP_DATASET_ID
     assert provenance["source"]["one_project"] == "ibl_neuropixel_brainwide_01"
     assert provenance["source"]["release_tag"] == "Brainwidemap"
+
+
+def test_ibl_brainwide_map_aggregate_records_subset_scope() -> None:
+    trials = [
+        *harmonize_ibl_visual_trials(
+            {
+                "contrastLeft": [1.0, math.nan],
+                "contrastRight": [math.nan, 1.0],
+                "choice": [1, -1],
+                "feedbackType": [1, 1],
+                "response_times": [1.2, 2.3],
+                "stimOn_times": [1.0, 2.0],
+                "probabilityLeft": [0.2, 0.2],
+            },
+            session_id="session-a",
+            subject_id="subject-a",
+            dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+        ),
+        *harmonize_ibl_visual_trials(
+            {
+                "contrastLeft": [1.0, math.nan],
+                "contrastRight": [math.nan, 1.0],
+                "choice": [1, -1],
+                "feedbackType": [1, 1],
+                "response_times": [3.2, 4.3],
+                "stimOn_times": [3.0, 4.0],
+                "probabilityLeft": [0.8, 0.8],
+            },
+            session_id="session-b",
+            subject_id="subject-b",
+            dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+        ),
+    ]
+
+    result = analyze_ibl_brainwide_map_behavior_aggregate(
+        trials,
+        session_ids=["session-a", "session-b"],
+    )
+
+    assert result["analysis_id"] == (
+        "analysis.ibl-brainwide-map.behavioral-aggregate-psychometric"
+    )
+    assert result["n_sessions"] == 2
+    assert result["n_subjects"] == 2
+    assert result["session_ids"] == ["session-a", "session-b"]
+    assert any("not the full 139-subject" in caveat for caveat in result["caveats"])
 
 
 def test_psychometric_svg_contains_prior_label() -> None:

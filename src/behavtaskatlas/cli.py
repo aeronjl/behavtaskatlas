@@ -133,6 +133,7 @@ from behavtaskatlas.ibl import (
     IBL_VISUAL_PROTOCOL_ID,
     MOUSE_UNBIASED_VISUAL_PROTOCOL_ID,
     analyze_ibl_brainwide_map_behavior,
+    analyze_ibl_brainwide_map_behavior_aggregate,
     analyze_ibl_visual_protocol,
     harmonize_ibl_visual_trials,
     ibl_brainwide_map_provenance_payload,
@@ -140,6 +141,7 @@ from behavtaskatlas.ibl import (
     load_ibl_trials_from_openalyx,
     provenance_payload,
     summarize_canonical_trials,
+    summarize_canonical_trials_pooled_prior,
     write_analysis_json,
     write_canonical_trials_csv,
     write_ibl_visual_report_html,
@@ -247,6 +249,7 @@ from behavtaskatlas.steinmetz import (
 from behavtaskatlas.validation import validate_repository
 from behavtaskatlas.visual_contrast_family import (
     DEFAULT_VISUAL_CONTRAST_FAMILY_DERIVED_DIR,
+    IBL_BRAINWIDE_MAP_VISUAL_CONTRAST_SESSIONS,
     analyze_visual_contrast_family,
     load_visual_contrast_family_perturbation_effects,
     load_visual_contrast_family_trials,
@@ -408,6 +411,27 @@ def main(argv: list[str] | None = None) -> int:
         "--trials-csv",
         default=None,
         help="Optional explicit canonical trial CSV path",
+    )
+
+    ibl_brainwide_aggregate_parser = subparsers.add_parser(
+        "ibl-brainwide-aggregate",
+        help="Aggregate generated IBL Brainwide Map behavior sessions",
+    )
+    ibl_brainwide_aggregate_parser.add_argument(
+        "--derived-dir",
+        default=str(DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR),
+        help="Directory containing generated Brainwide Map session artifacts",
+    )
+    ibl_brainwide_aggregate_parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_IBL_BRAINWIDE_MAP_DERIVED_DIR / "aggregate"),
+        help="Directory for aggregate Brainwide Map outputs",
+    )
+    ibl_brainwide_aggregate_parser.add_argument(
+        "--session-id",
+        action="append",
+        default=None,
+        help="Optional Brainwide session id to include; repeat for multiple sessions",
     )
 
     ibl_brainwide_report_parser = subparsers.add_parser(
@@ -1982,6 +2006,14 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     extract_finding_parser.add_argument(
+        "--summary-csv",
+        default=None,
+        help=(
+            "For pooled psychometric extraction, explicit summary CSV path. "
+            "Overrides --summary-filename and the slice derived directory."
+        ),
+    )
+    extract_finding_parser.add_argument(
         "--condition-column",
         default=None,
         help=(
@@ -2006,6 +2038,17 @@ def main(argv: list[str] | None = None) -> int:
             "For pooled psychometric extraction, denominator column. If omitted, "
             "n_response then n_trials are used."
         ),
+    )
+    extract_finding_parser.add_argument(
+        "--n-subjects",
+        type=int,
+        default=None,
+        help="Optional subject count to write into each generated finding.",
+    )
+    extract_finding_parser.add_argument(
+        "--extraction-notes",
+        default=None,
+        help="Optional extraction notes to write into each generated finding.",
     )
     extract_finding_parser.add_argument(
         "--derived-dir",
@@ -2357,6 +2400,12 @@ def main(argv: list[str] | None = None) -> int:
             eid=args.eid,
             derived_dir=Path(args.derived_dir),
             trials_csv=Path(args.trials_csv) if args.trials_csv else None,
+        )
+    if args.command == "ibl-brainwide-aggregate":
+        return _ibl_brainwide_aggregate(
+            derived_dir=Path(args.derived_dir),
+            out_dir=Path(args.out_dir),
+            session_ids=args.session_id,
         )
     if args.command == "ibl-brainwide-report":
         return _ibl_report(
@@ -2797,10 +2846,13 @@ def main(argv: list[str] | None = None) -> int:
             x_label=args.x_label,
             x_units=args.x_units,
             summary_filename=args.summary_filename,
+            summary_csv=Path(args.summary_csv) if args.summary_csv else None,
             condition_column=args.condition_column,
             y_column=args.y_column,
             y_label=args.y_label,
             n_column=args.n_column,
+            n_subjects=args.n_subjects,
+            extraction_notes=args.extraction_notes,
             derived_dir=Path(args.derived_dir),
         )
     if args.command == "import-supplement":
@@ -3387,6 +3439,118 @@ def _ibl_brainwide_analyze(
     print(f"Wrote psychometric summary to {summary_path}")
     print(f"Wrote analysis result to {result_path}")
     print(f"Wrote psychometric plot to {plot_path}")
+    return 0
+
+
+def _ibl_brainwide_aggregate(
+    *,
+    derived_dir: Path,
+    out_dir: Path,
+    session_ids: list[str] | None,
+) -> int:
+    selected_session_ids = session_ids or [
+        session_id for session_id, _label in IBL_BRAINWIDE_MAP_VISUAL_CONTRAST_SESSIONS
+    ]
+    if not selected_session_ids:
+        print("No Brainwide Map session ids provided.", file=sys.stderr)
+        return 2
+
+    trials: list[CanonicalTrial] = []
+    source_files: list[Path] = []
+    missing: list[Path] = []
+    for session_id in selected_session_ids:
+        trials_path = derived_dir / session_id / "trials.csv"
+        if not trials_path.exists():
+            missing.append(trials_path)
+            continue
+        source_files.append(trials_path)
+        trials.extend(load_canonical_trials_csv(trials_path))
+
+    if missing:
+        joined = "\n".join(str(path) for path in missing)
+        print(f"Missing Brainwide Map trial CSV(s):\n{joined}", file=sys.stderr)
+        return 2
+    if not trials:
+        print("No Brainwide Map trials found in selected sessions.", file=sys.stderr)
+        return 2
+
+    result = analyze_ibl_brainwide_map_behavior_aggregate(
+        trials,
+        session_ids=selected_session_ids,
+    )
+    summary_rows = result["summary_rows"]
+    pooled_summary_rows = summarize_canonical_trials_pooled_prior(trials)
+
+    trials_path = out_dir / "trials.csv"
+    summary_path = out_dir / "psychometric_summary.csv"
+    pooled_summary_path = out_dir / "pooled_psychometric_summary.csv"
+    result_path = out_dir / "analysis_result.json"
+    plot_path = out_dir / "psychometric.svg"
+    pooled_plot_path = out_dir / "pooled_psychometric.svg"
+    provenance_path = out_dir / "provenance.json"
+    report_path = out_dir / "report.html"
+
+    output_files = {
+        "trials": str(trials_path),
+        "psychometric_summary": str(summary_path),
+        "pooled_psychometric_summary": str(pooled_summary_path),
+        "analysis_result": str(result_path),
+        "psychometric_svg": str(plot_path),
+        "pooled_psychometric_svg": str(pooled_plot_path),
+        "provenance": str(provenance_path),
+        "report": str(report_path),
+    }
+    provenance = {
+        "object_type": "aggregate_provenance",
+        "analysis_id": result["analysis_id"],
+        "generated_at": result["generated_at"],
+        "behavtaskatlas_commit": result.get("behavtaskatlas_commit"),
+        "behavtaskatlas_git_dirty": result.get("behavtaskatlas_git_dirty"),
+        "protocol_id": IBL_VISUAL_PROTOCOL_ID,
+        "dataset_id": IBL_BRAINWIDE_MAP_DATASET_ID,
+        "n_trials": len(trials),
+        "n_sessions": result["n_sessions"],
+        "n_subjects": result["n_subjects"],
+        "session_ids": selected_session_ids,
+        "source_files": [str(path) for path in source_files],
+        "source": {
+            "session": f"{result['n_sessions']} Brainwide Map sessions",
+            "subject": f"{result['n_subjects']} subjects",
+            "one_project": result.get("one_project"),
+            "release_tag": result.get("release_tag"),
+        },
+        "output_files": output_files,
+        "caveats": result.get("caveats", []),
+    }
+
+    write_canonical_trials_csv(trials_path, trials)
+    write_summary_csv(summary_path, summary_rows)
+    write_summary_csv(pooled_summary_path, pooled_summary_rows)
+    write_analysis_json(result_path, result)
+    write_psychometric_svg(plot_path, summary_rows)
+    write_psychometric_svg(pooled_plot_path, pooled_summary_rows)
+    write_provenance_json(provenance_path, provenance)
+    write_ibl_visual_report_html(
+        report_path,
+        result,
+        provenance=provenance,
+        psychometric_svg_text=plot_path.read_text(encoding="utf-8"),
+        artifact_links={
+            "Canonical trials CSV": "trials.csv",
+            "Prior-stratified psychometric summary CSV": "psychometric_summary.csv",
+            "Pooled psychometric summary CSV": "pooled_psychometric_summary.csv",
+            "Analysis result JSON": "analysis_result.json",
+            "Provenance JSON": "provenance.json",
+        },
+    )
+
+    print(
+        f"Aggregated {len(trials)} Brainwide Map trials across "
+        f"{result['n_sessions']} sessions / {result['n_subjects']} subjects"
+    )
+    print(f"Wrote prior-stratified psychometric summary to {summary_path}")
+    print(f"Wrote pooled psychometric summary to {pooled_summary_path}")
+    print(f"Wrote aggregate report to {report_path}")
     return 0
 
 
@@ -5774,10 +5938,13 @@ def _extract_finding(
     x_label: str | None,
     x_units: str | None,
     summary_filename: str | None,
+    summary_csv: Path | None,
     condition_column: str | None,
     y_column: str | None,
     y_label: str | None,
     n_column: str | None,
+    n_subjects: int | None,
+    extraction_notes: str | None,
     derived_dir: Path,
 ) -> int:
     from behavtaskatlas.models import VerticalSlice
@@ -5821,6 +5988,8 @@ def _extract_finding(
         extractor_kwargs["x_units"] = x_units
     if summary_filename is not None:
         extractor_kwargs["summary_filename"] = summary_filename
+    if summary_csv is not None:
+        extractor_kwargs["summary_csv"] = summary_csv
     if condition_column is not None:
         extractor_kwargs["condition_column"] = condition_column
     if y_column is not None:
@@ -5829,6 +5998,10 @@ def _extract_finding(
         extractor_kwargs["y_label"] = y_label
     if n_column is not None:
         extractor_kwargs["n_column"] = n_column
+    if n_subjects is not None:
+        extractor_kwargs["n_subjects"] = n_subjects
+    if extraction_notes is not None:
+        extractor_kwargs["extraction_notes"] = extraction_notes
 
     try:
         if curve_type == "psychometric":
@@ -5837,10 +6010,13 @@ def _extract_finding(
             if by_subject_condition is not None:
                 for key in (
                     "summary_filename",
+                    "summary_csv",
                     "condition_column",
                     "y_column",
                     "y_label",
                     "n_column",
+                    "n_subjects",
+                    "extraction_notes",
                 ):
                     extractor_kwargs.pop(key, None)
                 findings = extract_subject_condition_psychometric_findings_for_slice(
@@ -5852,10 +6028,13 @@ def _extract_finding(
             elif by_subject:
                 for key in (
                     "summary_filename",
+                    "summary_csv",
                     "condition_column",
                     "y_column",
                     "y_label",
                     "n_column",
+                    "n_subjects",
+                    "extraction_notes",
                 ):
                     extractor_kwargs.pop(key, None)
                 findings = extract_subject_psychometric_findings_for_slice(

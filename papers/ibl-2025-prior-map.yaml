@@ -17,7 +17,10 @@ protocol_ids:
   - protocol.ibl-visual-decision-v1
 dataset_ids:
   - dataset.ibl-brainwide-map-2025
-finding_ids: []
+finding_ids:
+  - finding.ibl-2025-prior-map.multi-session-psychometric.p_left-0.2
+  - finding.ibl-2025-prior-map.multi-session-psychometric.p_left-0.5
+  - finding.ibl-2025-prior-map.multi-session-psychometric.p_left-0.8
 curation_status: data-linked
 notes: >
   Companion IBL Brainwide Map paper focused on block prior probability and

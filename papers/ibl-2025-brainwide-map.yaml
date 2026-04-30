@@ -18,7 +18,8 @@ protocol_ids:
   - protocol.ibl-visual-decision-v1
 dataset_ids:
   - dataset.ibl-brainwide-map-2025
-finding_ids: []
+finding_ids:
+  - finding.ibl-2025-brainwide-map.multi-session-psychometric
 curation_status: data-linked
 notes: >
   Companion source paper for the IBL Brainwide Map dataset. The task retains

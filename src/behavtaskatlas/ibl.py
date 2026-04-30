@@ -266,6 +266,22 @@ def summarize_canonical_trials(trials: list[CanonicalTrial]) -> list[dict[str, A
     for trial in trials:
         grouped[(trial.prior_context, trial.stimulus_value)].append(trial)
 
+    return _summarize_grouped_trials(grouped)
+
+
+def summarize_canonical_trials_pooled_prior(
+    trials: list[CanonicalTrial],
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str | None, float | None], list[CanonicalTrial]] = defaultdict(list)
+    for trial in trials:
+        grouped[(None, trial.stimulus_value)].append(trial)
+
+    return _summarize_grouped_trials(grouped)
+
+
+def _summarize_grouped_trials(
+    grouped: dict[tuple[str | None, float | None], list[CanonicalTrial]],
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for (prior_context, stimulus_value), group in sorted(
         grouped.items(), key=lambda item: (item[0][0] or "", _none_safe_float(item[0][1]))
@@ -418,6 +434,45 @@ def analyze_ibl_brainwide_map_behavior(trials: list[CanonicalTrial]) -> dict[str
     )
     result["one_project"] = IBL_BRAINWIDE_MAP_PROJECT
     result["release_tag"] = IBL_BRAINWIDE_MAP_RELEASE_TAG
+    return result
+
+
+def analyze_ibl_brainwide_map_behavior_aggregate(
+    trials: list[CanonicalTrial],
+    *,
+    session_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    result = analyze_canonical_psychometric(
+        trials,
+        analysis_id="analysis.ibl-brainwide-map.behavioral-aggregate-psychometric",
+        protocol_id=IBL_VISUAL_PROTOCOL_ID,
+        dataset_id=IBL_BRAINWIDE_MAP_DATASET_ID,
+        report_title="IBL Brainwide Map Behavioral Aggregate Report",
+        stimulus_label="Signed contrast",
+        stimulus_units="percent contrast, signed right positive",
+        stimulus_metric_name="contrast",
+        caveats=[
+            (
+                "This aggregate summarizes the available atlas Brainwide Map behavior "
+                "subset used for visual-contrast family depth, not the full 139-subject "
+                "neural release."
+            ),
+            (
+                "The included sessions are selected public Brainwide Map "
+                "ephysChoiceWorld sessions with generated canonical trial CSVs."
+            ),
+            (
+                "No-response trials are included in total trial counts but excluded from "
+                "the p(right) denominator."
+            ),
+        ],
+    )
+    observed_session_ids = sorted({trial.session_id for trial in trials if trial.session_id})
+    result["one_project"] = IBL_BRAINWIDE_MAP_PROJECT
+    result["release_tag"] = IBL_BRAINWIDE_MAP_RELEASE_TAG
+    result["session_ids"] = session_ids or observed_session_ids
+    result["n_sessions"] = len(set(result["session_ids"]))
+    result["n_subjects"] = len({trial.subject_id for trial in trials if trial.subject_id})
     return result
 
 
