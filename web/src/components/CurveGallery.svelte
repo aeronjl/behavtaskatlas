@@ -119,10 +119,10 @@
   }
 
   function sourceClass(level: string): string {
-    if (level === "raw-trial") return "bg-ok-soft text-ok";
-    if (level === "processed-trial") return "bg-accent-soft text-accent";
-    if (level === "figure-source-data") return "bg-warn-soft text-warn";
-    return "bg-slate-100 text-slate-600";
+    if (level === "raw-trial") return "bg-encoding-source-raw-soft text-encoding-source-raw-strong";
+    if (level === "processed-trial") return "bg-encoding-source-processed-soft text-encoding-source-processed-strong";
+    if (level === "figure-source-data") return "bg-encoding-source-figure-soft text-encoding-source-figure-strong";
+    return "bg-confidence-single-soft text-confidence-single-strong";
   }
 
   // SSR fallback values; refreshed once after client mount via $effect

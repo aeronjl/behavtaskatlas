@@ -145,12 +145,13 @@
   --color-encoding-curve-hit-rate: #f43f5e;       /* rose-500 */
 
   /* Model families. */
-  --color-encoding-model-sdt: #0ea5e9;        /* sky-500 */
-  --color-encoding-model-ddm: #7c3aed;        /* violet-500 */
-  --color-encoding-model-logistic: #2563eb;   /* blue-600 */
-  --color-encoding-model-click: #f59e0b;      /* amber-500 */
-  --color-encoding-model-bernoulli: #64748b;  /* slate-500 */
+  --color-encoding-model-sdt: #0ea5e9;          /* sky-500 */
+  --color-encoding-model-ddm: #7c3aed;          /* violet-500 */
+  --color-encoding-model-logistic: #2563eb;     /* blue-600 */
+  --color-encoding-model-click: #f59e0b;        /* amber-500 */
+  --color-encoding-model-bernoulli: #64748b;    /* slate-500 */
   --color-encoding-model-chronometric: #14b8a6;
+  --color-encoding-model-accuracy: #f43f5e;     /* rose-500 */
 
   /* Node types (the four catalog axes shown on /graph). Held to the
    * same hex values they had as inline literals so the relationship
@@ -159,6 +160,61 @@
   --color-encoding-node-protocol: #2b5ea0;
   --color-encoding-node-dataset: #246b3b;
   --color-encoding-node-slice: #b35c00;
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * SOFT CHIP VARIANTS — paired tokens for the chip pattern
+   * (bg-{soft} text-{strong} ring-{edge}). Derived from the base via
+   * color-mix so a future base-color swap cascades; tweak the mix
+   * percentages here if the soft palette needs to shift overall.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  /* Source level. */
+  --color-encoding-source-raw-soft: color-mix(in srgb, var(--color-encoding-source-raw) 12%, white);
+  --color-encoding-source-raw-strong: color-mix(in srgb, var(--color-encoding-source-raw) 78%, black);
+  --color-encoding-source-raw-edge: color-mix(in srgb, var(--color-encoding-source-raw) 28%, white);
+  --color-encoding-source-processed-soft: color-mix(in srgb, var(--color-encoding-source-processed) 12%, white);
+  --color-encoding-source-processed-strong: color-mix(in srgb, var(--color-encoding-source-processed) 78%, black);
+  --color-encoding-source-processed-edge: color-mix(in srgb, var(--color-encoding-source-processed) 28%, white);
+  --color-encoding-source-figure-soft: color-mix(in srgb, var(--color-encoding-source-figure) 14%, white);
+  --color-encoding-source-figure-strong: color-mix(in srgb, var(--color-encoding-source-figure) 80%, black);
+  --color-encoding-source-figure-edge: color-mix(in srgb, var(--color-encoding-source-figure) 30%, white);
+
+  /* Confidence. */
+  --color-confidence-decisive-soft: color-mix(in srgb, var(--color-confidence-decisive) 12%, white);
+  --color-confidence-decisive-strong: color-mix(in srgb, var(--color-confidence-decisive) 82%, black);
+  --color-confidence-decisive-edge: color-mix(in srgb, var(--color-confidence-decisive) 28%, white);
+  --color-confidence-supported-soft: color-mix(in srgb, var(--color-confidence-supported) 12%, white);
+  --color-confidence-supported-strong: color-mix(in srgb, var(--color-confidence-supported) 80%, black);
+  --color-confidence-supported-edge: color-mix(in srgb, var(--color-confidence-supported) 28%, white);
+  --color-confidence-close-soft: color-mix(in srgb, var(--color-confidence-close) 14%, white);
+  --color-confidence-close-strong: color-mix(in srgb, var(--color-confidence-close) 80%, black);
+  --color-confidence-close-edge: color-mix(in srgb, var(--color-confidence-close) 30%, white);
+  --color-confidence-single-soft: color-mix(in srgb, var(--color-confidence-single) 18%, white);
+  --color-confidence-single-strong: color-mix(in srgb, var(--color-confidence-single) 80%, black);
+  --color-confidence-single-edge: color-mix(in srgb, var(--color-confidence-single) 35%, white);
+
+  /* Model families. */
+  --color-encoding-model-sdt-soft: color-mix(in srgb, var(--color-encoding-model-sdt) 12%, white);
+  --color-encoding-model-sdt-strong: color-mix(in srgb, var(--color-encoding-model-sdt) 78%, black);
+  --color-encoding-model-sdt-edge: color-mix(in srgb, var(--color-encoding-model-sdt) 28%, white);
+  --color-encoding-model-ddm-soft: color-mix(in srgb, var(--color-encoding-model-ddm) 12%, white);
+  --color-encoding-model-ddm-strong: color-mix(in srgb, var(--color-encoding-model-ddm) 78%, black);
+  --color-encoding-model-ddm-edge: color-mix(in srgb, var(--color-encoding-model-ddm) 28%, white);
+  --color-encoding-model-logistic-soft: color-mix(in srgb, var(--color-encoding-model-logistic) 12%, white);
+  --color-encoding-model-logistic-strong: color-mix(in srgb, var(--color-encoding-model-logistic) 78%, black);
+  --color-encoding-model-logistic-edge: color-mix(in srgb, var(--color-encoding-model-logistic) 28%, white);
+  --color-encoding-model-click-soft: color-mix(in srgb, var(--color-encoding-model-click) 14%, white);
+  --color-encoding-model-click-strong: color-mix(in srgb, var(--color-encoding-model-click) 80%, black);
+  --color-encoding-model-click-edge: color-mix(in srgb, var(--color-encoding-model-click) 30%, white);
+  --color-encoding-model-bernoulli-soft: color-mix(in srgb, var(--color-encoding-model-bernoulli) 18%, white);
+  --color-encoding-model-bernoulli-strong: color-mix(in srgb, var(--color-encoding-model-bernoulli) 80%, black);
+  --color-encoding-model-bernoulli-edge: color-mix(in srgb, var(--color-encoding-model-bernoulli) 35%, white);
+  --color-encoding-model-chronometric-soft: color-mix(in srgb, var(--color-encoding-model-chronometric) 12%, white);
+  --color-encoding-model-chronometric-strong: color-mix(in srgb, var(--color-encoding-model-chronometric) 78%, black);
+  --color-encoding-model-chronometric-edge: color-mix(in srgb, var(--color-encoding-model-chronometric) 28%, white);
+  --color-encoding-model-accuracy-soft: color-mix(in srgb, var(--color-encoding-model-accuracy) 12%, white);
+  --color-encoding-model-accuracy-strong: color-mix(in srgb, var(--color-encoding-model-accuracy) 78%, black);
+  --color-encoding-model-accuracy-edge: color-mix(in srgb, var(--color-encoding-model-accuracy) 28%, white);
 }
 
 html {

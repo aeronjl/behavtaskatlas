@@ -202,14 +202,14 @@
 
   function winnerSoftClass(keyOrVariant: string): string {
     const key = keyOrVariant.startsWith("model_variant.") ? winnerKey(keyOrVariant) : keyOrVariant;
-    if (key === "ddm") return "bg-violet-50 text-violet-700 ring-violet-200";
-    if (key === "click") return "bg-amber-50 text-amber-800 ring-amber-200";
-    if (key === "sdt") return "bg-blue-50 text-blue-700 ring-blue-200";
-    if (key === "chronometric") return "bg-teal-50 text-teal-700 ring-teal-200";
-    if (key === "logistic") return "bg-sky-50 text-sky-700 ring-sky-200";
-    if (key === "rate") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    if (key === "accuracy") return "bg-rose-50 text-rose-700 ring-rose-200";
-    return "bg-slate-100 text-slate-700 ring-slate-200";
+    if (key === "ddm") return "bg-encoding-model-ddm-soft text-encoding-model-ddm-strong ring-encoding-model-ddm-edge";
+    if (key === "click") return "bg-encoding-model-click-soft text-encoding-model-click-strong ring-encoding-model-click-edge";
+    if (key === "sdt") return "bg-encoding-model-sdt-soft text-encoding-model-sdt-strong ring-encoding-model-sdt-edge";
+    if (key === "chronometric") return "bg-encoding-model-chronometric-soft text-encoding-model-chronometric-strong ring-encoding-model-chronometric-edge";
+    if (key === "logistic") return "bg-encoding-model-logistic-soft text-encoding-model-logistic-strong ring-encoding-model-logistic-edge";
+    if (key === "rate") return "bg-encoding-model-bernoulli-soft text-encoding-model-bernoulli-strong ring-encoding-model-bernoulli-edge";
+    if (key === "accuracy") return "bg-encoding-model-accuracy-soft text-encoding-model-accuracy-strong ring-encoding-model-accuracy-edge";
+    return "bg-confidence-single-soft text-confidence-single-strong ring-confidence-single-edge";
   }
 
   function confidenceClass(label: string | undefined): string {
@@ -221,11 +221,11 @@
   }
 
   function confidenceSoftClass(label: string | undefined): string {
-    if (label === "decisive") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    if (label === "supported") return "bg-sky-50 text-sky-700 ring-sky-200";
-    if (label === "close") return "bg-amber-50 text-amber-800 ring-amber-200";
-    if (label === "single_candidate") return "bg-slate-100 text-slate-700 ring-slate-200";
-    return "bg-slate-100 text-slate-600 ring-slate-200";
+    if (label === "decisive") return "bg-confidence-decisive-soft text-confidence-decisive-strong ring-confidence-decisive-edge";
+    if (label === "supported") return "bg-confidence-supported-soft text-confidence-supported-strong ring-confidence-supported-edge";
+    if (label === "close") return "bg-confidence-close-soft text-confidence-close-strong ring-confidence-close-edge";
+    if (label === "single_candidate") return "bg-confidence-single-soft text-confidence-single-strong ring-confidence-single-edge";
+    return "bg-confidence-single-soft text-confidence-single-strong ring-confidence-single-edge";
   }
 
   function sourceClass(level: string): string {
@@ -243,10 +243,10 @@
   }
 
   function sourceSoftClass(level: string): string {
-    if (level === "raw-trial") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    if (level === "processed-trial") return "bg-sky-50 text-sky-700 ring-sky-200";
-    if (level === "figure-source-data") return "bg-amber-50 text-amber-800 ring-amber-200";
-    return "bg-slate-100 text-slate-700 ring-slate-200";
+    if (level === "raw-trial") return "bg-encoding-source-raw-soft text-encoding-source-raw-strong ring-encoding-source-raw-edge";
+    if (level === "processed-trial") return "bg-encoding-source-processed-soft text-encoding-source-processed-strong ring-encoding-source-processed-edge";
+    if (level === "figure-source-data") return "bg-encoding-source-figure-soft text-encoding-source-figure-strong ring-encoding-source-figure-edge";
+    return "bg-confidence-single-soft text-confidence-single-strong ring-confidence-single-edge";
   }
 
   function uniqueCaveatTags(row: AnswerRow): string[] {
