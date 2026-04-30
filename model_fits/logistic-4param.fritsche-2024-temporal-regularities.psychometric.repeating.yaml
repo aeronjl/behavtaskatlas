@@ -1,0 +1,74 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.fritsche-2024-temporal-regularities.psychometric.repeating
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.fritsche-2024-temporal-regularities.psychometric.repeating
+parameters:
+  bias: 0.03945900098731152
+  slope: 6.290481250916957
+  lower_lapse: 0.10705546126337616
+  upper_lapse: 0.07594852260900278
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -21631.418394193188
+  aic: 43270.836788386376
+  bic: 43305.899597083226
+  n_trials: 47368.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 3961
+    y: 0.10705556253810776
+  - x: -50.0
+    n: 3929
+    y: 0.1073421073536436
+  - x: -25.0
+    n: 4031
+    y: 0.12203371235519618
+  - x: -12.5
+    n: 3965
+    y: 0.20501115428128033
+  - x: -6.25
+    n: 3862
+    y: 0.3268056358321945
+  - x: 0.0
+    n: 7950
+    y: 0.5142722580965516
+  - x: 6.25
+    n: 3865
+    y: 0.7022801018619425
+  - x: 12.5
+    n: 3900
+    y: 0.8250090449679475
+  - x: 25.0
+    n: 3929
+    y: 0.9088876408364769
+  - x: 50.0
+    n: 3926
+    y: 0.9237612137802136
+  - x: 100.0
+    n: 4050
+    y: 0.9240513748377078
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0024771690368652344
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

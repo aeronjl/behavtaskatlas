@@ -1,0 +1,80 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.zatka-haas-2021-sensory-coding-causal-impact.choice-conditional-psychometric
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.zatka-haas-2021-sensory-coding-causal-impact.choice-conditional-psychometric
+parameters:
+  bias: 0.6124690664224187
+  slope: 7.956277083342998
+  lower_lapse: 0.1061876877122105
+  upper_lapse: 0.13718650503240665
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -3910.4545165676677
+  aic: 7828.909033135335
+  bic: 7856.624654784475
+  n_trials: 7547.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right_choice_trials
+  points:
+  - x: -54.0
+    n: 579
+    y: 0.10697727208680197
+  - x: -44.0
+    n: 357
+    y: 0.10895534211757281
+  - x: -30.0
+    n: 418
+    y: 0.12199029432068666
+  - x: -24.0
+    n: 549
+    y: 0.13900829989561841
+  - x: -14.0
+    n: 389
+    y: 0.21018918829170855
+  - x: -10.0
+    n: 283
+    y: 0.2639619294373268
+  - x: 0.0
+    n: 2357
+    y: 0.4699466362634455
+  - x: 10.0
+    n: 286
+    y: 0.684951957774143
+  - x: 14.0
+    n: 393
+    y: 0.7442150299476556
+  - x: 24.0
+    n: 554
+    y: 0.8248045510584928
+  - x: 30.0
+    n: 388
+    y: 0.8444445149029527
+  - x: 44.0
+    n: 419
+    y: 0.8595871489289872
+  - x: 54.0
+    n: 575
+    y: 0.8618926499663551
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.002312183380126953
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

@@ -1,0 +1,66 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.ibl-2025-brainwide-map.multi-session-psychometric
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.ibl-2025-brainwide-map.multi-session-psychometric
+parameters:
+  d_prime: 0.039241483594836465
+  criterion: -0.06966389559462564
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -2653.372042838455
+  aic: 5310.74408567691
+  bic: 5324.14910619129
+  n_trials: 6018.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 670
+    y: 5.798687368979896e-05
+  - x: -25.0
+    n: 673
+    y: 0.1810493862392556
+  - x: -12.5
+    n: 643
+    y: 0.33693061140455816
+  - x: -6.25
+    n: 692
+    y: 0.43030591731993206
+  - x: 0.0
+    n: 673
+    y: 0.5277694104608436
+  - x: 6.25
+    n: 675
+    y: 0.62359000479743
+  - x: 12.5
+    n: 661
+    y: 0.7123224985467606
+  - x: 25.0
+    n: 622
+    y: 0.8533020283610622
+  - x: 100.0
+    n: 709
+    y: 0.99996749032294
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0022521018981933594
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

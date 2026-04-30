@@ -1,0 +1,66 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.steinmetz-2019-distributed-coding.choice-conditional-psychometric
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.steinmetz-2019-distributed-coding.choice-conditional-psychometric
+parameters:
+  d_prime: 0.02271209943872294
+  criterion: -0.011278675512406022
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -2520.400177639587
+  aic: 5044.800355279174
+  bic: 5058.433468816458
+  n_trials: 6745.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right_choice_trials
+  points:
+  - x: -100.0
+    n: 722
+    y: 0.011912758459804463
+  - x: -75.0
+    n: 587
+    y: 0.04531071083117823
+  - x: -50.0
+    n: 891
+    y: 0.13043731328693897
+  - x: -25.0
+    n: 476
+    y: 0.28892641093669597
+  - x: 0.0
+    n: 1439
+    y: 0.5044994451339978
+  - x: 25.0
+    n: 544
+    y: 0.7187327946559869
+  - x: 50.0
+    n: 824
+    y: 0.8742851440235104
+  - x: 75.0
+    n: 533
+    y: 0.9567986063800229
+  - x: 100.0
+    n: 729
+    y: 0.9887697456861044
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0013248920440673828
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

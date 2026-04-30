@@ -2,6 +2,18 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 14:45:14 BST - Closed visual-contrast no-fit model gaps
+
+Added logistic-4param and SDT-2AFC model fits for the nine ready visual-contrast
+psychometric findings created or promoted in the depth pass: Fritsche
+regularity curves, IBL Brainwide/prior-map aggregate curves, and the
+Steinmetz/Zatka-Haas choice-conditional curves. The generated model index now
+has 222 fits, every finding has at least one AIC-ranked candidate, and the
+model roadmap drops to 21 items: 8 blocked Khalvati proxy/source-data rows and
+13 lower-priority near-miss slice capability rows. Immediate MVP implication:
+the visual-contrast depth expansion is now model-comparable, not just
+descriptive.
+
 ## 2026-04-30 14:07:20 BST - Added multi-session IBL Brainwide Map findings
 
 Built a reproducible IBL Brainwide aggregate over the ten selected public

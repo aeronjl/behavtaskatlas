@@ -1,0 +1,68 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.ibl-2025-prior-map.multi-session-psychometric.p_left-0.8
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.ibl-2025-prior-map.multi-session-psychometric.p_left-0.8
+parameters:
+  bias: 7.038235993968418
+  slope: 10.407212450953319
+  lower_lapse: 0.019904526059875815
+  upper_lapse: 0.03713062575106743
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -959.9708809570565
+  aic: 1927.941761914113
+  bic: 1951.2872409562933
+  n_trials: 2531.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 466
+    y: 0.019936718922456364
+  - x: -25.0
+    n: 471
+    y: 0.06139908864376309
+  - x: -12.5
+    n: 427
+    y: 0.14502721736082605
+  - x: -6.25
+    n: 474
+    y: 0.22555610139301263
+  - x: -0.0
+    n: 264
+    y: 0.3377695630114656
+  - x: 6.25
+    n: 103
+    y: 0.4735405833665704
+  - x: 12.5
+    n: 111
+    y: 0.6123418076179816
+  - x: 25.0
+    n: 91
+    y: 0.8203748365144439
+  - x: 100.0
+    n: 124
+    y: 0.9627448854440604
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.004288911819458008
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

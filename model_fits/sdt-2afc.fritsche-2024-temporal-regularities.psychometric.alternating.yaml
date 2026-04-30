@@ -1,0 +1,72 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.sdt-2afc.fritsche-2024-temporal-regularities.psychometric.alternating
+variant_id: model_variant.sdt-2afc
+finding_ids:
+- finding.fritsche-2024-temporal-regularities.psychometric.alternating
+parameters:
+  d_prime: 0.02227546160516764
+  criterion: 0.019740534002376926
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -23884.471540081897
+  aic: 47772.943080163794
+  bic: 47790.46636129916
+  n_trials: 47176.0
+  n_free_params: 2.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right
+  points:
+  - x: -100.0
+    n: 3972
+    y: 0.012310855332625617
+  - x: -50.0
+    n: 3871
+    y: 0.1284993136302125
+  - x: -25.0
+    n: 3995
+    y: 0.28209570285121777
+  - x: -12.5
+    n: 3999
+    y: 0.3827814411687364
+  - x: -6.25
+    n: 3892
+    y: 0.43684933975758605
+  - x: 0.0
+    n: 7843
+    y: 0.492125177806919
+  - x: 6.25
+    n: 3973
+    y: 0.5475528940168845
+  - x: 12.5
+    n: 3970
+    y: 0.6020676958280528
+  - x: 25.0
+    n: 3960
+    y: 0.704416617935955
+  - x: 50.0
+    n: 3813
+    y: 0.8630296478623196
+  - x: 100.0
+    n: 3888
+    y: 0.9863710871562188
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.001753091812133789
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.sdt-2afc;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'

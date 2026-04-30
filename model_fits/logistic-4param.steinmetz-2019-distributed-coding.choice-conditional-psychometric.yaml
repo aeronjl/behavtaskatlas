@@ -1,0 +1,68 @@
+object_type: model_fit
+schema_version: 0.1.0
+id: model_fit.logistic-4param.steinmetz-2019-distributed-coding.choice-conditional-psychometric
+variant_id: model_variant.logistic-4param
+finding_ids:
+- finding.steinmetz-2019-distributed-coding.choice-conditional-psychometric
+parameters:
+  bias: -3.384953633754993
+  slope: 15.385366866336843
+  lower_lapse: 0.03258247282508611
+  upper_lapse: 0.05787730800692824
+parameter_uncertainty: {}
+quality:
+  log_likelihood: -2463.5286787178743
+  aic: 4935.057357435749
+  bic: 4962.323584510316
+  n_trials: 6745.0
+  n_free_params: 4.0
+predictions:
+  curve_type: psychometric
+  x_label: Signed contrast
+  x_units: percent
+  y_label: p_right_choice_trials
+  points:
+  - x: -100.0
+    n: 722
+    y: 0.0342837779556783
+  - x: -75.0
+    n: 587
+    y: 0.0411563263167303
+  - x: -50.0
+    n: 891
+    y: 0.07450891237760952
+  - x: -25.0
+    n: 476
+    y: 0.21179665964494976
+  - x: 0.0
+    n: 1439
+    y: 0.5371790249211867
+  - x: 25.0
+    n: 544
+    y: 0.8179985999475883
+  - x: 50.0
+    n: 824
+    y: 0.9146706773237097
+  - x: 75.0
+    n: 533
+    y: 0.9365823507227324
+  - x: 100.0
+    n: 729
+    y: 0.9410262841003431
+fit_method:
+  type: scipy.optimize.minimize
+  options:
+    method: L-BFGS-B
+    bounds: see code
+  duration_seconds: 0.0030100345611572266
+caveat_tags: []
+curation_status: data-linked
+provenance:
+  curators:
+  - behavtaskatlas
+  created: '2026-04-30'
+  updated: '2026-04-30'
+  fit_commit: 8365eb3
+  fit_dirty: true
+  source_notes: 'Fitted with scipy.optimize.minimize via behavtaskatlas.model_fits.logistic-4param;
+    success=True; CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH'
