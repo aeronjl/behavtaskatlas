@@ -35,6 +35,12 @@ dist/
 .astro/
 *.tsbuildinfo
 
+# Vercel extracts release artifact files here during build; keep the
+# hand-authored public assets tracked.
+web/public/*
+!web/public/favicon.svg
+!web/public/og.svg
+
 # Stray top-level JS — web/ has its own package.json + bun.lock and those
 # should be tracked; the repo root is Python-only.
 /package.json

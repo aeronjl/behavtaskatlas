@@ -2,6 +2,15 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:09:07 BST - Kept Vercel release assets out of dirty-build status
+
+Ignored generated files under `web/public/` while keeping the hand-authored
+favicon and Open Graph image tracked. Vercel extracts the latest slice-artifact
+release there before static export, so those generated deploy assets were
+making clean release builds display as dirty. Immediate MVP implication: the
+public site can expose release assets without confusing generated provenance
+with uncommitted source edits.
+
 ## 2026-04-30 13:03:33 BST - Made click model audits clean-checkout reproducible
 
 Added a tracked compact Brunton click-trial cache and wired click forward
