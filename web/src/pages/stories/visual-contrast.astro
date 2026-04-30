@@ -126,17 +126,17 @@ function statusLabel(value: string): string {
 }
 
 function sourceClass(level: string): string {
-  if (level === "raw-trial") return "bg-ok text-white";
-  if (level === "processed-trial") return "bg-accent text-white";
-  if (level === "figure-source-data") return "bg-warn text-white";
-  return "bg-slate-200 text-slate-700";
+  if (level === "raw-trial") return "bg-encoding-source-raw text-white";
+  if (level === "processed-trial") return "bg-encoding-source-processed text-white";
+  if (level === "figure-source-data") return "bg-encoding-source-figure text-white";
+  return "bg-surface-sunken text-fg-secondary";
 }
 
 function confidenceClass(label: string): string {
-  if (label === "decisive") return "bg-ok";
-  if (label === "supported") return "bg-accent";
-  if (label === "close") return "bg-warn";
-  return "bg-slate-300";
+  if (label === "decisive") return "bg-confidence-decisive";
+  if (label === "supported") return "bg-confidence-supported";
+  if (label === "close") return "bg-confidence-close";
+  return "bg-confidence-single";
 }
 
 function coverageWidth(value: number, max: number): string {

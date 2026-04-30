@@ -132,29 +132,32 @@
   }
 
   function sourceClass(level: string): string {
-    if (level === "raw-trial") return "bg-emerald-500";
-    if (level === "processed-trial") return "bg-sky-500";
-    if (level === "figure-source-data") return "bg-amber-500";
-    return "bg-slate-300";
+    if (level === "raw-trial") return "bg-encoding-source-raw";
+    if (level === "processed-trial") return "bg-encoding-source-processed";
+    if (level === "figure-source-data") return "bg-encoding-source-figure";
+    return "bg-rule-strong";
   }
 
   function curveClass(curve: string): string {
-    if (curve === "psychometric") return "bg-blue-600";
-    if (curve === "chronometric") return "bg-teal-500";
-    if (curve === "accuracy_by_strength") return "bg-violet-500";
-    return "bg-slate-400";
+    if (curve === "psychometric") return "bg-encoding-curve-psychometric";
+    if (curve === "chronometric") return "bg-encoding-curve-chronometric";
+    if (curve === "accuracy_by_strength") return "bg-encoding-curve-accuracy";
+    return "bg-fg-muted";
   }
 
+  // Coverage axis: each step in the strip reuses an encoding hue for
+  // the closest semantic match (curves for findings, source for data,
+  // model for analysis-linked).
   function coverageTone(status: string): string {
-    if (status === "findings") return "bg-blue-600";
-    if (status === "analysis-linked") return "bg-teal-500";
-    if (status === "data-linked") return "bg-emerald-500";
-    if (status === "protocol-linked") return "bg-amber-500";
-    return "bg-slate-300";
+    if (status === "findings") return "bg-encoding-curve-psychometric";
+    if (status === "analysis-linked") return "bg-encoding-curve-chronometric";
+    if (status === "data-linked") return "bg-encoding-source-raw";
+    if (status === "protocol-linked") return "bg-encoding-source-figure";
+    return "bg-rule-strong";
   }
 
   function coverageStepClass(active: boolean, tone: string): string {
-    return active ? tone : "bg-slate-100";
+    return active ? tone : "bg-surface-sunken";
   }
 
   type Option = { value: string; label: string; count: number };

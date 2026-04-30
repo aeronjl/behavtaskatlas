@@ -190,14 +190,14 @@
 
   function winnerClass(keyOrVariant: string): string {
     const key = keyOrVariant.startsWith("model_variant.") ? winnerKey(keyOrVariant) : keyOrVariant;
-    if (key === "ddm") return "bg-violet-600";
-    if (key === "click") return "bg-amber-500";
-    if (key === "sdt") return "bg-blue-600";
-    if (key === "chronometric") return "bg-teal-500";
-    if (key === "logistic") return "bg-sky-500";
-    if (key === "rate") return "bg-emerald-500";
-    if (key === "accuracy") return "bg-rose-500";
-    return "bg-slate-400";
+    if (key === "ddm") return "bg-encoding-model-ddm";
+    if (key === "click") return "bg-encoding-model-click";
+    if (key === "sdt") return "bg-encoding-model-sdt";
+    if (key === "chronometric") return "bg-encoding-model-chronometric";
+    if (key === "logistic") return "bg-encoding-model-logistic";
+    if (key === "rate") return "bg-encoding-model-bernoulli";
+    if (key === "accuracy") return "bg-encoding-curve-hit-rate";
+    return "bg-fg-muted";
   }
 
   function winnerSoftClass(keyOrVariant: string): string {
@@ -213,11 +213,11 @@
   }
 
   function confidenceClass(label: string | undefined): string {
-    if (label === "decisive") return "bg-emerald-500";
-    if (label === "supported") return "bg-sky-500";
-    if (label === "close") return "bg-amber-500";
-    if (label === "single_candidate") return "bg-slate-500";
-    return "bg-slate-300";
+    if (label === "decisive") return "bg-confidence-decisive";
+    if (label === "supported") return "bg-confidence-supported";
+    if (label === "close") return "bg-confidence-close";
+    if (label === "single_candidate") return "bg-confidence-single";
+    return "bg-rule-strong";
   }
 
   function confidenceSoftClass(label: string | undefined): string {
@@ -229,10 +229,10 @@
   }
 
   function sourceClass(level: string): string {
-    if (level === "raw-trial") return "bg-emerald-500";
-    if (level === "processed-trial") return "bg-sky-500";
-    if (level === "figure-source-data") return "bg-amber-500";
-    return "bg-slate-300";
+    if (level === "raw-trial") return "bg-encoding-source-raw";
+    if (level === "processed-trial") return "bg-encoding-source-processed";
+    if (level === "figure-source-data") return "bg-encoding-source-figure";
+    return "bg-rule-strong";
   }
 
   function sourceShortLabel(level: string): string {
