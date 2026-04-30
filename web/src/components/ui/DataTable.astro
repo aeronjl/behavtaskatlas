@@ -31,12 +31,19 @@ interface Column {
   label: string;
   align?: "left" | "right" | "center";
   title?: string;
+  colspan?: number;
+  rowspan?: number;
   /** Extra Tailwind classes for this column's header cell (e.g. "w-48"). */
   class?: string;
 }
 
 interface Props {
-  columns: Column[];
+  /** Single-row header. Use `headerRows` for multi-row / colspan headers. */
+  columns?: Column[];
+  /** Multi-row header. First row gets normal head padding, subsequent
+   * rows get smaller padding + smaller font (the "sub-header" pattern
+   * used for things like {variant} above {AIC, params} sub-columns). */
+  headerRows?: Column[][];
   density?: "compact" | "md";
   /** Layout-mode override for the wrapping div. */
   class?: string;
@@ -44,11 +51,20 @@ interface Props {
 
 const {
   columns,
+  headerRows,
   density = "md",
   class: className,
 } = Astro.props as Props;
 
 const headPad = density === "compact" ? "px-2 py-1.5" : "px-3 py-2";
+const subHeadPad = "px-3 py-1 text-mono-id";
+const rows: Column[][] = headerRows ?? (columns ? [columns] : []);
+
+function alignClass(align: Column["align"]): string {
+  if (align === "right") return "text-right";
+  if (align === "center") return "text-center";
+  return "text-left";
+}
 ---
 
 <div
@@ -59,24 +75,24 @@ const headPad = density === "compact" ? "px-2 py-1.5" : "px-3 py-2";
 >
   <table class="w-full text-body">
     <thead class="bg-surface text-left text-body-xs uppercase tracking-wide text-fg-muted">
-      <tr>
-        {columns.map((col) => (
-          <th
-            class:list={[
-              headPad,
-              col.align === "right"
-                ? "text-right"
-                : col.align === "center"
-                  ? "text-center"
-                  : "text-left",
-              col.class,
-            ]}
-            title={col.title}
-          >
-            {col.label}
-          </th>
-        ))}
-      </tr>
+      {rows.map((row, rowIndex) => (
+        <tr>
+          {row.map((col) => (
+            <th
+              colspan={col.colspan}
+              rowspan={col.rowspan}
+              class:list={[
+                rowIndex === 0 ? headPad : subHeadPad,
+                alignClass(col.align),
+                col.class,
+              ]}
+              title={col.title}
+            >
+              {col.label}
+            </th>
+          ))}
+        </tr>
+      ))}
     </thead>
     <tbody class="divide-y divide-rule">
       <slot />

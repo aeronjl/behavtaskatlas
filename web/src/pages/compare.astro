@@ -331,63 +331,58 @@ const sections = COMPARISONS.map((spec) => {
             <p class="mb-2 text-mono-id text-fg-muted">
               Lower AIC wins (★). <span class="text-fg-secondary">{section.spec.hint}</span>
             </p>
-            <div class="overflow-x-auto rounded border border-rule">
-              <table class="w-full text-body-xs">
-                <thead class="bg-surface text-left uppercase tracking-wide text-fg-muted">
-                  <tr>
-                    <th class="px-3 py-2">Group</th>
-                    {section.variants.map((v) => (
-                      <th class="px-3 py-2 text-right" colspan="2">
-                        {v}
-                      </th>
-                    ))}
-                  </tr>
-                  <tr class="bg-surface text-mono-id text-fg-muted">
-                    <th class="px-3 py-1"></th>
-                    {section.variants.map(() => (
+            <DataTable
+              density="compact"
+              headerRows={[
+                [
+                  { label: "Group", rowspan: 2 },
+                  ...section.variants.map((v) => ({
+                    label: v,
+                    align: "right" as const,
+                    colspan: 2,
+                  })),
+                ],
+                [
+                  ...section.variants.flatMap(() => [
+                    { label: "AIC", align: "right" as const },
+                    { label: "params" },
+                  ]),
+                ],
+              ]}
+            >
+              {section.groups.map((group) => (
+                <tr>
+                  <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
+                    {group}
+                  </td>
+                  {section.variants.map((v) => {
+                    const row = section.modelFitRows.find(
+                      (r) => r.group === group && r.variant === v,
+                    );
+                    if (!row) {
+                      return (
+                        <>
+                          <td class="px-3 py-2 text-right text-fg-subtle">—</td>
+                          <td class="px-3 py-2 text-fg-subtle">—</td>
+                        </>
+                      );
+                    }
+                    const isWinner = section.winners.get(group) === v;
+                    return (
                       <>
-                        <th class="px-3 py-1 text-right">AIC</th>
-                        <th class="px-3 py-1 text-left">params</th>
+                        <td class="px-3 py-2 text-right font-mono">
+                          {isWinner ? "★ " : ""}
+                          {fmt(row.aic, 1)}
+                        </td>
+                        <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
+                          {paramSummary(row.params)}
+                        </td>
                       </>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-rule">
-                  {section.groups.map((group) => (
-                    <tr>
-                      <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
-                        {group}
-                      </td>
-                      {section.variants.map((v) => {
-                        const row = section.modelFitRows.find(
-                          (r) => r.group === group && r.variant === v,
-                        );
-                        if (!row) {
-                          return (
-                            <>
-                              <td class="px-3 py-2 text-right text-fg-subtle">—</td>
-                              <td class="px-3 py-2 text-fg-subtle">—</td>
-                            </>
-                          );
-                        }
-                        const isWinner = section.winners.get(group) === v;
-                        return (
-                          <>
-                            <td class="px-3 py-2 text-right font-mono">
-                              {isWinner ? "★ " : ""}
-                              {fmt(row.aic, 1)}
-                            </td>
-                            <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
-                              {paramSummary(row.params)}
-                            </td>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    );
+                  })}
+                </tr>
+              ))}
+            </DataTable>
           </div>
         ) : null}
 
