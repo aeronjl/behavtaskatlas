@@ -87,6 +87,8 @@
     "paper-asc": "Paper A-Z",
   };
 
+  const confidenceSteps = ["single_candidate", "close", "supported", "decisive"];
+
   function initialParam(name: string): string | null {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get(name);
@@ -149,6 +151,117 @@
     return value.toFixed(digits);
   }
 
+  function winnerKey(variantId: string): string {
+    const id = variantId.toLowerCase();
+    if (id.includes("ddm")) return "ddm";
+    if (id.includes("click")) return "click";
+    if (id.includes("sdt")) return "sdt";
+    if (id.includes("chronometric")) return "chronometric";
+    if (id.includes("logistic")) return "logistic";
+    if (id.includes("bernoulli") || id.includes("rate")) return "rate";
+    if (id.includes("accuracy")) return "accuracy";
+    return "other";
+  }
+
+  function winnerShortLabel(variantId: string): string {
+    const key = winnerKey(variantId);
+    if (key === "ddm") return "DDM";
+    if (key === "click") return "Clicks";
+    if (key === "sdt") return "SDT";
+    if (key === "chronometric") return "RT";
+    if (key === "logistic") return "Logistic";
+    if (key === "rate") return "Rate";
+    if (key === "accuracy") return "Accuracy";
+    return "Other";
+  }
+
+  function winnerClass(keyOrVariant: string): string {
+    const key = keyOrVariant.startsWith("model_variant.") ? winnerKey(keyOrVariant) : keyOrVariant;
+    if (key === "ddm") return "bg-violet-600";
+    if (key === "click") return "bg-amber-500";
+    if (key === "sdt") return "bg-blue-600";
+    if (key === "chronometric") return "bg-teal-500";
+    if (key === "logistic") return "bg-sky-500";
+    if (key === "rate") return "bg-emerald-500";
+    if (key === "accuracy") return "bg-rose-500";
+    return "bg-slate-400";
+  }
+
+  function winnerSoftClass(keyOrVariant: string): string {
+    const key = keyOrVariant.startsWith("model_variant.") ? winnerKey(keyOrVariant) : keyOrVariant;
+    if (key === "ddm") return "bg-violet-50 text-violet-700 ring-violet-200";
+    if (key === "click") return "bg-amber-50 text-amber-800 ring-amber-200";
+    if (key === "sdt") return "bg-blue-50 text-blue-700 ring-blue-200";
+    if (key === "chronometric") return "bg-teal-50 text-teal-700 ring-teal-200";
+    if (key === "logistic") return "bg-sky-50 text-sky-700 ring-sky-200";
+    if (key === "rate") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    if (key === "accuracy") return "bg-rose-50 text-rose-700 ring-rose-200";
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
+  function confidenceClass(label: string | undefined): string {
+    if (label === "decisive") return "bg-emerald-500";
+    if (label === "supported") return "bg-sky-500";
+    if (label === "close") return "bg-amber-500";
+    if (label === "single_candidate") return "bg-slate-500";
+    return "bg-slate-300";
+  }
+
+  function confidenceSoftClass(label: string | undefined): string {
+    if (label === "decisive") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    if (label === "supported") return "bg-sky-50 text-sky-700 ring-sky-200";
+    if (label === "close") return "bg-amber-50 text-amber-800 ring-amber-200";
+    if (label === "single_candidate") return "bg-slate-100 text-slate-700 ring-slate-200";
+    return "bg-slate-100 text-slate-600 ring-slate-200";
+  }
+
+  function sourceClass(level: string): string {
+    if (level === "raw-trial") return "bg-emerald-500";
+    if (level === "processed-trial") return "bg-sky-500";
+    if (level === "figure-source-data") return "bg-amber-500";
+    return "bg-slate-300";
+  }
+
+  function sourceShortLabel(level: string): string {
+    if (level === "raw-trial") return "raw";
+    if (level === "processed-trial") return "trials";
+    if (level === "figure-source-data") return "figure";
+    return "summary";
+  }
+
+  function sourceSoftClass(level: string): string {
+    if (level === "raw-trial") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    if (level === "processed-trial") return "bg-sky-50 text-sky-700 ring-sky-200";
+    if (level === "figure-source-data") return "bg-amber-50 text-amber-800 ring-amber-200";
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
+  function uniqueCaveatTags(row: AnswerRow): string[] {
+    return Array.from(new Set([...row.best_caveat_tags, ...row.candidate_caveat_tags]));
+  }
+
+  function caveatCount(row: AnswerRow): number {
+    return uniqueCaveatTags(row).length;
+  }
+
+  function aicWidth(value: number | null | undefined, max: number): string {
+    if (!value || max <= 0) return "0%";
+    return `${Math.max(8, Math.round((Math.log1p(value) / Math.log1p(max)) * 100))}%`;
+  }
+
+  function percent(value: number, total: number): string {
+    if (value <= 0 || total <= 0) return "0%";
+    return `${Math.max(3, Math.round((value / total) * 100))}%`;
+  }
+
+  function candidatePips(row: AnswerRow, maxCandidates: number): Array<{ index: number; active: boolean }> {
+    const total = Math.max(1, Math.min(8, maxCandidates));
+    return Array.from({ length: total }, (_, index) => ({
+      index,
+      active: index < row.n_candidate_fits,
+    }));
+  }
+
   function countOptions(values: string[]): Option[] {
     const counts = new Map<string, number>();
     for (const value of values.filter(Boolean)) {
@@ -170,8 +283,8 @@
   const closeCount = $derived(
     rows.filter((row) => row.confidence_label === "close").length,
   );
-  const caveatCount = $derived(
-    rows.filter((row) => row.candidate_caveat_tags.length > 0).length,
+  const caveatedRowCount = $derived(
+    rows.filter((row) => caveatCount(row) > 0).length,
   );
   const processCount = $derived(
     rows.filter((row) =>
@@ -183,6 +296,8 @@
   const decisiveCount = $derived(
     rows.filter((row) => row.confidence_label === "decisive").length,
   );
+  const maxDelta = $derived(Math.max(1, ...rows.map((row) => row.delta_aic_to_next ?? 0)));
+  const maxCandidateCount = $derived(Math.max(1, ...rows.map((row) => row.n_candidate_fits)));
 
   function syncUrl() {
     if (typeof window === "undefined") return;
@@ -350,26 +465,31 @@
         n: number;
         close: number;
         caveats: number;
-        variants: Map<string, number>;
+        mixed: number;
+        winners: Map<string, { label: string; count: number }>;
       }
     >();
     for (const row of filteredRows) {
       const family = row.task_family || "Unknown task family";
       const group =
         groups.get(family) ??
-        { family, n: 0, close: 0, caveats: 0, variants: new Map<string, number>() };
+        { family, n: 0, close: 0, caveats: 0, mixed: 0, winners: new Map<string, { label: string; count: number }>() };
       group.n += 1;
       if (row.confidence_label === "close") group.close += 1;
-      if (row.candidate_caveat_tags.length > 0) group.caveats += 1;
-      group.variants.set(row.best_variant_label, (group.variants.get(row.best_variant_label) ?? 0) + 1);
+      if (caveatCount(row) > 0) group.caveats += 1;
+      if (row.has_mixed_aic_scopes) group.mixed += 1;
+      const key = winnerKey(row.best_variant_id);
+      const winner = group.winners.get(key) ?? { label: winnerShortLabel(row.best_variant_id), count: 0 };
+      winner.count += 1;
+      group.winners.set(key, winner);
       groups.set(family, group);
     }
     return Array.from(groups.values())
       .map((group) => ({
         ...group,
-        topVariants: Array.from(group.variants.entries())
-          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-          .slice(0, 3),
+        winnerSegments: Array.from(group.winners.entries())
+          .map(([key, winner]) => ({ key, ...winner }))
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
       }))
       .sort((a, b) => b.n - a.n || a.family.localeCompare(b.family))
       .slice(0, 5);
@@ -397,7 +517,7 @@
     </div>
     <div class="rounded-md border border-slate-200 bg-white p-3">
       <p class="text-xs uppercase tracking-wide text-slate-500">Caveated rows</p>
-      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{caveatCount}</p>
+      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{caveatedRowCount}</p>
       <p class="mt-1 text-xs text-slate-500">source or proxy caveats</p>
     </div>
     <div class="rounded-md border border-slate-200 bg-white p-3">
@@ -540,10 +660,137 @@
                     {row.task_family} · {row.protocol_name}
                   </p>
                 </div>
-                <span class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600">
+                <span
+                  class={[
+                    "shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase ring-1",
+                    confidenceSoftClass(row.confidence_label),
+                  ]}
+                >
                   {labelForConfidence(row.confidence_label)}
                 </span>
               </header>
+
+              <div
+                data-testid="model-glyph-strip"
+                class="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+                aria-label={`${row.paper_label} model-selection glyphs`}
+              >
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div class="min-w-0">
+                    <div class="mb-1 flex items-baseline gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Winner</span>
+                    </div>
+                    <div
+                      class={[
+                        "flex min-h-6 min-w-0 items-center gap-1.5 rounded px-2 py-1 text-xs ring-1",
+                        winnerSoftClass(row.best_variant_id),
+                      ]}
+                      title={`${row.best_family_label}: ${row.best_variant_label}`}
+                    >
+                      <span class={["h-2.5 w-2.5 shrink-0 rounded-full", winnerClass(row.best_variant_id)]}></span>
+                      <span class="truncate font-semibold">{winnerShortLabel(row.best_variant_id)}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1 flex items-baseline justify-between gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">AIC gap</span>
+                      <span class="font-mono text-xs text-slate-900">{fmt(row.delta_aic_to_next)}</span>
+                    </div>
+                    <div
+                      class="h-2 rounded-full bg-white"
+                      title={`Delta AIC to next candidate: ${fmt(row.delta_aic_to_next)}`}
+                    >
+                      <span
+                        class={["block h-2 rounded-full", confidenceClass(row.confidence_label)]}
+                        style={`width: ${aicWidth(row.delta_aic_to_next, maxDelta)}`}
+                      ></span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1 flex items-baseline gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Confidence</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1">
+                      {#each confidenceSteps as step (step)}
+                        <span
+                          class={[
+                            "h-2 rounded-full",
+                            row.confidence_label === step ? confidenceClass(step) : "bg-white",
+                          ]}
+                          title={labelForConfidence(step)}
+                        ></span>
+                      {/each}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1 flex items-baseline justify-between gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Candidates</span>
+                      <span class="font-mono text-xs text-slate-900">{row.n_candidate_fits}</span>
+                    </div>
+                    <div class="flex gap-1" title={`${row.n_candidate_fits} candidate fit${row.n_candidate_fits === 1 ? "" : "s"}`}>
+                      {#each candidatePips(row, maxCandidateCount) as pip (pip.index)}
+                        <span
+                          class={[
+                            "h-2 flex-1 rounded-full",
+                            pip.active ? "bg-slate-700" : "bg-white",
+                          ]}
+                        ></span>
+                      {/each}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1 flex items-baseline gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Source</span>
+                    </div>
+                    <div
+                      class={[
+                        "flex min-h-6 items-center gap-1.5 rounded px-2 py-1 text-xs ring-1",
+                        sourceSoftClass(row.source_data_level),
+                      ]}
+                      title={readable(row.source_data_level)}
+                    >
+                      <span class={["h-2.5 w-2.5 rounded-full", sourceClass(row.source_data_level)]}></span>
+                      <span class="truncate font-semibold">{sourceShortLabel(row.source_data_level)}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1 flex items-baseline justify-between gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Caveats</span>
+                      <span class="font-mono text-xs text-slate-900">{caveatCount(row)}</span>
+                    </div>
+                    <div class="flex min-h-6 flex-wrap items-center gap-1">
+                      {#if caveatCount(row) > 0}
+                        {#each uniqueCaveatTags(row).slice(0, 3) as tag (tag)}
+                          <span
+                            class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-warn-soft px-1 text-[10px] font-semibold text-warn"
+                            title={caveatDefinitions[tag]?.description ?? labelForCaveat(tag)}
+                          >
+                            !
+                          </span>
+                        {/each}
+                        {#if caveatCount(row) > 3}
+                          <span class="font-mono text-[10px] text-warn">+{caveatCount(row) - 3}</span>
+                        {/if}
+                      {:else}
+                        <span class="h-2 flex-1 rounded-full bg-white" title="no caveat tags"></span>
+                      {/if}
+                      {#if row.has_mixed_aic_scopes}
+                        <span
+                          class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-amber-100 px-1 font-mono text-[10px] font-semibold text-amber-800"
+                          title="mixed AIC comparison scopes"
+                        >
+                          M
+                        </span>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                 <div>
@@ -598,7 +845,7 @@
     </div>
 
     <aside class="space-y-4">
-      <section class="rounded-md border border-slate-200 bg-white p-4">
+      <section class="rounded-md border border-slate-200 bg-white p-4" data-testid="family-verdicts">
         <h3 class="text-sm font-semibold text-slate-900">Family Verdicts</h3>
         <ul class="mt-3 space-y-3">
           {#each familyVerdicts as group (group.family)}
@@ -607,16 +854,63 @@
                 <p class="text-xs font-semibold text-slate-800">{group.family}</p>
                 <span class="font-mono text-xs text-slate-500">{group.n}</span>
               </div>
-              <ul class="mt-1 flex flex-wrap gap-1">
-                {#each group.topVariants as [variant, count] (`${group.family}-${variant}`)}
-                  <li class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700">
-                    {variant} <span class="font-mono">{count}</span>
+
+              <div
+                class="mt-2 flex h-2 overflow-hidden rounded-full bg-slate-100"
+                title="winner family distribution"
+              >
+                {#each group.winnerSegments as segment (`${group.family}-${segment.key}`)}
+                  <span
+                    class={["h-2", winnerClass(segment.key)]}
+                    style={`width: ${percent(segment.count, group.n)}`}
+                    title={`${segment.label}: ${segment.count}`}
+                  ></span>
+                {/each}
+              </div>
+
+              <ul class="mt-2 flex flex-wrap gap-1">
+                {#each group.winnerSegments.slice(0, 4) as segment (`${group.family}-${segment.key}-label`)}
+                  <li
+                    class={[
+                      "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ring-1",
+                      winnerSoftClass(segment.key),
+                    ]}
+                  >
+                    <span class={["h-1.5 w-1.5 rounded-full", winnerClass(segment.key)]}></span>
+                    {segment.label} <span class="font-mono">{segment.count}</span>
                   </li>
                 {/each}
               </ul>
-              <p class="mt-1 text-[11px] text-slate-500">
-                {group.close} close · {group.caveats} caveated
-              </p>
+
+              <div class="mt-2 grid grid-cols-3 gap-2">
+                <div title={`${group.close} close model-selection rows`}>
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                    <span>Close</span>
+                    <span class="font-mono">{group.close}</span>
+                  </div>
+                  <div class="h-1.5 rounded-full bg-slate-100">
+                    <span class="block h-1.5 rounded-full bg-amber-500" style={`width: ${percent(group.close, group.n)}`}></span>
+                  </div>
+                </div>
+                <div title={`${group.caveats} caveated model-selection rows`}>
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                    <span>Caveat</span>
+                    <span class="font-mono">{group.caveats}</span>
+                  </div>
+                  <div class="h-1.5 rounded-full bg-slate-100">
+                    <span class="block h-1.5 rounded-full bg-warn" style={`width: ${percent(group.caveats, group.n)}`}></span>
+                  </div>
+                </div>
+                <div title={`${group.mixed} mixed-scope model-selection rows`}>
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                    <span>Mixed</span>
+                    <span class="font-mono">{group.mixed}</span>
+                  </div>
+                  <div class="h-1.5 rounded-full bg-slate-100">
+                    <span class="block h-1.5 rounded-full bg-slate-600" style={`width: ${percent(group.mixed, group.n)}`}></span>
+                  </div>
+                </div>
+              </div>
             </li>
           {/each}
         </ul>

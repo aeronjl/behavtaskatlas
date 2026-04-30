@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import CoverageGapMatrix from "../components/CoverageGapMatrix.svelte";
 import {
   audit,
   catalog,
@@ -8,6 +9,7 @@ import {
   hrefForFinding,
   linkIntegrity,
   models,
+  papers,
   slugForId,
 } from "../lib/data";
 import { findings as findingsIndex } from "../lib/findings";
@@ -75,6 +77,8 @@ type RoadmapItem = {
   next_action?: string;
   recommended_action: string;
   impact: string;
+  missing_requirements?: string[];
+  related_variant_id?: string;
   rationale?: string;
 };
 const roadmap =
@@ -138,11 +142,16 @@ type DataRequestEntry = {
   priority: string;
   request_type: string;
   blocker_type?: string | null;
+  blocker_detail?: string | null;
+  curation_status?: string | null;
   dataset_ids: string[];
+  dataset_names?: string[];
   paper_ids: string[];
+  paper_labels?: string[];
   protocol_ids: string[];
   slice_ids: string[];
   finding_ids: string[];
+  model_roadmap_issue_types?: string[];
   purpose: string;
   next_action: string;
   requested_files: Array<{ name: string; description: string; required: boolean }>;
@@ -167,12 +176,68 @@ type DataRequestEntry = {
   contact_instructions?: string | null;
   request_draft?: { subject: string; body: string } | null;
 };
+type MatrixCellKey =
+  | "raw_data"
+  | "trial_table"
+  | "figure_source"
+  | "findings"
+  | "model_fits"
+  | "reports"
+  | "source_request";
+type MatrixCellState =
+  | "ok"
+  | "partial"
+  | "ready"
+  | "missing"
+  | "blocked"
+  | "unknown"
+  | "na";
+type CoverageGapMatrixRow = {
+  blocker: string;
+  cells: Record<MatrixCellKey, MatrixCellState>;
+  chips: string[];
+  detail?: string | null;
+  href: string;
+  id: string;
+  next_action: string;
+  priority: string;
+  request_href?: string | null;
+  request_label?: string | null;
+  source: string;
+  status: string;
+  target_id: string;
+  target_label: string;
+  target_type: string;
+  view: "ready" | "blocked" | "extraction";
+};
+type SliceCoverageRow = {
+  fittable_variant_ids?: string[];
+  n_subjects?: number;
+  n_trials?: number;
+  slice_id: string;
+  trials_path?: string | null;
+};
 
 const findings = (findingsIndex.findings ?? []) as unknown as FindingEntry[];
 const findingsById = new Map(findings.map((f) => [f.finding_id, f]));
+const findingsBySlice = new Map<string, FindingEntry[]>();
+for (const finding of findings) {
+  const rows = findingsBySlice.get(finding.slice_id) ?? [];
+  rows.push(finding);
+  findingsBySlice.set(finding.slice_id, rows);
+}
 const datasetsById = new Map(
   catalog.dataset_details.map((d) => [d.dataset_id, d]),
 );
+const papersById = new Map(papers.papers.map((paper) => [paper.id, paper]));
+const slicesById = new Map(catalog.vertical_slices.map((slice) => [slice.slice_id, slice]));
+const sliceCoverageById = new Map(
+  (((models as unknown as { slice_coverage?: SliceCoverageRow[] }).slice_coverage ?? []) as SliceCoverageRow[])
+    .map((row) => [row.slice_id, row]),
+);
+const fitsByFinding = ((models as unknown as {
+  fits_by_finding?: Record<string, unknown[]>;
+}).fits_by_finding ?? {}) as Record<string, unknown[]>;
 const blockedItems = roadmapItems.filter(
   (item) => item.status === "blocked_external_data",
 );
@@ -341,8 +406,161 @@ function roadmapHref(item: RoadmapItem): string {
 function formatDate(value: string | undefined | null): string {
   return value ? value : "none";
 }
+function hrefForNode(nodeId: string | undefined | null, nodeType?: string | null): string {
+  if (!nodeId) return "#";
+  if (nodeId.startsWith("paper.") || nodeType === "paper") return `/papers/${slugForId(nodeId)}`;
+  if (nodeId.startsWith("finding.") || nodeType === "finding") return hrefForFinding(nodeId);
+  if (nodeId.startsWith("slice.") || nodeType === "slice") return `/slices/${slugForId(nodeId)}`;
+  if (nodeId.startsWith("dataset.") || nodeType === "dataset") return `/datasets/${slugForId(nodeId)}`;
+  if (nodeId.startsWith("protocol.") || nodeType === "protocol") return `/protocols/${slugForId(nodeId)}`;
+  return "#";
+}
+function requestCellState(actionState: string | null | undefined): MatrixCellState {
+  if (actionState === "ready_to_send") return "ready";
+  if (actionState === "blocked" || actionState === "overdue") return "blocked";
+  if (actionState === "draft" || actionState === "waiting" || actionState === "follow_up_due") return "partial";
+  if (actionState === "closed" || actionState === "fulfilled_pending_intake") return "ok";
+  return "unknown";
+}
+function uniqueList(values: Array<string | undefined | null>): string[] {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+}
+
+const coverageGapRows: CoverageGapMatrixRow[] = [];
+
+for (const request of requestRows) {
+  const paperId = request.paper_ids[0] ?? "";
+  const paper = paperId ? papersById.get(paperId) : undefined;
+  const findingCount =
+    request.finding_ids.length ||
+    request.paper_ids.reduce((total, id) => total + (papersById.get(id)?.finding_count ?? 0), 0);
+  const sourceLevel = request.dataset_ids.length > 0 ? "figure-source-data" : "";
+  coverageGapRows.push({
+    blocker: request.blocker_type ?? request.request_type,
+    cells: {
+      raw_data: request.dataset_ids.length > 0 ? "partial" : "blocked",
+      trial_table: "blocked",
+      figure_source: request.dataset_ids.length > 0 ? "ok" : "unknown",
+      findings: findingCount > 0 ? "partial" : "missing",
+      model_fits: (request.model_roadmap_issue_types ?? []).includes("proxy_source_data")
+        ? "partial"
+        : "missing",
+      reports: request.slice_ids.length > 0 ? "ok" : "missing",
+      source_request: requestCellState(request.action_state ?? request.status),
+    },
+    chips: [
+      request.paper_ids.length > 0 ? `${request.paper_ids.length} paper${request.paper_ids.length === 1 ? "" : "s"}` : "",
+      findingCount > 0 ? `${findingCount} finding${findingCount === 1 ? "" : "s"}` : "",
+      request.dataset_ids.length > 0 ? `${request.dataset_ids.length} dataset${request.dataset_ids.length === 1 ? "" : "s"}` : "",
+      sourceLevel ? label(sourceLevel) : "",
+    ].filter(Boolean),
+    detail: request.blocker_detail,
+    href: paperId ? `/papers/${slugForId(paperId)}` : request.request_export_path ?? "#",
+    id: `request:${request.request_id}`,
+    next_action: request.action_summary ?? request.next_action,
+    priority: request.priority,
+    request_href: request.request_export_path,
+    request_label: label(request.status),
+    source: "data request",
+    status: request.action_state ?? request.status,
+    target_id: paperId || request.request_id,
+    target_label: request.title || paper?.citation?.split(".")[0] || compactId(request.request_id),
+    target_type: request.paper_ids.length > 1 ? "paper group" : "paper",
+    view: "blocked",
+  });
+}
+
+const readyItemsBySlice = new Map<string, RoadmapItem[]>();
+for (const item of roadmapItems.filter((entry) => entry.status === "ready")) {
+  const sliceId = item.slice_id || item.target_id;
+  const rows = readyItemsBySlice.get(sliceId) ?? [];
+  rows.push(item);
+  readyItemsBySlice.set(sliceId, rows);
+}
+for (const [sliceId, items] of readyItemsBySlice) {
+  const slice = slicesById.get(sliceId);
+  const sliceCoverage = sliceCoverageById.get(sliceId);
+  const sliceFindings = findingsBySlice.get(sliceId) ?? [];
+  const fitCount = sliceFindings.reduce(
+    (total, finding) => total + (fitsByFinding[finding.finding_id]?.length ?? 0),
+    0,
+  );
+  const missingRequirements = uniqueList(items.flatMap((item) => item.missing_requirements ?? []));
+  coverageGapRows.push({
+    blocker: missingRequirements.length > 0
+      ? `missing ${missingRequirements.join(", ")}`
+      : issueLabel(items[0]?.issue_type ?? "near_miss_slice"),
+    cells: {
+      raw_data: sliceCoverage?.trials_path ? "ok" : "missing",
+      trial_table: sliceCoverage?.trials_path ? "ok" : "missing",
+      figure_source: "na",
+      findings: sliceFindings.length > 0 ? "ok" : "missing",
+      model_fits: fitCount > 0 ? "partial" : "ready",
+      reports: slice?.report_status === "available" ? "ok" : "missing",
+      source_request: "na",
+    },
+    chips: [
+      `${items.length} variant${items.length === 1 ? "" : "s"}`,
+      sliceCoverage?.n_trials ? `${sliceCoverage.n_trials.toLocaleString()} trials` : "",
+      missingRequirements.length > 0 ? missingRequirements.join(", ") : "",
+    ].filter(Boolean),
+    detail: items[0]?.rationale,
+    href: `/slices/${slugForId(sliceId)}`,
+    id: `roadmap-ready:${sliceId}`,
+    next_action: items[0]?.recommended_action ?? "Add the missing harmonized capability or mark the variant intentionally inapplicable.",
+    priority: items[0]?.priority_label ?? "low",
+    source: "model roadmap",
+    status: "ready",
+    target_id: sliceId,
+    target_label: slice?.title ?? compactId(sliceId),
+    target_type: "slice",
+    view: "ready",
+  });
+}
+
+for (const item of curationItems.filter((entry) => entry.status === "open")) {
+  const nodeId = item.node_id ?? item.source_issue_id ?? item.item_id;
+  const relatedRequest = requestRows.find((request) =>
+    Boolean(nodeId) &&
+    (request.protocol_ids.includes(nodeId ?? "") ||
+      request.paper_ids.includes(nodeId ?? "") ||
+      request.slice_ids.includes(nodeId ?? "") ||
+      request.finding_ids.includes(nodeId ?? "")),
+  );
+  const needsDataset = item.action_type.includes("dataset");
+  const needsSlice = item.action_type.includes("vertical slice");
+  coverageGapRows.push({
+    blocker: item.action_type,
+    cells: {
+      raw_data: needsDataset ? "missing" : "unknown",
+      trial_table: "missing",
+      figure_source: "unknown",
+      findings: "missing",
+      model_fits: "missing",
+      reports: needsSlice ? "missing" : "unknown",
+      source_request: relatedRequest
+        ? requestCellState(relatedRequest.action_state ?? relatedRequest.status)
+        : "unknown",
+    },
+    chips: [item.source_issue_type, item.node_type ?? "", relatedRequest ? relatedRequest.status : ""].filter(Boolean),
+    detail: item.message,
+    href: hrefForNode(nodeId, item.node_type),
+    id: `curation:${item.item_id}`,
+    next_action: item.suggested_next_step,
+    priority: item.priority,
+    request_href: relatedRequest?.request_export_path,
+    request_label: relatedRequest ? label(relatedRequest.status) : null,
+    source: "curation queue",
+    status: item.status,
+    target_id: nodeId,
+    target_label: item.node_label ?? compactId(nodeId),
+    target_type: item.node_type ?? "record",
+    view: "extraction",
+  });
+}
 
 const sectionLinks = [
+  { id: "gap-matrix", label: "Gap matrix" },
   { id: "audit", label: "Reproducibility audit" },
   { id: "curation", label: "Curation queue" },
   { id: "blockers", label: "External data blockers" },
@@ -434,6 +652,18 @@ const headlineCounts = {
         {headlineCounts.link_issues}
       </p>
     </a>
+  </section>
+
+  <section id="gap-matrix" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Gap matrix</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        One board for local implementation targets, external data blockers,
+        and extraction gaps. Rows are generated from the curation queue,
+        data-request records, and model-coverage roadmap.
+      </p>
+    </header>
+    <CoverageGapMatrix client:load rows={coverageGapRows} />
   </section>
 
   <section id="audit" class="mb-12 scroll-mt-20">

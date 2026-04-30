@@ -59,6 +59,7 @@ def _base_routes() -> set[str]:
         "/stories",
         "/stories/prior-shifts",
         "/stories/rdm",
+        "/stories/visual-contrast",
     }
 
 

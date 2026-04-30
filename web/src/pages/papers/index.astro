@@ -1,13 +1,30 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { findings } from "../../lib/findings";
-import { papers, type PaperEntry } from "../../lib/data";
+import { models, papers, type PaperEntry } from "../../lib/data";
 import CitationDownloads from "../../components/CitationDownloads.astro";
 import PapersBrowser from "../../components/PapersBrowser.svelte";
 
-const cardList = (papers.papers as PaperEntry[]).slice().sort(
-  (a, b) => b.year - a.year || a.citation.localeCompare(b.citation),
+const findingPaperById = new Map(
+  findings.findings.map((finding) => [finding.finding_id, finding.paper_id]),
 );
+const modelFitIdsByPaper = new Map<string, Set<string>>();
+for (const fit of models.fits) {
+  for (const findingId of fit.finding_ids ?? []) {
+    const paperId = findingPaperById.get(findingId);
+    if (!paperId) continue;
+    const fitIds = modelFitIdsByPaper.get(paperId) ?? new Set<string>();
+    fitIds.add(fit.id);
+    modelFitIdsByPaper.set(paperId, fitIds);
+  }
+}
+
+const cardList = (papers.papers as PaperEntry[])
+  .map((paper) => ({
+    ...paper,
+    model_fit_count: modelFitIdsByPaper.get(paper.id)?.size ?? 0,
+  }))
+  .sort((a, b) => b.year - a.year || a.citation.localeCompare(b.citation));
 ---
 
 <BaseLayout

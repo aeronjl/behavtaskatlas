@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Site UI/UX
+
+- Added visual atlas overview counters and task-family coverage matrix to the
+  home page.
+- Added a visual-contrast family map with paper timeline, coverage matrix,
+  curve scan, small-multiple galleries, model-confidence summaries, and
+  protocol footprints.
+- Added compact paper coverage strips on `/papers`, model-selection glyphs and
+  family verdict bars on `/models`, and a generated coverage gap matrix on
+  `/atlas-health`.
+- Hardened the home overview mobile layout so the wide matrix remains scoped to
+  its own horizontal scroll region.
+
 ## v0.2.0 — 2026-04-30
 
 Depth release focused on visual contrast coverage, paper visibility, and

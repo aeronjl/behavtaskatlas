@@ -21,6 +21,7 @@
     finding_n_subjects_max?: number | null;
     id: string;
     lab?: string | null;
+    model_fit_count?: number | null;
     n_subjects?: number | null;
     notes?: string | null;
     protocols?: LinkedRecord[] | null;
@@ -93,6 +94,18 @@
     return row.n_subjects ?? row.finding_n_subjects_max ?? null;
   }
 
+  function sliceCount(row: PaperBrowserRow): number {
+    return row.vertical_slices?.length ?? 0;
+  }
+
+  function datasetCount(row: PaperBrowserRow): number {
+    return row.datasets?.length ?? 0;
+  }
+
+  function modelFitCount(row: PaperBrowserRow): number {
+    return row.model_fit_count ?? 0;
+  }
+
   function readable(value: string): string {
     if (value === "non-human-primate") return "NHP";
     if (value === "processed-trial") return "processed trials";
@@ -109,8 +122,47 @@
     return `data:${mime};charset=utf-8,${encodeURIComponent(text)}`;
   }
 
+  function filteredHref(path: string, param: string, value: string): string {
+    return `${path}?${param}=${encodeURIComponent(value)}`;
+  }
+
+  function paperQuery(row: PaperBrowserRow): string {
+    return row.citation.split(".")[0] ?? row.slug;
+  }
+
   function valueText(values: readonly string[] | undefined): string {
     return values && values.length > 0 ? values.map(readable).join(", ") : "-";
+  }
+
+  function stripWidth(value: number | null | undefined, max: number): string {
+    if (!value || max <= 0) return "0%";
+    return `${Math.max(8, Math.round((value / max) * 100))}%`;
+  }
+
+  function sourceClass(level: string): string {
+    if (level === "raw-trial") return "bg-emerald-500";
+    if (level === "processed-trial") return "bg-sky-500";
+    if (level === "figure-source-data") return "bg-amber-500";
+    return "bg-slate-300";
+  }
+
+  function curveClass(curve: string): string {
+    if (curve === "psychometric") return "bg-blue-600";
+    if (curve === "chronometric") return "bg-teal-500";
+    if (curve === "accuracy_by_strength") return "bg-violet-500";
+    return "bg-slate-400";
+  }
+
+  function coverageTone(status: string): string {
+    if (status === "findings") return "bg-blue-600";
+    if (status === "analysis-linked") return "bg-teal-500";
+    if (status === "data-linked") return "bg-emerald-500";
+    if (status === "protocol-linked") return "bg-amber-500";
+    return "bg-slate-300";
+  }
+
+  function coverageStepClass(active: boolean, tone: string): string {
+    return active ? tone : "bg-slate-100";
   }
 
   function optionCounts(
@@ -385,21 +437,28 @@
   }
 
   const filteredRows = $derived(sorted(sortedBaseRows.filter(rowMatches)));
+  const maxFindings = $derived(Math.max(1, ...rows.map((row) => row.finding_count ?? 0)));
+  const maxModels = $derived(Math.max(1, ...rows.map(modelFitCount)));
+  const maxSlices = $derived(Math.max(1, ...rows.map(sliceCount)));
 
   const summary = $derived.by(() => {
     const protocols = new Set<string>();
     let findings = 0;
+    let modelFits = 0;
+    let slices = 0;
     let trials = 0;
     let sourceLinked = 0;
     for (const row of filteredRows) {
       findings += row.finding_count;
+      modelFits += modelFitCount(row);
+      slices += sliceCount(row);
       trials += row.total_n_trials ?? 0;
       if ((row.source_data_levels ?? []).length > 0) sourceLinked += 1;
       for (const protocol of row.protocols ?? []) {
         protocols.add(protocol.name ?? protocol.protocol_id ?? "");
       }
     }
-    return { findings, trials, protocols: protocols.size, sourceLinked };
+    return { findings, modelFits, slices, trials, protocols: protocols.size, sourceLinked };
   });
 </script>
 
@@ -546,6 +605,8 @@
       Showing <span class="font-mono font-semibold text-slate-900">{filteredRows.length}</span>
       of <span class="font-mono text-slate-900">{rows.length}</span> papers ·
       <span class="font-mono text-slate-900">{fmtCount(summary.findings)}</span> findings ·
+      <span class="font-mono text-slate-900">{fmtCount(summary.modelFits)}</span> model fits ·
+      <span class="font-mono text-slate-900">{fmtCount(summary.slices)}</span> slices ·
       <span class="font-mono text-slate-900">{fmtCount(summary.trials)}</span> trials ·
       <span class="font-mono text-slate-900">{summary.protocols}</span> protocols
     </p>
@@ -595,6 +656,130 @@
             {#each row.species ?? [] as species (species)}
               <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{readable(species)}</span>
             {/each}
+          </div>
+
+          <div
+            data-testid="paper-coverage-strip"
+            class="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+            aria-label={`${paperQuery(row)} coverage strip`}
+          >
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              <div class="xl:col-span-2">
+                <div class="mb-1 flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Coverage</span>
+                  <span class="text-[11px] text-slate-600">{coverageLabel(row.coverage_status)}</span>
+                </div>
+                <div
+                  class="grid grid-cols-6 gap-1"
+                  title="bibliography, protocol, source, slice, finding, model coverage"
+                >
+                  <span class="h-2 rounded-full bg-slate-500" title="bibliography curated"></span>
+                  <span
+                    class={["h-2 rounded-full", coverageStepClass((row.protocols?.length ?? 0) > 0, "bg-sky-500")]}
+                    title={`${row.protocols?.length ?? 0} linked protocol${(row.protocols?.length ?? 0) === 1 ? "" : "s"}`}
+                  ></span>
+                  <span
+                    class={["h-2 rounded-full", coverageStepClass((row.source_data_levels?.length ?? 0) > 0, "bg-emerald-500")]}
+                    title={`${row.source_data_levels?.length ?? 0} source level${(row.source_data_levels?.length ?? 0) === 1 ? "" : "s"}`}
+                  ></span>
+                  <span
+                    class={["h-2 rounded-full", coverageStepClass(sliceCount(row) > 0, "bg-teal-500")]}
+                    title={`${sliceCount(row)} linked slice${sliceCount(row) === 1 ? "" : "s"}`}
+                  ></span>
+                  <span
+                    class={["h-2 rounded-full", coverageStepClass(row.finding_count > 0, "bg-blue-600")]}
+                    title={`${row.finding_count} extracted finding${row.finding_count === 1 ? "" : "s"}`}
+                  ></span>
+                  <span
+                    class={["h-2 rounded-full", coverageStepClass(modelFitCount(row) > 0, "bg-violet-500")]}
+                    title={`${modelFitCount(row)} model fit${modelFitCount(row) === 1 ? "" : "s"}`}
+                  ></span>
+                </div>
+              </div>
+
+              <a
+                class="no-underline"
+                href={filteredHref("/findings", "q", paperQuery(row))}
+                title={`${row.finding_count} extracted finding${row.finding_count === 1 ? "" : "s"}`}
+              >
+                <span class="flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Findings</span>
+                  <span class="font-mono text-xs text-slate-900">{row.finding_count}</span>
+                </span>
+                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                  <span
+                    class={["block h-1.5 rounded-full", coverageTone(row.coverage_status)]}
+                    style={`width: ${stripWidth(row.finding_count, maxFindings)}`}
+                  ></span>
+                </span>
+              </a>
+
+              <a
+                class="no-underline"
+                href={filteredHref("/models", "model_q", paperQuery(row))}
+                title={`${modelFitCount(row)} committed model fit${modelFitCount(row) === 1 ? "" : "s"}`}
+              >
+                <span class="flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Models</span>
+                  <span class="font-mono text-xs text-slate-900">{modelFitCount(row)}</span>
+                </span>
+                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                  <span
+                    class="block h-1.5 rounded-full bg-violet-500"
+                    style={`width: ${stripWidth(modelFitCount(row), maxModels)}`}
+                  ></span>
+                </span>
+              </a>
+
+              <a
+                class="no-underline"
+                href={`/papers/${row.slug}`}
+                title={`${sliceCount(row)} linked slice${sliceCount(row) === 1 ? "" : "s"} and ${datasetCount(row)} linked dataset${datasetCount(row) === 1 ? "" : "s"}`}
+              >
+                <span class="flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Slices</span>
+                  <span class="font-mono text-xs text-slate-900">{sliceCount(row)}</span>
+                </span>
+                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                  <span
+                    class="block h-1.5 rounded-full bg-teal-500"
+                    style={`width: ${stripWidth(sliceCount(row), maxSlices)}`}
+                  ></span>
+                </span>
+              </a>
+
+              <div>
+                <div class="mb-1 flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Curves</span>
+                  <span class="font-mono text-xs text-slate-900">{row.curve_types?.length ?? 0}</span>
+                </div>
+                <div class="flex gap-1" title={valueText(row.curve_types)}>
+                  {#if row.curve_types && row.curve_types.length > 0}
+                    {#each row.curve_types as curve (curve)}
+                      <span class={["h-2 flex-1 rounded-full", curveClass(curve)]} title={readable(curve)}></span>
+                    {/each}
+                  {:else}
+                    <span class="h-2 flex-1 rounded-full bg-slate-100" title="no curves extracted"></span>
+                  {/if}
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-1 flex items-baseline justify-between gap-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Source</span>
+                  <span class="font-mono text-xs text-slate-900">{row.source_data_levels?.length ?? 0}</span>
+                </div>
+                <div class="flex gap-1" title={valueText(row.source_data_levels)}>
+                  {#if row.source_data_levels && row.source_data_levels.length > 0}
+                    {#each row.source_data_levels as level (level)}
+                      <span class={["h-2 flex-1 rounded-full", sourceClass(level)]} title={readable(level)}></span>
+                    {/each}
+                  {:else}
+                    <span class="h-2 flex-1 rounded-full bg-slate-100" title="no linked source data"></span>
+                  {/if}
+                </div>
+              </div>
+            </div>
           </div>
 
           <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-700 sm:grid-cols-4">

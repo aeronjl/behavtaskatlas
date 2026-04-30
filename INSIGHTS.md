@@ -2,6 +2,105 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 20:24:15 BST - Hardened the visual UI batch for release
+
+Ran a release-hardening pass across the visual roadmap surfaces and fixed the
+home overview's mobile containment so the wide family matrix stays within its
+own scroll region. Browser smoke covered `/`, `/stories`,
+`/stories/visual-contrast`, `/papers`, `/models`, and `/atlas-health#gap-matrix`
+on desktop and mobile, confirming the new overview, story, paper strips, model
+glyphs, family verdicts, and gap matrix render without runtime errors.
+Post-commit `site-index` plus `release-check` passes with 0 errors and 3
+warnings: Odoemene follow-up artifacts, normal-priority curation items, and
+stale ignored provenance remain documented follow-ups. Immediate MVP
+implication: the UI roadmap can move through CI and deploy as a site-level
+improvement while the next true data-release gate remains explicit.
+
+## 2026-04-30 20:07:57 BST - Added the coverage gap matrix
+
+Implemented the Phase 6 visual roadmap pass on `/atlas-health` with a generated
+gap matrix that combines data requests, model-roadmap near misses, and curation
+queue items into filterable ready/blocked/extraction views. The matrix exposes
+raw-data, trial-table, figure-source, finding, model-fit, report,
+source-request, blocker, and next-action state in one visual board. This matters
+because next curation work is now triageable without reading separate prose
+sections or CSV exports. Immediate MVP implication: future source-ingestion work
+should update the same row sources so release readiness stays one-shot and
+visually inspectable.
+
+## 2026-04-30 19:56:19 BST - Added model-selection glyphs
+
+Implemented the Phase 5 visual roadmap pass on `/models` with per-answer glyph
+strips for winner family, AIC separation, candidate breadth, confidence, source
+quality, caveats, and mixed-scope status, plus family verdict bars that show
+winner-class, close-call, caveat, and mixed-scope distributions. This matters
+because model-selection ambiguity is now visible before users read each card or
+open the detailed tables. Immediate MVP implication: the same warning/source
+rails can anchor the upcoming coverage gap matrix.
+
+## 2026-04-30 19:15:46 BST - Added paper coverage strips
+
+Implemented the Phase 4 visual roadmap pass on `/papers` with compact coverage
+strips that show bibliography/protocol/source/slice/finding/model coverage,
+finding/model/slice mini-bars, curve/source glyphs, and model-fit counts
+derived from committed model records. This matters because paper cards now
+surface high-value, data-rich, and extraction-blocked papers visually before
+users read card prose. Immediate MVP implication: the same glyph grammar should
+be reused for model-selection and gap-triage views.
+
+## 2026-04-30 19:05:00 BST - Added the atlas overview dashboard
+
+Implemented the Phase 3 visual roadmap pass on `/` with an automatically
+generated `AtlasOverview` component that combines headline counters,
+task-family heat cells, source-depth strips, dense-family bars, and
+source-backed gap calls into one scannable view. This matters because users can
+now see the atlas shape, not just record totals, before choosing a browse path.
+Immediate MVP implication: paper coverage strips should reuse the same compact
+count/source/model glyph language so visual scanning stays consistent across
+the site.
+
+## 2026-04-30 18:48:42 BST - Added small-multiple curve galleries
+
+Implemented the Phase 2 visual roadmap pass on `/stories/visual-contrast` with
+a reusable `CurveGallery` component for paper/protocol grouping, pooled/all
+trace modes, source filtering, linked finding traces, and optional fit
+overlays. This matters because variation and replication inside the deepest
+task family are now visible as panels instead of being buried in one dense plot
+or table. Immediate MVP implication: the component can be reused for other
+dense families and should inform paper coverage strips and the atlas overview
+dashboard.
+
+## 2026-04-30 18:13:42 BST - Shipped the first visual family map
+
+Implemented `/stories/visual-contrast` as the first visual UI/UX roadmap slice,
+combining paper timeline, coverage matrix, curve scan, model-confidence
+summary, model-winner bars, and protocol footprint for the deepest task family.
+This matters because users can now see family depth, replication, source
+quality, and model ambiguity before reading individual record pages. Immediate
+MVP implication: the same pattern can now be generalized into small-multiple
+curve galleries, paper coverage strips, and the atlas overview dashboard.
+
+## 2026-04-30 17:33:36 BST - Formalized the visual UI/UX roadmap
+
+Added a prioritized visual UI/UX roadmap to `MVP_PLAN.md`, starting with a
+visual contrast family page and small-multiple curve galleries before broader
+atlas overview, paper coverage strips, model-selection glyphs, and a coverage
+gap matrix. This matters because the atlas should communicate depth,
+replication, source quality, and model ambiguity visually instead of relying on
+text-heavy cards. Immediate MVP implication: the next implementation step
+should prove the visual roadmap on the deepest current family, then generalize
+successful components across catalog, papers, slices, and models.
+
+## 2026-04-30 17:29:47 BST - Prioritize visual structure over text-heavy browsing
+
+The next UI/UX layer should reduce reliance on prose-heavy cards and make
+task structure visible through graphs, coverage matrices, small multiples, and
+model-comparison glyphs. The atlas now has enough linked records, curves, and
+model selections that users need fast visual cues for coverage, replication,
+source quality, and model ambiguity before reading details. Immediate MVP
+implication: the next roadmap slice should add visual overviews to browse
+pages, not only more filters or text summaries.
+
 ## 2026-04-30 16:53:26 BST - Standardized top-level browse release polish
 
 Finished a release-prep UX pass across the new browse surfaces: `/catalog`

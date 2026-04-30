@@ -33,6 +33,28 @@ DEFAULT_STORIES: tuple[dict[str, Any], ...] = (
         "keywords": ["story", "stories", "synthesis", "models", "findings"],
     },
     {
+        "id": "story.visual-contrast",
+        "title": "Visual contrast family map",
+        "subtitle": "Timeline, coverage matrix, small multiples, and model ambiguity",
+        "body": (
+            "Visual contrast discrimination coverage across notable papers, "
+            "protocol variants, source-data levels, extracted findings, slices, "
+            "small-multiple curve galleries, and model-selection winners."
+        ),
+        "href": "/stories/visual-contrast",
+        "keywords": [
+            "story",
+            "visual contrast",
+            "2afc",
+            "psychometric",
+            "small multiples",
+            "curve gallery",
+            "coverage",
+            "family depth",
+            "model selection",
+        ],
+    },
+    {
         "id": "story.rdm",
         "title": "Cross-species random-dot motion",
         "subtitle": "Psychometric + chronometric + DDM cross-species fits",
