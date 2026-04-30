@@ -1,6 +1,6 @@
 [project]
 name = "behavtaskatlas"
-version = "0.1.0"
+version = "0.2.0"
 description = "A file-first atlas for behavioral neuroscience task protocols."
 readme = "README.md"
 requires-python = ">=3.11"

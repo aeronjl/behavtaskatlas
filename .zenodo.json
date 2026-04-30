@@ -1,5 +1,6 @@
 {
   "title": "behavtaskatlas: a file-first atlas of sensory-guided decision-making tasks",
+  "version": "0.2.0",
   "description": "behavtaskatlas links task families, protocols, datasets, implementations, and reproducible vertical slices for sensory-guided decision-making tasks in behavioral neuroscience. Each release bundles curated YAML records, harmonization adapters, baseline analyses, in-browser meta-analysis tooling, and a static atlas site. See https://behavtaskatlas.vercel.app/ for the live atlas and https://github.com/aeronjl/behavtaskatlas for the source.",
   "upload_type": "software",
   "license": "CC-BY-4.0",

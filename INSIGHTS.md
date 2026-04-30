@@ -2,6 +2,17 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 14:58:18 BST - Prepared v0.2.0 release metadata
+
+Promoted the visual-contrast depth and model catch-up work into a formal
+`v0.2.0` release candidate. The version bump records 18 curated papers, 91
+findings, 17 vertical slices, 222 model fits, zero no-fit findings in the model
+roadmap, and the known non-blocking release warnings around Odoemene, normal
+curation-queue items, and stale ignored slice provenance. Immediate MVP
+implication: the current atlas state is ready to be stamped as the first
+post-v0.1.0 content-depth release, while source-access requests become the next
+workstream after tagging.
+
 ## 2026-04-30 14:45:14 BST - Closed visual-contrast no-fit model gaps
 
 Added logistic-4param and SDT-2AFC model fits for the nine ready visual-contrast
