@@ -20,10 +20,12 @@ html {
   font-family: var(--font-sans);
   color: #111;
   background: #fff;
+  max-width: 100%;
 }
 
 body {
   line-height: 1.55;
+  max-width: 100%;
 }
 
 /* Page titles and section openers get the editorial serif. Nested h1 in

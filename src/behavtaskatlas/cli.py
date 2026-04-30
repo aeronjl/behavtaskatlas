@@ -6434,6 +6434,8 @@ def _site_index(
         DataRequest,
         Dataset,
         Finding,
+        ModelFamily,
+        ModelVariant,
         Paper,
         Protocol,
         TaskFamily,
@@ -6446,6 +6448,9 @@ def _site_index(
     protocol_records = [r for r in records if isinstance(r, Protocol)]
     dataset_records = [r for r in records if isinstance(r, Dataset)]
     slice_records = [r for r in records if isinstance(r, VerticalSlice)]
+    data_request_records = [r for r in records if isinstance(r, DataRequest)]
+    model_family_records = [r for r in records if isinstance(r, ModelFamily)]
+    model_variant_records = [r for r in records if isinstance(r, ModelVariant)]
     findings_payload = build_findings_index(
         papers=paper_records,
         findings=finding_records,
@@ -6493,6 +6498,9 @@ def _site_index(
         slices=slice_records,
         findings=finding_records,
         comparisons=[r for r in records if isinstance(r, Comparison)],
+        model_families=model_family_records,
+        model_variants=model_variant_records,
+        data_requests=data_request_records,
     )
     search_path = derived_dir / "search.json"
     search_path.write_text(
@@ -6514,7 +6522,6 @@ def _site_index(
         write_data_request_markdown_exports,
     )
 
-    data_request_records = [r for r in records if isinstance(r, DataRequest)]
     data_requests_payload = build_data_requests_index(
         requests=data_request_records,
         datasets=dataset_records,
@@ -6540,8 +6547,8 @@ def _site_index(
     from behavtaskatlas.models import ModelFamily, ModelFit, ModelVariant
 
     models_payload = build_models_index(
-        families=[r for r in records if isinstance(r, ModelFamily)],
-        variants=[r for r in records if isinstance(r, ModelVariant)],
+        families=model_family_records,
+        variants=model_variant_records,
         fits=[r for r in records if isinstance(r, ModelFit)],
         slices=slice_records,
         derived_dir=derived_dir,

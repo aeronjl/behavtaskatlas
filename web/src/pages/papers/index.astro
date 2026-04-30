@@ -3,41 +3,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { findings } from "../../lib/findings";
 import { papers, type PaperEntry } from "../../lib/data";
 import CitationDownloads from "../../components/CitationDownloads.astro";
-
-type LinkedProtocol = PaperEntry["protocols"][number];
-type SubjectCountEntry = PaperEntry & {
-  finding_n_subjects_max?: number | null;
-};
+import PapersBrowser from "../../components/PapersBrowser.svelte";
 
 const cardList = (papers.papers as PaperEntry[]).slice().sort(
   (a, b) => b.year - a.year || a.citation.localeCompare(b.citation),
 );
-
-const coverageLabels: Record<string, string> = {
-  findings: "Findings extracted",
-  "analysis-linked": "Analysis linked",
-  "data-linked": "Dataset linked",
-  "protocol-linked": "Protocol curated",
-  "bibliography-only": "Bibliography only",
-};
-
-function listText(values: readonly string[] | undefined): string {
-  return values && values.length > 0 ? values.join(", ") : "—";
-}
-
-function protocolText(protocols: readonly LinkedProtocol[] | undefined): string {
-  return protocols && protocols.length > 0
-    ? protocols.map((protocol) => protocol.name).join(", ")
-    : "—";
-}
-
-function coverageLabel(status: string): string {
-  return coverageLabels[status] ?? status;
-}
-
-function subjectCount(card: PaperEntry): number | null {
-  return card.n_subjects ?? (card as SubjectCountEntry).finding_n_subjects_max ?? null;
-}
 ---
 
 <BaseLayout
@@ -71,79 +41,7 @@ function subjectCount(card: PaperEntry): number | null {
         <code class="rounded bg-slate-100 px-1">papers/</code>.
       </section>
     ) : (
-      <ul class="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {cardList.map((card) => (
-          <li class="flex flex-col rounded-md border border-slate-200 bg-white p-4">
-            <header class="mb-2 flex items-baseline justify-between gap-2">
-              <h2 class="text-base font-semibold">
-                <a href={`/papers/${card.slug}`}>
-                  {card.citation}
-                </a>
-              </h2>
-              <span class="rounded bg-slate-100 px-2 py-0.5 text-xs">
-                {card.year}
-              </span>
-            </header>
-            <p class="mb-3 text-xs font-mono text-slate-500">{card.id}</p>
-            <dl class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-700">
-              <dt class="text-slate-500">Coverage</dt>
-              <dd>{coverageLabel(card.coverage_status)}</dd>
-              <dt class="text-slate-500">Lab</dt>
-              <dd>{card.lab ?? "—"}</dd>
-              <dt class="text-slate-500">Species</dt>
-              <dd>{listText(card.species)}</dd>
-              <dt class="text-slate-500">Protocols</dt>
-              <dd>{protocolText(card.protocols)}</dd>
-              <dt class="text-slate-500">Source levels</dt>
-              <dd>{listText(card.source_data_levels)}</dd>
-            </dl>
-            <ul class="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-              <li class="rounded bg-slate-100 px-2 py-0.5">
-                <span class="text-slate-500">Findings</span>
-                <span class="ml-1 font-mono font-semibold text-slate-900">
-                  {card.finding_count}
-                </span>
-              </li>
-              <li class="rounded bg-slate-100 px-2 py-0.5">
-                <span class="text-slate-500">Curves</span>
-                <span class="ml-1 text-slate-900">
-                  {listText(card.curve_types)}
-                </span>
-              </li>
-              {card.total_n_trials > 0 ? (
-                <li class="rounded bg-slate-100 px-2 py-0.5">
-                  <span class="text-slate-500">Σ trials</span>
-                  <span class="ml-1 font-mono font-semibold text-slate-900">
-                    {card.total_n_trials.toLocaleString()}
-                  </span>
-                </li>
-              ) : null}
-              {subjectCount(card) ? (
-                <li class="rounded bg-slate-100 px-2 py-0.5">
-                  <span class="text-slate-500">Subjects</span>
-                  <span class="ml-1 font-mono font-semibold text-slate-900">
-                    {subjectCount(card)}
-                  </span>
-                </li>
-              ) : null}
-            </ul>
-            {card.doi ? (
-              <p class="text-xs">
-                <a class="text-accent" href={`https://doi.org/${card.doi}`}>
-                  doi:{card.doi}
-                </a>
-              </p>
-            ) : null}
-            <div class="mt-auto pt-3">
-              <CitationDownloads
-                bibtex={card.bibtex}
-                ris={card.ris}
-                filenameStem={card.slug}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
+      <PapersBrowser rows={cardList} client:load />
     )
   }
 </BaseLayout>

@@ -23,66 +23,24 @@ function isActive(href: string): boolean {
 ---
 
 <nav class="border-b border-slate-200 bg-white">
-  <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-    <a
-      href="/"
-      class="font-semibold tracking-tight text-slate-900 no-underline"
-      aria-label="behavtaskatlas home"
-    >
-      behavtaskatlas
-    </a>
+  <div class="mx-auto max-w-5xl px-4 py-3">
+    <div class="flex items-center gap-3">
+      <a
+        href="/"
+        class="shrink-0 font-semibold tracking-tight text-slate-900 no-underline"
+        aria-label="behavtaskatlas home"
+      >
+        behavtaskatlas
+      </a>
 
-    <ul class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-      {
-        primary.map((item) => (
-          <li>
-            <a
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              class:list={[
-                "no-underline transition-colors",
-                isActive(item.href)
-                  ? "border-b-2 border-accent pb-0.5 text-slate-900 font-medium"
-                  : "text-slate-700 hover:text-accent",
-              ]}
-            >
-              {item.label}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-
-    <div class="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-      <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500">
-        {
-          secondary.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                aria-current={isActive(item.href) ? "page" : undefined}
-                class:list={[
-                  "no-underline",
-                  isActive(item.href)
-                    ? "text-slate-900 font-medium"
-                    : "hover:text-accent",
-                ]}
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-
-      <form action="/search" method="get" class="relative flex items-center">
+      <form action="/search" method="get" class="relative ml-auto min-w-0 flex-1 sm:max-w-48">
         <label class="sr-only" for="nav-search">Search the atlas</label>
         <input
           id="nav-search"
           type="search"
           name="q"
           placeholder="Search…"
-          class="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 pr-9 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          class="w-full rounded-md border border-slate-300 bg-white px-2 py-1 pr-9 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           autocomplete="off"
         />
         <kbd
@@ -90,6 +48,52 @@ function isActive(href: string): boolean {
           aria-hidden="true"
         >⌘K</kbd>
       </form>
+    </div>
+
+    <div class="mt-2 -mx-4 overflow-x-auto px-4">
+      <div class="flex w-max items-baseline gap-x-5">
+        <ul class="flex items-center gap-x-5 text-sm">
+          {
+            primary.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  class:list={[
+                    "no-underline transition-colors whitespace-nowrap",
+                    isActive(item.href)
+                      ? "border-b-2 border-accent pb-0.5 text-slate-900 font-medium"
+                      : "text-slate-700 hover:text-accent",
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <ul class="flex items-center gap-x-3 text-xs text-slate-500">
+          {
+            secondary.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  class:list={[
+                    "no-underline whitespace-nowrap",
+                    isActive(item.href)
+                      ? "text-slate-900 font-medium"
+                      : "hover:text-accent",
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
     </div>
   </div>
 </nav>

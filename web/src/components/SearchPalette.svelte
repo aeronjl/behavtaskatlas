@@ -10,6 +10,9 @@
     vertical_slice: "Slice",
     finding: "Finding",
     comparison: "Comparison",
+    model: "Model",
+    story: "Story",
+    data_request: "Data request",
   };
 
   const payload: SearchPayload = searchIndex;
@@ -58,8 +61,15 @@
       }
       if (!matched) return 0;
     }
-    // Bias paper/comparison/story over deep-leaf records when scores tie.
-    if (entry.type === "paper" || entry.type === "comparison") total *= 1.1;
+    // Bias paper/comparison/story/model over deep-leaf records when scores tie.
+    if (
+      entry.type === "paper" ||
+      entry.type === "comparison" ||
+      entry.type === "story" ||
+      entry.type === "model"
+    ) {
+      total *= 1.1;
+    }
     return total;
   }
 
@@ -171,7 +181,7 @@
           bind:this={inputEl}
           bind:value={query}
           type="search"
-          placeholder="Search papers, findings, slices, models…"
+          placeholder="Search papers, findings, models, stories…"
           class="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
           autocomplete="off"
           autocapitalize="none"
@@ -187,7 +197,7 @@
           <p>{payload.counts.total} indexed records.</p>
           <p class="mt-2 text-xs">
             Type to search across papers, task families, protocols, datasets,
-            slices, findings, and comparisons. <kbd
+            slices, findings, models, stories, data requests, and comparisons. <kbd
               class="rounded bg-slate-100 px-1 font-mono text-[10px]"
               >↑</kbd
             >

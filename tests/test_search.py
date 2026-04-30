@@ -8,12 +8,17 @@ from behavtaskatlas.models import (
     ChoiceSpec,
     Comparison,
     CurvePoint,
+    DataRequest,
     Dataset,
     FeedbackSpec,
     Finding,
+    ModelFamily,
+    ModelVariant,
     Paper,
+    ParameterDefinition,
     Protocol,
     Provenance,
+    RequestedDataFile,
     ResultCurve,
     StimulusSpec,
     StratificationKey,
@@ -183,6 +188,85 @@ def _comparison() -> Comparison:
     )
 
 
+def _model_family() -> ModelFamily:
+    return ModelFamily(
+        object_type="model_family",
+        schema_version="0.1.0",
+        id="model_family.demo-ddm",
+        name="Demo drift diffusion",
+        description="A model family for accumulation-to-bound fits.",
+        parameter_definitions=[
+            ParameterDefinition(
+                name="drift_rate",
+                symbol="v",
+                units="a.u.",
+                description="Evidence-dependent drift rate.",
+            )
+        ],
+        applicable_curve_types=["psychometric", "chronometric"],
+        requires=["stimulus_value", "choice", "response_time"],
+        references=[],
+        curation_status="literature-curated",
+        provenance=_provenance(),
+    )
+
+
+def _model_variant() -> ModelVariant:
+    return ModelVariant(
+        object_type="model_variant",
+        schema_version="0.1.0",
+        id="model_variant.demo-ddm-vanilla",
+        family_id="model_family.demo-ddm",
+        name="Demo vanilla DDM",
+        description="A drift-diffusion variant with fixed starting point.",
+        free_parameters=["drift_rate", "boundary", "nondecision_time"],
+        fixed_parameters={"z": 0.5},
+        requires=["response_time"],
+        references=[],
+        curation_status="literature-curated",
+        provenance=_provenance(),
+    )
+
+
+def _data_request() -> DataRequest:
+    return DataRequest(
+        object_type="data_request",
+        schema_version="0.1.0",
+        id="data_request.demo-source-data",
+        title="Demo source data request",
+        status="ready_to_send",
+        priority="high",
+        request_type="author_request",
+        paper_ids=["paper.demo-2024"],
+        protocol_ids=["protocol.demo"],
+        model_roadmap_issue_types=["missing_trial_level_source"],
+        blocker_type="author_request_raw_trials",
+        purpose="Recover missing trial-level source data.",
+        blocker_detail="No public trial-level archive was identified.",
+        next_action="Send an author request.",
+        requested_files=[
+            RequestedDataFile(
+                name="demo_trials",
+                description="Trial-level choices and response times.",
+                required=True,
+            )
+        ],
+        curation_status="literature-curated",
+        provenance=_provenance(),
+    )
+
+
+def _story() -> dict[str, object]:
+    return {
+        "id": "story.demo",
+        "title": "Demo search story",
+        "subtitle": "Cross-record synthesis",
+        "body": "A narrative story that links models and findings.",
+        "href": "/stories/demo",
+        "keywords": ["story", "synthesis"],
+    }
+
+
 def test_build_search_index_covers_every_record_type() -> None:
     index = build_search_index(
         papers=[_paper()],
@@ -192,8 +276,12 @@ def test_build_search_index_covers_every_record_type() -> None:
         slices=[_slice()],
         findings=[_finding()],
         comparisons=[_comparison()],
+        model_families=[_model_family()],
+        model_variants=[_model_variant()],
+        data_requests=[_data_request()],
+        stories=[_story()],
     )
-    assert index["counts"]["total"] == 7
+    assert index["counts"]["total"] == 11
     assert index["counts"] == {
         "paper": 1,
         "task_family": 1,
@@ -202,7 +290,10 @@ def test_build_search_index_covers_every_record_type() -> None:
         "vertical_slice": 1,
         "finding": 1,
         "comparison": 1,
-        "total": 7,
+        "model": 2,
+        "data_request": 1,
+        "story": 1,
+        "total": 11,
     }
     types = {e["type"] for e in index["entries"]}
     assert types == {
@@ -213,6 +304,9 @@ def test_build_search_index_covers_every_record_type() -> None:
         "vertical_slice",
         "finding",
         "comparison",
+        "model",
+        "data_request",
+        "story",
     }
 
 
@@ -225,8 +319,13 @@ def test_search_entries_carry_searchable_fields_and_links() -> None:
         slices=[_slice()],
         findings=[_finding()],
         comparisons=[_comparison()],
+        model_families=[_model_family()],
+        model_variants=[_model_variant()],
+        data_requests=[_data_request()],
+        stories=[_story()],
     )
-    by_type = {e["type"]: e for e in index["entries"]}
+    by_type = {e["type"]: e for e in index["entries"] if e["type"] != "model"}
+    model_entries = [e for e in index["entries"] if e["type"] == "model"]
 
     paper_entry = by_type["paper"]
     assert paper_entry["href"] == "/papers/demo-2024"
@@ -249,3 +348,16 @@ def test_search_entries_carry_searchable_fields_and_links() -> None:
     comparison_entry = by_type["comparison"]
     assert comparison_entry["href"].startswith("/compare#")
     assert "macaque-vs-human" in comparison_entry["href"]
+
+    model_hrefs = {entry["href"] for entry in model_entries}
+    assert "/models#demo-ddm" in model_hrefs
+    assert "/models#demo-ddm-vanilla" in model_hrefs
+    assert any("drift_rate" in entry["keywords"] for entry in model_entries)
+
+    data_request_entry = by_type["data_request"]
+    assert data_request_entry["href"] == "/data_requests/demo-source-data.md"
+    assert "missing_trial_level_source" in data_request_entry["keywords"]
+
+    story_entry = by_type["story"]
+    assert story_entry["href"] == "/stories/demo"
+    assert "synthesis" in story_entry["keywords"]

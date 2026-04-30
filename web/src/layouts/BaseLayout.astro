@@ -41,10 +41,10 @@ const ogImage = new URL("/og.svg", Astro.site ?? Astro.url).toString();
     <meta name="twitter:description" content={resolvedDescription} />
     <meta name="twitter:image" content={ogImage} />
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
+  <body class="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900">
     <Nav />
     <SearchPalette client:idle />
-    <main class="mx-auto max-w-5xl px-4 py-8">
+    <main class="mx-auto w-full min-w-0 max-w-5xl px-4 py-8">
       <slot />
     </main>
     <footer class="border-t border-slate-200 bg-white">

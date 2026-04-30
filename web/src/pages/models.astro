@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import DdmParamScatter from "../components/DdmParamScatter.svelte";
+import ModelAnswersBrowser from "../components/ModelAnswersBrowser.svelte";
 import ModelSelectionMatrix from "../components/ModelSelectionMatrix.svelte";
 import ModelSelectionTable from "../components/ModelSelectionTable.svelte";
 import { hrefForFinding, models, slugForId } from "../lib/data";
@@ -105,6 +106,16 @@ type NearMissSlice = {
   n_trials: number;
   n_subjects: number;
 };
+type ModelRoadmapItem = {
+  caveat_tags?: string[];
+  issue_type: string;
+  priority_label: string;
+  rank: number;
+  recommended_action?: string | null;
+  status: string;
+  target_id: string;
+  target_type: string;
+};
 
 const {
   slice_coverage,
@@ -175,6 +186,10 @@ const coverageGaps = ((models as unknown as {
   proxy_backed_findings: [],
   near_miss_slices: [],
 });
+const modelRoadmapItems =
+  ((models as unknown as {
+    model_coverage_roadmap?: { items?: ModelRoadmapItem[] };
+  }).model_coverage_roadmap?.items ?? []) as ModelRoadmapItem[];
 
 const variantsByFamily = new Map<string, Variant[]>();
 const variantsById = new Map<string, Variant>();
@@ -327,6 +342,7 @@ const modelSelectionRows = findingSelections
       paper_href: `/papers/${slugForId(entry.paper_id)}`,
       paper_label: entry.paper_citation.split(".")[0] ?? entry.paper_citation,
       species: entry.species ?? "unknown",
+      task_family: entry.family_name ?? "Unknown task family",
       protocol_name: entry.protocol_name,
       curve_type: entry.curve_type,
       source_data_level: entry.source_data_level,
@@ -457,12 +473,13 @@ const scopeOrder = [
 ];
 
 const sectionLinks = [
-  { id: "families", label: "Families & variants" },
+  { id: "answers", label: "Model answers" },
   { id: "selection", label: "Per-finding selection" },
   { id: "matrix", label: "Selection matrix" },
   { id: "ddm", label: "DDM cross-species" },
   { id: "coverage", label: "Coverage gaps" },
   { id: "fittability", label: "Slice fittability" },
+  { id: "families", label: "Families & variants" },
   { id: "fits", label: "All fits" },
 ];
 ---
@@ -525,65 +542,25 @@ const sectionLinks = [
     </section>
   ) : null}
 
-  <section id="families" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Families &amp; variants</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Each family declares its parameters, applicable curve types, and data
-        requirements. Variants free a particular subset of the parameters.
-      </p>
-    </header>
-    <div class="space-y-4">
-      {families.map((family) => (
-        <article class="rounded-md border border-slate-200 bg-white p-4">
-          <header class="mb-2 flex items-baseline justify-between gap-3">
-            <h3 class="text-base font-semibold">{family.name}</h3>
-            <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
-              {family.applicable_curve_types.join(", ")}
-            </span>
-          </header>
-          <p class="font-mono text-xs text-slate-500">{family.id}</p>
-          <p class="mt-2 text-sm text-slate-700">{family.description}</p>
-          <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div>
-              <h4 class="mb-1 text-xs font-semibold text-slate-700">Parameters</h4>
-              <ul class="space-y-1 text-xs text-slate-700">
-                {family.parameter_definitions.map((p) => (
-                  <li>
-                    <span class="font-mono">{p.symbol ?? p.name}</span>
-                    <span class="ml-1 text-slate-500">{p.name}</span>
-                    {p.units ? <span class="ml-1 text-slate-500">[{p.units}]</span> : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 class="mb-1 text-xs font-semibold text-slate-700">Requires</h4>
-              <ul class="flex flex-wrap gap-1">
-                {family.requires.map((r) => (
-                  <li class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">{r}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div class="mt-3">
-            <h4 class="mb-1 text-xs font-semibold text-slate-700">
-              Variants ({(variantsByFamily.get(family.id) ?? []).length})
-            </h4>
-            <ul class="space-y-1 text-xs">
-              {(variantsByFamily.get(family.id) ?? []).map((v) => (
-                <li>
-                  <span class="font-mono text-slate-700">{v.id}</span>
-                  <span class="ml-2 text-slate-600">— {v.name}</span>
-                  <span class="ml-2 text-slate-500">free=[{v.free_parameters.join(", ")}]</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
+  {modelSelectionRows.length > 0 ? (
+    <section id="answers" class="mb-12 scroll-mt-20">
+      <header class="mb-3">
+        <h2 class="text-xl font-semibold tracking-tight">Model Answers</h2>
+        <p class="mt-1 max-w-3xl text-sm text-slate-600">
+          Finding-level winners, close calls, caveated rows, and model-roadmap
+          priorities grouped by task context before the reference tables.
+        </p>
+      </header>
+      <ModelAnswersBrowser
+        client:load
+        rows={modelSelectionRows}
+        roadmapItems={modelRoadmapItems}
+        caveatDefinitions={caveatDefinitions}
+        confidenceDefinitions={confidenceDefinitions}
+        scopeDefinitions={scopeDefinitions}
+      />
+    </section>
+  ) : null}
 
   {modelSelectionRows.length > 0 ? (
     <section id="selection" class="mb-12 scroll-mt-20">
@@ -1034,6 +1011,66 @@ const sectionLinks = [
     <p class="mt-2 text-[11px] text-slate-500">
       Known requirements: {known_requirements.join(", ")}
     </p>
+  </section>
+
+  <section id="families" class="mb-12 scroll-mt-20">
+    <header class="mb-3">
+      <h2 class="text-xl font-semibold tracking-tight">Families &amp; variants</h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Each family declares its parameters, applicable curve types, and data
+        requirements. Variants free a particular subset of the parameters.
+      </p>
+    </header>
+    <div class="space-y-4">
+      {families.map((family) => (
+        <article id={slugForId(family.id)} class="scroll-mt-20 rounded-md border border-slate-200 bg-white p-4">
+          <header class="mb-2 flex items-baseline justify-between gap-3">
+            <h3 class="text-base font-semibold">{family.name}</h3>
+            <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+              {family.applicable_curve_types.join(", ")}
+            </span>
+          </header>
+          <p class="font-mono text-xs text-slate-500">{family.id}</p>
+          <p class="mt-2 text-sm text-slate-700">{family.description}</p>
+          <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <h4 class="mb-1 text-xs font-semibold text-slate-700">Parameters</h4>
+              <ul class="space-y-1 text-xs text-slate-700">
+                {family.parameter_definitions.map((p) => (
+                  <li>
+                    <span class="font-mono">{p.symbol ?? p.name}</span>
+                    <span class="ml-1 text-slate-500">{p.name}</span>
+                    {p.units ? <span class="ml-1 text-slate-500">[{p.units}]</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 class="mb-1 text-xs font-semibold text-slate-700">Requires</h4>
+              <ul class="flex flex-wrap gap-1">
+                {family.requires.map((r) => (
+                  <li class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">{r}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div class="mt-3">
+            <h4 class="mb-1 text-xs font-semibold text-slate-700">
+              Variants ({(variantsByFamily.get(family.id) ?? []).length})
+            </h4>
+            <ul class="space-y-1 text-xs">
+              {(variantsByFamily.get(family.id) ?? []).map((v) => (
+                <li id={slugForId(v.id)} class="scroll-mt-20">
+                  <span class="font-mono text-slate-700">{v.id}</span>
+                  <span class="ml-2 text-slate-600">— {v.name}</span>
+                  <span class="ml-2 text-slate-500">free=[{v.free_parameters.join(", ")}]</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      ))}
+    </div>
   </section>
 
   {fits.length > 0 ? (

@@ -1,11 +1,30 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { manifest, slugForId } from "../../lib/data";
+import SlicesBrowser from "../../components/SlicesBrowser.svelte";
+import { catalog, manifest } from "../../lib/data";
 
-type SliceMetric = { label: string; value: unknown };
+const familyById = new Map(
+  catalog.task_families.map((family) => [family.family_id, family.name]),
+);
+const protocolById = new Map(
+  catalog.protocols.map((protocol) => [protocol.protocol_id, protocol.name]),
+);
+const datasetById = new Map(
+  catalog.datasets.map((dataset) => [dataset.dataset_id, dataset.name]),
+);
+
+const sliceRows = manifest.slices.map((slice) => ({
+  ...slice,
+  family_name: familyById.get(slice.family_id) ?? null,
+  protocol_name: protocolById.get(slice.protocol_id) ?? null,
+  dataset_name: datasetById.get(slice.dataset_id) ?? null,
+}));
 ---
 
-<BaseLayout title="Vertical slices · behavtaskatlas">
+<BaseLayout
+  title="Vertical slices · behavtaskatlas"
+  description="Browse reproducible vertical slices linking behavioral neuroscience protocols, datasets, source data, and local analysis reports."
+>
   <header class="mb-6">
     <h1 class="text-3xl font-semibold tracking-tight">Vertical slices</h1>
     <p class="mt-2 text-sm text-slate-600">
@@ -14,54 +33,5 @@ type SliceMetric = { label: string; value: unknown };
     </p>
   </header>
 
-  <ul class="grid grid-cols-1 gap-3 md:grid-cols-2">
-    {
-      manifest.slices.map((slice) => (
-        <li class="rounded-md border border-slate-200 bg-white p-4">
-          <header class="mb-2 flex items-baseline justify-between gap-2">
-            <h2 class="text-base font-semibold">
-              <a href={`/slices/${slugForId(slice.id)}`}>{slice.title}</a>
-            </h2>
-            <span
-              class:list={[
-                "rounded px-2 py-0.5 text-xs",
-                slice.report_status === "available"
-                  ? "bg-ok-soft text-ok"
-                  : "bg-warn-soft text-warn",
-              ]}
-            >
-              {slice.status_label}
-            </span>
-          </header>
-          <p class="mb-3 text-sm text-slate-600">{slice.description}</p>
-          <dl class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-700">
-            <dt class="text-slate-500">Species</dt>
-            <dd>{slice.comparison.species}</dd>
-            <dt class="text-slate-500">Modality</dt>
-            <dd>{slice.comparison.modality}</dd>
-            <dt class="text-slate-500">Choice</dt>
-            <dd>{slice.comparison.choice_type}</dd>
-            <dt class="text-slate-500">Source level</dt>
-            <dd>{slice.comparison.source_data_level}</dd>
-          </dl>
-          {
-            ((slice.metrics ?? []) as unknown as SliceMetric[]).length > 0 ? (
-              <ul class="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                {((slice.metrics ?? []) as unknown as SliceMetric[]).slice(0, 4).map((m) => (
-                  <li class="rounded bg-slate-100 px-2 py-0.5">
-                    <span class="text-slate-500">{m.label}</span>
-                    <span class="ml-1 font-mono font-semibold text-slate-900">
-                      {typeof m.value === "number"
-                        ? m.value.toLocaleString()
-                        : (m.value ?? "—")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null
-          }
-        </li>
-      ))
-    }
-  </ul>
+  <SlicesBrowser rows={sliceRows} client:load />
 </BaseLayout>

@@ -2,6 +2,86 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 16:53:26 BST - Standardized top-level browse release polish
+
+Finished a release-prep UX pass across the new browse surfaces: `/catalog`
+and `/search` now preserve filters in the URL, search summaries report visible
+and matched counts consistently, model-answer search matches query tokens
+instead of exact phrases, and papers/slices/catalog/search/models share
+recoverable empty states with clear-filter actions. Immediate MVP implication:
+the atlas top-level paths are now shareable, mobile-checked, and consistent
+enough to support a release without requiring users to rediscover filter state
+or know record URLs in advance.
+
+## 2026-04-30 16:41:44 BST - Reframed models around answer-first browsing
+
+Added a `/models` answer surface that puts finding-level winners, close calls,
+caveated rows, process-model rows, family verdicts, and top model-roadmap
+actions ahead of the families/variants taxonomy. The browser is URL-backed and
+filters by task, species, curve type, winning model family, confidence label,
+and question mode while preserving links into finding and paper records.
+Immediate MVP implication: model results are now discoverable by research
+question and source quality before users need to understand the model registry,
+completing the first pass of browsable top-level surfaces across papers,
+slices, catalog, search, and models.
+
+## 2026-04-30 16:32:45 BST - Added slice and catalog browse surfaces
+
+Promoted `/slices` from a static card grid into a URL-backed faceted browser
+over family, species, modality, evidence type, source level, and report state,
+and added a compact `/catalog` directory that searches across families,
+protocols, datasets, and slices before the detailed family sections. This makes
+reproducible analyses and catalog records discoverable by operational task
+variables rather than by known page paths. Immediate MVP implication: papers,
+slices, catalog records, and search now share the same browsing pattern, leaving
+the models page as the next major UX surface to make question-oriented.
+
+## 2026-04-30 16:15:46 BST - Expanded search into models, stories, and data requests
+
+Extended the generated search index from 174 to 205 entries by adding model
+family/variant records, curated story pages, and tracked data-request records
+to the same `site-index` workflow that already powers papers, findings, slices,
+and comparisons. Search now exposes 23 model entries, 3 story entries, and 5
+data-request entries with URL-backed `/search` filtering and command-palette
+labels; link integrity checks the new routes as part of the generated payload.
+Immediate MVP implication: users can discover model choices, synthesis pages,
+and source-access blockers from one search surface instead of knowing separate
+site sections in advance.
+
+## 2026-04-30 15:50:42 BST - Promoted papers into a faceted browser
+
+Replaced the static `/papers` grid with a hydrated papers browser that supports
+URL-backed search, source-state filtering, sorting, quick presets, and facets
+for coverage, species, source level, curve type, and protocol. This makes the
+paper index usable as a task-family entry point rather than a flat
+bibliography; for example, Walsh narrows to one record and the visual-task
+preset narrows to 13 records while preserving per-paper DOI and citation
+exports. Immediate MVP implication: the site now has a browsable front door for
+paper-level depth, and the same pattern can be applied next to search and slice
+discovery.
+
+## 2026-04-30 15:31:26 BST - Shipped first UI browsability pass
+
+Implemented the first UI/UX roadmap slice: mobile-safe navigation and page
+containers, internally scrollable charts, and a reusable mini findings chart
+that defaults to per-condition or pooled traces with all-curves and fit overlays
+available on demand. This reduces dense paper views such as Walsh 2024 from 39
+default subject-level traces to 3 condition traces while preserving access to
+all curves and fit diagnostics. Immediate MVP implication: record detail pages
+are now more readable on desktop and mobile, and the shared chart component can
+support the next faceted browsing pass.
+
+## 2026-04-30 15:17:43 BST - Reframed the web roadmap around browsability
+
+Reviewed the Astro site after the v0.2.0 release and found that the atlas now
+has enough breadth and depth that record-level pages alone are no longer the
+best product spine. The most important UX gaps are mobile overflow, overloaded
+per-paper charts, weak faceted browsing on papers/slices/catalog pages, search
+coverage that omits models/stories/data requests, and a models page that leads
+with implementation taxonomy instead of model-selection answers. Immediate MVP
+implication: the next UI work should create question- and family-oriented
+browse paths while preserving provenance detail on record pages.
+
 ## 2026-04-30 15:04:02 BST - Published v0.2.0 release
 
 Tagged commit `ef129ff` as `v0.2.0` and published the GitHub Release after the

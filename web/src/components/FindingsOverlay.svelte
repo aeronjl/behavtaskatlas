@@ -14,7 +14,7 @@
     return Array.from(out).sort();
   }
 
-  const allEntries: FindingsEntry[] = data.findings;
+  const allEntries = $derived(data.findings as FindingsEntry[]);
   const allCurveTypes = uniqueOf(allEntries, (e) => e.curve_type);
   const allYears = allEntries.map((e) => e.paper_year).filter((y): y is number => y != null);
   const minYear = allYears.length > 0 ? Math.min(...allYears) : 1990;
@@ -1513,10 +1513,12 @@ def fit_curves(payload_json):
       {/if}
     </div>
   {/if}
-  <div
-    bind:this={chartContainer}
-    class={["w-full", filteredEntries.length === 0 ? "hidden" : ""]}
-  ></div>
+  <div class="-mx-1 overflow-x-auto px-1">
+    <div
+      bind:this={chartContainer}
+      class={["min-w-[760px]", filteredEntries.length === 0 ? "hidden" : ""]}
+    ></div>
+  </div>
 
   {#if filteredEntries.length > 0}
     <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
@@ -1549,7 +1551,9 @@ def fit_curves(payload_json):
         is the across-curve standard deviation. High σ regions are where the
         literature diverges most.
       </p>
-      <div bind:this={disagreementContainer} class="w-full"></div>
+      <div class="-mx-1 overflow-x-auto px-1">
+        <div bind:this={disagreementContainer} class="min-w-[760px]"></div>
+      </div>
     </div>
   {/if}
 

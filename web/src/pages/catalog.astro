@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import CatalogBrowser from "../components/CatalogBrowser.svelte";
 import RecordChip from "../components/RecordChip.astro";
 import { catalog, manifest, slugForId } from "../lib/data";
 
@@ -44,14 +45,89 @@ const orphanProtocols = catalog.protocols.filter(
   (p) => !catalog.task_families.some((f) => f.family_id === p.family_id),
 );
 
+const familyNameById = new Map(
+  catalog.task_families.map((family) => [family.family_id, family.name]),
+);
+
 function familyAnchor(familyId: string): string {
   return slugForId(familyId);
 }
+
+const catalogRows = [
+  ...catalog.task_families.map((family) => ({
+    record_type: "family" as const,
+    id: family.family_id,
+    title: family.name,
+    href: `#${familyAnchor(family.family_id)}`,
+    modalities: family.modalities,
+    species: [],
+    family_id: family.family_id,
+    family_name: family.name,
+    choice_type: family.choice_types.join(", "),
+    status: family.curation_status,
+    protocol_count: family.protocol_count,
+    dataset_count: family.dataset_count,
+    slice_count: family.slice_count,
+    body: `${family.protocol_count} protocols, ${family.dataset_count} datasets, ${family.slice_count} slices`,
+  })),
+  ...catalog.protocols.map((protocol) => ({
+    record_type: "protocol" as const,
+    id: protocol.protocol_id,
+    title: protocol.name,
+    href: `/protocols/${slugForId(protocol.protocol_id)}`,
+    family_id: protocol.family_id,
+    family_name:
+      protocol.family_name ??
+      familyNameById.get(protocol.family_id) ??
+      protocol.family_id,
+    species: protocol.species,
+    modalities: protocol.modalities,
+    evidence_type: protocol.evidence_type,
+    choice_type: protocol.choice_type,
+    status: protocol.curation_status,
+    dataset_count: (protocol.dataset_ids ?? []).length,
+    slice_count: (protocol.slice_ids ?? []).length,
+    body: `${protocol.protocol_scope} protocol`,
+  })),
+  ...catalog.datasets.map((dataset) => ({
+    record_type: "dataset" as const,
+    id: dataset.dataset_id,
+    title: dataset.name,
+    href: `/datasets/${slugForId(dataset.dataset_id)}`,
+    species: dataset.species,
+    modalities: [],
+    source_data_level: dataset.source_data_level,
+    status: dataset.curation_status,
+    protocol_count: (dataset.protocol_ids ?? []).length,
+    slice_count: (dataset.slice_ids ?? []).length,
+    body: dataset.license ?? dataset.source_url ?? "",
+  })),
+  ...catalog.vertical_slices.map((slice) => ({
+    record_type: "slice" as const,
+    id: slice.slice_id,
+    title: slice.title,
+    href: `/slices/${slugForId(slice.slice_id)}`,
+    family_id: slice.family_id,
+    family_name: familyNameById.get(slice.family_id) ?? slice.family_id,
+    species: slice.species ? [slice.species] : [],
+    modalities: slice.modality ? [slice.modality] : [],
+    evidence_type: slice.evidence_type,
+    source_data_level: slice.source_data_level,
+    status: slice.report_status,
+    protocol_count: 1,
+    dataset_count: 1,
+    slice_count: 1,
+    body: slice.stimulus_metric ?? "",
+  })),
+];
 ---
 
-<BaseLayout title={`Catalog · ${catalog.title}`}>
+<BaseLayout
+  title={`Catalog · ${catalog.title}`}
+  description="Browsable atlas directory for task families, protocols, datasets, and reproducible vertical slices."
+>
   <header class="mb-6">
-    <h1 class="text-3xl">Catalog</h1>
+    <h1 class="text-3xl font-semibold tracking-tight">Catalog</h1>
     <p class="mt-2 max-w-3xl text-sm text-slate-700">
       Every record in the atlas, grouped under its task family. Each family
       bundles one or more protocols (concrete task variants), each protocol
@@ -69,6 +145,10 @@ function familyAnchor(familyId: string): string {
       {counts.report_available ?? 0} reports available
     </p>
   </header>
+
+  <section class="mb-8">
+    <CatalogBrowser rows={catalogRows} client:load />
+  </section>
 
   <nav class="mb-8 -mx-4 overflow-x-auto px-4">
     <ul class="flex flex-wrap gap-2 text-xs">
@@ -198,7 +278,7 @@ function familyAnchor(familyId: string): string {
                         </p>
                         <ul class="mt-1 flex flex-wrap gap-2">
                           {datasets.map((d) => (
-                            <li>
+                            <li class="min-w-0 max-w-full">
                               <RecordChip
                                 type="dataset"
                                 label={d.name}
@@ -217,15 +297,15 @@ function familyAnchor(familyId: string): string {
                         </p>
                         <ul class="mt-1 flex flex-wrap gap-2">
                           {slices.map((slice) => (
-                            <li>
+                            <li class="min-w-0 max-w-full">
                               <a
-                                class="inline-flex items-baseline gap-1.5 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs no-underline text-slate-700 hover:border-accent hover:text-accent"
+                                class="inline-flex max-w-full min-w-0 items-baseline gap-1.5 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs no-underline text-slate-700 hover:border-accent hover:text-accent"
                                 href={`/slices/${slugForId(slice.id)}`}
                               >
                                 <span class="text-[10px] uppercase tracking-wide text-slate-500">
                                   slice
                                 </span>
-                                <span>{slice.title}</span>
+                                <span class="min-w-0 truncate">{slice.title}</span>
                                 <span
                                   class:list={[
                                     "ml-1 rounded px-1 py-0 text-[10px]",

@@ -34,7 +34,7 @@ const TYPE_LABELS: Record<RecordType, string> = {
 
 const padding = size === "md" ? "px-2.5 py-1" : "px-2 py-0.5";
 const textSize = size === "md" ? "text-sm" : "text-xs";
-const baseClasses = `inline-flex items-baseline gap-1.5 rounded border border-slate-200 bg-white ${padding} ${textSize} font-normal text-slate-700`;
+const baseClasses = `inline-flex max-w-full min-w-0 items-baseline gap-1.5 rounded border border-slate-200 bg-white ${padding} ${textSize} font-normal text-slate-700`;
 ---
 
 {href ? (
@@ -45,7 +45,7 @@ const baseClasses = `inline-flex items-baseline gap-1.5 rounded border border-sl
     <span class="text-[10px] uppercase tracking-wide text-slate-500">
       {TYPE_LABELS[type]}
     </span>
-    <span class="truncate max-w-xs">{label}</span>
+    <span class="min-w-0 truncate">{label}</span>
     {id ? <span class="font-mono text-[10px] text-slate-400">{id}</span> : null}
   </a>
 ) : (
@@ -53,7 +53,7 @@ const baseClasses = `inline-flex items-baseline gap-1.5 rounded border border-sl
     <span class="text-[10px] uppercase tracking-wide text-slate-500">
       {TYPE_LABELS[type]}
     </span>
-    <span class="truncate max-w-xs">{label}</span>
+    <span class="min-w-0 truncate">{label}</span>
     {id ? <span class="font-mono text-[10px] text-slate-400">{id}</span> : null}
   </span>
 )}

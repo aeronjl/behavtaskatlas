@@ -56,6 +56,8 @@ def _base_routes() -> set[str]:
         "/papers",
         "/search",
         "/slices",
+        "/stories",
+        "/stories/prior-shifts",
         "/stories/rdm",
     }
 

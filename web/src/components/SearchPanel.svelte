@@ -3,9 +3,11 @@
   import { searchIndex } from "../lib/search";
 
   let initialQuery = "";
+  let initialTypes = "";
   if (typeof window !== "undefined") {
     const params = new URLSearchParams(window.location.search);
     initialQuery = params.get("q") ?? "";
+    initialTypes = params.get("type") ?? "";
   }
 
   const TYPE_LABEL: Record<string, string> = {
@@ -16,20 +18,64 @@
     vertical_slice: "Slice",
     finding: "Finding",
     comparison: "Comparison",
+    model: "Model",
+    story: "Story",
+    data_request: "Data request",
   };
   const ALL_TYPES = Object.keys(TYPE_LABEL);
 
   const payload: SearchPayload = searchIndex;
 
+  function initialTypeSet(): Set<string> {
+    if (!initialTypes) return new Set(ALL_TYPES);
+    const selected = initialTypes
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => ALL_TYPES.includes(value));
+    return selected.length > 0 ? new Set(selected) : new Set(ALL_TYPES);
+  }
+
   let query = $state(initialQuery.trim());
-  let activeTypes = $state(new Set<string>(ALL_TYPES));
+  let activeTypes = $state(initialTypeSet());
   let inputEl: HTMLInputElement | null = $state(null);
+
+  const activeFilterCount = $derived(
+    (query.trim().length > 0 ? 1 : 0) +
+      (activeTypes.size === ALL_TYPES.length ? 0 : 1),
+  );
+
+  function syncUrl() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    const trimmed = query.trim();
+    if (trimmed.length > 0) params.set("q", trimmed);
+    if (activeTypes.size !== ALL_TYPES.length) {
+      params.set("type", ALL_TYPES.filter((type) => activeTypes.has(type)).join(","));
+    }
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, "", next);
+    }
+  }
 
   function toggleType(t: string) {
     const next = new Set(activeTypes);
     if (next.has(t)) next.delete(t); else next.add(t);
     if (next.size === 0) ALL_TYPES.forEach((x) => next.add(x));
     activeTypes = next;
+    syncUrl();
+  }
+
+  function clearAll() {
+    query = "";
+    activeTypes = new Set(ALL_TYPES);
+    syncUrl();
+  }
+
+  function updateQuery(event: Event) {
+    query = (event.currentTarget as HTMLInputElement).value;
+    syncUrl();
   }
 
   function score(entry: SearchEntry, tokens: string[]): number {
@@ -80,42 +126,31 @@
       .filter((t) => t.length > 0),
   );
 
-  const results = $derived(
+  const rankedResults = $derived(
     payload.entries
       .filter((e) => activeTypes.has(e.type))
       .map((e) => ({ entry: e, s: tokens.length === 0 ? 0 : score(e, tokens) }))
       .filter((r) => tokens.length === 0 || r.s > 0)
-      .sort((a, b) => b.s - a.s || a.entry.title.localeCompare(b.entry.title))
-      .slice(0, 100),
+      .sort((a, b) => b.s - a.s || a.entry.title.localeCompare(b.entry.title)),
+  );
+
+  const results = $derived(
+    rankedResults.slice(0, 100),
   );
 
   $effect(() => {
     if (inputEl && initialQuery) inputEl.focus();
   });
 
-  $effect(() => {
-    if (typeof window === "undefined") return;
-    const trimmed = query.trim();
-    const params = new URLSearchParams(window.location.search);
-    const previous = params.get("q") ?? "";
-    if (trimmed === previous) return;
-    if (trimmed.length === 0) {
-      params.delete("q");
-    } else {
-      params.set("q", trimmed);
-    }
-    const search = params.toString();
-    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
-    window.history.replaceState(null, "", next);
-  });
 </script>
 
 <div class="space-y-3">
   <input
     bind:this={inputEl}
-    bind:value={query}
+    value={query}
+    oninput={updateQuery}
     type="search"
-    placeholder="Search papers, protocols, datasets, slices, findings, comparisons…"
+    placeholder="Search papers, models, stories, requests, findings…"
     class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
     autocomplete="off"
     autocapitalize="none"
@@ -140,18 +175,32 @@
         {TYPE_LABEL[t]} · {payload.counts[t] ?? 0}
       </button>
     {/each}
+    {#if activeFilterCount > 0}
+      <button
+        type="button"
+        class="rounded border border-slate-300 bg-slate-50 px-2 py-0.5 font-semibold text-slate-800 hover:border-accent hover:text-accent"
+        onclick={clearAll}
+      >
+        clear {activeFilterCount}
+      </button>
+    {/if}
   </div>
 
   <p class="text-xs text-slate-500">
     {tokens.length === 0
-      ? `${payload.counts.total} indexed records.`
-      : `${results.length} match${results.length === 1 ? "" : "es"} for "${query}".`}
+      ? `Showing ${results.length} of ${rankedResults.length} indexed records.`
+      : `Showing ${results.length} of ${rankedResults.length} match${rankedResults.length === 1 ? "" : "es"} for "${query}".`}
   </p>
 
   {#if results.length === 0 && tokens.length > 0}
-    <p class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
-      No matches. Try a broader query or toggle more record types.
-    </p>
+    <section class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <p>No matches. Try a broader query or toggle more record types.</p>
+      {#if activeFilterCount > 0}
+        <button type="button" class="mt-3 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-800 hover:border-accent hover:text-accent" onclick={clearAll}>
+          Clear filters
+        </button>
+      {/if}
+    </section>
   {:else}
     <ul class="divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
       {#each results as { entry } (entry.id)}
