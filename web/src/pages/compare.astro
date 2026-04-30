@@ -2,6 +2,9 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
 import DdmParamScatter from "../components/DdmParamScatter.svelte";
+import Card from "../components/ui/Card.astro";
+import DataTable from "../components/ui/DataTable.astro";
+import PageHeader from "../components/ui/PageHeader.astro";
 import {
   comparisons as comparisonsIndex,
   findings,
@@ -215,271 +218,248 @@ const sections = COMPARISONS.map((spec) => {
 <BaseLayout
   title="Compare · behavtaskatlas"
   description="Pre-baked cross-paper comparisons that answer specific questions: prior-block shifts, species differences, cueing effects, all on shared signed-evidence axes with fitted parameter deltas."
+  width="wide"
 >
-  <header class="mb-8">
-    <h1 class="text-3xl">Compare</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-600">
+  <PageHeader title="Compare">
+    <Fragment slot="lede">
       Curated cross-paper comparisons that answer one question each. Each
       panel embeds the relevant findings overlaid on shared signed-evidence
       axes and reports fitted parameter deltas computed at build time from a
       4-parameter logistic fit to each finding.
-    </p>
-    <p class="mt-2 text-xs text-slate-500">
-      Comparisons are hand-curated; the underlying findings live in{" "}
-      <code class="rounded bg-slate-100 px-1">findings/</code> and the
-      complete catalog is on <a class="text-accent" href="/findings">/findings</a>.
-    </p>
-  </header>
+    </Fragment>
+    <Fragment slot="meta">
+      <p class="text-body-xs text-fg-muted">
+        Comparisons are hand-curated; the underlying findings live in{" "}
+        <code class="rounded bg-surface-sunken px-1 text-mono-id">findings/</code>
+        and the complete catalog is on
+        <a class="text-accent" href="/findings">/findings</a>.
+      </p>
+    </Fragment>
+  </PageHeader>
 
-  <aside
-    class="mb-10 rounded-md border border-slate-200 bg-white p-4 text-sm"
+  <Card
+    as="aside"
+    padding="md"
+    class="mb-10 text-body"
     aria-label="Reading the parameter columns"
   >
-    <h2 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-      Reading the deltas
-    </h2>
-    <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+    <h2 class="mb-2 text-eyebrow uppercase text-fg-muted">Reading the deltas</h2>
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-body-xs sm:grid-cols-3">
       <div>
-        <dt class="font-mono text-slate-900">Δμ</dt>
-        <dd class="text-slate-600">
+        <dt class="font-mono text-fg">Δμ</dt>
+        <dd class="text-fg-secondary">
           Bias shift along the x-axis (in stimulus units). Positive Δμ means
           the curve moved rightward relative to the reference.
         </dd>
       </div>
       <div>
-        <dt class="font-mono text-slate-900">Δσ</dt>
-        <dd class="text-slate-600">
+        <dt class="font-mono text-fg">Δσ</dt>
+        <dd class="text-fg-secondary">
           Slope change. Larger σ = shallower psychometric (lower
           discriminability). |Δσ|≈0 means sensitivity is preserved.
         </dd>
       </div>
       <div>
-        <dt class="font-mono text-slate-900">Δ threshold</dt>
-        <dd class="text-slate-600">
+        <dt class="font-mono text-fg">Δ threshold</dt>
+        <dd class="text-fg-secondary">
           Difference in the x at which P(right)=75% (or 84% for accuracy
           curves). Same direction as Δμ but reads in stimulus units.
         </dd>
       </div>
     </dl>
-  </aside>
+  </Card>
 
   <div class="space-y-12">
-    {
-      sections.map((section) => (
-        <section
-          class="scroll-mt-20 rounded-md border border-slate-200 bg-white p-5"
-          id={section.spec.id}
-        >
-          <header class="mb-4 flex items-baseline justify-between gap-3">
-            <h2 class="text-lg font-semibold text-slate-900">
-              {section.spec.question}
-            </h2>
-            <a
-              class="shrink-0 text-xs font-mono text-slate-400 no-underline hover:text-accent"
-              href={`#${section.spec.id}`}
-              aria-label={`Permalink to ${section.spec.question}`}
-              title="Copy permalink"
-            >
-              #
-            </a>
-          </header>
-          <p class="mb-4 text-sm text-slate-700">{section.spec.framing}</p>
-          {section.entries.length > 0 ? (
-            <MiniFindingsChart
-              client:visible
-              findings={section.entries}
-              colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
-              height={320}
-            />
-          ) : section.modelFitRows.length === 0 ? (
-            <p class="rounded border border-warn bg-warn-soft p-3 text-xs text-warn">
-              None of the referenced findings or fits are present in the
-              index. Edit the comparison's
-              <code class="ml-1 rounded bg-slate-100 px-1">
-                comparisons/*.yaml
-              </code>
-              record or fix its
-              <code class="ml-1 rounded bg-slate-100 px-1">finding_ids</code>
-              /
-              <code class="rounded bg-slate-100 px-1">model_fit_ids</code>.
+    {sections.map((section) => (
+      <Card
+        as="section"
+        padding="lg"
+        id={section.spec.id}
+        class="scroll-mt-20"
+      >
+        <header class="mb-4 flex items-baseline justify-between gap-3">
+          <h2 class="text-h3 text-fg">{section.spec.question}</h2>
+          <a
+            class="shrink-0 text-mono-id text-fg-subtle no-underline hover:text-accent"
+            href={`#${section.spec.id}`}
+            aria-label={`Permalink to ${section.spec.question}`}
+            title="Copy permalink"
+          >#</a>
+        </header>
+        <p class="mb-4 text-body text-fg-secondary">{section.spec.framing}</p>
+        {section.entries.length > 0 ? (
+          <MiniFindingsChart
+            client:visible
+            findings={section.entries}
+            colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
+            height={320}
+          />
+        ) : section.modelFitRows.length === 0 ? (
+          <Card padding="sm" surface="warn" border="tinted" class="text-body-xs text-warn">
+            None of the referenced findings or fits are present in the
+            index. Edit the comparison's
+            <code class="ml-1 rounded bg-surface-sunken px-1">
+              comparisons/*.yaml
+            </code>
+            record or fix its
+            <code class="ml-1 rounded bg-surface-sunken px-1">finding_ids</code>
+            /
+            <code class="rounded bg-surface-sunken px-1">model_fit_ids</code>.
+          </Card>
+        ) : null}
+
+        {section.isDdmHomogeneous && section.ddmRows.length > 0 ? (
+          <div class="mt-4">
+            <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
+              Parameter strip plot · {section.variants[0]}
+            </h3>
+            <p class="mb-2 text-mono-id text-fg-muted">
+              {section.ddmRows.length} fits, all sharing variant{" "}
+              <code class="font-mono">{section.variants[0]}</code>. Hover a
+              point for fit id, paper, and stratification.
             </p>
-          ) : null}
+            <DdmParamScatter client:visible fits={section.ddmRows} height={240} />
+          </div>
+        ) : null}
 
-          {section.isDdmHomogeneous && section.ddmRows.length > 0 ? (
-            <div class="mt-4">
-              <h3 class="mb-1 text-xs font-semibold text-slate-700">
-                Parameter strip plot · {section.variants[0]}
-              </h3>
-              <p class="mb-2 text-[11px] text-slate-500">
-                {section.ddmRows.length} fits, all sharing variant{" "}
-                <code class="font-mono">{section.variants[0]}</code>. Hover a
-                point for fit id, paper, and stratification.
-              </p>
-              <DdmParamScatter client:visible fits={section.ddmRows} height={240} />
-            </div>
-          ) : null}
-
-          {section.modelFitRows.length > 0 ? (
-            <div class="mt-4">
-              <h3 class="mb-1 text-xs font-semibold text-slate-700">
-                Model-fit comparison ({section.modelFitRows.length} fits across{" "}
-                {section.variants.length} variant{section.variants.length === 1 ? "" : "s"})
-              </h3>
-              <p class="mb-2 text-[11px] text-slate-500">
-                Lower AIC wins (★). <span class="text-slate-700">{section.spec.hint}</span>
-              </p>
-              <div class="overflow-x-auto rounded border border-slate-200">
-                <table class="w-full text-xs">
-                  <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+        {section.modelFitRows.length > 0 ? (
+          <div class="mt-4">
+            <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
+              Model-fit comparison ({section.modelFitRows.length} fits across{" "}
+              {section.variants.length} variant{section.variants.length === 1 ? "" : "s"})
+            </h3>
+            <p class="mb-2 text-mono-id text-fg-muted">
+              Lower AIC wins (★). <span class="text-fg-secondary">{section.spec.hint}</span>
+            </p>
+            <div class="overflow-x-auto rounded border border-rule">
+              <table class="w-full text-body-xs">
+                <thead class="bg-surface text-left uppercase tracking-wide text-fg-muted">
+                  <tr>
+                    <th class="px-3 py-2">Group</th>
+                    {section.variants.map((v) => (
+                      <th class="px-3 py-2 text-right" colspan="2">
+                        {v}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr class="bg-surface text-mono-id text-fg-muted">
+                    <th class="px-3 py-1"></th>
+                    {section.variants.map(() => (
+                      <>
+                        <th class="px-3 py-1 text-right">AIC</th>
+                        <th class="px-3 py-1 text-left">params</th>
+                      </>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-rule">
+                  {section.groups.map((group) => (
                     <tr>
-                      <th class="px-3 py-2">Group</th>
-                      {section.variants.map((v) => (
-                        <th class="px-3 py-2 text-right" colspan="2">
-                          {v}
-                        </th>
-                      ))}
-                    </tr>
-                    <tr class="bg-slate-50 text-[10px] text-slate-500">
-                      <th class="px-3 py-1"></th>
-                      {section.variants.map(() => (
-                        <>
-                          <th class="px-3 py-1 text-right">AIC</th>
-                          <th class="px-3 py-1 text-left">params</th>
-                        </>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-200">
-                    {section.groups.map((group) => (
-                      <tr>
-                        <td class="px-3 py-2 font-mono text-[11px] text-slate-700">
-                          {group}
-                        </td>
-                        {section.variants.map((v) => {
-                          const row = section.modelFitRows.find(
-                            (r) => r.group === group && r.variant === v,
-                          );
-                          if (!row) {
-                            return (
-                              <>
-                                <td class="px-3 py-2 text-right text-slate-400">—</td>
-                                <td class="px-3 py-2 text-slate-400">—</td>
-                              </>
-                            );
-                          }
-                          const isWinner = section.winners.get(group) === v;
+                      <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
+                        {group}
+                      </td>
+                      {section.variants.map((v) => {
+                        const row = section.modelFitRows.find(
+                          (r) => r.group === group && r.variant === v,
+                        );
+                        if (!row) {
                           return (
                             <>
-                              <td class="px-3 py-2 text-right font-mono">
-                                {isWinner ? "★ " : ""}
-                                {fmt(row.aic, 1)}
-                              </td>
-                              <td class="px-3 py-2 font-mono text-[10px] text-slate-600">
-                                {paramSummary(row.params)}
-                              </td>
+                              <td class="px-3 py-2 text-right text-fg-subtle">—</td>
+                              <td class="px-3 py-2 text-fg-subtle">—</td>
                             </>
                           );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : null}
-
-          {section.has_fits ? (
-            <div class="mt-4">
-              <h3 class="mb-1 text-xs font-semibold text-slate-700">
-                Fitted parameters
-              </h3>
-              <p class="mb-2 text-[11px] text-slate-500">
-                Deltas relative to the first row.{" "}
-                <span class="text-slate-700">{section.spec.hint}</span>
-              </p>
-              <div class="overflow-x-auto rounded border border-slate-200">
-                <table class="w-full text-xs">
-                  <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th class="px-3 py-2">Finding</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="Mid-asymptote crossing (psychometric bias)"
-                      >μ (bias)</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="Slope width; larger σ = shallower psychometric"
-                      >σ (slope)</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="x-value where the fitted curve crosses the threshold target"
-                      >{section.target_y_label}</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="Bias shift relative to reference row"
-                      >Δμ</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="Slope change relative to reference row"
-                      >Δσ</th>
-                      <th
-                        class="px-3 py-2 text-right"
-                        title="Threshold-crossing change relative to reference row"
-                      >Δ threshold</th>
+                        }
+                        const isWinner = section.winners.get(group) === v;
+                        return (
+                          <>
+                            <td class="px-3 py-2 text-right font-mono">
+                              {isWinner ? "★ " : ""}
+                              {fmt(row.aic, 1)}
+                            </td>
+                            <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
+                              {paramSummary(row.params)}
+                            </td>
+                          </>
+                        );
+                      })}
                     </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-200">
-                    {section.deltas.map((row) => (
-                      <tr class={row.is_reference ? "bg-slate-50" : ""}>
-                        <td class="px-3 py-2">
-                          <a href={`/papers/${slugForId(row.paper_id)}`}>
-                            {row.label}
-                          </a>
-                          {row.is_reference ? (
-                            <span class="ml-2 text-[10px] text-slate-500">
-                              (reference)
-                            </span>
-                          ) : null}
-                        </td>
-                        <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
-                        <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
-                        <td class="px-3 py-2 text-right font-mono">
-                          {fmt(row.threshold)}
-                        </td>
-                        <td class="px-3 py-2 text-right font-mono">
-                          {row.is_reference ? "—" : fmt(row.delta_mu)}
-                        </td>
-                        <td class="px-3 py-2 text-right font-mono">
-                          {row.is_reference ? "—" : fmt(row.delta_sigma)}
-                        </td>
-                        <td class="px-3 py-2 text-right font-mono">
-                          {row.is_reference ? "—" : fmt(row.delta_threshold)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <p class="mt-3 text-[11px] text-slate-500">
-              No 4-parameter logistic fit applies (curve type does not support
-              it, or fits failed). Visual comparison only.
+          </div>
+        ) : null}
+
+        {section.has_fits ? (
+          <div class="mt-4">
+            <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
+              Fitted parameters
+            </h3>
+            <p class="mb-2 text-mono-id text-fg-muted">
+              Deltas relative to the first row.{" "}
+              <span class="text-fg-secondary">{section.spec.hint}</span>
             </p>
-          )}
-        </section>
-      ))
-    }
+            <DataTable
+              density="compact"
+              columns={[
+                { label: "Finding" },
+                { label: "μ (bias)", align: "right", title: "Mid-asymptote crossing (psychometric bias)" },
+                { label: "σ (slope)", align: "right", title: "Slope width; larger σ = shallower psychometric" },
+                { label: section.target_y_label, align: "right", title: "x-value where the fitted curve crosses the threshold target" },
+                { label: "Δμ", align: "right", title: "Bias shift relative to reference row" },
+                { label: "Δσ", align: "right", title: "Slope change relative to reference row" },
+                { label: "Δ threshold", align: "right", title: "Threshold-crossing change relative to reference row" },
+              ]}
+            >
+              {section.deltas.map((row) => (
+                <tr class={row.is_reference ? "bg-surface" : ""}>
+                  <td class="px-3 py-2">
+                    <a href={`/papers/${slugForId(row.paper_id)}`}>
+                      {row.label}
+                    </a>
+                    {row.is_reference ? (
+                      <span class="ml-2 text-mono-id text-fg-muted">
+                        (reference)
+                      </span>
+                    ) : null}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
+                  <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {fmt(row.threshold)}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {row.is_reference ? "—" : fmt(row.delta_mu)}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {row.is_reference ? "—" : fmt(row.delta_sigma)}
+                  </td>
+                  <td class="px-3 py-2 text-right font-mono">
+                    {row.is_reference ? "—" : fmt(row.delta_threshold)}
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+          </div>
+        ) : (
+          <p class="mt-3 text-mono-id text-fg-muted">
+            No 4-parameter logistic fit applies (curve type does not support
+            it, or fits failed). Visual comparison only.
+          </p>
+        )}
+      </Card>
+    ))}
   </div>
 
-  <p class="mt-8 text-xs text-slate-500">
+  <p class="mt-8 text-body-xs text-fg-muted">
     These comparisons are pre-baked at build time; the underlying logistic
     fits are computed by{" "}
-    <code class="rounded bg-slate-100 px-1">behavtaskatlas site-index</code>
+    <code class="rounded bg-surface-sunken px-1">behavtaskatlas site-index</code>
     using the same model as the interactive fitter on{" "}
     <a class="text-accent" href="/findings">/findings</a>, so values agree.
     Curate new comparisons by adding a YAML file under
-    <code class="ml-1 rounded bg-slate-100 px-1">comparisons/</code> in the
-    repository.
+    <code class="ml-1 rounded bg-surface-sunken px-1">comparisons/</code>
+    in the repository.
   </p>
 </BaseLayout>

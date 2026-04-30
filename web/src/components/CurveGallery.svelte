@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FindingsEntry } from "../lib/findings";
+  import { chartChrome, modelColors, sourceColors } from "../lib/encoding";
 
   type TraceMode = "aggregate" | "all" | "pooled";
   type GroupMode = "paper" | "protocol";
@@ -124,18 +125,27 @@
     return "bg-slate-100 text-slate-600";
   }
 
+  // SSR fallback values; refreshed once after client mount via $effect
+  // below so `getComputedStyle` reads the live CSS variable values.
+  let chrome = $state(chartChrome());
+  let sourceMap = $state(sourceColors());
+  let modelMap = $state(modelColors());
+
+  $effect(() => {
+    chrome = chartChrome();
+    sourceMap = sourceColors();
+    modelMap = modelColors();
+  });
+
   function sourceStroke(level: string): string {
-    if (level === "raw-trial") return "#246b3b";
-    if (level === "processed-trial") return "#2b5ea0";
-    if (level === "figure-source-data") return "#b35c00";
-    return "#64748b";
+    return sourceMap[level] ?? chrome.mutedFg;
   }
 
   function fitStroke(variantId: string): string {
-    if (variantId.includes("logistic")) return "#b35c00";
-    if (variantId.includes("sdt")) return "#246b3b";
-    if (variantId.includes("ddm")) return "#2b5ea0";
-    return "#64748b";
+    if (variantId.includes("logistic")) return modelMap.logistic;
+    if (variantId.includes("sdt")) return modelMap.sdt;
+    if (variantId.includes("ddm")) return modelMap.ddm;
+    return chrome.mutedFg;
   }
 
   function traceLabel(entry: FindingsEntry): string {
@@ -511,8 +521,8 @@
               y={chart.top}
               width={innerWidth}
               height={innerHeight}
-              fill="#fff"
-              stroke="#cbd5e1"
+              fill="white"
+              stroke={chrome.viewStroke}
             />
             {#each [0, 0.5, 1] as fraction (fraction)}
               {@const y = chart.top + innerHeight * fraction}
@@ -521,7 +531,7 @@
                 x2={chart.left + innerWidth}
                 y1={y}
                 y2={y}
-                stroke="#e2e8f0"
+                stroke={chrome.gridColor}
                 stroke-width="0.8"
               />
             {/each}
@@ -530,25 +540,25 @@
               x2={chart.left + innerWidth}
               y1={chart.top + innerHeight}
               y2={chart.top + innerHeight}
-              stroke="#94a3b8"
+              stroke={chrome.subtleFg}
             />
             <line
               x1={chart.left}
               x2={chart.left}
               y1={chart.top}
               y2={chart.top + innerHeight}
-              stroke="#94a3b8"
+              stroke={chrome.subtleFg}
             />
-            <text x={chart.left - 6} y={chart.top + 4} text-anchor="end" font-size="9" fill="#64748b">
+            <text x={chart.left - 6} y={chart.top + 4} text-anchor="end" font-size="9" fill={chrome.mutedFg}>
               {axisLabel(domain.yMax)}
             </text>
-            <text x={chart.left - 6} y={chart.top + innerHeight + 3} text-anchor="end" font-size="9" fill="#64748b">
+            <text x={chart.left - 6} y={chart.top + innerHeight + 3} text-anchor="end" font-size="9" fill={chrome.mutedFg}>
               {axisLabel(domain.yMin)}
             </text>
-            <text x={chart.left} y={chart.height - 8} text-anchor="middle" font-size="9" fill="#64748b">
+            <text x={chart.left} y={chart.height - 8} text-anchor="middle" font-size="9" fill={chrome.mutedFg}>
               {axisLabel(domain.xMin)}
             </text>
-            <text x={chart.left + innerWidth} y={chart.height - 8} text-anchor="middle" font-size="9" fill="#64748b">
+            <text x={chart.left + innerWidth} y={chart.height - 8} text-anchor="middle" font-size="9" fill={chrome.mutedFg}>
               {axisLabel(domain.xMax)}
             </text>
 

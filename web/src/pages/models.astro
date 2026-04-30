@@ -4,6 +4,13 @@ import DdmParamScatter from "../components/DdmParamScatter.svelte";
 import ModelAnswersBrowser from "../components/ModelAnswersBrowser.svelte";
 import ModelSelectionMatrix from "../components/ModelSelectionMatrix.svelte";
 import ModelSelectionTable from "../components/ModelSelectionTable.svelte";
+import Card from "../components/ui/Card.astro";
+import DataTable from "../components/ui/DataTable.astro";
+import PageHeader from "../components/ui/PageHeader.astro";
+import Section from "../components/ui/Section.astro";
+import SectionAnchorNav from "../components/ui/SectionAnchorNav.astro";
+import Stat from "../components/ui/Stat.astro";
+import StatGrid from "../components/ui/StatGrid.astro";
 import { hrefForFinding, models, slugForId } from "../lib/data";
 import { findings as findingsIndex } from "../lib/findings";
 
@@ -487,70 +494,53 @@ const sectionLinks = [
 <BaseLayout
   title="Models · behavtaskatlas"
   description="Computational model families, variants, fits, the AIC selection matrix, and per-slice fittability across the atlas."
+  width="wide"
 >
-  <header class="mb-6">
-    <h1 class="text-3xl font-semibold tracking-tight">Models</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-700">
-      {counts.families} families, {counts.variants} variants,
-      {counts.fits} fit{counts.fits === 1 ? "" : "s"}. Each fit is a YAML
-      record with parameters, quality metrics, and provenance; the
-      <a class="text-accent" href="/atlas-health#audit">audit</a>
-      forward-evaluates each committed fit on every CI run.
-    </p>
-    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <a
-        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
-        href="/model_selection.csv"
-      >model_selection.csv</a>
-      <a
-        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
-        href="/model_selection_by_scope.csv"
-      >by_scope.csv</a>
-      <a
-        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
-        href="/fits_by_finding.csv"
-      >fits_by_finding.csv</a>
-      <a
-        class="rounded border border-slate-300 bg-white px-3 py-1.5 no-underline text-slate-700 hover:border-accent hover:text-accent"
-        href="/model_roadmap.csv"
-      >roadmap.csv</a>
-      <span class="text-slate-500">
-        · provenance: {provenanceSummary.fit_dirty_false ?? 0} clean,
-        {provenanceSummary.fit_dirty_true ?? 0} dirty
-      </span>
-    </div>
-  </header>
+  <PageHeader
+    title="Models"
+    lede={`${counts.families} families, ${counts.variants} variants, ${counts.fits} fit${counts.fits === 1 ? "" : "s"}. Each fit is a YAML record with parameters, quality metrics, and provenance; the audit forward-evaluates each committed fit on every CI run.`}
+  >
+    <Fragment slot="meta">
+      <div class="flex flex-wrap items-center gap-2 text-body-xs">
+        <a
+          class="rounded border border-rule-strong bg-surface-raised px-3 py-1.5 no-underline text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          href="/model_selection.csv"
+        >model_selection.csv</a>
+        <a
+          class="rounded border border-rule-strong bg-surface-raised px-3 py-1.5 no-underline text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          href="/model_selection_by_scope.csv"
+        >by_scope.csv</a>
+        <a
+          class="rounded border border-rule-strong bg-surface-raised px-3 py-1.5 no-underline text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          href="/fits_by_finding.csv"
+        >fits_by_finding.csv</a>
+        <a
+          class="rounded border border-rule-strong bg-surface-raised px-3 py-1.5 no-underline text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          href="/model_roadmap.csv"
+        >roadmap.csv</a>
+        <span class="text-fg-muted">
+          · provenance: {provenanceSummary.fit_dirty_false ?? 0} clean,
+          {provenanceSummary.fit_dirty_true ?? 0} dirty
+        </span>
+      </div>
+    </Fragment>
+  </PageHeader>
 
-  <nav class="mb-8 -mx-4 overflow-x-auto px-4">
-    <ul class="flex flex-wrap gap-2 text-xs">
-      {sectionLinks.map((link) => (
-        <li>
-          <a
-            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 no-underline hover:border-accent hover:text-accent"
-            href={`#${link.id}`}
-          >
-            {link.label}
-          </a>
-        </li>
-      ))}
-    </ul>
-  </nav>
+  <SectionAnchorNav items={sectionLinks} />
 
   {counts.fits === 0 ? (
-    <section class="mb-8 rounded-md border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+    <Card padding="md" border="strong" surface="raised" class="mb-8 border-dashed text-body text-fg-secondary">
       Model layer scaffolding is in. No fits committed yet.
-    </section>
+    </Card>
   ) : null}
 
   {modelSelectionRows.length > 0 ? (
-    <section id="answers" class="mb-12 scroll-mt-20">
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">Model Answers</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-600">
-          Finding-level winners, close calls, caveated rows, and model-roadmap
-          priorities grouped by task context before the reference tables.
-        </p>
-      </header>
+    <Section
+      id="answers"
+      spacing="lg"
+      title="Model Answers"
+      description="Finding-level winners, close calls, caveated rows, and model-roadmap priorities grouped by task context before the reference tables."
+    >
       <ModelAnswersBrowser
         client:load
         rows={modelSelectionRows}
@@ -559,19 +549,16 @@ const sectionLinks = [
         confidenceDefinitions={confidenceDefinitions}
         scopeDefinitions={scopeDefinitions}
       />
-    </section>
+    </Section>
   ) : null}
 
   {modelSelectionRows.length > 0 ? (
-    <section id="selection" class="mb-12 scroll-mt-20">
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">Per-finding selection</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-600">
-          Finding-level AIC winners alongside their scope-specific winners.
-          Mixed-scope rows are useful for triage; scope-specific rows keep
-          direct-choice, joint choice+RT, and summary likelihoods separate.
-        </p>
-      </header>
+    <Section
+      id="selection"
+      spacing="lg"
+      title="Per-finding selection"
+      description="Finding-level AIC winners alongside their scope-specific winners. Mixed-scope rows are useful for triage; scope-specific rows keep direct-choice, joint choice+RT, and summary likelihoods separate."
+    >
       <ModelSelectionTable
         client:visible
         rows={modelSelectionRows}
@@ -579,32 +566,25 @@ const sectionLinks = [
         confidenceDefinitions={confidenceDefinitions}
         scopeDefinitions={scopeDefinitions}
       />
-    </section>
+    </Section>
   ) : null}
 
-  <section id="matrix" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Selection matrix</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Rows are finding-by-comparison-scope groups; columns are model classes.
-        Each filled cell is the best AIC candidate in that class within the
-        same likelihood scope. Scope winners marked in green.
-      </p>
-    </header>
+  <Section
+    id="matrix"
+    spacing="lg"
+    title="Selection matrix"
+    description="Rows are finding-by-comparison-scope groups; columns are model classes. Each filled cell is the best AIC candidate in that class within the same likelihood scope. Scope winners marked in green."
+  >
 
-    <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+    <StatGrid cols={4} class="mb-4">
       {confidenceOrder.map((key) => (
-        <div class="rounded-md border border-slate-200 bg-white p-3">
-          <p class="text-xs uppercase text-slate-500">
-            {confidenceDefinitions[key]?.label ?? key.replace(/_/g, " ")}
-          </p>
-          <p class="mt-1 text-2xl font-semibold">{fmtCount(confidenceCounts[key])}</p>
-          <p class="mt-1 text-xs text-slate-500 line-clamp-2">
-            {confidenceDefinitions[key]?.description ?? ""}
-          </p>
-        </div>
+        <Stat
+          label={confidenceDefinitions[key]?.label ?? key.replace(/_/g, " ")}
+          value={fmtCount(confidenceCounts[key])}
+          hint={confidenceDefinitions[key]?.description ?? ""}
+        />
       ))}
-    </div>
+    </StatGrid>
 
     <details class="mb-4 rounded-md border border-slate-200 bg-white p-4">
       <summary class="cursor-pointer text-sm font-semibold text-slate-700">
@@ -642,119 +622,111 @@ const sectionLinks = [
           Interpretation warnings ({interpretationWarnings.length})
         </summary>
         <div class="mt-3 max-h-80 overflow-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Finding" },
+              { label: "Warning" },
+              { label: "Winner scope" },
+              { label: "Candidate scopes" },
+            ]}
+          >
+            {interpretationWarnings.map((w) => (
               <tr>
-                <th class="px-3 py-2">Finding</th>
-                <th class="px-3 py-2">Warning</th>
-                <th class="px-3 py-2">Winner scope</th>
-                <th class="px-3 py-2">Candidate scopes</th>
+                <td class="px-3 py-2">
+                  <a class="font-mono text-mono-id" href={hrefForFinding(w.finding_id)}>
+                    {w.finding_id.replace("finding.", "")}
+                  </a>
+                  <p class="text-mono-id text-fg-muted">
+                    {w.best_variant_id.replace("model_variant.", "")} ·
+                    {" "}{w.confidence_label.replace(/_/g, " ")}
+                  </p>
+                </td>
+                <td class="px-3 py-2">
+                  <span
+                    class={
+                      w.severity === "high"
+                        ? "rounded bg-warn-soft px-1.5 py-0.5 text-mono-id uppercase text-warn"
+                        : "rounded bg-surface-sunken px-1.5 py-0.5 text-mono-id uppercase text-fg-secondary"
+                    }
+                  >
+                    {w.warning_type.replace(/_/g, " ")}
+                  </span>
+                  <p class="mt-1 text-body-xs text-fg-secondary">{w.message}</p>
+                </td>
+                <td class="px-3 py-2 text-body-xs text-fg-secondary">
+                  {scopeLabel(w.comparison_scope)}
+                </td>
+                <td class="px-3 py-2">
+                  <ul class="flex flex-wrap gap-1">
+                    {w.candidate_comparison_scopes.map((scope) => (
+                      <li class="rounded bg-surface-sunken px-1.5 py-0.5 text-mono-id text-fg-secondary">
+                        {scopeLabel(scope)}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {interpretationWarnings.map((w) => (
-                <tr>
-                  <td class="px-3 py-2">
-                    <a class="font-mono text-[11px]" href={hrefForFinding(w.finding_id)}>
-                      {w.finding_id.replace("finding.", "")}
-                    </a>
-                    <p class="text-[11px] text-slate-500">
-                      {w.best_variant_id.replace("model_variant.", "")} ·
-                      {" "}{w.confidence_label.replace(/_/g, " ")}
-                    </p>
-                  </td>
-                  <td class="px-3 py-2">
-                    <span
-                      class={
-                        w.severity === "high"
-                          ? "rounded bg-warn-soft px-1.5 py-0.5 text-[10px] uppercase text-warn"
-                          : "rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600"
-                      }
-                    >
-                      {w.warning_type.replace(/_/g, " ")}
-                    </span>
-                    <p class="mt-1 text-xs text-slate-600">{w.message}</p>
-                  </td>
-                  <td class="px-3 py-2 text-xs text-slate-600">
-                    {scopeLabel(w.comparison_scope)}
-                  </td>
-                  <td class="px-3 py-2">
-                    <ul class="flex flex-wrap gap-1">
-                      {w.candidate_comparison_scopes.map((scope) => (
-                        <li class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                          {scopeLabel(scope)}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </details>
     ) : null}
-  </section>
+  </Section>
 
   {ddmRows.length > 0 ? (
-    <section id="ddm" class="mb-12 scroll-mt-20">
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">DDM cross-species</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-600">
-          {ddmRows.length} drift-diffusion fits across {ddmSpecies.length} species
-          and {ddmVariants.length} variant{ddmVariants.length === 1 ? "" : "s"}.
-          Strip plot shows drift, boundary, and non-decision time; points
-          coloured by paper, shaped by variant.
-        </p>
-      </header>
-      <div class="rounded-md border border-slate-200 bg-white p-4">
+    <Section
+      id="ddm"
+      spacing="lg"
+      title="DDM cross-species"
+      description={`${ddmRows.length} drift-diffusion fits across ${ddmSpecies.length} species and ${ddmVariants.length} variant${ddmVariants.length === 1 ? "" : "s"}. Strip plot shows drift, boundary, and non-decision time; points coloured by paper, shaped by variant.`}
+    >
+      <Card padding="md">
         <DdmParamScatter client:visible fits={ddmRows} height={280} />
-      </div>
+      </Card>
       <details class="mt-3 rounded-md border border-slate-200 bg-white">
         <summary class="cursor-pointer p-3 text-sm font-semibold text-slate-700">
           DDM fit table
         </summary>
-        <div class="overflow-x-auto border-t border-slate-200">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <div class="border-t border-rule">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Variant" },
+              { label: "Paper" },
+              { label: "Species" },
+              { label: "Subject / cond." },
+              { label: "k", align: "right" },
+              { label: "a", align: "right" },
+              { label: "t0 (s)", align: "right" },
+              { label: "z", align: "right" },
+              { label: "v0", align: "right" },
+              { label: "AIC", align: "right" },
+            ]}
+          >
+            {ddmRows.map((r) => (
               <tr>
-                <th class="px-3 py-2">Variant</th>
-                <th class="px-3 py-2">Paper</th>
-                <th class="px-3 py-2">Species</th>
-                <th class="px-3 py-2">Subject / cond.</th>
-                <th class="px-3 py-2 text-right">k</th>
-                <th class="px-3 py-2 text-right">a</th>
-                <th class="px-3 py-2 text-right">t0 (s)</th>
-                <th class="px-3 py-2 text-right">z</th>
-                <th class="px-3 py-2 text-right">v0</th>
-                <th class="px-3 py-2 text-right">AIC</th>
+                <td class="px-3 py-2 font-mono text-mono-id">{r.variant}</td>
+                <td class="px-3 py-2 text-body-xs">{r.paper_label}</td>
+                <td class="px-3 py-2 text-body-xs">{r.species}</td>
+                <td class="px-3 py-2 text-mono-id text-fg-secondary">
+                  {r.subject_id ?? r.condition ?? "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {fmt(r.drift_per_unit_evidence, 4)}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(r.boundary)}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(r.non_decision_time)}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {r.starting_point !== null ? fmt(r.starting_point) : "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {r.drift_bias !== null ? fmt(r.drift_bias) : "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(r.aic, 1)}</td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {ddmRows.map((r) => (
-                <tr>
-                  <td class="px-3 py-2 font-mono text-[11px]">{r.variant}</td>
-                  <td class="px-3 py-2 text-xs">{r.paper_label}</td>
-                  <td class="px-3 py-2 text-xs">{r.species}</td>
-                  <td class="px-3 py-2 text-[11px] text-slate-600">
-                    {r.subject_id ?? r.condition ?? "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {fmt(r.drift_per_unit_evidence, 4)}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">{fmt(r.boundary)}</td>
-                  <td class="px-3 py-2 text-right font-mono">{fmt(r.non_decision_time)}</td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {r.starting_point !== null ? fmt(r.starting_point) : "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">
-                    {r.drift_bias !== null ? fmt(r.drift_bias) : "—"}
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono">{fmt(r.aic, 1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </details>
       <p class="mt-2 text-xs text-slate-500">
@@ -762,76 +734,50 @@ const sectionLinks = [
         v0 columns only have values when the variant frees that parameter.
         See <a class="text-accent" href="/compare#comparison.walsh-bias-locus">Walsh bias-locus comparison</a> for the AIC verdict per cue.
       </p>
-    </section>
+    </Section>
   ) : null}
 
-  <section id="coverage" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Coverage gaps</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Findings without competing fits, single-candidate winners, proxy-backed
-        wins, and slice capabilities one requirement away from supporting a
-        variant. Roadmap of next-best work lives on
-        <a class="text-accent" href="/atlas-health#roadmap">/atlas-health</a>.
-      </p>
-    </header>
-    <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">No fits</p>
-        <p class="mt-1 text-2xl font-semibold">
-          {fmtCount(coverageGaps.counts?.findings_with_no_fits)}
-        </p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Single candidate</p>
-        <p class="mt-1 text-2xl font-semibold">
-          {fmtCount(coverageGaps.counts?.findings_with_single_candidate)}
-        </p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Proxy backed</p>
-        <p class="mt-1 text-2xl font-semibold">
-          {fmtCount(coverageGaps.counts?.proxy_backed_findings)}
-        </p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Near-miss slices</p>
-        <p class="mt-1 text-2xl font-semibold">
-          {fmtCount(coverageGaps.counts?.near_miss_slices)}
-        </p>
-      </div>
-    </div>
+  <Section
+    id="coverage"
+    spacing="lg"
+    title="Coverage gaps"
+    description="Findings without competing fits, single-candidate winners, proxy-backed wins, and slice capabilities one requirement away from supporting a variant. Roadmap of next-best work lives on /atlas-health."
+  >
+    <StatGrid cols={4} class="mb-4">
+      <Stat label="No fits" value={fmtCount(coverageGaps.counts?.findings_with_no_fits)} />
+      <Stat label="Single candidate" value={fmtCount(coverageGaps.counts?.findings_with_single_candidate)} />
+      <Stat label="Proxy backed" value={fmtCount(coverageGaps.counts?.proxy_backed_findings)} />
+      <Stat label="Near-miss slices" value={fmtCount(coverageGaps.counts?.near_miss_slices)} />
+    </StatGrid>
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <article class="rounded-md border border-slate-200 bg-white">
         <header class="border-b border-slate-200 px-3 py-2">
           <h3 class="text-sm font-semibold">Findings with no fits</h3>
         </header>
         <div class="max-h-80 overflow-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Finding" },
+              { label: "Paper" },
+              { label: "Source" },
+            ]}
+          >
+            {noFitRows.map((row) => (
               <tr>
-                <th class="px-3 py-2">Finding</th>
-                <th class="px-3 py-2">Paper</th>
-                <th class="px-3 py-2">Source</th>
+                <td class="px-3 py-2">
+                  <a class="font-mono text-mono-id" href={hrefForFinding(row.finding_id)}>
+                    {row.finding_id.replace("finding.", "")}
+                  </a>
+                  <p class="text-mono-id text-fg-muted">
+                    {gapSpecies(row)} · {gapCurve(row)}
+                  </p>
+                </td>
+                <td class="px-3 py-2 text-body-xs text-fg-secondary">{gapPaper(row)}</td>
+                <td class="px-3 py-2 text-body-xs text-fg-secondary">{gapSource(row)}</td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {noFitRows.map((row) => (
-                <tr>
-                  <td class="px-3 py-2">
-                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
-                      {row.finding_id.replace("finding.", "")}
-                    </a>
-                    <p class="text-[11px] text-slate-500">
-                      {gapSpecies(row)} · {gapCurve(row)}
-                    </p>
-                  </td>
-                  <td class="px-3 py-2 text-xs text-slate-600">{gapPaper(row)}</td>
-                  <td class="px-3 py-2 text-xs text-slate-600">{gapSource(row)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </article>
       <article class="rounded-md border border-slate-200 bg-white">
@@ -839,33 +785,31 @@ const sectionLinks = [
           <h3 class="text-sm font-semibold">Single-candidate findings</h3>
         </header>
         <div class="max-h-80 overflow-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Finding" },
+              { label: "Only winner" },
+              { label: "Source" },
+            ]}
+          >
+            {singleCandidateRows.map((row) => (
               <tr>
-                <th class="px-3 py-2">Finding</th>
-                <th class="px-3 py-2">Only winner</th>
-                <th class="px-3 py-2">Source</th>
+                <td class="px-3 py-2">
+                  <a class="font-mono text-mono-id" href={hrefForFinding(row.finding_id)}>
+                    {row.finding_id.replace("finding.", "")}
+                  </a>
+                  <p class="text-mono-id text-fg-muted">
+                    {gapSpecies(row)} · {gapCurve(row)}
+                  </p>
+                </td>
+                <td class="px-3 py-2 font-mono text-mono-id">
+                  {(row.best_variant_id ?? "").replace("model_variant.", "")}
+                </td>
+                <td class="px-3 py-2 text-body-xs text-fg-secondary">{gapSource(row)}</td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {singleCandidateRows.map((row) => (
-                <tr>
-                  <td class="px-3 py-2">
-                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
-                      {row.finding_id.replace("finding.", "")}
-                    </a>
-                    <p class="text-[11px] text-slate-500">
-                      {gapSpecies(row)} · {gapCurve(row)}
-                    </p>
-                  </td>
-                  <td class="px-3 py-2 font-mono text-[11px]">
-                    {(row.best_variant_id ?? "").replace("model_variant.", "")}
-                  </td>
-                  <td class="px-3 py-2 text-xs text-slate-600">{gapSource(row)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </article>
       <article class="rounded-md border border-slate-200 bg-white">
@@ -873,37 +817,35 @@ const sectionLinks = [
           <h3 class="text-sm font-semibold">Proxy-backed findings</h3>
         </header>
         <div class="max-h-80 overflow-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Finding" },
+              { label: "Proxy caveats" },
+            ]}
+          >
+            {proxyRows.map((row) => (
               <tr>
-                <th class="px-3 py-2">Finding</th>
-                <th class="px-3 py-2">Proxy caveats</th>
+                <td class="px-3 py-2">
+                  <a class="font-mono text-mono-id" href={hrefForFinding(row.finding_id)}>
+                    {row.finding_id.replace("finding.", "")}
+                  </a>
+                  <p class="text-mono-id text-fg-muted">
+                    {gapSpecies(row)} · {gapCurve(row)}
+                  </p>
+                </td>
+                <td class="px-3 py-2">
+                  <ul class="flex flex-wrap gap-1">
+                    {(row.proxy_caveat_tags ?? []).map((tag) => (
+                      <li class="rounded bg-warn-soft px-1.5 py-0.5 text-mono-id text-warn">
+                        {caveatDefinitions[tag]?.label ?? tag.replace(/_/g, " ")}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {proxyRows.map((row) => (
-                <tr>
-                  <td class="px-3 py-2">
-                    <a class="font-mono text-[11px]" href={hrefForFinding(row.finding_id)}>
-                      {row.finding_id.replace("finding.", "")}
-                    </a>
-                    <p class="text-[11px] text-slate-500">
-                      {gapSpecies(row)} · {gapCurve(row)}
-                    </p>
-                  </td>
-                  <td class="px-3 py-2">
-                    <ul class="flex flex-wrap gap-1">
-                      {(row.proxy_caveat_tags ?? []).map((tag) => (
-                        <li class="rounded bg-warn-soft px-1.5 py-0.5 text-[10px] text-warn">
-                          {caveatDefinitions[tag]?.label ?? tag.replace(/_/g, " ")}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </article>
       <article class="rounded-md border border-slate-200 bg-white">
@@ -911,63 +853,54 @@ const sectionLinks = [
           <h3 class="text-sm font-semibold">Near-miss slice capabilities</h3>
         </header>
         <div class="max-h-80 overflow-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <DataTable
+            class="rounded-none border-0"
+            columns={[
+              { label: "Slice" },
+              { label: "Variant" },
+              { label: "Missing" },
+            ]}
+          >
+            {nearMissRows.map((row) => (
               <tr>
-                <th class="px-3 py-2">Slice</th>
-                <th class="px-3 py-2">Variant</th>
-                <th class="px-3 py-2">Missing</th>
+                <td class="px-3 py-2">
+                  <a class="font-mono text-mono-id" href={`/slices/${slugForId(row.slice_id)}`}>
+                    {row.slice_id.replace("slice.", "")}
+                  </a>
+                  <p class="text-mono-id text-fg-muted">
+                    {row.n_trials.toLocaleString()} trials · {row.n_subjects} subjects
+                  </p>
+                </td>
+                <td class="px-3 py-2 font-mono text-mono-id">
+                  {row.variant_id.replace("model_variant.", "")}
+                </td>
+                <td class="px-3 py-2 font-mono text-mono-id">
+                  {row.missing_requirements.join(", ")}
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {nearMissRows.map((row) => (
-                <tr>
-                  <td class="px-3 py-2">
-                    <a class="font-mono text-[11px]" href={`/slices/${slugForId(row.slice_id)}`}>
-                      {row.slice_id.replace("slice.", "")}
-                    </a>
-                    <p class="text-[11px] text-slate-500">
-                      {row.n_trials.toLocaleString()} trials · {row.n_subjects} subjects
-                    </p>
-                  </td>
-                  <td class="px-3 py-2 font-mono text-[11px]">
-                    {row.variant_id.replace("model_variant.", "")}
-                  </td>
-                  <td class="px-3 py-2 font-mono text-[11px]">
-                    {row.missing_requirements.join(", ")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </DataTable>
         </div>
       </article>
     </div>
-  </section>
+  </Section>
 
-  <section id="fittability" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Per-slice fittability</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Mapping from canonical-trial coverage in each slice's harmonized
-        trials.csv to the variants whose data requirements it satisfies.
-        Slices with empty fittability lack the right canonical fields
-        (RT, signed choice, click times) or need adapter fixes.
-      </p>
-    </header>
-    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="px-3 py-2">Slice</th>
-            <th class="px-3 py-2 text-right">Trials</th>
-            <th class="px-3 py-2 text-right">Subjects</th>
-            <th class="px-3 py-2">Capabilities</th>
-            <th class="px-3 py-2">Fittable variants</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200">
-          {slice_coverage.map((s) => (
+  <Section
+    id="fittability"
+    spacing="lg"
+    title="Per-slice fittability"
+    description="Mapping from canonical-trial coverage in each slice's harmonized trials.csv to the variants whose data requirements it satisfies. Slices with empty fittability lack the right canonical fields (RT, signed choice, click times) or need adapter fixes."
+  >
+    <DataTable
+      columns={[
+        { label: "Slice" },
+        { label: "Trials", align: "right" },
+        { label: "Subjects", align: "right" },
+        { label: "Capabilities" },
+        { label: "Fittable variants" },
+      ]}
+    >
+      {slice_coverage.map((s) => (
             <tr>
               <td class="px-3 py-2">
                 <a class="font-mono text-xs" href={`/slices/${slugForId(s.slice_id)}`}>
@@ -1005,22 +938,18 @@ const sectionLinks = [
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
-    </div>
-    <p class="mt-2 text-[11px] text-slate-500">
+    </DataTable>
+    <p class="mt-2 text-mono-id text-fg-muted">
       Known requirements: {known_requirements.join(", ")}
     </p>
-  </section>
+  </Section>
 
-  <section id="families" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Families &amp; variants</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Each family declares its parameters, applicable curve types, and data
-        requirements. Variants free a particular subset of the parameters.
-      </p>
-    </header>
+  <Section
+    id="families"
+    spacing="lg"
+    title="Families & variants"
+    description="Each family declares its parameters, applicable curve types, and data requirements. Variants free a particular subset of the parameters."
+  >
     <div class="space-y-4">
       {families.map((family) => (
         <article id={slugForId(family.id)} class="scroll-mt-20 rounded-md border border-slate-200 bg-white p-4">
@@ -1071,50 +1000,44 @@ const sectionLinks = [
         </article>
       ))}
     </div>
-  </section>
+  </Section>
 
   {fits.length > 0 ? (
-    <section id="fits" class="mb-8 scroll-mt-20">
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">All fits</h2>
-        <p class="mt-1 text-sm text-slate-600">
-          Raw fit list. For per-finding context, follow the finding link.
-        </p>
-      </header>
-      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th class="px-3 py-2">Fit</th>
-              <th class="px-3 py-2">Variant</th>
-              <th class="px-3 py-2">Findings</th>
-              <th class="px-3 py-2 text-right">logL</th>
-              <th class="px-3 py-2 text-right">AIC</th>
-              <th class="px-3 py-2 text-right">n_trials</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            {fits.map((f) => (
-              <tr>
-                <td class="px-3 py-2 font-mono text-xs">{f.id}</td>
-                <td class="px-3 py-2 font-mono text-xs">{f.variant_id}</td>
-                <td class="px-3 py-2 font-mono text-[11px]">
-                  {f.finding_ids.map((fid) => (
-                    <a class="mr-1" href={hrefForFinding(fid)}>{fid}</a>
-                  ))}
-                </td>
-                <td class="px-3 py-2 text-right font-mono">
-                  {f.quality?.log_likelihood ?? "—"}
-                </td>
-                <td class="px-3 py-2 text-right font-mono">{f.quality?.aic ?? "—"}</td>
-                <td class="px-3 py-2 text-right font-mono">
-                  {f.quality?.n_trials ?? "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <Section
+      id="fits"
+      spacing="md"
+      title="All fits"
+      description="Raw fit list. For per-finding context, follow the finding link."
+    >
+      <DataTable
+        columns={[
+          { label: "Fit" },
+          { label: "Variant" },
+          { label: "Findings" },
+          { label: "logL", align: "right" },
+          { label: "AIC", align: "right" },
+          { label: "n_trials", align: "right" },
+        ]}
+      >
+        {fits.map((f) => (
+          <tr>
+            <td class="px-3 py-2 font-mono text-body-xs">{f.id}</td>
+            <td class="px-3 py-2 font-mono text-body-xs">{f.variant_id}</td>
+            <td class="px-3 py-2 font-mono text-mono-id">
+              {f.finding_ids.map((fid) => (
+                <a class="mr-1" href={hrefForFinding(fid)}>{fid}</a>
+              ))}
+            </td>
+            <td class="px-3 py-2 text-right font-mono">
+              {f.quality?.log_likelihood ?? "—"}
+            </td>
+            <td class="px-3 py-2 text-right font-mono">{f.quality?.aic ?? "—"}</td>
+            <td class="px-3 py-2 text-right font-mono">
+              {f.quality?.n_trials ?? "—"}
+            </td>
+          </tr>
+        ))}
+      </DataTable>
+    </Section>
   ) : null}
 </BaseLayout>

@@ -3,6 +3,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import RecordChip from "../../components/RecordChip.astro";
+import Card from "../../components/ui/Card.astro";
+import DetailLayout from "../../components/ui/DetailLayout.astro";
+import DetailToc from "../../components/ui/DetailToc.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import Section from "../../components/ui/Section.astro";
+import StatusPill from "../../components/ui/StatusPill.astro";
 import { catalog, slugForId } from "../../lib/data";
 import type { CatalogProtocolDetail } from "../../lib/data";
 import { findings as findingsIndex } from "../../lib/findings";
@@ -62,9 +68,47 @@ const protocolPapers = Array.from(
     ]),
   ).values(),
 ).sort((a, b) => b.paper_year - a.paper_year);
+
+type TocItem = { id: string; label: string; count?: number };
+const tocItems: TocItem[] = [
+  { id: "structure", label: "Task structure" } as TocItem,
+  timingRows.length > 0
+    ? { id: "timing", label: "Trial timing", count: timingRows.length }
+    : null,
+  protocol.vertical_slices.length > 0
+    ? {
+        id: "slices",
+        label: "Vertical slices",
+        count: protocol.vertical_slices.length,
+      }
+    : null,
+  protocol.expected_analyses.length > 0
+    ? { id: "analyses", label: "Expected analyses" }
+    : null,
+  interpretiveClaims.length > 0
+    ? {
+        id: "claims",
+        label: "Interpretive claims",
+        count: interpretiveClaims.length,
+      }
+    : null,
+  protocol.open_questions.length > 0
+    ? { id: "questions", label: "Open questions" }
+    : null,
+  protocolPapers.length > 0
+    ? { id: "papers", label: "Papers", count: protocolPapers.length }
+    : null,
+  protocolFindings.length > 0
+    ? { id: "findings", label: "Findings", count: protocolFindings.length }
+    : null,
+].filter((item): item is TocItem => item !== null);
+
+const isCurated =
+  protocol.curation_status === "data-linked" ||
+  protocol.curation_status === "literature-curated";
 ---
 
-<BaseLayout title={`${protocol.name} · Protocol`}>
+<BaseLayout title={`${protocol.name} · Protocol`} width="wide">
   <Breadcrumbs
     crumbs={[
       { label: "Catalog", href: "/catalog" },
@@ -73,235 +117,235 @@ const protocolPapers = Array.from(
     ]}
   />
 
-  <header class="mb-8">
-    <p class="text-xs uppercase tracking-wide text-slate-500">Protocol</p>
-    <h1 class="mt-1 text-3xl">{protocol.name}</h1>
-    {protocol.aliases.length > 0 ? (
-      <p class="mt-1 text-sm text-slate-600">
-        Aliases: {protocol.aliases.join(", ")}
-      </p>
+  <DetailLayout>
+    <Fragment slot="rail">
+      <DetailToc items={tocItems} />
+      <Card padding="md" class="text-body-xs">
+        <h3 class="mb-3 text-eyebrow uppercase text-fg-muted">Protocol</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-fg-muted">Family</dt>
+            <dd class="mt-0.5 text-fg">{protocol.family_name ?? protocol.family_id}</dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Scope</dt>
+            <dd class="mt-0.5 text-fg">{protocol.protocol_scope}</dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Species</dt>
+            <dd class="mt-0.5 text-fg">{protocol.species.join(", ")}</dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Status</dt>
+            <dd class="mt-1">
+              <StatusPill tone={isCurated ? "ok" : "neutral"}>
+                {protocol.curation_status}
+              </StatusPill>
+            </dd>
+          </div>
+          {protocol.aliases.length > 0 ? (
+            <div>
+              <dt class="text-fg-muted">Aliases</dt>
+              <dd class="mt-0.5 text-fg-secondary">{protocol.aliases.join(", ")}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </Card>
+      {protocol.datasets.length > 0 ? (
+        <Card padding="md" class="mt-3 text-body-xs">
+          <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Datasets</h3>
+          <ul class="flex flex-wrap gap-1.5">
+            {protocol.datasets.map((d) => (
+              <li>
+                <RecordChip
+                  type="dataset"
+                  label={d.name}
+                  href={`/datasets/${slugForId(d.dataset_id)}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+    </Fragment>
+
+    <PageHeader
+      eyebrow="Protocol"
+      title={protocol.name}
+      lede={protocol.description}
+    />
+
+    <Section
+      id="structure"
+      spacing="md"
+      title="Task structure"
+      description="Stimulus, choice, feedback, and training as declared in the protocol record."
+    >
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card padding="md">
+          <h3 class="mb-2 text-h3 text-fg-secondary">Stimulus</h3>
+          <dl class="space-y-1 text-body">
+            {Object.entries(stimulus).map(([key, value]) => (
+              <div class="grid grid-cols-3 gap-2">
+                <dt class="text-fg-muted">{key}</dt>
+                <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+        <Card padding="md">
+          <h3 class="mb-2 text-h3 text-fg-secondary">Choice</h3>
+          <dl class="space-y-1 text-body">
+            {Object.entries(choice).map(([key, value]) => (
+              <div class="grid grid-cols-3 gap-2">
+                <dt class="text-fg-muted">{key}</dt>
+                <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+        <Card padding="md">
+          <h3 class="mb-2 text-h3 text-fg-secondary">Feedback</h3>
+          <dl class="space-y-1 text-body">
+            {Object.entries(feedback).map(([key, value]) => (
+              <div class="grid grid-cols-3 gap-2">
+                <dt class="text-fg-muted">{key}</dt>
+                <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+        <Card padding="md">
+          <h3 class="mb-2 text-h3 text-fg-secondary">Training</h3>
+          <dl class="space-y-1 text-body">
+            {Object.entries(training).map(([key, value]) => (
+              <div class="grid grid-cols-3 gap-2">
+                <dt class="text-fg-muted">{key}</dt>
+                <dd class="col-span-2 break-words">{renderValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      </div>
+    </Section>
+
+    {timingRows.length > 0 ? (
+      <Section id="timing" spacing="md" title="Trial timing">
+        <ol class="space-y-2 text-body">
+          {timingRows.map((phase) => (
+            <Card as="li" padding="sm">
+              <div class="font-medium">{phase.name}</div>
+              <div class="text-body-xs text-fg-muted">{phase.duration}</div>
+              {phase.description ? (
+                <p class="mt-1 text-fg-secondary">{phase.description}</p>
+              ) : null}
+            </Card>
+          ))}
+        </ol>
+      </Section>
     ) : null}
-    <p class="mt-2 max-w-3xl text-sm text-slate-700">{protocol.description}</p>
-    <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-700 sm:grid-cols-4">
-      <div>
-        <dt class="text-slate-500">Family</dt>
-        <dd class="mt-0.5">{protocol.family_name ?? protocol.family_id}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">Scope</dt>
-        <dd class="mt-0.5">{protocol.protocol_scope}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">Species</dt>
-        <dd class="mt-0.5">{protocol.species.join(", ")}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">Status</dt>
-        <dd class="mt-0.5">{protocol.curation_status}</dd>
-      </div>
-    </dl>
-    {(protocol.datasets.length > 0 || protocol.vertical_slices.length > 0) ? (
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        {protocol.datasets.map((d) => (
-          <RecordChip
-            type="dataset"
-            label={d.name}
-            href={`/datasets/${slugForId(d.dataset_id)}`}
-          />
-        ))}
-      </div>
-    ) : null}
-  </header>
 
-  <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="rounded-md border border-slate-200 bg-white p-4">
-      <h2 class="mb-2 text-sm font-semibold text-slate-700">Stimulus</h2>
-      <dl class="space-y-1 text-sm">
-        {
-          Object.entries(stimulus).map(([key, value]) => (
-            <div class="grid grid-cols-3 gap-2">
-              <dt class="text-slate-500">{key}</dt>
-              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-4">
-      <h2 class="mb-2 text-sm font-semibold text-slate-700">Choice</h2>
-      <dl class="space-y-1 text-sm">
-        {
-          Object.entries(choice).map(([key, value]) => (
-            <div class="grid grid-cols-3 gap-2">
-              <dt class="text-slate-500">{key}</dt>
-              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-4">
-      <h2 class="mb-2 text-sm font-semibold text-slate-700">Feedback</h2>
-      <dl class="space-y-1 text-sm">
-        {
-          Object.entries(feedback).map(([key, value]) => (
-            <div class="grid grid-cols-3 gap-2">
-              <dt class="text-slate-500">{key}</dt>
-              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-4">
-      <h2 class="mb-2 text-sm font-semibold text-slate-700">Training</h2>
-      <dl class="space-y-1 text-sm">
-        {
-          Object.entries(training).map(([key, value]) => (
-            <div class="grid grid-cols-3 gap-2">
-              <dt class="text-slate-500">{key}</dt>
-              <dd class="col-span-2 break-words">{renderValue(value)}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </div>
-  </section>
-
-  <section class="mb-8">
-    <h2 class="mb-2 text-sm font-semibold text-slate-700">Trial timing</h2>
-    <ol class="space-y-2 text-sm">
-      {
-        timingRows.map((phase) => (
-          <li class="rounded-md border border-slate-200 bg-white p-3">
-            <div class="font-medium">{phase.name}</div>
-            <div class="text-xs text-slate-500">{phase.duration}</div>
-            {phase.description ? (
-              <p class="mt-1 text-slate-700">{phase.description}</p>
-            ) : null}
-          </li>
-        ))
-      }
-    </ol>
-  </section>
-
-  {
-    protocol.vertical_slices.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Vertical slices</h2>
-        <ul class="space-y-1 text-sm">
+    {protocol.vertical_slices.length > 0 ? (
+      <Section id="slices" spacing="md" title="Vertical slices">
+        <ul class="space-y-1 text-body">
           {protocol.vertical_slices.map((slice) => (
             <li class="flex items-baseline justify-between">
-              <span>{slice.title}</span>
-              <span class="text-xs text-slate-500">{slice.report_status}</span>
+              <a class="text-fg" href={`/slices/${slugForId(slice.slice_id)}`}>{slice.title}</a>
+              <StatusPill tone={slice.report_status === "available" ? "ok" : "neutral"}>
+                {slice.report_status}
+              </StatusPill>
             </li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    protocol.expected_analyses.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">
-          Expected analyses
-        </h2>
-        <ul class="list-disc space-y-1 pl-5 text-sm">
+    {protocol.expected_analyses.length > 0 ? (
+      <Section id="analyses" spacing="md" title="Expected analyses">
+        <ul class="list-disc space-y-1 pl-5 text-body">
           {protocol.expected_analyses.map((item) => (
             <li>{item}</li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    interpretiveClaims.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">
-          Interpretive claims
-        </h2>
-        <ul class="space-y-2 text-sm">
+    {interpretiveClaims.length > 0 ? (
+      <Section id="claims" spacing="md" title="Interpretive claims">
+        <ul class="space-y-2 text-body">
           {interpretiveClaims.map((claim) => (
-            <li class="rounded-md border border-slate-200 bg-white p-3">
+            <Card as="li" padding="sm">
               <div class="font-medium">{claim.label}</div>
-              <div class="text-xs text-slate-500">
+              <div class="text-body-xs text-fg-muted">
                 Confidence: {claim.confidence} · {claim.source}
               </div>
               {claim.caveat ? (
-                <p class="mt-1 text-slate-700">{claim.caveat}</p>
+                <p class="mt-1 text-fg-secondary">{claim.caveat}</p>
               ) : null}
-            </li>
+            </Card>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    protocol.open_questions.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Open questions</h2>
-        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+    {protocol.open_questions.length > 0 ? (
+      <Section id="questions" spacing="md" title="Open questions">
+        <ul class="list-disc space-y-1 pl-5 text-body text-fg-secondary">
           {protocol.open_questions.map((q) => (
             <li>{q}</li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    protocolPapers.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Papers</h2>
-        <ul class="space-y-1 text-sm">
+    {protocolPapers.length > 0 ? (
+      <Section id="papers" spacing="md" title="Papers">
+        <ul class="space-y-1 text-body">
           {protocolPapers.map((p) => (
             <li>
               <a href={`/papers/${slugForId(p.paper_id)}`}>{p.paper_citation}</a>
-              <span class="ml-2 text-xs text-slate-500">({p.paper_year})</span>
+              <span class="ml-2 text-body-xs text-fg-muted">({p.paper_year})</span>
             </li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    protocolFindings.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">
-          Findings <span class="font-normal text-slate-500">on this protocol</span>
-        </h2>
+    {protocolFindings.length > 0 ? (
+      <Section
+        id="findings"
+        spacing="md"
+        title="Findings"
+        description="Curves attached to this protocol on shared signed-evidence axes."
+      >
         <MiniFindingsChart
           client:visible
           findings={protocolFindings}
           colorBy="paper"
           height={280}
         />
-        <ul class="mt-3 space-y-1 text-sm">
+        <ul class="mt-3 space-y-1 text-body">
           {protocolFindings.map((entry) => (
             <li class="flex items-baseline justify-between gap-3">
               <span>
                 <a href={`/papers/${slugForId(entry.paper_id)}`}>
                   {entry.paper_citation}
                 </a>
-                <span class="ml-2 text-xs text-slate-500">
+                <span class="ml-2 text-body-xs text-fg-muted">
                   · {entry.curve_type}
                   {entry.stratification.condition
                     ? ` · ${entry.stratification.condition}`
                     : ""}
                 </span>
               </span>
-              <span class="text-xs text-slate-500">{entry.source_data_level}</span>
+              <span class="text-body-xs text-fg-muted">{entry.source_data_level}</span>
             </li>
           ))}
         </ul>
-        <p class="mt-2 text-xs text-slate-500">
+        <p class="mt-2 text-body-xs text-fg-muted">
           See all <a href="/findings">findings overlaid on shared axes</a>.
         </p>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
+  </DetailLayout>
 </BaseLayout>

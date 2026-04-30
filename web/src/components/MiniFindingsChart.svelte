@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FindingsEntry } from "../lib/findings";
+  import { chartChrome } from "../lib/encoding";
 
   type ColorBy = "paper" | "curve_type" | "condition";
   type TraceMode = "aggregate" | "all" | "pooled";
@@ -292,6 +293,7 @@
       });
     }
 
+    const chrome = chartChrome();
     const spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container" as const,
@@ -299,11 +301,11 @@
       resolve: { scale: { color: "independent" } },
       layer: layers,
       config: {
-        view: { stroke: "#cbd5e1" },
-        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
+        view: { stroke: chrome.viewStroke },
+        axis: { gridColor: chrome.gridColor, labelColor: chrome.labelColor },
         legend: {
-          labelColor: "#334155",
-          titleColor: "#0f172a",
+          labelColor: chrome.labelColor,
+          titleColor: chrome.titleColor,
           orient: "right" as const,
         },
       },

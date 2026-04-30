@@ -1,0 +1,92 @@
+---
+/**
+ * Card — bordered surface, the workhorse of the data product.
+ *
+ * Replaces hundreds of hand-written `rounded-md border border-slate-200
+ * bg-white p-{3|4|5}` blocks. Default: subtle border, raised surface,
+ * medium padding. Tinted variants (accent/warn/ok/bad) cover the
+ * status-callout pattern; surface="sunken" is for nested wells.
+ *
+ * The default tag is `<article>`; pass `as="div"` if the parent already
+ * provides article semantics.
+ */
+interface Props {
+  padding?: "none" | "sm" | "md" | "lg";
+  surface?: "raised" | "sunken" | "accent" | "warn" | "ok" | "bad";
+  border?: "subtle" | "strong" | "emphasis" | "tinted" | "none";
+  /** When set, the Card renders as an anchor and gets hover affordance. */
+  href?: string;
+  as?: "article" | "div" | "section" | "li" | "aside" | "a";
+  /** Anchor id for in-page nav targets. */
+  id?: string;
+  class?: string;
+}
+
+const {
+  padding = "md",
+  surface = "raised",
+  border = "subtle",
+  href,
+  as: explicitTag,
+  id,
+  class: className,
+} = Astro.props as Props;
+
+// `href` implies an anchor unless `as` is set explicitly.
+const Tag = explicitTag ?? (href ? "a" : "article");
+
+const paddingClass = {
+  none: "",
+  sm: "p-3",
+  md: "p-4",
+  lg: "p-5",
+}[padding];
+
+const surfaceClass = {
+  raised: "bg-surface-raised",
+  sunken: "bg-surface-sunken",
+  accent: "bg-surface-accent",
+  warn: "bg-surface-warn",
+  ok: "bg-surface-ok",
+  bad: "bg-surface-bad",
+}[surface];
+
+// `tinted` borders match the surface tone (e.g. warn surface + warn
+// border for callouts that need to read as a single unit).
+const borderClass = {
+  none: "",
+  subtle: "border border-rule",
+  strong: "border border-rule-strong",
+  emphasis: "border border-rule-emphasis",
+  tinted: {
+    raised: "border border-rule",
+    sunken: "border border-rule",
+    accent: "border border-accent",
+    warn: "border border-warn",
+    ok: "border border-ok",
+    bad: "border border-bad",
+  }[surface],
+}[border];
+
+// When the card is a link, add a `group` (so children can opt into
+// group-hover:*), kill the inherited underline, and brighten the border
+// on hover.
+const linkClass = href
+  ? "group block no-underline transition-colors hover:border-rule-emphasis"
+  : "";
+---
+
+<Tag
+  href={href}
+  id={id}
+  class:list={[
+    "rounded-md",
+    paddingClass,
+    surfaceClass,
+    borderClass,
+    linkClass,
+    className,
+  ]}
+>
+  <slot />
+</Tag>

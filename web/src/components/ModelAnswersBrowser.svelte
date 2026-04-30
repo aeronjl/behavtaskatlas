@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FacetBar from "./FacetBar.svelte";
+
   type CaveatDefinition = {
     label: string;
     description: string;
@@ -94,17 +96,28 @@
     return new URLSearchParams(window.location.search).get(name);
   }
 
+  function initialSingle(name: string): Set<string> {
+    const value = initialParam(name);
+    return value && value !== "all" ? new Set([value]) : new Set<string>();
+  }
+
   const initialQuestion = initialParam("model_question") ?? "winners";
   const initialSort = initialParam("model_sort") ?? "delta-desc";
 
   let query = $state(initialParam("model_q") ?? "");
   let question = $state(questionLabels[initialQuestion] ? initialQuestion : "winners");
-  let taskFamily = $state(initialParam("model_family") ?? "all");
-  let species = $state(initialParam("model_species") ?? "all");
-  let curveType = $state(initialParam("model_curve") ?? "all");
-  let winnerFamily = $state(initialParam("model_winner") ?? "all");
-  let confidence = $state(initialParam("model_confidence") ?? "all");
   let sortMode = $state(sortLabels[initialSort] ? initialSort : "delta-desc");
+  let selected = $state<Record<string, Set<string>>>({
+    task: initialSingle("model_family"),
+    species: initialSingle("model_species"),
+    curve: initialSingle("model_curve"),
+    winner: initialSingle("model_winner"),
+    confidence: initialSingle("model_confidence"),
+  });
+
+  function singlePick(key: string): string {
+    return Array.from(selected[key] ?? new Set())[0] ?? "";
+  }
 
   const queryTokens = $derived(
     query
@@ -117,11 +130,11 @@
   const activeFilterCount = $derived(
     (queryTokens.length > 0 ? 1 : 0) +
       (question === "winners" ? 0 : 1) +
-      (taskFamily === "all" ? 0 : 1) +
-      (species === "all" ? 0 : 1) +
-      (curveType === "all" ? 0 : 1) +
-      (winnerFamily === "all" ? 0 : 1) +
-      (confidence === "all" ? 0 : 1),
+      ((selected.task?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.species?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.curve?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.winner?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.confidence?.size ?? 0) > 0 ? 1 : 0),
   );
 
   function readable(value: string | null | undefined): string {
@@ -299,7 +312,9 @@
   const maxDelta = $derived(Math.max(1, ...rows.map((row) => row.delta_aic_to_next ?? 0)));
   const maxCandidateCount = $derived(Math.max(1, ...rows.map((row) => row.n_candidate_fits)));
 
-  function syncUrl() {
+  // URL sync via $effect: re-run whenever any filter state changes.
+  // replaceState skips adding history entries for filter tweaks.
+  $effect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const setOrDelete = (name: string, value: string, defaultValue: string) => {
@@ -308,72 +323,51 @@
     };
     setOrDelete("model_q", query.trim(), "");
     setOrDelete("model_question", question, "winners");
-    setOrDelete("model_family", taskFamily, "all");
-    setOrDelete("model_species", species, "all");
-    setOrDelete("model_curve", curveType, "all");
-    setOrDelete("model_winner", winnerFamily, "all");
-    setOrDelete("model_confidence", confidence, "all");
+    setOrDelete("model_family", singlePick("task"), "");
+    setOrDelete("model_species", singlePick("species"), "");
+    setOrDelete("model_curve", singlePick("curve"), "");
+    setOrDelete("model_winner", singlePick("winner"), "");
+    setOrDelete("model_confidence", singlePick("confidence"), "");
     setOrDelete("model_sort", sortMode, "delta-desc");
     const search = params.toString();
     const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
     if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
       window.history.replaceState(null, "", next);
     }
-  }
+  });
 
-  function updateQuery(event: Event) {
-    query = (event.currentTarget as HTMLInputElement).value;
-    syncUrl();
-  }
-
-  function updateSelect(event: Event, field: string) {
-    const value = (event.currentTarget as HTMLSelectElement).value;
-    if (field === "task") taskFamily = value;
-    if (field === "species") species = value;
-    if (field === "curve") curveType = value;
-    if (field === "winner") winnerFamily = value;
-    if (field === "confidence") confidence = value;
-    if (field === "sort") sortMode = value;
-    syncUrl();
-  }
-
-  function setQuestion(value: string) {
-    question = value;
-    syncUrl();
+  function setSinglePick(key: string, value: string) {
+    selected = {
+      ...selected,
+      [key]: value === "" ? new Set<string>() : new Set([value]),
+    };
   }
 
   function clearAll() {
     query = "";
     question = "winners";
-    taskFamily = "all";
-    species = "all";
-    curveType = "all";
-    winnerFamily = "all";
-    confidence = "all";
     sortMode = "delta-desc";
-    syncUrl();
+    selected = {
+      task: new Set(),
+      species: new Set(),
+      curve: new Set(),
+      winner: new Set(),
+      confidence: new Set(),
+    };
   }
 
   function applyPreset(value: string) {
-    query = "";
-    question = "winners";
-    taskFamily = "all";
-    species = "all";
-    curveType = "all";
-    winnerFamily = "all";
-    confidence = "all";
-    sortMode = "delta-desc";
-    if (value === "visual") taskFamily = "Visual contrast discrimination";
-    if (value === "rdm") taskFamily = "Random-dot motion discrimination";
-    if (value === "human") species = "human";
-    if (value === "mouse") species = "mouse";
+    clearAll();
+    if (value === "visual") setSinglePick("task", "Visual contrast discrimination");
+    if (value === "rdm") setSinglePick("task", "Random-dot motion discrimination");
+    if (value === "human") setSinglePick("species", "human");
+    if (value === "mouse") setSinglePick("species", "mouse");
     if (value === "close") {
       question = "close";
       sortMode = "close-first";
     }
     if (value === "caveats") question = "caveats";
     if (value === "process") question = "process";
-    syncUrl();
   }
 
   function hasQuestion(row: AnswerRow): boolean {
@@ -424,17 +418,22 @@
   }
 
   const filteredRows = $derived.by(() => {
+    const taskPick = singlePick("task");
+    const speciesPick = singlePick("species");
+    const curvePick = singlePick("curve");
+    const winnerPick = singlePick("winner");
+    const confidencePick = singlePick("confidence");
     const out = rows.filter((row) => {
       if (!hasQuestion(row)) return false;
       if (queryTokens.length > 0) {
         const text = haystack(row);
         if (!queryTokens.every((token) => text.includes(token))) return false;
       }
-      if (taskFamily !== "all" && row.task_family !== taskFamily) return false;
-      if (species !== "all" && row.species !== species) return false;
-      if (curveType !== "all" && row.curve_type !== curveType) return false;
-      if (winnerFamily !== "all" && row.best_family_label !== winnerFamily) return false;
-      if (confidence !== "all" && row.confidence_label !== confidence) return false;
+      if (taskPick && row.task_family !== taskPick) return false;
+      if (speciesPick && row.species !== speciesPick) return false;
+      if (curvePick && row.curve_type !== curvePick) return false;
+      if (winnerPick && row.best_family_label !== winnerPick) return false;
+      if (confidencePick && row.confidence_label !== confidencePick) return false;
       return true;
     });
     return out.sort((a, b) => {
@@ -501,6 +500,63 @@
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 6),
   );
+
+  // FacetBar configuration
+  const facets = $derived([
+    {
+      key: "task",
+      label: "Task",
+      mode: "single" as const,
+      allLabel: "All tasks",
+      options: taskOptions,
+    },
+    {
+      key: "species",
+      label: "Species",
+      mode: "single" as const,
+      allLabel: "All species",
+      options: speciesOptions,
+    },
+    {
+      key: "curve",
+      label: "Curve",
+      mode: "single" as const,
+      allLabel: "All curves",
+      options: curveOptions,
+    },
+    {
+      key: "winner",
+      label: "Winner",
+      mode: "single" as const,
+      allLabel: "All winners",
+      options: winnerOptions,
+    },
+    {
+      key: "confidence",
+      label: "Confidence",
+      mode: "single" as const,
+      allLabel: "All labels",
+      options: confidenceOptions.map((option) => ({
+        ...option,
+        label: labelForConfidence(option.value),
+      })),
+    },
+  ]);
+
+  const sortOptions = Object.entries(sortLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
+  const presets = [
+    { key: "visual", label: "visual contrast" },
+    { key: "rdm", label: "random-dot motion" },
+    { key: "human", label: "human" },
+    { key: "mouse", label: "mouse" },
+    { key: "close", label: "close calls" },
+    { key: "caveats", label: "source caveats" },
+    { key: "process", label: "process models" },
+  ];
 </script>
 
 <section class="space-y-4">
@@ -527,108 +583,36 @@
     </div>
   </div>
 
-  <div class="rounded-md border border-slate-200 bg-white p-4">
-    <div class="flex flex-wrap gap-2 text-xs">
-      {#each Object.entries(questionLabels) as [value, label] (value)}
-        <button
-          type="button"
-          class={[
-            "rounded border px-2.5 py-1 font-semibold",
-            question === value
-              ? "border-accent bg-accent text-white"
-              : "border-slate-300 bg-white text-slate-700 hover:border-accent hover:text-accent",
-          ]}
-          onclick={() => setQuestion(value)}
-        >
-          {label}
-        </button>
-      {/each}
-    </div>
-
-    <div class="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(6,minmax(8rem,0.8fr))]">
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Search</span>
-        <input
-          value={query}
-          oninput={updateQuery}
-          type="search"
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          placeholder="paper, task, model, caveat"
-          autocomplete="off"
-          autocapitalize="none"
-          spellcheck="false"
-        />
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Task</span>
-        <select value={taskFamily} onchange={(event) => updateSelect(event, "task")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          <option value="all">All tasks</option>
-          {#each taskOptions as option (option.value)}
-            <option value={option.value}>{option.label} · {option.count}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Species</span>
-        <select value={species} onchange={(event) => updateSelect(event, "species")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          <option value="all">All species</option>
-          {#each speciesOptions as option (option.value)}
-            <option value={option.value}>{option.label} · {option.count}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Curve</span>
-        <select value={curveType} onchange={(event) => updateSelect(event, "curve")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          <option value="all">All curves</option>
-          {#each curveOptions as option (option.value)}
-            <option value={option.value}>{option.label} · {option.count}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Winner</span>
-        <select value={winnerFamily} onchange={(event) => updateSelect(event, "winner")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          <option value="all">All winners</option>
-          {#each winnerOptions as option (option.value)}
-            <option value={option.value}>{option.label} · {option.count}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Confidence</span>
-        <select value={confidence} onchange={(event) => updateSelect(event, "confidence")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          <option value="all">All labels</option>
-          {#each confidenceOptions as option (option.value)}
-            <option value={option.value}>{labelForConfidence(option.value)} · {option.count}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Sort</span>
-        <select value={sortMode} onchange={(event) => updateSelect(event, "sort")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-          {#each Object.entries(sortLabels) as [value, label] (value)}
-            <option value={value}>{label}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-
-    <div class="mt-3 flex flex-wrap gap-2 text-xs">
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("visual")}>visual contrast</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("rdm")}>random-dot motion</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("human")}>human</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("mouse")}>mouse</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("close")}>close calls</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("caveats")}>source caveats</button>
-      <button type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent" onclick={() => applyPreset("process")}>process models</button>
-      {#if activeFilterCount > 0}
-        <button type="button" class="rounded border border-slate-300 bg-slate-50 px-2 py-1 font-semibold text-slate-800 hover:border-accent hover:text-accent" onclick={clearAll}>
-          clear {activeFilterCount}
-        </button>
-      {/if}
-    </div>
+  <div class="flex flex-wrap gap-2 text-body-xs">
+    {#each Object.entries(questionLabels) as [value, label] (value)}
+      <button
+        type="button"
+        class={[
+          "rounded border px-2.5 py-1 font-semibold",
+          question === value
+            ? "border-accent bg-accent text-white"
+            : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
+        ]}
+        onclick={() => (question = value)}
+      >
+        {label}
+      </button>
+    {/each}
   </div>
+
+  <FacetBar
+    searchPlaceholder="paper, task, model, caveat"
+    bind:query
+    {sortOptions}
+    bind:sortMode
+    sortLabel="Sort"
+    {presets}
+    onPreset={applyPreset}
+    {facets}
+    bind:selected
+    {activeFilterCount}
+    onClearAll={clearAll}
+  />
 
   <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(17rem,0.65fr)]">
     <div class="space-y-3">

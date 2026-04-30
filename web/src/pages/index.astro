@@ -2,6 +2,12 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import AtlasOverview from "../components/AtlasOverview.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
+import Card from "../components/ui/Card.astro";
+import DataTable from "../components/ui/DataTable.astro";
+import PageHeader from "../components/ui/PageHeader.astro";
+import Section from "../components/ui/Section.astro";
+import Stat from "../components/ui/Stat.astro";
+import StatGrid from "../components/ui/StatGrid.astro";
 import { manifest } from "../lib/data";
 import {
   comparisons,
@@ -138,41 +144,31 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
 <BaseLayout
   title={manifest.title}
   description="A file-first atlas of sensory-guided decision-making tasks in behavioral neuroscience. Browse curated task families, protocols, datasets, vertical slices, and cross-paper findings on shared axes."
+  width="wide"
 >
-  <header class="mb-8">
-    <h1 class="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-      A file-first atlas of behavioral neuroscience tasks.
-    </h1>
-    <p class="mt-3 max-w-3xl text-base text-slate-700">
-      Curated task families, protocols, datasets, and reproducible analyses,
-      paired with a meta-analysis layer of cross-paper findings on shared
-      signed-evidence axes. Every record is YAML in git, validated by
-      Pydantic, and rebuilt on every commit.
-    </p>
-  </header>
+  <PageHeader
+    title="A file-first atlas of behavioral neuroscience tasks."
+    lede="Curated task families, protocols, datasets, and reproducible analyses, paired with a meta-analysis layer of cross-paper findings on shared signed-evidence axes. Every record is YAML in git, validated by Pydantic, and rebuilt on every commit."
+  />
 
   <AtlasOverview />
 
   {featuredComparison && featuredFindings.length > 0 ? (
-    <section class="mb-12">
-      <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <Section spacing="lg">
+      <Card padding="lg">
         <header class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <p class="text-xs uppercase tracking-wide text-accent">
-              Featured comparison
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              {featuredComparison.question}
-            </h2>
+            <p class="text-eyebrow uppercase text-accent">Featured comparison</p>
+            <h2 class="mt-1 text-h3 text-fg">{featuredComparison.question}</h2>
           </div>
           <a
-            class="text-xs no-underline text-accent hover:underline"
+            class="text-body-xs no-underline text-accent hover:underline"
             href={`/compare#${featuredComparison.id}`}
           >
             See parameter deltas →
           </a>
         </header>
-        <p class="mb-4 max-w-3xl text-sm text-slate-700">
+        <p class="mb-4 max-w-prose text-body text-fg-secondary">
           {featuredComparison.framing}
         </p>
         <MiniFindingsChart
@@ -186,139 +182,102 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
           }
           height={300}
         />
-      </article>
-    </section>
+      </Card>
+    </Section>
   ) : null}
 
-  <section class="mb-12">
-    <h2 class="mb-3 text-xs uppercase tracking-wide text-slate-500">
-      Where to start
-    </h2>
+  <Section eyebrow="Where to start" spacing="lg">
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       {entryPoints.map((card) => (
-        <a
-          href={card.href}
-          class="group rounded-md border border-slate-200 bg-white p-4 no-underline transition-colors hover:border-accent"
-        >
+        <Card href={card.href} padding="md">
           <div class="flex items-baseline justify-between gap-3">
-            <h3 class="text-base font-semibold text-slate-900">
-              {card.title}
-            </h3>
+            <h3 class="text-h3 text-fg">{card.title}</h3>
             <span
-              class="text-sm text-slate-400 transition-colors group-hover:text-accent"
+              class="text-body text-fg-subtle transition-colors group-hover:text-accent"
               aria-hidden="true"
             >→</span>
           </div>
-          <p class="mt-1 text-sm text-slate-600">{card.description}</p>
-        </a>
+          <p class="mt-1 text-body text-fg-secondary">{card.description}</p>
+        </Card>
       ))}
     </div>
-  </section>
+  </Section>
 
-  <section class="mb-12">
-    <a
-      href="/stories/visual-contrast"
-      class="group flex flex-col gap-2 rounded-md border border-slate-200 bg-white p-5 no-underline transition-colors hover:border-accent sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
-    >
+  <Section spacing="lg">
+    <Card href="/stories/visual-contrast" padding="lg" class="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
       <div class="max-w-2xl">
-        <p class="text-xs uppercase tracking-wide text-accent">
-          Latest story
-        </p>
-        <h2 class="mt-1 text-xl text-slate-900">
+        <p class="text-eyebrow uppercase text-accent">Latest story</p>
+        <h2 class="mt-1 text-h3 text-fg">
           Visual contrast discrimination now has a family map
         </h2>
-        <p class="mt-2 text-sm text-slate-600">
+        <p class="mt-2 text-body text-fg-secondary">
           Timeline, coverage matrix, curve scan, small multiples, source
           depth, and model ambiguity are now visible in one scannable view.
         </p>
       </div>
       <span
-        class="shrink-0 self-start text-sm text-slate-400 transition-colors group-hover:text-accent sm:self-baseline"
+        class="shrink-0 self-start text-body text-fg-subtle transition-colors group-hover:text-accent sm:self-baseline"
         aria-hidden="true"
       >→</span>
-    </a>
-    <p class="mt-2 text-xs text-slate-500">
+    </Card>
+    <p class="mt-2 text-body-xs text-fg-muted">
       All stories at <a class="text-accent" href="/stories">/stories</a>.
     </p>
-  </section>
+  </Section>
 
   <section class="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-    <article class="rounded-md border border-slate-200 bg-white p-5">
+    <Card padding="lg">
       <header class="mb-3 flex items-baseline justify-between">
-        <h2 class="text-base font-semibold text-slate-900">
-          Across the literature
-        </h2>
-        <a class="text-xs text-accent" href="/findings">/findings →</a>
+        <h2 class="text-h3 text-fg">Across the literature</h2>
+        <a class="text-body-xs text-accent" href="/findings">/findings →</a>
       </header>
-      <p class="mb-4 text-sm text-slate-600">
+      <p class="mb-4 text-body text-fg-secondary">
         Aggregate stats over the {aggregateStats.n_psychometric_findings}{" "}
         psychometric findings currently in the index, computed from build-time
         4-parameter logistic fits.
       </p>
-      <dl class="mb-5 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-        <div>
-          <dt class="text-xs uppercase text-slate-500">Median bias (μ)</dt>
-          <dd class="mt-0.5 font-mono text-base">{fmt(aggregateStats.median_bias)}</dd>
-        </div>
-        <div>
-          <dt class="text-xs uppercase text-slate-500">Median slope (σ)</dt>
-          <dd class="mt-0.5 font-mono text-base">{fmt(aggregateStats.median_sigma)}</dd>
-        </div>
-        <div>
-          <dt class="text-xs uppercase text-slate-500">Median 75% threshold</dt>
-          <dd class="mt-0.5 font-mono text-base">
-            {fmt(aggregateStats.median_threshold)}
-          </dd>
-        </div>
-        <div>
-          <dt class="text-xs uppercase text-slate-500">Σ trials</dt>
-          <dd class="mt-0.5 font-mono text-base">
-            {aggregateStats.total_trials_psychometric.toLocaleString()}
-          </dd>
-        </div>
-      </dl>
-      <h3 class="mb-1 text-xs font-semibold uppercase text-slate-500">By species</h3>
-      <div class="overflow-x-auto rounded border border-slate-200">
-        <table class="w-full text-xs">
-          <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-            <tr>
-              <th class="px-2 py-1.5">Species</th>
-              <th class="px-2 py-1.5 text-right">Findings</th>
-              <th class="px-2 py-1.5 text-right">Median σ</th>
-              <th class="px-2 py-1.5 text-right">Median 75%</th>
-              <th class="px-2 py-1.5 text-right">Σ trials</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            {speciesRows.map((row) => (
-              <tr>
-                <td class="px-2 py-1.5">{row.species}</td>
-                <td class="px-2 py-1.5 text-right font-mono">{row.count}</td>
-                <td class="px-2 py-1.5 text-right font-mono">{fmt(row.median_sigma)}</td>
-                <td class="px-2 py-1.5 text-right font-mono">
-                  {fmt(row.median_threshold)}
-                </td>
-                <td class="px-2 py-1.5 text-right font-mono">
-                  {row.total_trials.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </article>
+      <StatGrid cols={4} class="mb-5">
+        <Stat label="Median bias (μ)" value={fmt(aggregateStats.median_bias)} />
+        <Stat label="Median slope (σ)" value={fmt(aggregateStats.median_sigma)} />
+        <Stat label="Median 75% threshold" value={fmt(aggregateStats.median_threshold)} />
+        <Stat label="Σ trials" value={aggregateStats.total_trials_psychometric} />
+      </StatGrid>
+      <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">By species</h3>
+      <DataTable
+        density="compact"
+        columns={[
+          { label: "Species" },
+          { label: "Findings", align: "right" },
+          { label: "Median σ", align: "right" },
+          { label: "Median 75%", align: "right" },
+          { label: "Σ trials", align: "right" },
+        ]}
+      >
+        {speciesRows.map((row) => (
+          <tr>
+            <td class="px-2 py-1.5">{row.species}</td>
+            <td class="px-2 py-1.5 text-right font-mono">{row.count}</td>
+            <td class="px-2 py-1.5 text-right font-mono">{fmt(row.median_sigma)}</td>
+            <td class="px-2 py-1.5 text-right font-mono">
+              {fmt(row.median_threshold)}
+            </td>
+            <td class="px-2 py-1.5 text-right font-mono">
+              {row.total_trials.toLocaleString()}
+            </td>
+          </tr>
+        ))}
+      </DataTable>
+    </Card>
 
     <aside class="space-y-3">
-      <div class="rounded-md border border-slate-200 bg-white p-4 text-xs text-slate-500">
-        <h2 class="mb-2 text-xs uppercase tracking-wide text-slate-500">
-          Build state
-        </h2>
+      <Card padding="md" class="text-body-xs text-fg-muted">
+        <h2 class="mb-2 text-eyebrow uppercase text-fg-muted">Build state</h2>
         <p>
           Generated {generated}
           {manifest.behavtaskatlas_commit ? (
             <>
               {" · "}
-              <code class="rounded bg-slate-100 px-1 py-0.5 text-[11px]">
+              <code class="rounded bg-surface-sunken px-1 py-0.5 text-mono-id">
                 {manifest.behavtaskatlas_commit}
               </code>
             </>
@@ -329,7 +288,7 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
           Operational status on{" "}
           <a class="text-accent" href="/atlas-health">/atlas-health</a>.
         </p>
-      </div>
+      </Card>
     </aside>
   </section>
 </BaseLayout>

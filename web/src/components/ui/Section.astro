@@ -1,0 +1,82 @@
+---
+/**
+ * Section — labeled content block with optional title, description,
+ * and right-side action.
+ *
+ * Replaces the ~50 hand-rolled `<section class="mb-10"><header
+ * class="mb-3"><h2>...` patterns sprinkled across pages.
+ *
+ * Pass `level={3}` to use an h3 instead of h2 (for nested groups).
+ * Pass `id` for in-page anchor navigation; scroll-mt-20 keeps the
+ * heading clear of any sticky chrome.
+ */
+interface Props {
+  title?: string;
+  /** Small uppercase label above the title — useful when the section
+   * doesn't need a full h2 (e.g. "Where to start", "Latest story"). */
+  eyebrow?: string;
+  description?: string;
+  id?: string;
+  level?: 2 | 3;
+  spacing?: "sm" | "md" | "lg";
+  class?: string;
+}
+
+const {
+  title,
+  eyebrow,
+  description,
+  id,
+  level = 2,
+  spacing = "md",
+  class: className,
+} = Astro.props as Props;
+
+const HeadingTag = `h${level}` as "h2" | "h3";
+const headingClass = level === 2 ? "text-h2 text-fg" : "text-h3 text-fg";
+
+const spacingClass = {
+  sm: "mb-6",
+  md: "mb-10",
+  lg: "mb-12",
+}[spacing];
+
+const hasAction = Astro.slots.has("action");
+const showHeader = Boolean(title) || Boolean(eyebrow) || hasAction;
+---
+
+<section
+  id={id}
+  class:list={[spacingClass, "scroll-mt-20", className]}
+>
+  {showHeader ? (
+    <header class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div class="min-w-0">
+        {eyebrow ? (
+          <p class="text-eyebrow uppercase text-fg-muted">{eyebrow}</p>
+        ) : null}
+        {title ? (
+          <HeadingTag class:list={[headingClass, eyebrow ? "mt-1" : ""]}>
+            {title}
+          </HeadingTag>
+        ) : null}
+        {description ? (
+          <p
+            class:list={[
+              "max-w-prose text-body text-fg-secondary",
+              title || eyebrow ? "mt-1" : "",
+            ]}
+          >
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {hasAction ? (
+        <div class="shrink-0">
+          <slot name="action" />
+        </div>
+      ) : null}
+    </header>
+  ) : null}
+  <slot />
+</section>

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SlicesBrowser from "../../components/SlicesBrowser.svelte";
+import PageHeader from "../../components/ui/PageHeader.astro";
 import { catalog, manifest } from "../../lib/data";
 
 const familyById = new Map(
@@ -24,14 +25,12 @@ const sliceRows = manifest.slices.map((slice) => ({
 <BaseLayout
   title="Vertical slices · behavtaskatlas"
   description="Browse reproducible vertical slices linking behavioral neuroscience protocols, datasets, source data, and local analysis reports."
+  width="wide"
 >
-  <header class="mb-6">
-    <h1 class="text-3xl font-semibold tracking-tight">Vertical slices</h1>
-    <p class="mt-2 text-sm text-slate-600">
-      Each slice binds one protocol and one dataset to a reproducible local
-      analysis pipeline. {manifest.slices.length} slices.
-    </p>
-  </header>
+  <PageHeader
+    title="Vertical slices"
+    lede={`Each slice binds one protocol and one dataset to a reproducible local analysis pipeline. ${manifest.slices.length} slices.`}
+  />
 
   <SlicesBrowser rows={sliceRows} client:load />
 </BaseLayout>

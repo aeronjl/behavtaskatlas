@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FacetBar from "./FacetBar.svelte";
+
   type CatalogRow = {
     body?: string | null;
     choice_type?: string | null;
@@ -40,11 +42,6 @@
     coverage: "Most covered",
   };
 
-  function initialParam(name: string): string | null {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get(name);
-  }
-
   function readable(value: string | null | undefined): string {
     if (!value) return "-";
     if (value === "non-human-primate") return "NHP";
@@ -81,59 +78,84 @@
     countOptions(rows.map((row) => row.status ?? "").filter(Boolean)),
   );
 
+  const facets = $derived([
+    {
+      key: "species",
+      label: "Species",
+      mode: "single" as const,
+      allLabel: "All species",
+      options: speciesOptions,
+    },
+    {
+      key: "modality",
+      label: "Modality",
+      mode: "single" as const,
+      allLabel: "All modalities",
+      options: modalityOptions,
+    },
+    {
+      key: "source",
+      label: "Source",
+      mode: "single" as const,
+      allLabel: "All sources",
+      options: sourceOptions,
+    },
+    {
+      key: "status",
+      label: "Status",
+      mode: "single" as const,
+      allLabel: "All statuses",
+      options: statusOptions,
+    },
+  ]);
+
+  const sortOptions = Object.entries(sortLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
+  function initialParam(name: string): string | null {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get(name);
+  }
+
   function initialTypeSet(): Set<CatalogRow["record_type"]> {
     const raw = initialParam("type");
     if (!raw) return new Set(allTypes);
-    const selected = raw
+    const requested = raw
       .split(",")
       .map((value) => value.trim())
       .filter((value): value is CatalogRow["record_type"] =>
         allTypes.includes(value as CatalogRow["record_type"]),
       );
-    return selected.length > 0 ? new Set(selected) : new Set(allTypes);
+    return requested.length > 0 ? new Set(requested) : new Set(allTypes);
   }
 
-  function initialOption(name: string): string {
-    return initialParam(name) ?? "all";
+  function initialSingle(name: string): Set<string> {
+    const value = initialParam(name);
+    return value && value !== "all" ? new Set([value]) : new Set<string>();
   }
 
   const initialSort = initialParam("sort") ?? "type";
 
   let query = $state(initialParam("q") ?? "");
-  let activeTypes = $state(initialTypeSet());
-  let species = $state(initialOption("species"));
-  let modality = $state(initialOption("modality"));
-  let sourceLevel = $state(initialOption("source"));
-  let status = $state(initialOption("status"));
   let sortMode = $state(sortLabels[initialSort] ? initialSort : "type");
+  let activeTypes = $state(initialTypeSet());
+  let selected = $state<Record<string, Set<string>>>({
+    species: initialSingle("species"),
+    modality: initialSingle("modality"),
+    source: initialSingle("source"),
+    status: initialSingle("status"),
+  });
 
   const activeFilterCount = $derived(
     (query.trim().length > 0 ? 1 : 0) +
       (activeTypes.size === allTypes.length ? 0 : 1) +
-      (species === "all" ? 0 : 1) +
-      (modality === "all" ? 0 : 1) +
-      (sourceLevel === "all" ? 0 : 1) +
-      (status === "all" ? 0 : 1),
+      ((selected.species?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.modality?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.source?.size ?? 0) > 0 ? 1 : 0) +
+      ((selected.status?.size ?? 0) > 0 ? 1 : 0),
   );
-
-  function syncUrl() {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams();
-    if (query.trim().length > 0) params.set("q", query.trim());
-    if (activeTypes.size !== allTypes.length) {
-      params.set("type", allTypes.filter((type) => activeTypes.has(type)).join(","));
-    }
-    if (species !== "all") params.set("species", species);
-    if (modality !== "all") params.set("modality", modality);
-    if (sourceLevel !== "all") params.set("source", sourceLevel);
-    if (status !== "all") params.set("status", status);
-    if (sortMode !== "type") params.set("sort", sortMode);
-    const search = params.toString();
-    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
-    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
-      window.history.replaceState(null, "", next);
-    }
-  }
 
   function toggleType(type: CatalogRow["record_type"]) {
     const next = new Set(activeTypes);
@@ -141,34 +163,39 @@
     else next.add(type);
     if (next.size === 0) allTypes.forEach((value) => next.add(value));
     activeTypes = next;
-    syncUrl();
   }
 
   function clearAll() {
     query = "";
     activeTypes = new Set(allTypes);
-    species = "all";
-    modality = "all";
-    sourceLevel = "all";
-    status = "all";
     sortMode = "type";
-    syncUrl();
+    selected = {
+      species: new Set(),
+      modality: new Set(),
+      source: new Set(),
+      status: new Set(),
+    };
   }
 
-  function updateQuery(event: Event) {
-    query = (event.currentTarget as HTMLInputElement).value;
-    syncUrl();
-  }
-
-  function updateSelect(event: Event, field: string) {
-    const value = (event.currentTarget as HTMLSelectElement).value;
-    if (field === "species") species = value;
-    if (field === "modality") modality = value;
-    if (field === "source") sourceLevel = value;
-    if (field === "status") status = value;
-    if (field === "sort") sortMode = value;
-    syncUrl();
-  }
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    if (query.trim().length > 0) params.set("q", query.trim());
+    if (activeTypes.size !== allTypes.length) {
+      params.set("type", allTypes.filter((type) => activeTypes.has(type)).join(","));
+    }
+    const single = (key: string) => Array.from(selected[key] ?? new Set())[0];
+    if (single("species")) params.set("species", single("species")!);
+    if (single("modality")) params.set("modality", single("modality")!);
+    if (single("source")) params.set("source", single("source")!);
+    if (single("status")) params.set("status", single("status")!);
+    if (sortMode !== "type") params.set("sort", sortMode);
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, "", next);
+    }
+  });
 
   function haystack(row: CatalogRow): string {
     return [
@@ -203,10 +230,14 @@
   function rowMatches(row: CatalogRow): boolean {
     if (!activeTypes.has(row.record_type)) return false;
     if (!matchesQuery(row)) return false;
-    if (species !== "all" && !(row.species ?? []).includes(species)) return false;
-    if (modality !== "all" && !(row.modalities ?? []).includes(modality)) return false;
-    if (sourceLevel !== "all" && row.source_data_level !== sourceLevel) return false;
-    if (status !== "all" && row.status !== status) return false;
+    const speciesPick = Array.from(selected.species ?? new Set())[0];
+    const modalityPick = Array.from(selected.modality ?? new Set())[0];
+    const sourcePick = Array.from(selected.source ?? new Set())[0];
+    const statusPick = Array.from(selected.status ?? new Set())[0];
+    if (speciesPick && !(row.species ?? []).includes(speciesPick)) return false;
+    if (modalityPick && !(row.modalities ?? []).includes(modalityPick)) return false;
+    if (sourcePick && row.source_data_level !== sourcePick) return false;
+    if (statusPick && row.status !== statusPick) return false;
     return true;
   }
 
@@ -239,74 +270,21 @@
   });
 </script>
 
-<section class="rounded-md border border-slate-200 bg-white p-4">
-  <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(9rem,0.8fr))]">
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Search catalog</span>
-      <input
-        value={query}
-        oninput={updateQuery}
-        type="search"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        placeholder="family, protocol, dataset, slice"
-        autocomplete="off"
-        autocapitalize="none"
-        spellcheck="false"
-      />
-    </label>
+<section class="space-y-4">
+  <FacetBar
+    searchPlaceholder="family, protocol, dataset, slice"
+    bind:query
+    {sortOptions}
+    bind:sortMode
+    sortLabel="Sort"
+    {facets}
+    bind:selected
+    {activeFilterCount}
+    onClearAll={clearAll}
+  />
 
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Species</span>
-      <select value={species} onchange={(event) => updateSelect(event, "species")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-        <option value="all">All species</option>
-        {#each speciesOptions as option (option.value)}
-          <option value={option.value}>{option.label} · {option.count}</option>
-        {/each}
-      </select>
-    </label>
-
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Modality</span>
-      <select value={modality} onchange={(event) => updateSelect(event, "modality")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-        <option value="all">All modalities</option>
-        {#each modalityOptions as option (option.value)}
-          <option value={option.value}>{option.label} · {option.count}</option>
-        {/each}
-      </select>
-    </label>
-
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Source</span>
-      <select value={sourceLevel} onchange={(event) => updateSelect(event, "source")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-        <option value="all">All sources</option>
-        {#each sourceOptions as option (option.value)}
-          <option value={option.value}>{option.label} · {option.count}</option>
-        {/each}
-      </select>
-    </label>
-
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Status</span>
-      <select value={status} onchange={(event) => updateSelect(event, "status")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-        <option value="all">All statuses</option>
-        {#each statusOptions as option (option.value)}
-          <option value={option.value}>{option.label} · {option.count}</option>
-        {/each}
-      </select>
-    </label>
-
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Sort</span>
-      <select value={sortMode} onchange={(event) => updateSelect(event, "sort")} class="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm">
-        {#each Object.entries(sortLabels) as [value, label] (value)}
-          <option value={value}>{label}</option>
-        {/each}
-      </select>
-    </label>
-  </div>
-
-  <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-    <span class="text-slate-500">Types:</span>
+  <div class="flex flex-wrap items-center gap-2 text-body-xs text-fg-secondary">
+    <span class="text-fg-muted">Types:</span>
     {#each allTypes as type (type)}
       {@const active = activeTypes.has(type)}
       <button
@@ -315,58 +293,53 @@
           "rounded border px-2 py-0.5",
           active
             ? "border-accent bg-accent text-white"
-            : "border-slate-300 bg-white text-slate-700 hover:border-accent hover:text-accent",
+            : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
         ]}
         onclick={() => toggleType(type)}
       >
         {typeLabels[type]} · {typeCounts.get(type) ?? 0}
       </button>
     {/each}
-    {#if activeFilterCount > 0}
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-slate-50 px-2 py-0.5 font-semibold text-slate-800 hover:border-accent hover:text-accent"
-        onclick={clearAll}
-      >
-        clear {activeFilterCount}
-      </button>
-    {/if}
   </div>
 
-  <p class="mt-3 text-sm text-slate-600">
-    Showing <span class="font-mono font-semibold text-slate-900">{filteredRows.length}</span>
-    of <span class="font-mono text-slate-900">{rows.length}</span> records ·
-    <span class="font-mono text-slate-900">{summary.get("family") ?? 0}</span> families ·
-    <span class="font-mono text-slate-900">{summary.get("protocol") ?? 0}</span> protocols ·
-    <span class="font-mono text-slate-900">{summary.get("dataset") ?? 0}</span> datasets ·
-    <span class="font-mono text-slate-900">{summary.get("slice") ?? 0}</span> slices
+  <p class="text-body text-fg-secondary">
+    Showing <span class="font-mono font-semibold text-fg">{filteredRows.length}</span>
+    of <span class="font-mono text-fg">{rows.length}</span> records ·
+    <span class="font-mono text-fg">{summary.get("family") ?? 0}</span> families ·
+    <span class="font-mono text-fg">{summary.get("protocol") ?? 0}</span> protocols ·
+    <span class="font-mono text-fg">{summary.get("dataset") ?? 0}</span> datasets ·
+    <span class="font-mono text-fg">{summary.get("slice") ?? 0}</span> slices
   </p>
 
   {#if filteredRows.length === 0}
-    <section class="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+    <section class="rounded-md border border-rule bg-surface p-4 text-body text-fg-secondary">
       <p>No catalog records match the current filters.</p>
       {#if activeFilterCount > 0}
-        <button type="button" class="mt-3 block rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800 hover:border-accent hover:text-accent" onclick={clearAll}>
+        <button
+          type="button"
+          class="mt-3 block rounded border border-rule-strong bg-surface-raised px-2 py-1 text-body-xs font-semibold text-fg hover:border-rule-emphasis hover:text-accent"
+          onclick={clearAll}
+        >
           Clear filters
         </button>
       {/if}
     </section>
   {:else}
-    <ul class="mt-4 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
+    <ul class="mt-4 divide-y divide-rule rounded-md border border-rule bg-surface-raised">
       {#each visibleRows as row (row.id)}
-        <li class="px-3 py-2 text-sm">
+        <li class="px-3 py-2 text-body">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
             <div class="min-w-0">
-              <a class="font-medium text-slate-900 no-underline hover:text-accent" href={row.href}>
+              <a class="font-medium text-fg no-underline hover:text-accent" href={row.href}>
                 {row.title}
               </a>
-              <p class="mt-0.5 break-all font-mono text-[11px] text-slate-500">{row.id}</p>
+              <p class="mt-0.5 break-all font-mono text-mono-id text-fg-muted">{row.id}</p>
             </div>
-            <span class="w-fit rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+            <span class="w-fit rounded bg-surface-sunken px-1.5 py-0.5 text-mono-id uppercase tracking-wide text-fg-muted">
               {typeLabels[row.record_type]}
             </span>
           </div>
-          <p class="mt-1 text-xs text-slate-600">
+          <p class="mt-1 text-body-xs text-fg-secondary">
             {row.family_name ? `${row.family_name} · ` : ""}
             {[
               ...(row.species ?? []).map(readable),
@@ -377,13 +350,13 @@
             ].filter((value) => value !== "-").join(" · ")}
           </p>
           {#if row.body}
-            <p class="mt-1 line-clamp-2 text-xs text-slate-500">{row.body}</p>
+            <p class="mt-1 line-clamp-2 text-body-xs text-fg-muted">{row.body}</p>
           {/if}
         </li>
       {/each}
     </ul>
     {#if filteredRows.length > 80}
-      <p class="mt-2 text-xs text-slate-500">Showing first 80 matching records.</p>
+      <p class="mt-2 text-body-xs text-fg-muted">Showing first 80 matching records.</p>
     {/if}
   {/if}
 </section>

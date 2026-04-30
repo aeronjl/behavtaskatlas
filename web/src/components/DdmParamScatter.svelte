@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { chartChrome } from "../lib/encoding";
+
   type DdmFitRow = {
     fit_id: string;
     variant: string;
@@ -36,6 +38,7 @@
 
   $effect(() => {
     if (!chartContainer || !chartReady || !vegaEmbed) return;
+    const chrome = chartChrome();
     const params: Array<{ key: keyof DdmFitRow; title: string }> = [
       { key: "drift_per_unit_evidence", title: "k (drift / unit)" },
       { key: "boundary", title: "a (boundary)" },
@@ -94,9 +97,9 @@
       },
       resolve: { scale: { x: "independent" } },
       config: {
-        view: { stroke: "#cbd5e1" },
-        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
-        legend: { labelColor: "#334155", titleColor: "#0f172a", orient: "right" as const },
+        view: { stroke: chrome.viewStroke },
+        axis: { gridColor: chrome.gridColor, labelColor: chrome.labelColor },
+        legend: { labelColor: chrome.labelColor, titleColor: chrome.titleColor, orient: "right" as const },
       },
     };
     (async () => {

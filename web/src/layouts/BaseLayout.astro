@@ -6,9 +6,12 @@ import SearchPalette from "../components/SearchPalette.svelte";
 interface Props {
   title: string;
   description?: string;
+  /** Inner container width — picks one of the --container-* tokens.
+   * Defaults to "content" (64rem == previous max-w-5xl) for back-compat. */
+  width?: "prose" | "content" | "wide" | "full";
 }
 
-const { title, description } = Astro.props;
+const { title, description, width = "content" } = Astro.props;
 
 const SITE_NAME = "behavtaskatlas";
 const DEFAULT_DESCRIPTION =
@@ -17,6 +20,13 @@ const resolvedDescription = description ?? DEFAULT_DESCRIPTION;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
 const ogImage = new URL("/og.svg", Astro.site ?? Astro.url).toString();
+
+const widthClass = {
+  prose: "max-w-prose",
+  content: "max-w-content",
+  wide: "max-w-wide",
+  full: "max-w-full",
+}[width];
 ---
 
 <!doctype html>
@@ -41,14 +51,14 @@ const ogImage = new URL("/og.svg", Astro.site ?? Astro.url).toString();
     <meta name="twitter:description" content={resolvedDescription} />
     <meta name="twitter:image" content={ogImage} />
   </head>
-  <body class="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900">
+  <body class="min-h-screen overflow-x-hidden bg-surface text-fg">
     <Nav />
     <SearchPalette client:idle />
-    <main class="mx-auto w-full min-w-0 max-w-5xl px-4 py-8">
+    <main class:list={["mx-auto w-full min-w-0 px-4 py-8", widthClass]}>
       <slot />
     </main>
-    <footer class="border-t border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-6 text-xs text-slate-500">
+    <footer class="border-t border-rule bg-surface-raised">
+      <div class="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-6 text-body-xs text-fg-muted">
         <span>
           behavtaskatlas — a file-first atlas of behavioral neuroscience tasks.
         </span>

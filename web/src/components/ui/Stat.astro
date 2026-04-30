@@ -1,0 +1,70 @@
+---
+/**
+ * Stat — single KPI tile, optionally a link, optionally with a tone bar.
+ *
+ *   <Stat label="findings" value={142} href="/findings"
+ *         bar={{ value: 142, max: 500 }} tone="accent" />
+ *
+ * When `href` is given the tile renders as an anchor with an
+ * accent-on-hover border. Numeric `value`s are toLocaleString'd.
+ */
+interface Props {
+  label: string;
+  value: string | number;
+  hint?: string;
+  href?: string;
+  tone?: "default" | "accent" | "warn" | "ok" | "bad";
+  bar?: { value: number; max: number };
+  class?: string;
+}
+
+const {
+  label,
+  value,
+  hint,
+  href,
+  tone = "default",
+  bar,
+  class: className,
+} = Astro.props as Props;
+
+const Tag = href ? "a" : "div";
+
+const toneBarClass = {
+  default: "bg-fg-muted",
+  accent: "bg-accent",
+  warn: "bg-warn",
+  ok: "bg-ok",
+  bad: "bg-bad",
+}[tone];
+
+const baseClasses = [
+  "block rounded-md border border-rule bg-surface-raised p-3 transition-colors",
+  href ? "no-underline hover:border-rule-emphasis" : "",
+  className,
+];
+
+const valueText = typeof value === "number" ? value.toLocaleString() : value;
+
+const barWidth = bar
+  ? `${Math.max(4, Math.round((bar.value / Math.max(1, bar.max)) * 100))}%`
+  : "0%";
+---
+
+<Tag href={href} class:list={baseClasses}>
+  <span class="block text-eyebrow uppercase text-fg-muted">{label}</span>
+  <span class="mt-1 block text-h2 text-fg">
+    {valueText}
+  </span>
+  {hint ? (
+    <span class="mt-1 block text-body-xs text-fg-muted">{hint}</span>
+  ) : null}
+  {bar ? (
+    <span class="mt-2 block h-1.5 rounded-full bg-surface-sunken">
+      <span
+        class:list={["block h-1.5 rounded-full", toneBarClass]}
+        style={`width: ${barWidth}`}
+      />
+    </span>
+  ) : null}
+</Tag>

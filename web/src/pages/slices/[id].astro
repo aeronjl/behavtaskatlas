@@ -3,6 +3,14 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import InPlacePyodide from "../../components/InPlacePyodide.svelte";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import Card from "../../components/ui/Card.astro";
+import DetailLayout from "../../components/ui/DetailLayout.astro";
+import DetailToc from "../../components/ui/DetailToc.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import Section from "../../components/ui/Section.astro";
+import Stat from "../../components/ui/Stat.astro";
+import StatGrid from "../../components/ui/StatGrid.astro";
+import StatusPill from "../../components/ui/StatusPill.astro";
 import {
   catalog,
   manifest,
@@ -369,180 +377,201 @@ function resolveArtifactHref(href: string): string {
   // so the deployed asset lives at the absolute root path.
   return `/${href.replace(/^\/+/, "")}`;
 }
+
+type TocItem = { id: string; label: string; count?: number };
+
+const tocItems: TocItem[] = [
+  analysisConfig
+    ? { id: "analysis", label: "Run in your browser" }
+    : null,
+  sliceFindings.length > 0
+    ? {
+        id: "findings",
+        label: "Findings extracted",
+        count: sliceFindings.length,
+      }
+    : null,
+  metrics.length > 0
+    ? { id: "metrics", label: "Metrics", count: metrics.length }
+    : null,
+  { id: "profile", label: "Slice profile" } as TocItem,
+  { id: "artifacts", label: "Artifacts" } as TocItem,
+].filter((item): item is TocItem => item !== null);
+
+const reportTone = reportAvailable ? "ok" : "warn";
+const protocolHref = protocol
+  ? `/protocols/${slugForId(protocol.protocol_id)}`
+  : null;
+const datasetHref = dataset
+  ? `/datasets/${slugForId(dataset.dataset_id)}`
+  : null;
 ---
 
-<BaseLayout title={`${slice.title} · Slice`}>
+<BaseLayout title={`${slice.title} · Slice`} width="wide">
   <Breadcrumbs
     crumbs={[
       { label: "Slices", href: "/slices" },
       { label: slice.title },
     ]}
   />
-  <header class="mb-8">
-    <p class="text-xs uppercase tracking-wide text-slate-500">Vertical slice</p>
-    <h1 class="mt-1 text-3xl">{slice.title}</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-700">{slice.description}</p>
-    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <span
-        class:list={[
-          "rounded px-2 py-0.5",
-          reportAvailable ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn",
-        ]}
-      >
-        {slice.status_label}
-      </span>
-      {protocol ? (
-        <a
-          class="rounded border border-slate-200 bg-white px-2 py-0.5 no-underline text-slate-700 hover:border-accent"
-          href={`/protocols/${slugForId(protocol.protocol_id)}`}
-        >
-          <span class="text-slate-500">protocol</span>{" "}<span>{protocol.name}</span>
-        </a>
-      ) : (
-        <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-600 font-mono">
-          {slice.protocol_id}
-        </span>
-      )}
-      {dataset ? (
-        <a
-          class="rounded border border-slate-200 bg-white px-2 py-0.5 no-underline text-slate-700 hover:border-accent"
-          href={`/datasets/${slugForId(dataset.dataset_id)}`}
-        >
-          <span class="text-slate-500">dataset</span>{" "}<span>{dataset.name}</span>
-        </a>
-      ) : (
-        <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-600 font-mono">
-          {slice.dataset_id}
-        </span>
-      )}
-      <span class="font-mono text-slate-400">{slice.id}</span>
-    </div>
-  </header>
 
-  {analysisConfig ? (
-    <section class="mb-10">
-      <header class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <p class="text-xs uppercase tracking-wide text-accent">Run in your browser</p>
-          <h2 class="mt-1 text-xl font-semibold tracking-tight">
-            {analysisConfig.title}
-          </h2>
-        </div>
-        <p class="text-xs text-slate-500">
-          Pyodide + scipy run locally; first load downloads ~12 MB.
-        </p>
-      </header>
-      <p class="mb-3 max-w-3xl text-sm text-slate-700">
-        {analysisConfig.description}
-      </p>
-      <InPlacePyodide
-        client:visible
-        title={analysisConfig.title}
-        description={analysisConfig.description}
-        trialsUrl={analysisConfig.trialsUrl}
-        pythonSnippet={analysisConfig.snippet}
-      />
-    </section>
-  ) : (
-    <section class="mb-10 rounded-md border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-      No in-browser analysis cell is bundled for this slice yet. Run the
-      pipeline locally with{" "}
-      <code class="rounded bg-slate-100 px-1 font-mono text-xs">
-        uv run behavtaskatlas {slice.id.replace("slice.", "")}-report
-      </code>
-      to generate full artifacts.
-    </section>
-  )}
-
-  {sliceFindings.length > 0 ? (
-    <section class="mb-10">
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">Findings extracted</h2>
-        <p class="mt-1 text-sm text-slate-600">
-          Curves attached to this slice, on shared signed-evidence axes.
-        </p>
-      </header>
-      <MiniFindingsChart
-        client:visible
-        findings={sliceFindings}
-        colorBy="condition"
-        height={260}
-      />
-    </section>
-  ) : null}
-
-  {metrics.length > 0 ? (
-    <section class="mb-10">
-      <h2 class="mb-3 text-xl font-semibold tracking-tight">Metrics</h2>
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {metrics.map((metric) => (
-          <div class="rounded-md border border-slate-200 bg-white p-3">
-            <div class="text-xs uppercase tracking-wide text-slate-500">
-              {metric.label}
-            </div>
-            <div class="mt-1 text-lg font-semibold">
-              {metric.value ?? "—"}
-            </div>
+  <DetailLayout>
+    <Fragment slot="rail">
+      <DetailToc items={tocItems} />
+      <Card padding="md" class="text-body-xs">
+        <h3 class="mb-3 text-eyebrow uppercase text-fg-muted">Slice</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-fg-muted">Status</dt>
+            <dd class="mt-1">
+              <StatusPill tone={reportTone}>{slice.status_label}</StatusPill>
+            </dd>
           </div>
-        ))}
-      </div>
-    </section>
-  ) : null}
+          <div>
+            <dt class="text-fg-muted">Protocol</dt>
+            <dd class="mt-0.5">
+              {protocol && protocolHref ? (
+                <a class="text-fg" href={protocolHref}>{protocol.name}</a>
+              ) : (
+                <span class="font-mono text-mono-id text-fg-muted">{slice.protocol_id}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Dataset</dt>
+            <dd class="mt-0.5">
+              {dataset && datasetHref ? (
+                <a class="text-fg" href={datasetHref}>{dataset.name}</a>
+              ) : (
+                <span class="font-mono text-mono-id text-fg-muted">{slice.dataset_id}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Slice id</dt>
+            <dd class="mt-0.5 break-all font-mono text-mono-id text-fg-muted">{slice.id}</dd>
+          </div>
+        </dl>
+      </Card>
+    </Fragment>
 
-  <section class="mb-10">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Slice profile</h2>
-      <p class="mt-1 text-sm text-slate-600">
-        Operational variables for cross-slice comparison.
-      </p>
-    </header>
-    <div class="overflow-hidden rounded-md border border-slate-200 bg-white">
-      <table class="w-full text-sm">
-        <tbody class="divide-y divide-slate-200">
-          {comparisonRows.map(([label, value]) => (
-            <tr>
-              <td class="w-48 px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
-                {label}
-              </td>
-              <td class="px-3 py-2">{value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <PageHeader
+      eyebrow="Vertical slice"
+      title={slice.title}
+      lede={slice.description}
+    />
 
-  <section class="mb-8">
-    <h2 class="mb-3 text-xl font-semibold tracking-tight">Artifacts</h2>
-    {reportAvailable ? (
-      <p class="mb-3 rounded-md border border-ok bg-ok-soft p-3 text-sm text-ok">
-        Slice has a generated local report; the analysis pipeline ran cleanly
-        and produced trial-level output, plots, and provenance.
-      </p>
+    {analysisConfig ? (
+      <Section
+        id="analysis"
+        spacing="md"
+        title={analysisConfig.title}
+        eyebrow="Run in your browser"
+        description={analysisConfig.description}
+      >
+        <Fragment slot="action">
+          <p class="text-body-xs text-fg-muted">
+            Pyodide + scipy run locally; first load downloads ~12 MB.
+          </p>
+        </Fragment>
+        <InPlacePyodide
+          client:visible
+          title={analysisConfig.title}
+          description={analysisConfig.description}
+          trialsUrl={analysisConfig.trialsUrl}
+          pythonSnippet={analysisConfig.snippet}
+        />
+      </Section>
     ) : (
-      <p class="mb-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn">
-        Slice report has not been bundled into this deploy. Run the slice
-        pipeline locally to regenerate artifacts.
-      </p>
+      <Card padding="md" border="strong" class="mb-10 border-dashed text-body text-fg-secondary">
+        No in-browser analysis cell is bundled for this slice yet. Run the
+        pipeline locally with{" "}
+        <code class="rounded bg-surface-sunken px-1 font-mono text-mono-id">
+          uv run behavtaskatlas {slice.id.replace("slice.", "")}-report
+        </code>
+        to generate full artifacts.
+      </Card>
     )}
-    {links.length > 0 ? (
-      <ul class="space-y-1 text-sm">
-        {links
-          .map((link) => ({
-            ...link,
-            resolved: resolveArtifactHref(link.href),
-          }))
-          .map((link) => (
-            <li>
-              <a href={link.resolved} class="break-all">
-                {link.label}
-              </a>
-              <span class="ml-2 break-all font-mono text-xs text-slate-500">
-                {link.href}
-              </span>
-            </li>
-          ))}
-      </ul>
+
+    {sliceFindings.length > 0 ? (
+      <Section
+        id="findings"
+        spacing="md"
+        title="Findings extracted"
+        description="Curves attached to this slice, on shared signed-evidence axes."
+      >
+        <MiniFindingsChart
+          client:visible
+          findings={sliceFindings}
+          colorBy="condition"
+          height={260}
+        />
+      </Section>
     ) : null}
-  </section>
+
+    {metrics.length > 0 ? (
+      <Section id="metrics" spacing="md" title="Metrics">
+        <StatGrid cols={4}>
+          {metrics.map((metric) => (
+            <Stat label={metric.label} value={(metric.value ?? "—") as string | number} />
+          ))}
+        </StatGrid>
+      </Section>
+    ) : null}
+
+    <Section
+      id="profile"
+      spacing="md"
+      title="Slice profile"
+      description="Operational variables for cross-slice comparison."
+    >
+      <Card padding="none" class="overflow-hidden">
+        <table class="w-full text-body">
+          <tbody class="divide-y divide-rule">
+            {comparisonRows.map(([label, value]) => (
+              <tr>
+                <td class="w-48 px-3 py-2 text-eyebrow uppercase text-fg-muted">
+                  {label}
+                </td>
+                <td class="px-3 py-2">{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </Section>
+
+    <Section id="artifacts" spacing="md" title="Artifacts">
+      {reportAvailable ? (
+        <Card padding="md" surface="ok" border="tinted" class="mb-3 text-body text-ok">
+          Slice has a generated local report; the analysis pipeline ran cleanly
+          and produced trial-level output, plots, and provenance.
+        </Card>
+      ) : (
+        <Card padding="md" surface="warn" border="tinted" class="mb-3 text-body text-warn">
+          Slice report has not been bundled into this deploy. Run the slice
+          pipeline locally to regenerate artifacts.
+        </Card>
+      )}
+      {links.length > 0 ? (
+        <ul class="space-y-1 text-body">
+          {links
+            .map((link) => ({
+              ...link,
+              resolved: resolveArtifactHref(link.href),
+            }))
+            .map((link) => (
+              <li>
+                <a href={link.resolved} class="break-all">
+                  {link.label}
+                </a>
+                <span class="ml-2 break-all font-mono text-mono-id text-fg-muted">
+                  {link.href}
+                </span>
+              </li>
+            ))}
+        </ul>
+      ) : null}
+    </Section>
+  </DetailLayout>
 </BaseLayout>

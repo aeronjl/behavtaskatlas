@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FindingsOverlay from "../components/FindingsOverlay.svelte";
+import Card from "../components/ui/Card.astro";
+import DataTable from "../components/ui/DataTable.astro";
+import PageHeader from "../components/ui/PageHeader.astro";
 import { findings } from "../lib/findings";
 import { hrefForFinding } from "../lib/data";
 
@@ -21,85 +24,77 @@ const findingsList = findings.findings as Array<{
 <BaseLayout
   title="Findings · behavtaskatlas"
   description="Cross-paper psychometric findings, plotted on shared signed-evidence axes and filterable by species, modality, evidence type, response modality, and source-data level."
+  width="wide"
 >
-  <header class="mb-6">
-    <h1 class="text-3xl">Cross-paper findings</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-600">
-      Behavioural curves from {findingPaperCount} papers with extracted
-      findings, plotted on shared signed-evidence axes. The generated
-      bibliography tracks {counts.papers ?? findingPaperCount} curated papers
-      overall. Pick a curve type to switch view; use a preset to compare a
-      slice of the literature; toggle Fit + aggregate to refit every curve
-      interactively in your browser.
-    </p>
-  </header>
+  <PageHeader
+    title="Cross-paper findings"
+    lede={`Behavioural curves from ${findingPaperCount} papers with extracted findings, plotted on shared signed-evidence axes. The generated bibliography tracks ${counts.papers ?? findingPaperCount} curated papers overall. Pick a curve type to switch view; use a preset to compare a slice of the literature; toggle Fit + aggregate to refit every curve interactively in your browser.`}
+  />
 
   {
     counts.findings && counts.findings > 0 ? (
       <FindingsOverlay client:visible data={findings} />
     ) : (
-      <section class="rounded-md border border-slate-200 bg-white p-6 text-sm text-slate-600">
+      <Card padding="lg" class="text-body text-fg-secondary">
         No findings have been curated yet. Add a paper YAML under{" "}
-        <code class="rounded bg-slate-100 px-1">papers/</code> and a finding
-        YAML under <code class="rounded bg-slate-100 px-1">findings/</code>{" "}
-        (or run <code class="rounded bg-slate-100 px-1">behavtaskatlas
+        <code class="rounded bg-surface-sunken px-1">papers/</code> and a finding
+        YAML under <code class="rounded bg-surface-sunken px-1">findings/</code>{" "}
+        (or run <code class="rounded bg-surface-sunken px-1">behavtaskatlas
         extract-finding</code>).
-      </section>
+      </Card>
     )
   }
 
   {findingsList.length > 0 ? (
-    <details class="mt-10 rounded-md border border-slate-200 bg-white">
-      <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700 hover:text-accent">
+    <details class="mt-10 rounded-md border border-rule bg-surface-raised">
+      <summary class="cursor-pointer px-4 py-3 text-body font-semibold text-fg-secondary hover:text-accent">
         Browse all findings as a table
-        <span class="ml-2 text-xs font-normal text-slate-500">
+        <span class="ml-2 text-body-xs font-normal text-fg-muted">
           ({findingsList.length} rows)
         </span>
       </summary>
-      <div class="border-t border-slate-200 overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <div class="border-t border-rule">
+        <DataTable
+          class="rounded-none border-0"
+          columns={[
+            { label: "Finding" },
+            { label: "Paper" },
+            { label: "Year" },
+            { label: "Species" },
+            { label: "Protocol" },
+            { label: "Curve" },
+            { label: "Source level" },
+            { label: "Trials", align: "right" },
+          ]}
+        >
+          {findingsList.map((entry) => (
             <tr>
-              <th class="px-3 py-2">Finding</th>
-              <th class="px-3 py-2">Paper</th>
-              <th class="px-3 py-2">Year</th>
-              <th class="px-3 py-2">Species</th>
-              <th class="px-3 py-2">Protocol</th>
-              <th class="px-3 py-2">Curve</th>
-              <th class="px-3 py-2">Source level</th>
-              <th class="px-3 py-2 text-right">Trials</th>
+              <td class="max-w-64 px-3 py-2">
+                <a
+                  class="font-mono text-mono-id text-fg"
+                  href={hrefForFinding(entry.finding_id)}
+                >
+                  {entry.finding_id.replace("finding.", "")}
+                </a>
+              </td>
+              <td class="px-3 py-2">{entry.paper_citation}</td>
+              <td class="px-3 py-2 text-fg-secondary">{entry.paper_year}</td>
+              <td class="px-3 py-2 text-fg-secondary">
+                {entry.species ?? "—"}
+              </td>
+              <td class="px-3 py-2 text-fg-secondary">
+                {entry.protocol_name}
+              </td>
+              <td class="px-3 py-2 text-fg-secondary">{entry.curve_type}</td>
+              <td class="px-3 py-2 text-fg-secondary">
+                {entry.source_data_level}
+              </td>
+              <td class="px-3 py-2 text-right font-mono text-fg-secondary">
+                {entry.n_trials ?? "—"}
+              </td>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            {findingsList.map((entry) => (
-              <tr>
-                <td class="max-w-64 px-3 py-2">
-                  <a
-                    class="font-mono text-[11px] text-slate-900"
-                    href={hrefForFinding(entry.finding_id)}
-                  >
-                    {entry.finding_id.replace("finding.", "")}
-                  </a>
-                </td>
-                <td class="px-3 py-2">{entry.paper_citation}</td>
-                <td class="px-3 py-2 text-slate-600">{entry.paper_year}</td>
-                <td class="px-3 py-2 text-slate-600">
-                  {entry.species ?? "—"}
-                </td>
-                <td class="px-3 py-2 text-slate-600">
-                  {entry.protocol_name}
-                </td>
-                <td class="px-3 py-2 text-slate-600">{entry.curve_type}</td>
-                <td class="px-3 py-2 text-slate-600">
-                  {entry.source_data_level}
-                </td>
-                <td class="px-3 py-2 text-right font-mono text-slate-600">
-                  {entry.n_trials ?? "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          ))}
+        </DataTable>
       </div>
     </details>
   ) : null}

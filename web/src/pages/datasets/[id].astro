@@ -3,6 +3,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import RecordChip from "../../components/RecordChip.astro";
+import Card from "../../components/ui/Card.astro";
+import DataTable from "../../components/ui/DataTable.astro";
+import DetailLayout from "../../components/ui/DetailLayout.astro";
+import DetailToc from "../../components/ui/DetailToc.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import Section from "../../components/ui/Section.astro";
+import StatusPill from "../../components/ui/StatusPill.astro";
 import { catalog, slugForId } from "../../lib/data";
 import type { CatalogDatasetDetail } from "../../lib/data";
 import { findings as findingsIndex } from "../../lib/findings";
@@ -39,9 +46,40 @@ const datasetPapers = Array.from(
     ]),
   ).values(),
 ).sort((a, b) => b.paper_year - a.paper_year);
+
+type TocItem = { id: string; label: string; count?: number };
+const tocItems: TocItem[] = [
+  { id: "access", label: "Access notes" } as TocItem,
+  dataset.data_formats.length > 0
+    ? { id: "formats", label: "Data formats", count: dataset.data_formats.length }
+    : null,
+  Object.keys(trialMapping).length > 0
+    ? {
+        id: "mapping",
+        label: "Trial-table mapping",
+        count: Object.keys(trialMapping).length,
+      }
+    : null,
+  dataset.caveats.length > 0
+    ? { id: "caveats", label: "Caveats", count: dataset.caveats.length }
+    : null,
+  datasetPapers.length > 0
+    ? { id: "papers", label: "Papers", count: datasetPapers.length }
+    : null,
+  datasetFindings.length > 0
+    ? { id: "findings", label: "Findings", count: datasetFindings.length }
+    : null,
+].filter((item): item is TocItem => item !== null);
+
+const sourceTone =
+  dataset.source_data_level === "raw-trial"
+    ? "ok"
+    : dataset.source_data_level === "processed-trial"
+      ? "accent"
+      : "warn";
 ---
 
-<BaseLayout title={`${dataset.name} · Dataset`}>
+<BaseLayout title={`${dataset.name} · Dataset`} width="wide">
   <Breadcrumbs
     crumbs={[
       { label: "Catalog", href: "/catalog" },
@@ -50,160 +88,163 @@ const datasetPapers = Array.from(
     ]}
   />
 
-  <header class="mb-8">
-    <p class="text-xs uppercase tracking-wide text-slate-500">Dataset</p>
-    <div class="mt-1 flex flex-wrap items-baseline justify-between gap-3">
-      <h1 class="text-3xl">{dataset.name}</h1>
-      <a
-        class="shrink-0 rounded border border-slate-300 bg-white px-3 py-1.5 text-xs no-underline text-slate-700 transition-colors hover:border-accent hover:text-accent"
-        href={dataset.source_url}
-      >
-        Source ↗
-      </a>
-    </div>
-    <p class="mt-2 max-w-3xl text-sm text-slate-700">{dataset.description}</p>
-    <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-700 sm:grid-cols-4">
-      <div>
-        <dt class="text-slate-500">Source level</dt>
-        <dd class="mt-0.5">{dataset.source_data_level}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">Species</dt>
-        <dd class="mt-0.5">{dataset.species.join(", ")}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">Status</dt>
-        <dd class="mt-0.5">{dataset.curation_status}</dd>
-      </div>
-      <div>
-        <dt class="text-slate-500">License</dt>
-        <dd class="mt-0.5">{dataset.license ?? "—"}</dd>
-      </div>
-    </dl>
-    {dataset.protocols.length > 0 ? (
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-        {dataset.protocols.map((p) => (
-          <RecordChip
-            type="protocol"
-            label={p.name}
-            href={`/protocols/${slugForId(p.protocol_id)}`}
-          />
-        ))}
-      </div>
-    ) : null}
-  </header>
+  <DetailLayout>
+    <Fragment slot="rail">
+      <DetailToc items={tocItems} />
+      <Card padding="md" class="text-body-xs">
+        <h3 class="mb-3 text-eyebrow uppercase text-fg-muted">Dataset</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-fg-muted">Source level</dt>
+            <dd class="mt-1">
+              <StatusPill tone={sourceTone}>{dataset.source_data_level}</StatusPill>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Species</dt>
+            <dd class="mt-0.5 text-fg">{dataset.species.join(", ")}</dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">Status</dt>
+            <dd class="mt-0.5 text-fg">{dataset.curation_status}</dd>
+          </div>
+          <div>
+            <dt class="text-fg-muted">License</dt>
+            <dd class="mt-0.5 text-fg">{dataset.license ?? "—"}</dd>
+          </div>
+        </dl>
+        {dataset.source_url ? (
+          <a
+            class="mt-4 block rounded border border-rule-strong bg-surface-raised px-3 py-1.5 text-center no-underline text-fg-secondary transition-colors hover:border-rule-emphasis hover:text-accent"
+            href={dataset.source_url}
+          >
+            Source ↗
+          </a>
+        ) : null}
+      </Card>
+      {dataset.protocols.length > 0 ? (
+        <Card padding="md" class="mt-3 text-body-xs">
+          <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Protocols</h3>
+          <ul class="flex flex-wrap gap-1.5">
+            {dataset.protocols.map((p) => (
+              <li>
+                <RecordChip
+                  type="protocol"
+                  label={p.name}
+                  href={`/protocols/${slugForId(p.protocol_id)}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+    </Fragment>
 
-  <section class="mb-8 rounded-md border border-slate-200 bg-white p-4">
-    <h2 class="mb-2 text-sm font-semibold text-slate-700">Access notes</h2>
-    <p class="whitespace-pre-line text-sm text-slate-700">
-      {dataset.access_notes}
-    </p>
-  </section>
+    <PageHeader
+      eyebrow="Dataset"
+      title={dataset.name}
+      lede={dataset.description}
+    />
 
-  {
-    dataset.data_formats.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Data formats</h2>
-        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+    <Section id="access" spacing="md" title="Access notes">
+      <Card padding="md">
+        <p class="whitespace-pre-line text-body text-fg-secondary">
+          {dataset.access_notes}
+        </p>
+      </Card>
+    </Section>
+
+    {dataset.data_formats.length > 0 ? (
+      <Section id="formats" spacing="md" title="Data formats">
+        <ul class="list-disc space-y-1 pl-5 text-body text-fg-secondary">
           {dataset.data_formats.map((fmt) => (
             <li>{fmt}</li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    Object.keys(trialMapping).length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">
-          Expected trial-table mapping
-        </h2>
-        <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th class="px-3 py-2">Canonical field</th>
-                <th class="px-3 py-2">Source mapping</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              {Object.entries(trialMapping).map(([key, value]) => (
-                <tr>
-                  <td class="px-3 py-2 font-mono text-xs">{key}</td>
-                  <td class="px-3 py-2 text-slate-700">{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    ) : null
-  }
+    {Object.keys(trialMapping).length > 0 ? (
+      <Section
+        id="mapping"
+        spacing="md"
+        title="Expected trial-table mapping"
+        description="Canonical fields the harmonizer expects this dataset to populate."
+      >
+        <DataTable
+          columns={[
+            { label: "Canonical field" },
+            { label: "Source mapping" },
+          ]}
+        >
+          {Object.entries(trialMapping).map(([key, value]) => (
+            <tr>
+              <td class="px-3 py-2 font-mono text-mono-id">{key}</td>
+              <td class="px-3 py-2 text-fg-secondary">{value}</td>
+            </tr>
+          ))}
+        </DataTable>
+      </Section>
+    ) : null}
 
-  {
-    dataset.caveats.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Caveats</h2>
-        <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+    {dataset.caveats.length > 0 ? (
+      <Section id="caveats" spacing="md" title="Caveats">
+        <ul class="list-disc space-y-1 pl-5 text-body text-fg-secondary">
           {dataset.caveats.map((c) => (
             <li>{c}</li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    datasetPapers.length > 0 ? (
-      <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">Papers</h2>
-        <ul class="space-y-1 text-sm">
+    {datasetPapers.length > 0 ? (
+      <Section id="papers" spacing="md" title="Papers">
+        <ul class="space-y-1 text-body">
           {datasetPapers.map((p) => (
             <li>
               <a href={`/papers/${slugForId(p.paper_id)}`}>{p.paper_citation}</a>
-              <span class="ml-2 text-xs text-slate-500">({p.paper_year})</span>
+              <span class="ml-2 text-body-xs text-fg-muted">({p.paper_year})</span>
             </li>
           ))}
         </ul>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
 
-  {
-    datasetFindings.length > 0 ? (
-      <section>
-        <h2 class="mb-2 text-sm font-semibold text-slate-700">
-          Findings <span class="font-normal text-slate-500">on this dataset</span>
-        </h2>
+    {datasetFindings.length > 0 ? (
+      <Section
+        id="findings"
+        spacing="md"
+        title="Findings"
+        description="Curves attached to this dataset on shared signed-evidence axes."
+      >
         <MiniFindingsChart
           client:visible
           findings={datasetFindings}
           colorBy="paper"
           height={280}
         />
-        <ul class="mt-3 space-y-1 text-sm">
+        <ul class="mt-3 space-y-1 text-body">
           {datasetFindings.map((entry) => (
             <li class="flex items-baseline justify-between gap-3">
               <span>
                 <a href={`/papers/${slugForId(entry.paper_id)}`}>
                   {entry.paper_citation}
                 </a>
-                <span class="ml-2 text-xs text-slate-500">
+                <span class="ml-2 text-body-xs text-fg-muted">
                   · {entry.curve_type}
                   {entry.stratification.condition
                     ? ` · ${entry.stratification.condition}`
                     : ""}
                 </span>
               </span>
-              <span class="text-xs text-slate-500">{entry.source_data_level}</span>
+              <span class="text-body-xs text-fg-muted">{entry.source_data_level}</span>
             </li>
           ))}
         </ul>
-        <p class="mt-2 text-xs text-slate-500">
+        <p class="mt-2 text-body-xs text-fg-muted">
           See all <a href="/findings">findings overlaid on shared axes</a>.
         </p>
-      </section>
-    ) : null
-  }
+      </Section>
+    ) : null}
+  </DetailLayout>
 </BaseLayout>

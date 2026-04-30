@@ -1,0 +1,43 @@
+---
+/**
+ * SectionAnchorNav — chip-pill nav for in-page section anchors.
+ *
+ *   <SectionAnchorNav items={[
+ *     { id: "audit", label: "Reproducibility audit" },
+ *     { id: "curation", label: "Curation queue", count: 12 },
+ *   ]} />
+ *
+ * Replaces the chip-cloud `<nav>` repeated on /atlas-health, /models,
+ * /catalog, etc. Optional `count` adds a faint trailing badge.
+ */
+interface Item {
+  id: string;
+  label: string;
+  count?: number;
+}
+
+interface Props {
+  items: Item[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props as Props;
+---
+
+<nav class:list={["mb-8 -mx-4 overflow-x-auto px-4", className]}>
+  <ul class="flex flex-wrap gap-2 text-body-xs">
+    {items.map((item) => (
+      <li>
+        <a
+          href={`#${item.id}`}
+          class="inline-flex items-center gap-1.5 rounded-full border border-rule bg-surface-raised px-3 py-1.5 no-underline hover:border-rule-emphasis hover:text-accent"
+        >
+          {item.label}
+          {item.count !== undefined ? (
+            <span class="text-fg-muted">{item.count}</span>
+          ) : null}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

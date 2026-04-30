@@ -1,0 +1,47 @@
+---
+/**
+ * StatusPill — tinted inline tag for state, status, confidence, etc.
+ *
+ *   <StatusPill tone="ok">report available</StatusPill>
+ *   <StatusPill tone="warn" size="md">missing</StatusPill>
+ *
+ * Tones map to the existing status palette (bg-{tone}-soft text-{tone})
+ * so everything from "data-linked" badges to AIC confidence chips can
+ * funnel through the same primitive.
+ */
+interface Props {
+  tone?: "accent" | "warn" | "ok" | "bad" | "neutral";
+  size?: "sm" | "md";
+  class?: string;
+}
+
+const {
+  tone = "neutral",
+  size = "sm",
+  class: className,
+} = Astro.props as Props;
+
+const toneClass = {
+  accent: "bg-accent-soft text-accent",
+  warn: "bg-warn-soft text-warn",
+  ok: "bg-ok-soft text-ok",
+  bad: "bg-bad-soft text-bad",
+  neutral: "bg-surface-sunken text-fg-secondary",
+}[tone];
+
+const sizeClass = {
+  sm: "px-2 py-0.5 text-body-xs",
+  md: "px-2.5 py-1 text-body",
+}[size];
+---
+
+<span
+  class:list={[
+    "inline-flex items-center gap-1 rounded font-medium",
+    toneClass,
+    sizeClass,
+    className,
+  ]}
+>
+  <slot />
+</span>

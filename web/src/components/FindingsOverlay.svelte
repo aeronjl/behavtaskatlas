@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FindingsIndex, FindingsEntry } from "../lib/findings";
+  import { chartChrome, tones } from "../lib/encoding";
 
   let { data }: { data: FindingsIndex } = $props();
 
@@ -1065,6 +1066,8 @@ def fit_curves(payload_json):
       return;
     }
     const xTitle = displayEntries[0]?.x_label ?? "x";
+    const chrome = chartChrome();
+    const tonePalette = tones();
     const spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container" as const,
@@ -1072,7 +1075,7 @@ def fit_curves(payload_json):
       data: { values: DISAGREEMENT_VALUES },
       layer: [
         {
-          mark: { type: "area", opacity: 0.18, color: "#b35c00" },
+          mark: { type: "area", opacity: 0.18, color: tonePalette.warn },
           encoding: {
             x: { field: "x", type: "quantitative", title: xTitle },
             y: { field: "min", type: "quantitative", title: "Fit y" },
@@ -1080,7 +1083,7 @@ def fit_curves(payload_json):
           },
         },
         {
-          mark: { type: "line", color: "#b35c00", strokeWidth: 2 },
+          mark: { type: "line", color: tonePalette.warn, strokeWidth: 2 },
           encoding: {
             x: { field: "x", type: "quantitative", title: xTitle },
             y: { field: "std", type: "quantitative", title: "σ across curves" },
@@ -1096,8 +1099,8 @@ def fit_curves(payload_json):
       ],
       resolve: { scale: { y: "independent" as const } },
       config: {
-        view: { stroke: "#cbd5e1" },
-        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
+        view: { stroke: chrome.viewStroke },
+        axis: { gridColor: chrome.gridColor, labelColor: chrome.labelColor },
       },
     };
     (async () => {
@@ -1133,10 +1136,12 @@ def fit_curves(payload_json):
       : "x";
     const layers: Record<string, unknown>[] = [];
 
+    const chrome = chartChrome();
+    const tonePalette = tones();
     if (fitEnabled && POOLED_BAND_VALUES.length > 0) {
       layers.push({
         data: { values: POOLED_BAND_VALUES },
-        mark: { type: "area", opacity: 0.18, color: "#0f172a" },
+        mark: { type: "area", opacity: 0.18, color: tonePalette.primary },
         encoding: {
           x: { field: "x", type: "quantitative" },
           y: { field: "lower", type: "quantitative" },
@@ -1195,7 +1200,7 @@ def fit_curves(payload_json):
     if (fitEnabled && POOLED_LINE_VALUES.length > 0) {
       layers.push({
         data: { values: POOLED_LINE_VALUES },
-        mark: { type: "line", color: "#0f172a", strokeWidth: 3 },
+        mark: { type: "line", color: tonePalette.primary, strokeWidth: 3 },
         encoding: {
           x: { field: "x", type: "quantitative" },
           y: { field: "y", type: "quantitative" },
@@ -1209,9 +1214,9 @@ def fit_curves(payload_json):
       height: 380,
       layer: layers,
       config: {
-        view: { stroke: "#cbd5e1" },
-        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
-        legend: { labelColor: "#334155", titleColor: "#0f172a" },
+        view: { stroke: chrome.viewStroke },
+        axis: { gridColor: chrome.gridColor, labelColor: chrome.labelColor },
+        legend: { labelColor: chrome.labelColor, titleColor: chrome.titleColor },
       },
     };
     (async () => {

@@ -3,6 +3,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import CurveGallery from "../../components/CurveGallery.svelte";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import Card from "../../components/ui/Card.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import Section from "../../components/ui/Section.astro";
+import Stat from "../../components/ui/Stat.astro";
+import StatGrid from "../../components/ui/StatGrid.astro";
+import StatusPill from "../../components/ui/StatusPill.astro";
 import {
   catalog,
   models,
@@ -166,6 +172,7 @@ const topModelVariants = Array.from(
 <BaseLayout
   title="Visual contrast family map · behavtaskatlas"
   description="A visual overview of the atlas's visual contrast discrimination family: notable papers, protocols, coverage, findings, source depth, and model-selection ambiguity."
+  width="wide"
 >
   <Breadcrumbs
     crumbs={[
@@ -174,60 +181,47 @@ const topModelVariants = Array.from(
     ]}
   />
 
-  <header class="mb-8">
-    <p class="text-xs uppercase tracking-wide text-slate-500">
-      Story · task-family map
-    </p>
-    <h1 class="mt-1 text-3xl font-semibold tracking-tight">
-      Visual contrast discrimination
-    </h1>
-    <p class="mt-3 max-w-3xl text-base text-slate-700">
-      A visual scan of the atlas's deepest task family: which papers have
-      source-backed findings, which protocols have reproducible slices, where
-      model fits exist, and where the family is still only protocol-level
-      coverage.
-    </p>
-  </header>
+  <PageHeader
+    eyebrow="Story · task-family map"
+    title="Visual contrast discrimination"
+    lede="A visual scan of the atlas's deepest task family: which papers have source-backed findings, which protocols have reproducible slices, where model fits exist, and where the family is still only protocol-level coverage."
+  />
 
-  <section class="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs text-slate-500">Protocols</p>
-      <p class="mt-1 font-mono text-2xl text-slate-900">{familyProtocols.length}</p>
-      <p class="mt-1 text-xs text-slate-500">{protocolsWithReports.length} with reports</p>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs text-slate-500">Notable papers</p>
-      <p class="mt-1 font-mono text-2xl text-slate-900">{paperRows.length}</p>
-      <p class="mt-1 text-xs text-slate-500">{papersWithFindings.length} finding-backed</p>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs text-slate-500">Findings</p>
-      <p class="mt-1 font-mono text-2xl text-slate-900">{visualFindings.length}</p>
-      <p class="mt-1 text-xs text-slate-500">{totalTrials.toLocaleString()} trials</p>
-    </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs text-slate-500">Modeled papers</p>
-      <p class="mt-1 font-mono text-2xl text-slate-900">{papersWithModels.length}</p>
-      <p class="mt-1 text-xs text-slate-500">
-        {confidenceCounts.get("close") ?? 0} close calls
-      </p>
-    </div>
-  </section>
+  <StatGrid cols={4} class="mb-10">
+    <Stat
+      label="Protocols"
+      value={familyProtocols.length}
+      hint={`${protocolsWithReports.length} with reports`}
+    />
+    <Stat
+      label="Notable papers"
+      value={paperRows.length}
+      hint={`${papersWithFindings.length} finding-backed`}
+    />
+    <Stat
+      label="Findings"
+      value={visualFindings.length}
+      hint={`${totalTrials.toLocaleString()} trials`}
+    />
+    <Stat
+      label="Modeled papers"
+      value={papersWithModels.length}
+      hint={`${confidenceCounts.get("close") ?? 0} close calls`}
+    />
+  </StatGrid>
 
-  <section class="mb-10">
-    <header class="mb-3 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-tight">Paper Timeline</h2>
-        <p class="mt-1 text-sm text-slate-600">
-          Filled markers have extracted findings; marker size follows finding count.
-        </p>
-      </div>
-      <a class="text-sm text-accent" href="/papers?q=visual">Browse papers</a>
-    </header>
+  <Section
+    spacing="lg"
+    title="Paper Timeline"
+    description="Filled markers have extracted findings; marker size follows finding count."
+  >
+    <Fragment slot="action">
+      <a class="text-body text-accent" href="/papers?q=visual">Browse papers</a>
+    </Fragment>
 
     <div class="-mx-4 overflow-x-auto px-4">
       <svg
-        class="min-w-[760px] rounded-md border border-slate-200 bg-white"
+        class="min-w-[760px] rounded-md border border-rule bg-surface-raised"
         viewBox={`0 0 ${timelineWidth} ${timelineHeight}`}
         role="img"
         aria-label="Timeline of visual contrast papers in the atlas"
@@ -296,21 +290,16 @@ const topModelVariants = Array.from(
         })}
       </svg>
     </div>
-  </section>
+  </Section>
 
-  <section class="mb-10">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Coverage Matrix</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Each row is a paper linked to a visual-contrast protocol. Bars show
-        how much finding/model coverage exists; chips show operational and
-        source-data coverage.
-      </p>
-    </header>
-
+  <Section
+    spacing="lg"
+    title="Coverage Matrix"
+    description="Each row is a paper linked to a visual-contrast protocol. Bars show how much finding/model coverage exists; chips show operational and source-data coverage."
+  >
     <div class="-mx-4 overflow-x-auto px-4">
-      <table class="min-w-[900px] w-full overflow-hidden rounded-md border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <table class="min-w-[900px] w-full overflow-hidden rounded-md border border-rule bg-surface-raised text-body">
+        <thead class="bg-surface text-left text-body-xs uppercase tracking-wide text-fg-muted">
           <tr>
             <th class="px-3 py-2">Paper</th>
             <th class="px-3 py-2">Protocol</th>
@@ -322,24 +311,24 @@ const topModelVariants = Array.from(
             <th class="px-3 py-2">Slice</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200">
+        <tbody class="divide-y divide-rule">
           {paperRows.map((row) => (
             <tr>
               <td class="px-3 py-2">
-                <a class="font-medium text-slate-900 no-underline hover:text-accent" href={`/papers/${row.paper.slug}`}>
+                <a class="font-medium text-fg no-underline hover:text-accent" href={`/papers/${row.paper.slug}`}>
                   {shortCitation(row.paper.citation)}
                 </a>
-                <p class="mt-0.5 text-[11px] text-slate-500">
+                <p class="mt-0.5 text-mono-id text-fg-muted">
                   {row.paper.year} · {statusLabel(row.paper.coverage_status)}
                 </p>
               </td>
-              <td class="max-w-52 px-3 py-2 text-xs text-slate-600">
+              <td class="max-w-52 px-3 py-2 text-body-xs text-fg-secondary">
                 {row.protocolNames.length > 0 ? row.protocolNames.join(" · ") : "-"}
               </td>
               <td class="px-3 py-2">
                 <ul class="flex flex-wrap gap-1">
                   {row.species.map((value) => (
-                    <li class="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
+                    <li class="rounded bg-surface-sunken px-2 py-0.5 text-mono-id text-fg-secondary">
                       {readable(value)}
                     </li>
                   ))}
@@ -347,13 +336,11 @@ const topModelVariants = Array.from(
               </td>
               <td class="px-3 py-2">
                 {row.sourceLevels.length === 0 ? (
-                  <span class="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
-                    not linked
-                  </span>
+                  <StatusPill tone="neutral">not linked</StatusPill>
                 ) : (
                   <ul class="flex flex-wrap gap-1">
                     {row.sourceLevels.map((level) => (
-                      <li class={`rounded px-2 py-0.5 text-[11px] ${sourceClass(level)}`}>
+                      <li class={`rounded px-2 py-0.5 text-mono-id ${sourceClass(level)}`}>
                         {readable(level)}
                       </li>
                     ))}
@@ -362,11 +349,11 @@ const topModelVariants = Array.from(
               </td>
               <td class="px-3 py-2">
                 {row.curveTypes.length === 0 ? (
-                  <span class="text-xs text-slate-400">-</span>
+                  <span class="text-body-xs text-fg-subtle">-</span>
                 ) : (
                   <ul class="flex flex-wrap gap-1">
                     {row.curveTypes.map((curve) => (
-                      <li class="rounded bg-accent-soft px-2 py-0.5 text-[11px] text-accent">
+                      <li class="rounded bg-accent-soft px-2 py-0.5 text-mono-id text-accent">
                         {readable(curve)}
                       </li>
                     ))}
@@ -374,48 +361,41 @@ const topModelVariants = Array.from(
                 )}
               </td>
               <td class="px-3 py-2">
-                <div class="h-2 w-24 rounded bg-slate-100">
+                <div class="h-2 w-24 rounded bg-surface-sunken">
                   <div
                     class="h-2 rounded bg-accent"
                     style={`width: ${coverageWidth(row.findingCount, maxFindingCount)}`}
                   ></div>
                 </div>
-                <p class="mt-1 font-mono text-[11px] text-slate-600">{row.findingCount}</p>
+                <p class="mt-1 font-mono text-mono-id text-fg-secondary">{row.findingCount}</p>
               </td>
               <td class="px-3 py-2">
-                <div class="h-2 w-24 rounded bg-slate-100">
+                <div class="h-2 w-24 rounded bg-surface-sunken">
                   <div
                     class="h-2 rounded bg-ok"
                     style={`width: ${coverageWidth(row.modelCount, maxModelCount)}`}
                   ></div>
                 </div>
-                <p class="mt-1 font-mono text-[11px] text-slate-600">{row.modelCount}</p>
+                <p class="mt-1 font-mono text-mono-id text-fg-secondary">{row.modelCount}</p>
               </td>
               <td class="px-3 py-2">
-                {row.hasSlice ? (
-                  <span class="rounded bg-ok-soft px-2 py-0.5 text-[11px] text-ok">report</span>
-                ) : (
-                  <span class="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
-                    none
-                  </span>
-                )}
+                <StatusPill tone={row.hasSlice ? "ok" : "neutral"}>
+                  {row.hasSlice ? "report" : "none"}
+                </StatusPill>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
-  </section>
+  </Section>
 
-  <section class="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-    <div>
-      <header class="mb-3">
-        <h2 class="text-xl font-semibold tracking-tight">Curve Scan</h2>
-        <p class="mt-1 text-sm text-slate-600">
-          Pooled or per-condition traces first; subject-level curves remain one
-          click away.
-        </p>
-      </header>
+  <Section
+    spacing="lg"
+    title="Curve Scan"
+    description="Pooled or per-condition traces first; subject-level curves remain one click away."
+  >
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
       <MiniFindingsChart
         client:visible
         findings={visualFindings}
@@ -423,118 +403,113 @@ const topModelVariants = Array.from(
         height={300}
         showFits={true}
       />
-    </div>
 
-    <aside class="space-y-4">
-      <section class="rounded-md border border-slate-200 bg-white p-4">
-        <h2 class="text-sm font-semibold text-slate-900">Model Confidence</h2>
-        <ul class="mt-3 space-y-2">
-          {["decisive", "supported", "close", "unlabelled"].map((label) => {
-            const count = confidenceCounts.get(label) ?? 0;
-            return count > 0 ? (
-              <li class="flex items-center gap-2">
-                <span class={`h-2.5 w-2.5 rounded-full ${confidenceClass(label)}`}></span>
-                <span class="text-xs text-slate-700">{readable(label)}</span>
-                <span class="ml-auto font-mono text-xs text-slate-500">{count}</span>
+      <aside class="space-y-4">
+        <Card padding="md">
+          <h3 class="text-h3 text-fg">Model Confidence</h3>
+          <ul class="mt-3 space-y-2">
+            {["decisive", "supported", "close", "unlabelled"].map((label) => {
+              const count = confidenceCounts.get(label) ?? 0;
+              return count > 0 ? (
+                <li class="flex items-center gap-2">
+                  <span class={`h-2.5 w-2.5 rounded-full ${confidenceClass(label)}`}></span>
+                  <span class="text-body-xs text-fg-secondary">{readable(label)}</span>
+                  <span class="ml-auto font-mono text-body-xs text-fg-muted">{count}</span>
+                </li>
+              ) : null;
+            })}
+          </ul>
+        </Card>
+
+        <Card padding="md">
+          <h3 class="text-h3 text-fg">Top Winners</h3>
+          <ul class="mt-3 space-y-2">
+            {topModelVariants.map(([variant, count]) => (
+              <li>
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="text-body-xs text-fg-secondary">{readable(variant)}</span>
+                  <span class="font-mono text-body-xs text-fg-muted">{count}</span>
+                </div>
+                <div class="mt-1 h-1.5 rounded bg-surface-sunken">
+                  <div
+                    class="h-1.5 rounded bg-accent"
+                    style={`width: ${coverageWidth(count, topModelVariants[0]?.[1] ?? 1)}`}
+                  ></div>
+                </div>
               </li>
-            ) : null;
-          })}
-        </ul>
-      </section>
+            ))}
+          </ul>
+          <a class="mt-3 inline-block text-body-xs font-semibold text-accent" href="/models?model_family=Visual+contrast+discrimination">
+            Model answers
+          </a>
+        </Card>
+      </aside>
+    </div>
+  </Section>
 
-      <section class="rounded-md border border-slate-200 bg-white p-4">
-        <h2 class="text-sm font-semibold text-slate-900">Top Winners</h2>
-        <ul class="mt-3 space-y-2">
-          {topModelVariants.map(([variant, count]) => (
-            <li>
-              <div class="flex items-baseline justify-between gap-3">
-                <span class="text-xs text-slate-700">{readable(variant)}</span>
-                <span class="font-mono text-xs text-slate-500">{count}</span>
-              </div>
-              <div class="mt-1 h-1.5 rounded bg-slate-100">
-                <div
-                  class="h-1.5 rounded bg-accent"
-                  style={`width: ${coverageWidth(count, topModelVariants[0]?.[1] ?? 1)}`}
-                ></div>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <a class="mt-3 inline-block text-xs font-semibold text-accent" href="/models?model_family=Visual+contrast+discrimination">
-          Model answers
-        </a>
-      </section>
-    </aside>
-  </section>
-
-  <section class="mb-10">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Small-Multiple Gallery</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Paper- and protocol-level panels expose condition shifts, subject
-        variation, source depth, and fit overlays without collapsing the family
-        into one dense plot.
-      </p>
-    </header>
+  <Section
+    spacing="lg"
+    title="Small-Multiple Gallery"
+    description="Paper- and protocol-level panels expose condition shifts, subject variation, source depth, and fit overlays without collapsing the family into one dense plot."
+  >
     <CurveGallery client:visible findings={visualFindings} defaultCurveType="psychometric" />
-  </section>
+  </Section>
 
-  <section class="mb-10">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Protocol Footprint</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Protocol variants preserve response modality and context differences
-        instead of treating all contrast tasks as interchangeable.
-      </p>
-    </header>
+  <Section
+    spacing="lg"
+    title="Protocol Footprint"
+    description="Protocol variants preserve response modality and context differences instead of treating all contrast tasks as interchangeable."
+  >
     <ul class="grid grid-cols-1 gap-3 md:grid-cols-2">
       {familyProtocols.map((protocol) => (
-        <li class="rounded-md border border-slate-200 bg-white p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-semibold text-slate-900">
-                <a class="no-underline hover:text-accent" href={`/protocols/${slugForId(protocol.protocol_id)}`}>
-                  {protocol.name}
-                </a>
-              </h3>
-              <p class="mt-1 text-xs text-slate-500">
-                {protocol.species.map(readable).join(", ")} · {readable(protocol.choice_type)} ·{" "}
-                {(protocol.response_modalities ?? []).map(readable).join(", ")}
-              </p>
+        <li>
+          <Card padding="md">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-h3 text-fg">
+                  <a class="no-underline hover:text-accent" href={`/protocols/${slugForId(protocol.protocol_id)}`}>
+                    {protocol.name}
+                  </a>
+                </h3>
+                <p class="mt-1 text-body-xs text-fg-muted">
+                  {protocol.species.map(readable).join(", ")} · {readable(protocol.choice_type)} ·{" "}
+                  {(protocol.response_modalities ?? []).map(readable).join(", ")}
+                </p>
+              </div>
+              <StatusPill tone={protocol.report_status === "available" ? "ok" : "neutral"}>
+                {protocol.report_status === "available" ? "report" : "no report"}
+              </StatusPill>
             </div>
-            <span class={protocol.report_status === "available" ? "rounded bg-ok-soft px-2 py-0.5 text-[11px] text-ok" : "rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500"}>
-              {protocol.report_status === "available" ? "report" : "no report"}
-            </span>
-          </div>
-          <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-            <div>
-              <p class="font-mono text-slate-900">{(protocol.dataset_ids ?? []).length}</p>
-              <p class="text-[11px] text-slate-500">datasets</p>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center text-body-xs">
+              <div>
+                <p class="font-mono text-fg">{(protocol.dataset_ids ?? []).length}</p>
+                <p class="text-mono-id text-fg-muted">datasets</p>
+              </div>
+              <div>
+                <p class="font-mono text-fg">{(protocol.slice_ids ?? []).length}</p>
+                <p class="text-mono-id text-fg-muted">slices</p>
+              </div>
+              <div>
+                <p class="font-mono text-fg">
+                  {visualFindings.filter((finding) => finding.protocol_id === protocol.protocol_id).length}
+                </p>
+                <p class="text-mono-id text-fg-muted">findings</p>
+              </div>
             </div>
-            <div>
-              <p class="font-mono text-slate-900">{(protocol.slice_ids ?? []).length}</p>
-              <p class="text-[11px] text-slate-500">slices</p>
-            </div>
-            <div>
-              <p class="font-mono text-slate-900">
-                {visualFindings.filter((finding) => finding.protocol_id === protocol.protocol_id).length}
-              </p>
-              <p class="text-[11px] text-slate-500">findings</p>
-            </div>
-          </div>
+          </Card>
         </li>
       ))}
     </ul>
-  </section>
+  </Section>
 
-  <section class="rounded-md border border-slate-200 bg-white p-4">
-    <h2 class="text-sm font-semibold text-slate-900">Reading The Map</h2>
-    <p class="mt-2 text-sm text-slate-600">
+  <Card padding="md">
+    <h2 class="text-h3 text-fg">Reading The Map</h2>
+    <p class="mt-2 text-body text-fg-secondary">
       Dense rows are not automatically better science: they mean the atlas has
       extracted more operational evidence. Sparse rows identify protocol-linked
       papers where source access or extraction is still the limiting factor.
       The page deliberately keeps source depth, curve type, and model confidence
       as separate visual channels.
     </p>
-  </section>
+  </Card>
 </BaseLayout>

@@ -1,6 +1,112 @@
 @import "tailwindcss";
 
 @theme {
+  /* ─────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,
+    "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Iowan Old Style", "Charter", "Source Serif Pro",
+    "Palatino Linotype", "Palatino", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Type scale — explicit, named ramps for the data product. Tailwind's
+   * built-in text-{xs,sm,base,lg,xl,2xl,3xl} stay available as escape
+   * hatches; these are the canonical sizes for app surfaces. */
+  --text-display: 3rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.01em;
+  --text-display--font-weight: 600;
+
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1.15;
+  --text-h1--letter-spacing: -0.005em;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1.25;
+  --text-h2--letter-spacing: -0.005em;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.4;
+  --text-h3--font-weight: 600;
+
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1.3;
+  --text-eyebrow--letter-spacing: 0.06em;
+  --text-eyebrow--font-weight: 600;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.55;
+
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.6;
+
+  --text-body-xs: 0.75rem;
+  --text-body-xs--line-height: 1.5;
+
+  --text-mono-num: 0.8125rem;
+  --text-mono-num--line-height: 1.4;
+  --text-mono-num--font-family: var(--font-mono);
+
+  --text-mono-id: 0.6875rem;
+  --text-mono-id--line-height: 1.3;
+  --text-mono-id--font-family: var(--font-mono);
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * CONTAINER WIDTHS
+   * Each layout picks one explicitly. PageShell + BaseLayout expose these
+   * as a `width` prop. Tailwind generates max-w-{name} utilities.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --container-prose: 48rem;     /* articles, single-column reading */
+  --container-content: 64rem;   /* moderate dashboards (current default) */
+  --container-wide: 88rem;      /* multi-pane dashboards, matrices */
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * SURFACES — semantic backgrounds. Three elevations + tinted variants.
+   * Use bg-surface (page), bg-surface-raised (cards),
+   * bg-surface-sunken (chips, code), bg-surface-{accent|warn|ok|bad}.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --color-surface: #f8fafc;            /* slate-50: page background */
+  --color-surface-raised: #ffffff;     /* white: cards, panels */
+  --color-surface-sunken: #f1f5f9;     /* slate-100: chips, code wells */
+  --color-surface-accent: #e8eef7;     /* tinted accent (mirrors accent-soft) */
+  --color-surface-warn: #fbf2e6;
+  --color-surface-bad: #f8e8e8;
+  --color-surface-ok: #e7f3ec;
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * FOREGROUND — text colors with a clear hierarchy.
+   * Prefer text-fg / text-fg-secondary / text-fg-muted over hand-picked
+   * text-slate-{900|700|500} so the system stays consistent.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --color-fg: #0f172a;                 /* slate-900: primary text */
+  --color-fg-secondary: #334155;       /* slate-700: secondary text */
+  --color-fg-muted: #64748b;           /* slate-500: meta, eyebrow */
+  --color-fg-subtle: #94a3b8;          /* slate-400: empty, placeholder */
+  --color-fg-inverse: #ffffff;
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * RULES — borders, dividers.
+   * Use border-rule / border-rule-strong / border-rule-emphasis.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --color-rule: #e2e8f0;               /* slate-200: default border */
+  --color-rule-strong: #cbd5e1;        /* slate-300: stronger border */
+  --color-rule-emphasis: #2b5ea0;      /* accent: focus, selection */
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * STATUS / TONE — accent / warn / bad / ok plus their soft variants.
+   * Existing convention preserved (bg-{tone}-soft text-{tone}) so old
+   * pages keep working alongside the new tokens.
+   * ───────────────────────────────────────────────────────────────────── */
+
   --color-accent: #2b5ea0;
   --color-accent-soft: #e8eef7;
   --color-warn: #b35c00;
@@ -10,16 +116,47 @@
   --color-ok: #246b3b;
   --color-ok-soft: #e7f3ec;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,
-    "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Iowan Old Style", "Charter", "Source Serif Pro",
-    "Palatino Linotype", "Palatino", Georgia, "Times New Roman", serif;
+  /* ─────────────────────────────────────────────────────────────────────
+   * CONFIDENCE — AIC selection bands. Used on /models, /findings,
+   * /atlas-health for "decisive / supported / close / single" labels.
+   * ───────────────────────────────────────────────────────────────────── */
+
+  --color-confidence-decisive: #047857;   /* emerald-700 */
+  --color-confidence-supported: #0d9488;  /* teal-600 */
+  --color-confidence-close: #d97706;      /* amber-600 */
+  --color-confidence-single: #94a3b8;     /* slate-400 */
+
+  /* ─────────────────────────────────────────────────────────────────────
+   * ENCODING — semantic colors for the data layer. These appear in
+   * legends, chips, swatches, charts; defining them once is the single
+   * source of truth across HTML markup AND Vega specs (which can read
+   * them via getComputedStyle on :root).
+   * ───────────────────────────────────────────────────────────────────── */
+
+  /* Source data level. */
+  --color-encoding-source-raw: #10b981;       /* emerald-500 */
+  --color-encoding-source-processed: #0ea5e9; /* sky-500 */
+  --color-encoding-source-figure: #f59e0b;    /* amber-500 */
+
+  /* Curve types. */
+  --color-encoding-curve-psychometric: #2563eb;   /* blue-600 */
+  --color-encoding-curve-chronometric: #14b8a6;   /* teal-500 */
+  --color-encoding-curve-accuracy: #7c3aed;       /* violet-500 */
+  --color-encoding-curve-hit-rate: #f43f5e;       /* rose-500 */
+
+  /* Model families. */
+  --color-encoding-model-sdt: #0ea5e9;        /* sky-500 */
+  --color-encoding-model-ddm: #7c3aed;        /* violet-500 */
+  --color-encoding-model-logistic: #2563eb;   /* blue-600 */
+  --color-encoding-model-click: #f59e0b;      /* amber-500 */
+  --color-encoding-model-bernoulli: #64748b;  /* slate-500 */
+  --color-encoding-model-chronometric: #14b8a6;
 }
 
 html {
   font-family: var(--font-sans);
-  color: #111;
-  background: #fff;
+  color: var(--color-fg);
+  background: var(--color-surface);
   max-width: 100%;
 }
 
@@ -28,8 +165,8 @@ body {
   max-width: 100%;
 }
 
-/* Page titles and section openers get the editorial serif. Nested h1 in
- * cards is rare; h2/h3/h4 stay sans for tabular and dashboard contexts. */
+/* Page titles get the editorial serif. h2/h3/h4 inside dashboard surfaces
+ * stay sans for tabular density. */
 h1 {
   font-family: var(--font-serif);
   font-feature-settings: "kern", "liga";
@@ -37,9 +174,6 @@ h1 {
   line-height: 1.15;
 }
 
-/* Default link styling: subtle underline that brightens on hover. Pages
- * still opt out with `class="no-underline"` for chrome (nav, cards) and
- * inline `text-accent` for emphasis. */
 a {
   color: var(--color-accent);
   text-decoration: underline;
@@ -54,7 +188,6 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
-/* When chrome opts out of the underline, hover should still feel alive. */
 a.no-underline:hover,
 nav a:hover {
   text-decoration: none;

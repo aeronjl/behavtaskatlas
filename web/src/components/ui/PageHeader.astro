@@ -1,0 +1,77 @@
+---
+/**
+ * PageHeader — canonical recipe for the top of every page.
+ *
+ *   eyebrow → small uppercase tag (e.g. "Vertical slice", "Paper")
+ *   title   → h1 (serif via global.css)
+ *   id      → optional monospace id under the title
+ *   lede    → optional max-w-prose paragraph
+ *   actions → right-side slot for buttons / cite-export / link share
+ *   meta    → bottom slot for chip rows, count strips, breadcrumbs-after
+ *
+ * `align="split"` puts actions to the right of the title block on sm+.
+ */
+interface Props {
+  eyebrow?: string;
+  title: string;
+  id?: string;
+  /** Plain-text lede. For rich content (inline links, code, etc.) pass
+   * a `lede` slot instead. */
+  lede?: string;
+  align?: "stacked" | "split";
+  class?: string;
+}
+
+const {
+  eyebrow,
+  title,
+  id,
+  lede,
+  align = "stacked",
+  class: className,
+} = Astro.props as Props;
+
+const hasActions = Astro.slots.has("actions");
+const hasMeta = Astro.slots.has("meta");
+const hasLedeSlot = Astro.slots.has("lede");
+---
+
+<header class:list={["mb-8", className]}>
+  <div
+    class:list={[
+      "flex gap-x-6 gap-y-3",
+      align === "split"
+        ? "flex-col items-start sm:flex-row sm:items-baseline sm:justify-between"
+        : "flex-col",
+    ]}
+  >
+    <div class="min-w-0">
+      {eyebrow ? (
+        <p class="text-eyebrow uppercase text-fg-muted">{eyebrow}</p>
+      ) : null}
+      <h1 class:list={["text-h1 text-fg", eyebrow ? "mt-1" : ""]}>
+        {title}
+      </h1>
+      {id ? (
+        <p class="mt-1 break-all text-mono-id text-fg-muted">{id}</p>
+      ) : null}
+      {lede ? (
+        <p class="mt-3 max-w-prose text-body text-fg-secondary">{lede}</p>
+      ) : hasLedeSlot ? (
+        <div class="mt-3 max-w-prose text-body text-fg-secondary">
+          <slot name="lede" />
+        </div>
+      ) : null}
+    </div>
+    {hasActions ? (
+      <div class="shrink-0">
+        <slot name="actions" />
+      </div>
+    ) : null}
+  </div>
+  {hasMeta ? (
+    <div class="mt-4">
+      <slot name="meta" />
+    </div>
+  ) : null}
+</header>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FacetBar from "./FacetBar.svelte";
+
   type LinkedRecord = {
     name?: string | null;
     title?: string | null;
@@ -38,12 +40,6 @@
 
   type FacetKey = "coverage" | "species" | "source" | "curve" | "protocol";
 
-  type Option = {
-    value: string;
-    label: string;
-    count: number;
-  };
-
   let { rows }: { rows: PaperBrowserRow[] } = $props();
 
   const coverageLabels: Record<string, string> = {
@@ -76,10 +72,6 @@
     curve: "curve",
     protocol: "protocol",
   };
-
-  const sortedBaseRows = $derived(
-    rows.slice().sort((a, b) => b.year - a.year || a.citation.localeCompare(b.citation)),
-  );
 
   function slugForId(id: string | undefined): string {
     return (id ?? "").replace(/^[^.]+\./, "");
@@ -165,6 +157,8 @@
     return active ? tone : "bg-slate-100";
   }
 
+  type Option = { value: string; label: string; count: number };
+
   function optionCounts(
     getValues: (row: PaperBrowserRow) => readonly string[] | undefined,
     labelFor = readable,
@@ -224,106 +218,69 @@
   let sourceState = $state(
     sourceStateLabels[initialSourceState] ? initialSourceState : "all",
   );
-  let activeCoverage = $state(initialSet("coverage"));
-  let activeSpecies = $state(initialSet("species"));
-  let activeSource = $state(initialSet("source"));
-  let activeCurve = $state(initialSet("curve"));
-  let activeProtocol = $state(initialSet("protocol"));
-
-  const activeSets = $derived({
-    coverage: activeCoverage,
-    species: activeSpecies,
-    source: activeSource,
-    curve: activeCurve,
-    protocol: activeProtocol,
+  let selected = $state<Record<string, Set<string>>>({
+    coverage: initialSet("coverage"),
+    species: initialSet("species"),
+    source: initialSet("source"),
+    curve: initialSet("curve"),
+    protocol: initialSet("protocol"),
   });
 
+  const facets = $derived([
+    { key: "coverage", label: "Coverage", options: options.coverage },
+    { key: "species", label: "Species", options: options.species },
+    { key: "source", label: "Source level", options: options.source },
+    { key: "curve", label: "Curve type", options: options.curve },
+    { key: "protocol", label: "Protocol", options: options.protocol },
+  ]);
+
+  const sortOptions = Object.entries(sortLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
+  const stateOptions = Object.entries(sourceStateLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
+  const presets = [
+    { key: "findings", label: "with findings" },
+    { key: "needs-extraction", label: "needs extraction" },
+    { key: "visual", label: "visual tasks" },
+    { key: "rdm-clicks", label: "RDM / clicks" },
+    { key: "human", label: "human" },
+    { key: "mouse", label: "mouse" },
+  ];
+
   const activeFilterCount = $derived(
-    activeCoverage.size +
-      activeSpecies.size +
-      activeSource.size +
-      activeCurve.size +
-      activeProtocol.size +
+    (selected.coverage?.size ?? 0) +
+      (selected.species?.size ?? 0) +
+      (selected.source?.size ?? 0) +
+      (selected.curve?.size ?? 0) +
+      (selected.protocol?.size ?? 0) +
       (sourceState === "all" ? 0 : 1) +
       (query.trim().length > 0 ? 1 : 0),
   );
 
-  function selectedSet(key: FacetKey): Set<string> {
-    return activeSets[key];
-  }
-
-  function setSelected(key: FacetKey, next: Set<string>) {
-    if (key === "coverage") activeCoverage = next;
-    if (key === "species") activeSpecies = next;
-    if (key === "source") activeSource = next;
-    if (key === "curve") activeCurve = next;
-    if (key === "protocol") activeProtocol = next;
-  }
-
-  function syncUrl() {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams();
-    if (query.trim().length > 0) params.set("q", query.trim());
-    if (sortMode !== "newest") params.set("sort", sortMode);
-    if (sourceState !== "all") params.set("source_state", sourceState);
-    for (const key of Object.keys(facetParam) as FacetKey[]) {
-      const selected = Array.from(selectedSet(key)).sort();
-      if (selected.length > 0) params.set(facetParam[key], selected.join(","));
-    }
-    const search = params.toString();
-    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
-    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
-      window.history.replaceState(null, "", next);
-    }
-  }
-
-  function toggleFacet(key: FacetKey, value: string) {
-    const next = new Set(selectedSet(key));
-    if (next.has(value)) next.delete(value);
-    else next.add(value);
-    setSelected(key, next);
-    syncUrl();
-  }
-
-  function clearFacet(key: FacetKey) {
-    setSelected(key, new Set());
-    syncUrl();
+  function setFacetValues(key: FacetKey, values: string[]) {
+    const allowed = allowedValues[key];
+    selected = {
+      ...selected,
+      [key]: new Set(values.filter((value) => allowed.has(value))),
+    };
   }
 
   function resetFilters() {
     query = "";
     sortMode = "newest";
     sourceState = "all";
-    activeCoverage = new Set();
-    activeSpecies = new Set();
-    activeSource = new Set();
-    activeCurve = new Set();
-    activeProtocol = new Set();
-  }
-
-  function clearAll() {
-    resetFilters();
-    syncUrl();
-  }
-
-  function updateQuery(event: Event) {
-    query = (event.currentTarget as HTMLInputElement).value;
-    syncUrl();
-  }
-
-  function updateSourceState(event: Event) {
-    sourceState = (event.currentTarget as HTMLSelectElement).value;
-    syncUrl();
-  }
-
-  function updateSortMode(event: Event) {
-    sortMode = (event.currentTarget as HTMLSelectElement).value;
-    syncUrl();
-  }
-
-  function setFacetValues(key: FacetKey, values: string[]) {
-    const allowed = allowedValues[key];
-    setSelected(key, new Set(values.filter((value) => allowed.has(value))));
+    selected = {
+      coverage: new Set(),
+      species: new Set(),
+      source: new Set(),
+      curve: new Set(),
+      protocol: new Set(),
+    };
   }
 
   function applyPreset(preset: string) {
@@ -356,12 +313,29 @@
         });
       setFacetValues("protocol", accumulationProtocols);
     }
-    syncUrl();
   }
 
-  function includesAny(values: readonly string[] | undefined, selected: Set<string>): boolean {
-    if (selected.size === 0) return true;
-    return (values ?? []).some((value) => selected.has(value));
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    if (query.trim().length > 0) params.set("q", query.trim());
+    if (sortMode !== "newest") params.set("sort", sortMode);
+    if (sourceState !== "all") params.set("source_state", sourceState);
+    for (const key of Object.keys(facetParam) as FacetKey[]) {
+      const set = selected[key] ?? new Set<string>();
+      const arr = Array.from(set).sort();
+      if (arr.length > 0) params.set(facetParam[key], arr.join(","));
+    }
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(null, "", next);
+    }
+  });
+
+  function includesAny(values: readonly string[] | undefined, set: Set<string>): boolean {
+    if (set.size === 0) return true;
+    return (values ?? []).some((value) => set.has(value));
   }
 
   function paperHaystack(row: PaperBrowserRow): string {
@@ -398,14 +372,19 @@
 
   function rowMatches(row: PaperBrowserRow): boolean {
     if (!matchesQuery(row, query.trim())) return false;
-    if (activeCoverage.size > 0 && !activeCoverage.has(row.coverage_status)) return false;
-    if (!includesAny(row.species, activeSpecies)) return false;
-    if (!includesAny(row.source_data_levels, activeSource)) return false;
-    if (!includesAny(row.curve_types, activeCurve)) return false;
+    if (
+      (selected.coverage?.size ?? 0) > 0 &&
+      !(selected.coverage as Set<string>).has(row.coverage_status)
+    ) {
+      return false;
+    }
+    if (!includesAny(row.species, selected.species ?? new Set())) return false;
+    if (!includesAny(row.source_data_levels, selected.source ?? new Set())) return false;
+    if (!includesAny(row.curve_types, selected.curve ?? new Set())) return false;
     if (
       !includesAny(
         row.protocols?.map((protocol) => protocol.name ?? protocol.protocol_id ?? ""),
-        activeProtocol,
+        selected.protocol ?? new Set(),
       )
     ) {
       return false;
@@ -436,6 +415,10 @@
     });
   }
 
+  const sortedBaseRows = $derived(
+    rows.slice().sort((a, b) => b.year - a.year || a.citation.localeCompare(b.citation)),
+  );
+
   const filteredRows = $derived(sorted(sortedBaseRows.filter(rowMatches)));
   const maxFindings = $derived(Math.max(1, ...rows.map((row) => row.finding_count ?? 0)));
   const maxModels = $derived(Math.max(1, ...rows.map(modelFitCount)));
@@ -463,166 +446,46 @@
 </script>
 
 <section class="space-y-4">
-  <div class="rounded-md border border-slate-200 bg-white p-4">
-    <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.8fr)_minmax(11rem,0.75fr)_minmax(11rem,0.75fr)]">
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Search</span>
-        <input
-          value={query}
-          oninput={updateQuery}
-          type="search"
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          placeholder="paper, lab, protocol, dataset, DOI"
-          autocomplete="off"
-          autocapitalize="none"
-          spellcheck="false"
-        />
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Source state</span>
-        <select
-          value={sourceState}
-          onchange={updateSourceState}
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm"
-        >
-          {#each Object.entries(sourceStateLabels) as [value, label] (value)}
-            <option value={value}>{label}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="text-xs text-slate-600">
-        <span class="mb-1 block font-semibold text-slate-700">Sort</span>
-        <select
-          value={sortMode}
-          onchange={updateSortMode}
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm"
-        >
-          {#each Object.entries(sortLabels) as [value, label] (value)}
-            <option value={value}>{label}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
+  <FacetBar
+    searchPlaceholder="paper, lab, protocol, dataset, DOI"
+    bind:query
+    {sortOptions}
+    bind:sortMode
+    sortLabel="Sort"
+    {stateOptions}
+    bind:stateMode={sourceState}
+    stateLabel="Source state"
+    {presets}
+    onPreset={applyPreset}
+    {facets}
+    bind:selected
+    {activeFilterCount}
+    onClearAll={resetFilters}
+  />
 
-    <div class="mt-3 flex flex-wrap gap-2 text-xs">
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("findings")}
-      >
-        with findings
-      </button>
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("needs-extraction")}
-      >
-        needs extraction
-      </button>
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("visual")}
-      >
-        visual tasks
-      </button>
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("rdm-clicks")}
-      >
-        RDM / clicks
-      </button>
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("human")}
-      >
-        human
-      </button>
-      <button
-        type="button"
-        class="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:border-accent hover:text-accent"
-        onclick={() => applyPreset("mouse")}
-      >
-        mouse
-      </button>
-      {#if activeFilterCount > 0}
-        <button
-          type="button"
-          class="rounded border border-slate-300 bg-slate-50 px-2 py-1 font-semibold text-slate-800 hover:border-accent hover:text-accent"
-          onclick={clearAll}
-        >
-          clear {activeFilterCount}
-        </button>
-      {/if}
-    </div>
-
-    <div class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-5">
-      {#each Object.entries(options) as [key, facetOptions] (key)}
-        <div class="min-w-0">
-          <div class="mb-1 flex items-center justify-between gap-2 text-xs">
-            <h2 class="font-semibold text-slate-700">
-              {key === "coverage" ? "Coverage" : key === "source" ? "Source level" : key === "curve" ? "Curve type" : key === "protocol" ? "Protocol" : "Species"}
-            </h2>
-            {#if selectedSet(key as FacetKey).size > 0}
-              <button
-                type="button"
-                class="text-slate-500 hover:text-accent"
-                onclick={() => clearFacet(key as FacetKey)}
-              >
-                all
-              </button>
-            {/if}
-          </div>
-          <div class="flex max-h-36 flex-wrap gap-1 overflow-y-auto pr-1">
-            {#each facetOptions as option (option.value)}
-              {@const selected = selectedSet(key as FacetKey).has(option.value)}
-              <button
-                type="button"
-                class={[
-                  "max-w-full rounded border px-2 py-0.5 text-left text-[11px]",
-                  selected
-                    ? "border-accent bg-accent text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:border-accent hover:text-accent",
-                ]}
-                onclick={() => toggleFacet(key as FacetKey, option.value)}
-              >
-                <span class="inline-block max-w-[15rem] truncate align-bottom">{option.label}</span>
-                <span class={["ml-1 font-mono", selected ? "text-white" : "text-slate-500"]}>
-                  {option.count}
-                </span>
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/each}
-    </div>
-  </div>
-
-  <div class="flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+  <div class="flex flex-col gap-2 text-body text-fg-secondary sm:flex-row sm:items-center sm:justify-between">
     <p>
-      Showing <span class="font-mono font-semibold text-slate-900">{filteredRows.length}</span>
-      of <span class="font-mono text-slate-900">{rows.length}</span> papers ·
-      <span class="font-mono text-slate-900">{fmtCount(summary.findings)}</span> findings ·
-      <span class="font-mono text-slate-900">{fmtCount(summary.modelFits)}</span> model fits ·
-      <span class="font-mono text-slate-900">{fmtCount(summary.slices)}</span> slices ·
-      <span class="font-mono text-slate-900">{fmtCount(summary.trials)}</span> trials ·
-      <span class="font-mono text-slate-900">{summary.protocols}</span> protocols
+      Showing <span class="font-mono font-semibold text-fg">{filteredRows.length}</span>
+      of <span class="font-mono text-fg">{rows.length}</span> papers ·
+      <span class="font-mono text-fg">{fmtCount(summary.findings)}</span> findings ·
+      <span class="font-mono text-fg">{fmtCount(summary.modelFits)}</span> model fits ·
+      <span class="font-mono text-fg">{fmtCount(summary.slices)}</span> slices ·
+      <span class="font-mono text-fg">{fmtCount(summary.trials)}</span> trials ·
+      <span class="font-mono text-fg">{summary.protocols}</span> protocols
     </p>
-    <p class="text-xs text-slate-500">
+    <p class="text-body-xs text-fg-muted">
       {summary.sourceLinked} source-linked paper{summary.sourceLinked === 1 ? "" : "s"}
     </p>
   </div>
 
   {#if filteredRows.length === 0}
-    <section class="rounded-md border border-slate-200 bg-white p-6 text-sm text-slate-600">
+    <section class="rounded-md border border-rule bg-surface-raised p-6 text-body text-fg-secondary">
       <p>No papers match the current filters.</p>
       {#if activeFilterCount > 0}
         <button
           type="button"
-          class="mt-3 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-800 hover:border-accent hover:text-accent"
-          onclick={clearAll}
+          class="mt-3 rounded border border-rule-strong bg-surface px-2 py-1 text-body-xs font-semibold text-fg hover:border-rule-emphasis hover:text-accent"
+          onclick={resetFilters}
         >
           Clear filters
         </button>
@@ -631,43 +494,43 @@
   {:else}
     <ul class="grid grid-cols-1 gap-3 lg:grid-cols-2">
       {#each filteredRows as row (row.id)}
-        <li class="flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-4">
+        <li class="flex min-w-0 flex-col rounded-md border border-rule bg-surface-raised p-4">
           <header class="flex min-w-0 items-start justify-between gap-3">
             <div class="min-w-0">
-              <h2 class="text-base font-semibold leading-snug">
-                <a class="text-slate-900 no-underline hover:text-accent" href={`/papers/${row.slug}`}>
+              <h2 class="text-body-lg font-semibold leading-snug">
+                <a class="text-fg no-underline hover:text-accent" href={`/papers/${row.slug}`}>
                   {row.citation}
                 </a>
               </h2>
-              <p class="mt-1 break-all font-mono text-xs text-slate-500">{row.id}</p>
+              <p class="mt-1 break-all font-mono text-mono-id text-fg-muted">{row.id}</p>
             </div>
-            <span class="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+            <span class="shrink-0 rounded bg-surface-sunken px-2 py-0.5 text-body-xs text-fg-secondary">
               {row.year}
             </span>
           </header>
 
-          <div class="mt-3 flex flex-wrap gap-1 text-[11px]">
-            <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">
+          <div class="mt-3 flex flex-wrap gap-1 text-mono-id">
+            <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">
               {coverageLabel(row.coverage_status)}
             </span>
             {#if row.lab}
-              <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{row.lab}</span>
+              <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">{row.lab}</span>
             {/if}
             {#each row.species ?? [] as species (species)}
-              <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{readable(species)}</span>
+              <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">{readable(species)}</span>
             {/each}
           </div>
 
           <div
             data-testid="paper-coverage-strip"
-            class="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+            class="mt-3 rounded-md border border-rule bg-surface p-3"
             aria-label={`${paperQuery(row)} coverage strip`}
           >
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
               <div class="xl:col-span-2">
                 <div class="mb-1 flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Coverage</span>
-                  <span class="text-[11px] text-slate-600">{coverageLabel(row.coverage_status)}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Coverage</span>
+                  <span class="text-mono-id text-fg-secondary">{coverageLabel(row.coverage_status)}</span>
                 </div>
                 <div
                   class="grid grid-cols-6 gap-1"
@@ -703,10 +566,10 @@
                 title={`${row.finding_count} extracted finding${row.finding_count === 1 ? "" : "s"}`}
               >
                 <span class="flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Findings</span>
-                  <span class="font-mono text-xs text-slate-900">{row.finding_count}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Findings</span>
+                  <span class="font-mono text-body-xs text-fg">{row.finding_count}</span>
                 </span>
-                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                <span class="mt-1 block h-1.5 rounded-full bg-surface-raised">
                   <span
                     class={["block h-1.5 rounded-full", coverageTone(row.coverage_status)]}
                     style={`width: ${stripWidth(row.finding_count, maxFindings)}`}
@@ -720,10 +583,10 @@
                 title={`${modelFitCount(row)} committed model fit${modelFitCount(row) === 1 ? "" : "s"}`}
               >
                 <span class="flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Models</span>
-                  <span class="font-mono text-xs text-slate-900">{modelFitCount(row)}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Models</span>
+                  <span class="font-mono text-body-xs text-fg">{modelFitCount(row)}</span>
                 </span>
-                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                <span class="mt-1 block h-1.5 rounded-full bg-surface-raised">
                   <span
                     class="block h-1.5 rounded-full bg-violet-500"
                     style={`width: ${stripWidth(modelFitCount(row), maxModels)}`}
@@ -737,10 +600,10 @@
                 title={`${sliceCount(row)} linked slice${sliceCount(row) === 1 ? "" : "s"} and ${datasetCount(row)} linked dataset${datasetCount(row) === 1 ? "" : "s"}`}
               >
                 <span class="flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Slices</span>
-                  <span class="font-mono text-xs text-slate-900">{sliceCount(row)}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Slices</span>
+                  <span class="font-mono text-body-xs text-fg">{sliceCount(row)}</span>
                 </span>
-                <span class="mt-1 block h-1.5 rounded-full bg-white">
+                <span class="mt-1 block h-1.5 rounded-full bg-surface-raised">
                   <span
                     class="block h-1.5 rounded-full bg-teal-500"
                     style={`width: ${stripWidth(sliceCount(row), maxSlices)}`}
@@ -750,8 +613,8 @@
 
               <div>
                 <div class="mb-1 flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Curves</span>
-                  <span class="font-mono text-xs text-slate-900">{row.curve_types?.length ?? 0}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Curves</span>
+                  <span class="font-mono text-body-xs text-fg">{row.curve_types?.length ?? 0}</span>
                 </div>
                 <div class="flex gap-1" title={valueText(row.curve_types)}>
                   {#if row.curve_types && row.curve_types.length > 0}
@@ -766,8 +629,8 @@
 
               <div>
                 <div class="mb-1 flex items-baseline justify-between gap-2">
-                  <span class="text-[11px] uppercase tracking-wide text-slate-500">Source</span>
-                  <span class="font-mono text-xs text-slate-900">{row.source_data_levels?.length ?? 0}</span>
+                  <span class="text-eyebrow uppercase text-fg-muted">Source</span>
+                  <span class="font-mono text-body-xs text-fg">{row.source_data_levels?.length ?? 0}</span>
                 </div>
                 <div class="flex gap-1" title={valueText(row.source_data_levels)}>
                   {#if row.source_data_levels && row.source_data_levels.length > 0}
@@ -782,28 +645,28 @@
             </div>
           </div>
 
-          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-700 sm:grid-cols-4">
+          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-body-xs text-fg-secondary sm:grid-cols-4">
             <div>
-              <dt class="text-slate-500">Findings</dt>
-              <dd class="font-mono font-semibold text-slate-900">{row.finding_count}</dd>
+              <dt class="text-fg-muted">Findings</dt>
+              <dd class="font-mono font-semibold text-fg">{row.finding_count}</dd>
             </div>
             <div>
-              <dt class="text-slate-500">Trials</dt>
-              <dd class="font-mono font-semibold text-slate-900">{fmtCount(row.total_n_trials)}</dd>
+              <dt class="text-fg-muted">Trials</dt>
+              <dd class="font-mono font-semibold text-fg">{fmtCount(row.total_n_trials)}</dd>
             </div>
             <div>
-              <dt class="text-slate-500">Subjects</dt>
-              <dd class="font-mono font-semibold text-slate-900">{fmtCount(subjectCount(row))}</dd>
+              <dt class="text-fg-muted">Subjects</dt>
+              <dd class="font-mono font-semibold text-fg">{fmtCount(subjectCount(row))}</dd>
             </div>
             <div>
-              <dt class="text-slate-500">Curves</dt>
+              <dt class="text-fg-muted">Curves</dt>
               <dd>{valueText(row.curve_types)}</dd>
             </div>
           </dl>
 
-          <div class="mt-3 space-y-2 text-xs text-slate-700">
+          <div class="mt-3 space-y-2 text-body-xs text-fg-secondary">
             <div>
-              <p class="font-semibold text-slate-500">Protocols</p>
+              <p class="font-semibold text-fg-muted">Protocols</p>
               {#if row.protocols && row.protocols.length > 0}
                 <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                   {#each row.protocols as protocol (protocol.protocol_id ?? protocol.name)}
@@ -819,17 +682,17 @@
                   {/each}
                 </ul>
               {:else}
-                <p class="mt-1 text-slate-500">-</p>
+                <p class="mt-1 text-fg-muted">-</p>
               {/if}
             </div>
 
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div>
-                <p class="font-semibold text-slate-500">Source levels</p>
+                <p class="font-semibold text-fg-muted">Source levels</p>
                 <p class="mt-1">{valueText(row.source_data_levels)}</p>
               </div>
               <div>
-                <p class="font-semibold text-slate-500">Slices</p>
+                <p class="font-semibold text-fg-muted">Slices</p>
                 {#if row.vertical_slices && row.vertical_slices.length > 0}
                   <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                     {#each row.vertical_slices as slice (slice.slice_id ?? slice.title)}
@@ -845,13 +708,13 @@
                     {/each}
                   </ul>
                 {:else}
-                  <p class="mt-1 text-slate-500">-</p>
+                  <p class="mt-1 text-fg-muted">-</p>
                 {/if}
               </div>
             </div>
           </div>
 
-          <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-4 text-xs">
+          <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-4 text-body-xs">
             <a class="font-semibold text-accent" href={`/papers/${row.slug}`}>Details</a>
             {#if row.doi}
               <a class="text-accent" href={`https://doi.org/${row.doi}`}>doi:{row.doi}</a>
@@ -859,14 +722,14 @@
               <a class="text-accent" href={row.url}>source</a>
             {/if}
             <a
-              class="text-slate-600 hover:text-accent"
+              class="text-fg-secondary hover:text-accent"
               download={`${row.slug}.bib`}
               href={dataHref("application/x-bibtex", row.bibtex)}
             >
               BibTeX
             </a>
             <a
-              class="text-slate-600 hover:text-accent"
+              class="text-fg-secondary hover:text-accent"
               download={`${row.slug}.ris`}
               href={dataHref("application/x-research-info-systems", row.ris)}
             >

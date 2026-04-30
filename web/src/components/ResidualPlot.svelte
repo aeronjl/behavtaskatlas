@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { chartChrome } from "../lib/encoding";
+
   type ResidualRow = {
     fit_id: string;
     variant: string;
@@ -40,6 +42,7 @@
       chartContainer.innerHTML = "";
       return;
     }
+    const chrome = chartChrome();
     const spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container" as const,
@@ -47,7 +50,7 @@
       data: { values: rows },
       layer: [
         {
-          mark: { type: "rule", color: "#94a3b8" },
+          mark: { type: "rule", color: chrome.subtleFg },
           encoding: { y: { datum: 0 } },
         },
         {
@@ -77,11 +80,11 @@
         },
       ],
       config: {
-        view: { stroke: "#cbd5e1" },
-        axis: { gridColor: "#e2e8f0", labelColor: "#334155" },
+        view: { stroke: chrome.viewStroke },
+        axis: { gridColor: chrome.gridColor, labelColor: chrome.labelColor },
         legend: {
-          labelColor: "#334155",
-          titleColor: "#0f172a",
+          labelColor: chrome.labelColor,
+          titleColor: chrome.titleColor,
           orient: "right" as const,
         },
       },
@@ -102,11 +105,11 @@
 </script>
 
 {#if rows.length === 0}
-  <p class="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500">
+  <p class="rounded-md border border-rule bg-surface-raised p-3 text-body-xs text-fg-muted">
     No residual points available.
   </p>
 {:else}
-  <div class="rounded-md border border-slate-200 bg-white p-3">
+  <div class="rounded-md border border-rule bg-surface-raised p-3">
     <div bind:this={chartContainer} class="w-full"></div>
   </div>
 {/if}

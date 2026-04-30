@@ -1,0 +1,35 @@
+---
+/**
+ * PageShell — width-controlled inner container.
+ *
+ * Most pages get their outer width from BaseLayout's `width` prop; this
+ * primitive is for re-paging an already-mounted layout (e.g. nesting a
+ * `wide` matrix inside an otherwise `content`-width article) or for
+ * mounting a width container outside of BaseLayout entirely.
+ *
+ * The `width` keys map to --container-{prose|content|wide} tokens
+ * declared in styles/global.css.
+ */
+interface Props {
+  width?: "prose" | "content" | "wide" | "full";
+  as?: "div" | "section" | "main" | "article";
+  class?: string;
+}
+
+const {
+  width = "content",
+  as: Tag = "div",
+  class: className,
+} = Astro.props as Props;
+
+const widthClass = {
+  prose: "max-w-prose",
+  content: "max-w-content",
+  wide: "max-w-wide",
+  full: "max-w-full",
+}[width];
+---
+
+<Tag class:list={["mx-auto w-full min-w-0 px-4", widthClass, className]}>
+  <slot />
+</Tag>

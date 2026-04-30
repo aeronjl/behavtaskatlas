@@ -1,0 +1,50 @@
+---
+/**
+ * DetailLayout — two-column responsive shell for detail pages.
+ *
+ * On `lg+` splits into a 3fr main column and a 1fr (≥15rem) right rail.
+ * The rail is `position: sticky` from `top-6` and `self-start` so it
+ * doesn't stretch to match the main column. On `sm`/`md` the rail
+ * collapses below the main column in DOM order.
+ *
+ *   <DetailLayout>
+ *     <Fragment slot="rail">
+ *       <DetailToc items={...} />
+ *       <Card>...meta...</Card>
+ *     </Fragment>
+ *     <PageHeader title="..." />
+ *     <Section id="analysis">...</Section>
+ *     <Section id="findings">...</Section>
+ *   </DetailLayout>
+ */
+interface Props {
+  /** Disable the lg+ sticky behavior on the rail. */
+  stickyRail?: boolean;
+  class?: string;
+}
+
+const { stickyRail = true, class: className } = Astro.props as Props;
+const hasRail = Astro.slots.has("rail");
+---
+
+<div
+  class:list={[
+    "grid grid-cols-1 gap-8",
+    hasRail ? "lg:grid-cols-[minmax(0,3fr)_minmax(16rem,1fr)]" : "",
+    className,
+  ]}
+>
+  <div class="min-w-0">
+    <slot />
+  </div>
+  {hasRail ? (
+    <aside
+      class:list={[
+        "min-w-0",
+        stickyRail ? "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:self-start" : "",
+      ]}
+    >
+      <slot name="rail" />
+    </aside>
+  ) : null}
+</div>

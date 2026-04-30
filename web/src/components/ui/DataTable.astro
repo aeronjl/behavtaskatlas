@@ -1,0 +1,85 @@
+---
+/**
+ * DataTable — bordered table shell with auto-generated header.
+ *
+ * Captures the chrome that's repeated 15+ times across the project:
+ * overflow-x-auto + rounded border + surface + bg-surface head with
+ * fg-muted uppercase labels + divide-rule body. Consumers pass the
+ * column config and render `<tr>` rows in the default slot, keeping
+ * full control over cell content (links, formatted values, conditional
+ * status pills, etc.).
+ *
+ *   <DataTable
+ *     columns={[
+ *       { label: "Variant" },
+ *       { label: "AIC", align: "right" },
+ *       { label: "Caveats" },
+ *     ]}
+ *   >
+ *     {rows.map((row) => (
+ *       <tr>
+ *         <td class="px-3 py-2 font-mono">{row.variant}</td>
+ *         <td class="px-3 py-2 text-right font-mono">{row.aic}</td>
+ *         <td class="px-3 py-2">...</td>
+ *       </tr>
+ *     ))}
+ *   </DataTable>
+ *
+ * `density="compact"` tightens the head padding for inner/nested tables.
+ */
+interface Column {
+  label: string;
+  align?: "left" | "right" | "center";
+  title?: string;
+  /** Extra Tailwind classes for this column's header cell (e.g. "w-48"). */
+  class?: string;
+}
+
+interface Props {
+  columns: Column[];
+  density?: "compact" | "md";
+  /** Layout-mode override for the wrapping div. */
+  class?: string;
+}
+
+const {
+  columns,
+  density = "md",
+  class: className,
+} = Astro.props as Props;
+
+const headPad = density === "compact" ? "px-2 py-1.5" : "px-3 py-2";
+---
+
+<div
+  class:list={[
+    "overflow-x-auto rounded-md border border-rule bg-surface-raised",
+    className,
+  ]}
+>
+  <table class="w-full text-body">
+    <thead class="bg-surface text-left text-body-xs uppercase tracking-wide text-fg-muted">
+      <tr>
+        {columns.map((col) => (
+          <th
+            class:list={[
+              headPad,
+              col.align === "right"
+                ? "text-right"
+                : col.align === "center"
+                  ? "text-center"
+                  : "text-left",
+              col.class,
+            ]}
+            title={col.title}
+          >
+            {col.label}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-rule">
+      <slot />
+    </tbody>
+  </table>
+</div>

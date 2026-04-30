@@ -1,6 +1,14 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import CoverageGapMatrix from "../components/CoverageGapMatrix.svelte";
+import Card from "../components/ui/Card.astro";
+import DataTable from "../components/ui/DataTable.astro";
+import PageHeader from "../components/ui/PageHeader.astro";
+import Section from "../components/ui/Section.astro";
+import SectionAnchorNav from "../components/ui/SectionAnchorNav.astro";
+import Stat from "../components/ui/Stat.astro";
+import StatGrid from "../components/ui/StatGrid.astro";
+import StatusPill from "../components/ui/StatusPill.astro";
 import {
   audit,
   catalog,
@@ -580,159 +588,107 @@ const headlineCounts = {
 <BaseLayout
   title="Atlas health · behavtaskatlas"
   description="Reproducibility audit, curation queue, external data blockers, model coverage roadmap, and link integrity for the atlas."
+  width="wide"
 >
-  <header class="mb-6">
-    <h1 class="text-3xl font-semibold tracking-tight">Atlas health</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-600">
-      Operational status of the atlas: pooled-vs-by-subject reconciliation,
-      open curation tasks, external data blockers, the model-coverage
-      roadmap, and internal link integrity. CI runs each check on every
-      commit; this page is the latest committed result.
-    </p>
-  </header>
+  <PageHeader
+    title="Atlas health"
+    lede="Operational status of the atlas: pooled-vs-by-subject reconciliation, open curation tasks, external data blockers, the model-coverage roadmap, and internal link integrity. CI runs each check on every commit; this page is the latest committed result."
+  />
 
-  <nav class="mb-8 -mx-4 overflow-x-auto px-4">
-    <ul class="flex flex-wrap gap-2 text-xs">
-      {sectionLinks.map((link) => (
-        <li>
-          <a
-            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 no-underline hover:border-accent hover:text-accent"
-            href={`#${link.id}`}
-          >
-            {link.label}
-          </a>
-        </li>
-      ))}
-    </ul>
-  </nav>
+  <SectionAnchorNav items={sectionLinks} />
 
-  <section class="mb-10 grid grid-cols-2 gap-3 md:grid-cols-5">
-    <a
-      href="#audit"
-      class="rounded-md border border-slate-200 bg-white p-3 no-underline hover:border-accent"
-    >
-      <p class="text-xs uppercase tracking-wide text-slate-500">Audit</p>
-      <p class={`mt-1 inline-block rounded px-2 py-0.5 text-sm font-semibold uppercase ${statusClass(headlineCounts.audit_status)}`}>
-        {headlineCounts.audit_status}
-      </p>
-    </a>
-    <a
-      href="#curation"
-      class="rounded-md border border-slate-200 bg-white p-3 no-underline hover:border-accent"
-    >
-      <p class="text-xs uppercase tracking-wide text-slate-500">Curation open</p>
-      <p class="mt-1 text-2xl font-semibold text-slate-900">
-        {headlineCounts.curation_open}
-      </p>
-    </a>
-    <a
-      href="#blockers"
-      class="rounded-md border border-slate-200 bg-white p-3 no-underline hover:border-accent"
-    >
-      <p class="text-xs uppercase tracking-wide text-slate-500">Blocker groups</p>
-      <p class="mt-1 text-2xl font-semibold text-slate-900">
-        {headlineCounts.blockers}
-      </p>
-    </a>
-    <a
-      href="#roadmap"
-      class="rounded-md border border-slate-200 bg-white p-3 no-underline hover:border-accent"
-    >
-      <p class="text-xs uppercase tracking-wide text-slate-500">Roadmap items</p>
-      <p class="mt-1 text-2xl font-semibold text-slate-900">
-        {headlineCounts.roadmap_total}
-      </p>
-    </a>
-    <a
-      href="#links"
-      class="rounded-md border border-slate-200 bg-white p-3 no-underline hover:border-accent"
-    >
-      <p class="text-xs uppercase tracking-wide text-slate-500">Link issues</p>
-      <p class="mt-1 text-2xl font-semibold text-slate-900">
-        {headlineCounts.link_issues}
-      </p>
-    </a>
-  </section>
+  <StatGrid cols={5} class="mb-10">
+    <Card href="#audit" padding="sm">
+      <p class="text-eyebrow uppercase text-fg-muted">Audit</p>
+      <span class="mt-1 inline-block">
+        <StatusPill
+          tone={
+            headlineCounts.audit_status === "ok"
+              ? "ok"
+              : headlineCounts.audit_status === "drift"
+                ? "bad"
+                : headlineCounts.audit_status === "ambiguous"
+                  ? "warn"
+                  : "neutral"
+          }
+        >
+          {headlineCounts.audit_status}
+        </StatusPill>
+      </span>
+    </Card>
+    <Stat label="Curation open" value={headlineCounts.curation_open} href="#curation" />
+    <Stat label="Blocker groups" value={headlineCounts.blockers} href="#blockers" />
+    <Stat label="Roadmap items" value={headlineCounts.roadmap_total} href="#roadmap" />
+    <Stat label="Link issues" value={headlineCounts.link_issues} href="#links" />
+  </StatGrid>
 
-  <section id="gap-matrix" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Gap matrix</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        One board for local implementation targets, external data blockers,
-        and extraction gaps. Rows are generated from the curation queue,
-        data-request records, and model-coverage roadmap.
-      </p>
-    </header>
+  <Section
+    id="gap-matrix"
+    spacing="lg"
+    title="Gap matrix"
+    description="One board for local implementation targets, external data blockers, and extraction gaps. Rows are generated from the curation queue, data-request records, and model-coverage roadmap."
+  >
     <CoverageGapMatrix client:load rows={coverageGapRows} />
-  </section>
+  </Section>
 
-  <section id="audit" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Reproducibility audit</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        For each (paper × curve type × condition) group with both a pooled
-        finding and ≥2 per-subject findings, the audit recomputes the
-        n-weighted aggregate of the subject curves and compares to the
-        pooled curve at every matching x.
-      </p>
-    </header>
-    <div class="mb-4 rounded-md border border-slate-200 bg-white p-4">
+  <Section
+    id="audit"
+    spacing="lg"
+    title="Reproducibility audit"
+    description="For each (paper × curve type × condition) group with both a pooled finding and ≥2 per-subject findings, the audit recomputes the n-weighted aggregate of the subject curves and compares to the pooled curve at every matching x."
+  >
+    <Card padding="md" class="mb-4">
       <div class="flex flex-wrap items-baseline gap-3">
-        <span class={`rounded px-2 py-0.5 text-xs uppercase ${statusClass(audit.overall_status)}`}>
+        <span class={`rounded px-2 py-0.5 text-body-xs uppercase ${statusClass(audit.overall_status)}`}>
           {audit.overall_status}
         </span>
-        <p class="text-sm text-slate-700">
+        <p class="text-body text-fg-secondary">
           {audit.n_groups_audited} group{audit.n_groups_audited === 1 ? "" : "s"} audited.
         </p>
-        <p class="text-xs text-slate-500">
+        <p class="text-body-xs text-fg-muted">
           max |diff| = {fmt(audit.overall_max_abs_diff)} (tolerance {fmt(audit.tolerance, 4)})
         </p>
-        <p class="ml-auto text-[11px] text-slate-500">
-          local: <code class="rounded bg-slate-100 px-1">uv run behavtaskatlas audit-findings</code>
+        <p class="ml-auto text-mono-id text-fg-muted">
+          local: <code class="rounded bg-surface-sunken px-1">uv run behavtaskatlas audit-findings</code>
         </p>
       </div>
-    </div>
+    </Card>
     {auditReports.length === 0 ? (
       <p class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
         No groups currently meet the audit criteria (≥1 pooled + ≥2 per-subject).
       </p>
     ) : (
-      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th class="px-3 py-2">Paper</th>
-              <th class="px-3 py-2">Curve</th>
-              <th class="px-3 py-2">Condition</th>
-              <th class="px-3 py-2 text-right">Subjects</th>
-              <th class="px-3 py-2 text-right">x overlap</th>
-              <th class="px-3 py-2 text-right">max |diff|</th>
-              <th class="px-3 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            {auditReports.map((r) => (
-              <tr>
-                <td class="px-3 py-2">
-                  <a class="font-mono text-xs" href={`/papers/${slugForId(r.paper_id)}`}>
-                    {r.paper_id}
-                  </a>
-                </td>
-                <td class="px-3 py-2 text-xs">{r.curve_type}</td>
-                <td class="px-3 py-2 text-xs text-slate-600">{r.condition || "—"}</td>
-                <td class="px-3 py-2 text-right font-mono">{r.n_subjects ?? "—"}</td>
-                <td class="px-3 py-2 text-right font-mono">{r.n_x_overlap ?? "—"}</td>
-                <td class="px-3 py-2 text-right font-mono">{fmt(r.max_abs_diff)}</td>
-                <td class="px-3 py-2">
-                  <span class={`rounded px-2 py-0.5 text-xs uppercase ${statusClass(r.status)}`}>
-                    {r.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={[
+          { label: "Paper" },
+          { label: "Curve" },
+          { label: "Condition" },
+          { label: "Subjects", align: "right" },
+          { label: "x overlap", align: "right" },
+          { label: "max |diff|", align: "right" },
+          { label: "Status" },
+        ]}
+      >
+        {auditReports.map((r) => (
+          <tr>
+            <td class="px-3 py-2">
+              <a class="font-mono text-mono-id" href={`/papers/${slugForId(r.paper_id)}`}>
+                {r.paper_id}
+              </a>
+            </td>
+            <td class="px-3 py-2 text-body-xs">{r.curve_type}</td>
+            <td class="px-3 py-2 text-body-xs text-fg-secondary">{r.condition || "—"}</td>
+            <td class="px-3 py-2 text-right font-mono">{r.n_subjects ?? "—"}</td>
+            <td class="px-3 py-2 text-right font-mono">{r.n_x_overlap ?? "—"}</td>
+            <td class="px-3 py-2 text-right font-mono">{fmt(r.max_abs_diff)}</td>
+            <td class="px-3 py-2">
+              <span class={`rounded px-2 py-0.5 text-body-xs uppercase ${statusClass(r.status)}`}>
+                {r.status}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </DataTable>
     )}
     <div class="mt-4 space-y-3">
       {auditReports
@@ -768,16 +724,14 @@ const headlineCounts = {
           </details>
         ))}
     </div>
-  </section>
+  </Section>
 
-  <section id="curation" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Curation queue</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        {curationCounts.open ?? 0} open of {curationCounts.items ?? 0} total · generated {curationQueue.generated_at}.
-        Items come from the relationship-graph QA pass: orphan records, missing reciprocal links, coverage gaps.
-      </p>
-    </header>
+  <Section
+    id="curation"
+    spacing="lg"
+    title="Curation queue"
+    description={`${curationCounts.open ?? 0} open of ${curationCounts.items ?? 0} total · generated ${curationQueue.generated_at}. Items come from the relationship-graph QA pass: orphan records, missing reciprocal links, coverage gaps.`}
+  >
     {curationItems.length === 0 ? (
       <p class="rounded-md border border-ok bg-ok-soft p-4 text-sm text-ok">
         Curation queue is empty in the current commit.
@@ -785,28 +739,28 @@ const headlineCounts = {
     ) : (
       <>
         <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div class="rounded-md border border-slate-200 bg-white p-4">
-            <h3 class="mb-2 text-sm font-semibold text-slate-700">By priority</h3>
-            <ul class="space-y-1 text-sm">
+          <Card padding="md">
+            <h3 class="mb-2 text-h3 text-fg-secondary">By priority</h3>
+            <ul class="space-y-1 text-body">
               {Object.entries(priorityCounts).map(([k, v]) => (
                 <li class="flex justify-between">
-                  <span class="text-slate-700">{k}</span>
-                  <span class="font-mono text-slate-900">{v}</span>
+                  <span class="text-fg-secondary">{k}</span>
+                  <span class="font-mono text-fg">{v}</span>
                 </li>
               ))}
             </ul>
-          </div>
-          <div class="rounded-md border border-slate-200 bg-white p-4">
-            <h3 class="mb-2 text-sm font-semibold text-slate-700">By action type</h3>
-            <ul class="space-y-1 text-sm">
+          </Card>
+          <Card padding="md">
+            <h3 class="mb-2 text-h3 text-fg-secondary">By action type</h3>
+            <ul class="space-y-1 text-body">
               {Object.entries(actionCounts).map(([k, v]) => (
                 <li class="flex justify-between">
-                  <span class="text-slate-700">{k}</span>
-                  <span class="font-mono text-slate-900">{v}</span>
+                  <span class="text-fg-secondary">{k}</span>
+                  <span class="font-mono text-fg">{v}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         </div>
         {curationGrouped.map((group) => (
           <div class="mb-6">
@@ -842,43 +796,37 @@ const headlineCounts = {
         ))}
       </>
     )}
-  </section>
+  </Section>
 
-  <section id="blockers" class="mb-12 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">External data blockers</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Roadmap rows that cannot be closed by another local fit or adapter
-        pass — the missing source files have to be requested or located.
-        Tracked separately so proxy-backed model wins remain visible.
-        Export: <a class="text-accent" href="/data_requests.csv">data_requests.csv</a>.
-      </p>
-    </header>
+  <Section
+    id="blockers"
+    spacing="lg"
+    title="External data blockers"
+  >
+    <Fragment slot="action">
+      <a class="text-body-xs text-accent" href="/data_requests.csv">data_requests.csv</a>
+    </Fragment>
+    <p class="mb-4 max-w-prose text-body text-fg-secondary">
+      Roadmap rows that cannot be closed by another local fit or adapter
+      pass — the missing source files have to be requested or located.
+      Tracked separately so proxy-backed model wins remain visible.
+    </p>
 
-    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Blocker groups</p>
-        <p class="mt-1 text-2xl font-semibold">{blockerGroups.length}</p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Roadmap rows</p>
-        <p class="mt-1 text-2xl font-semibold">{blockedItems.length}</p>
-        <p class="mt-1 text-[11px] text-slate-500">high priority {blockedPriorityHigh}</p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Findings affected</p>
-        <p class="mt-1 text-2xl font-semibold">{affectedFindingCount}</p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Active requests</p>
-        <p class="mt-1 text-2xl font-semibold">{activeRequestCount}</p>
-        <p class="mt-1 text-[11px] text-slate-500">ready {readyRequestCount}</p>
-      </div>
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <p class="text-xs uppercase text-slate-500">Follow-up due</p>
-        <p class="mt-1 text-2xl font-semibold">{followUpDueCount}</p>
-      </div>
-    </div>
+    <StatGrid cols={5} class="mb-6">
+      <Stat label="Blocker groups" value={blockerGroups.length} />
+      <Stat
+        label="Roadmap rows"
+        value={blockedItems.length}
+        hint={`high priority ${blockedPriorityHigh}`}
+      />
+      <Stat label="Findings affected" value={affectedFindingCount} />
+      <Stat
+        label="Active requests"
+        value={activeRequestCount}
+        hint={`ready ${readyRequestCount}`}
+      />
+      <Stat label="Follow-up due" value={followUpDueCount} />
+    </StatGrid>
 
     {requestQueueGroups.length > 0 ? (
       <div class="mb-6">
@@ -953,16 +901,16 @@ const headlineCounts = {
     ) : null}
 
     {blockerGroups.length === 0 ? (
-      <p class="rounded-md border border-ok bg-ok-soft p-4 text-sm text-ok">
+      <Card padding="md" surface="ok" border="tinted" class="text-body text-ok">
         No external data blockers in the current roadmap.
-      </p>
+      </Card>
     ) : (
       <div class="space-y-4">
         {blockerGroups.map((group) => {
           const request = requestForGroup(group);
           return (
-            <article class="rounded-md border border-slate-200 bg-white">
-              <header class="border-b border-slate-200 p-4">
+            <Card padding="none">
+              <header class="border-b border-rule p-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p class="text-xs uppercase tracking-wide text-slate-500">
@@ -1121,10 +1069,10 @@ const headlineCounts = {
                   ) : null}
                 </aside>
               </div>
-              <div class="border-t border-slate-200">
+              <div class="border-t border-rule">
                 <div class="max-h-72 overflow-auto">
-                  <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                  <table class="w-full text-body">
+                    <thead class="bg-surface text-left text-body-xs uppercase text-fg-muted">
                       <tr>
                         <th class="px-3 py-2">Rank</th>
                         <th class="px-3 py-2">Finding</th>
@@ -1133,11 +1081,11 @@ const headlineCounts = {
                         <th class="px-3 py-2">Impact</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-rule">
                       {group.items.map((item) => (
                         <tr>
-                          <td class="px-3 py-2 font-mono text-xs">{item.rank}</td>
-                          <td class="px-3 py-2 font-mono text-[11px]">
+                          <td class="px-3 py-2 font-mono text-body-xs">{item.rank}</td>
+                          <td class="px-3 py-2 font-mono text-mono-id">
                             {item.finding_id ? (
                               <a href={hrefForFinding(item.finding_id)}>
                                 {compactId(item.finding_id)}
@@ -1146,51 +1094,42 @@ const headlineCounts = {
                               compactId(item.target_id)
                             )}
                           </td>
-                          <td class="px-3 py-2 text-xs text-slate-600">
+                          <td class="px-3 py-2 text-body-xs text-fg-secondary">
                             {label(item.curve_type)}
                           </td>
-                          <td class="px-3 py-2 text-xs text-slate-600">
+                          <td class="px-3 py-2 text-body-xs text-fg-secondary">
                             {label(item.comparison_scope)}
                           </td>
-                          <td class="px-3 py-2 text-xs text-slate-600">{item.impact}</td>
+                          <td class="px-3 py-2 text-body-xs text-fg-secondary">{item.impact}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-            </article>
+            </Card>
           );
         })}
       </div>
     )}
-  </section>
+  </Section>
 
-  <section id="roadmap" class="mb-12 scroll-mt-20">
-    <header class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-tight">Coverage roadmap</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-600">
-          Ranked from coverage gaps, comparison-scope warnings, caveats, and
-          near-miss slice capabilities. Top {topRoadmapItems.length} shown;
-          full export: <a class="text-accent" href="/model_roadmap.csv">model_roadmap.csv</a>.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2 text-xs">
-        <span class="rounded bg-warn-soft px-2 py-1 text-warn">
-          high {roadmap.counts?.by_priority?.high ?? 0}
-        </span>
-        <span class="rounded bg-accent-soft px-2 py-1 text-accent">
-          medium {roadmap.counts?.by_priority?.medium ?? 0}
-        </span>
-        <span class="rounded bg-slate-100 px-2 py-1 text-slate-600">
-          low {roadmap.counts?.by_priority?.low ?? 0}
-        </span>
-        <span class="rounded bg-bad-soft px-2 py-1 text-bad">
+  <Section
+    id="roadmap"
+    spacing="lg"
+    title="Coverage roadmap"
+    description={`Ranked from coverage gaps, comparison-scope warnings, caveats, and near-miss slice capabilities. Top ${topRoadmapItems.length} shown; full export: model_roadmap.csv.`}
+  >
+    <Fragment slot="action">
+      <div class="flex flex-wrap gap-2">
+        <StatusPill tone="warn">high {roadmap.counts?.by_priority?.high ?? 0}</StatusPill>
+        <StatusPill tone="accent">medium {roadmap.counts?.by_priority?.medium ?? 0}</StatusPill>
+        <StatusPill tone="neutral">low {roadmap.counts?.by_priority?.low ?? 0}</StatusPill>
+        <StatusPill tone="bad">
           blocked {roadmap.counts?.by_status?.blocked_external_data ?? 0}
-        </span>
+        </StatusPill>
       </div>
-    </header>
+    </Fragment>
     <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -1239,16 +1178,14 @@ const headlineCounts = {
         </tbody>
       </table>
     </div>
-  </section>
+  </Section>
 
-  <section id="links" class="mb-8 scroll-mt-20">
-    <header class="mb-3">
-      <h2 class="text-xl font-semibold tracking-tight">Link integrity</h2>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
-        Internal links checked against the set of generated routes (search,
-        graph, curation queue, finding provenance, model selection).
-      </p>
-    </header>
+  <Section
+    id="links"
+    spacing="md"
+    title="Link integrity"
+    description="Internal links checked against the set of generated routes (search, graph, curation queue, finding provenance, model selection)."
+  >
     <div class="mb-4 rounded-md border border-slate-200 bg-white p-4">
       <div class="flex flex-wrap items-baseline gap-3">
         <span class={`rounded px-2 py-0.5 text-xs uppercase ${statusClass(linkIntegrity.overall_status)}`}>
@@ -1263,30 +1200,25 @@ const headlineCounts = {
       </div>
     </div>
     {linkIssues.length === 0 ? (
-      <p class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <Card padding="md" class="text-body text-fg-secondary">
         No missing internal routes detected.
-      </p>
+      </Card>
     ) : (
-      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th class="px-3 py-2">Source</th>
-              <th class="px-3 py-2">Href</th>
-              <th class="px-3 py-2">Issue</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            {linkIssues.map((issue) => (
-              <tr>
-                <td class="px-3 py-2 font-mono text-[11px]">{issue.source}</td>
-                <td class="px-3 py-2 font-mono text-[11px]">{issue.href}</td>
-                <td class="px-3 py-2 text-xs text-slate-700">{issue.message}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={[
+          { label: "Source" },
+          { label: "Href" },
+          { label: "Issue" },
+        ]}
+      >
+        {linkIssues.map((issue) => (
+          <tr>
+            <td class="px-3 py-2 font-mono text-mono-id">{issue.source}</td>
+            <td class="px-3 py-2 font-mono text-mono-id">{issue.href}</td>
+            <td class="px-3 py-2 text-body-xs text-fg-secondary">{issue.message}</td>
+          </tr>
+        ))}
+      </DataTable>
     )}
-  </section>
+  </Section>
 </BaseLayout>

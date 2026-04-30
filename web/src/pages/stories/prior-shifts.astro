@@ -3,6 +3,10 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import Term from "../../components/Term.astro";
+import Card from "../../components/ui/Card.astro";
+import DataTable from "../../components/ui/DataTable.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import Section from "../../components/ui/Section.astro";
 import {
   comparisons,
   findings as findingsIndex,
@@ -165,6 +169,7 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
 <BaseLayout
   title="Prior conditioning shifts the psychometric · behavtaskatlas"
   description="Cross-species story: do prior probabilities shift only the bias (μ) of the psychometric, or do they also change the slope (σ)? Mouse blocks (IBL) and human trial-cues (Walsh) tested side by side."
+  width="content"
 >
   <Breadcrumbs
     crumbs={[
@@ -173,12 +178,11 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
     ]}
   />
 
-  <header class="mb-10 max-w-3xl">
-    <p class="text-xs uppercase tracking-wide text-slate-500">Story</p>
-    <h1 class="mt-1 text-3xl">
-      Prior conditioning shifts the psychometric, not the slope
-    </h1>
-    <p class="mt-3 text-base text-slate-700">
+  <PageHeader
+    eyebrow="Story"
+    title="Prior conditioning shifts the psychometric, not the slope"
+  >
+    <Fragment slot="lede">
       A textbook prediction in perceptual decision-making: telling a subject
       that one option is more likely should bias them toward it (
       <Term define="psychometric bias — the x-value where P(right) = 50%, in stimulus units">μ</Term>
@@ -190,127 +194,115 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
       cues. They use different mechanics, but they make the same
       prediction. The atlas's canonical psychometric axis lets us read
       both off side by side.
-    </p>
-  </header>
+    </Fragment>
+  </PageHeader>
 
   {!haveData ? (
-    <p class="rounded-md border border-warn bg-warn-soft p-4 text-sm text-warn">
+    <Card padding="md" surface="warn" border="tinted" class="text-body text-warn">
       One or both source comparisons (<code>comparison.ibl-prior-blocks</code>,
       {" "}<code>comparison.walsh-prior-cue</code>) are not present in the
       current build. Re-run <code>behavtaskatlas site-index</code> after
       adding the IBL and Walsh slices.
-    </p>
+    </Card>
   ) : null}
 
   {cases.map((c) => (
-    <section id={c.id} class="mb-12 scroll-mt-20">
-      <header class="mb-4">
-        <p class="text-xs uppercase tracking-wide text-accent">{c.species}</p>
-        <h2 class="mt-1 text-xl">{c.paper}</h2>
-        <p class="mt-2 max-w-3xl text-sm text-slate-700">
-          {c.description} The reference here is {c.referenceLabel}; deltas
-          report the bias and slope change relative to it.
-        </p>
-      </header>
-
+    <Section
+      id={c.id}
+      spacing="lg"
+      eyebrow={c.species}
+      title={c.paper}
+      description={`${c.description} The reference here is ${c.referenceLabel}; deltas report the bias and slope change relative to it.`}
+    >
       {c.entries.length > 0 ? (
-        <article class="rounded-md border border-slate-200 bg-white p-4">
+        <Card padding="md">
           <MiniFindingsChart
             client:visible
             findings={c.entries}
             colorBy="condition"
             height={260}
           />
-        </article>
+        </Card>
       ) : null}
 
       {c.deltas.length > 0 ? (
         <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
-          <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
-            <table class="w-full text-xs">
-              <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th class="px-3 py-2">Condition</th>
-                  <th class="px-3 py-2 text-right" title="Trial count for this condition">n</th>
-                  <th class="px-3 py-2 text-right">μ (bias)</th>
-                  <th class="px-3 py-2 text-right">σ (slope)</th>
-                  <th class="px-3 py-2 text-right">Δμ</th>
-                  <th class="px-3 py-2 text-right">Δσ</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200">
-                {c.deltas.map((row) => (
-                  <tr class={row.reference ? "bg-slate-50" : ""}>
-                    <td class="px-3 py-2">
-                      <a
-                        class="font-mono text-[11px]"
-                        href={hrefForFinding(row.finding_id)}
-                      >
-                        {row.label}
-                      </a>
-                      {row.reference ? (
-                        <span class="ml-2 text-[10px] text-slate-500">(reference)</span>
-                      ) : null}
-                    </td>
-                    <td class="px-3 py-2 text-right font-mono">
-                      {row.n_trials !== null ? row.n_trials.toLocaleString() : "—"}
-                    </td>
-                    <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
-                    <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
-                    <td class="px-3 py-2 text-right font-mono">
-                      {row.reference ? "—" : fmt(row.delta_mu)}
-                    </td>
-                    <td class="px-3 py-2 text-right font-mono">
-                      {row.reference ? "—" : fmt(row.delta_sigma)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <aside class="rounded-md border border-slate-200 bg-white p-4 text-sm">
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Effect size
-            </h3>
+          <DataTable
+            density="compact"
+            columns={[
+              { label: "Condition" },
+              { label: "n", align: "right", title: "Trial count for this condition" },
+              { label: "μ (bias)", align: "right" },
+              { label: "σ (slope)", align: "right" },
+              { label: "Δμ", align: "right" },
+              { label: "Δσ", align: "right" },
+            ]}
+          >
+            {c.deltas.map((row) => (
+              <tr class={row.reference ? "bg-surface" : ""}>
+                <td class="px-3 py-2">
+                  <a
+                    class="font-mono text-mono-id"
+                    href={hrefForFinding(row.finding_id)}
+                  >
+                    {row.label}
+                  </a>
+                  {row.reference ? (
+                    <span class="ml-2 text-mono-id text-fg-muted">(reference)</span>
+                  ) : null}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {row.n_trials !== null ? row.n_trials.toLocaleString() : "—"}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(row.mu)}</td>
+                <td class="px-3 py-2 text-right font-mono">{fmt(row.sigma)}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {row.reference ? "—" : fmt(row.delta_mu)}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {row.reference ? "—" : fmt(row.delta_sigma)}
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+          <Card as="aside" padding="md" class="text-body">
+            <h3 class="text-eyebrow uppercase text-fg-muted">Effect size</h3>
             <dl class="mt-2 space-y-2">
               <div>
-                <dt class="text-xs text-slate-500">max |Δμ|</dt>
-                <dd class="mt-0.5 font-mono text-base">{fmt(c.maxDeltaMu)}</dd>
+                <dt class="text-body-xs text-fg-muted">max |Δμ|</dt>
+                <dd class="mt-0.5 font-mono text-body-lg">{fmt(c.maxDeltaMu)}</dd>
               </div>
               <div>
-                <dt class="text-xs text-slate-500">max |Δσ|</dt>
-                <dd class="mt-0.5 font-mono text-base">{fmt(c.maxDeltaSigma)}</dd>
+                <dt class="text-body-xs text-fg-muted">max |Δσ|</dt>
+                <dd class="mt-0.5 font-mono text-body-lg">{fmt(c.maxDeltaSigma)}</dd>
               </div>
               <div>
-                <dt class="text-xs text-slate-500">|Δμ| / |Δσ|</dt>
-                <dd class="mt-0.5 font-mono text-base">
+                <dt class="text-body-xs text-fg-muted">|Δμ| / |Δσ|</dt>
+                <dd class="mt-0.5 font-mono text-body-lg">
                   {ratio(c.maxDeltaMu, c.maxDeltaSigma)}
                 </dd>
               </div>
             </dl>
-            <p class="mt-3 text-xs text-slate-500">
+            <p class="mt-3 text-body-xs text-fg-muted">
               The textbook bias-only prediction is large |Δμ|, ≈0 |Δσ|. The
               ratio quantifies it: ratios &gt; 1 mean μ moves more than σ.
             </p>
             {c.comparisonId ? (
-              <p class="mt-3 text-xs">
+              <p class="mt-3 text-body-xs">
                 <a class="text-accent" href={`/compare#${c.comparisonId}`}>
                   See on /compare →
                 </a>
               </p>
             ) : null}
-          </aside>
+          </Card>
         </div>
       ) : null}
-    </section>
+    </Section>
   ))}
 
   {haveData ? (
-    <section class="mb-10 max-w-3xl">
-      <header class="mb-3">
-        <h2 class="text-xl">The takeaway</h2>
-      </header>
-      <p class="text-base text-slate-700">
+    <Section spacing="lg" title="The takeaway">
+      <p class="text-body-lg text-fg-secondary">
         Both species behave like the classical model predicts:
         <Term define="psychometric bias">μ</Term>
         moves substantially with the prior, and
@@ -324,7 +316,7 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
         <Term define="psychometric slope">σ</Term>
         stays roughly fixed at each species' baseline.
       </p>
-      <p class="mt-3 text-base text-slate-700">
+      <p class="mt-3 text-body-lg text-fg-secondary">
         The atlas's job here is to make this readable in one glance. The
         underlying findings are 4-parameter logistic fits run at build
         time on the harmonized canonical-trial CSVs from the IBL and
@@ -335,14 +327,11 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
         </a>
         {" "}with the in-browser scipy fitter enabled.
       </p>
-    </section>
+    </Section>
   ) : null}
 
-  <section class="mb-10 max-w-3xl">
-    <header class="mb-3">
-      <h2 class="text-xl">Caveats</h2>
-    </header>
-    <ul class="list-disc space-y-2 pl-5 text-sm text-slate-700">
+  <Section spacing="lg" title="Caveats">
+    <ul class="list-disc space-y-2 pl-5 text-body text-fg-secondary">
       <li>
         IBL biased blocks and Walsh trial-cues operate at very different
         timescales. The atlas does not claim the underlying neural
@@ -368,5 +357,5 @@ const haveData = mouseEntries.length > 0 && humanEntries.length > 0;
         <Term define="change in σ relative to the reference condition">Δσ</Term>.
       </li>
     </ul>
-  </section>
+  </Section>
 </BaseLayout>

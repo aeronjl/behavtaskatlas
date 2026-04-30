@@ -1,0 +1,52 @@
+---
+/**
+ * DetailToc — sticky-rail table of contents for in-page anchors.
+ *
+ *   <DetailToc items={[
+ *     { id: "analysis", label: "Run in your browser" },
+ *     { id: "findings", label: "Findings extracted" },
+ *   ]} />
+ *
+ * Items with `count` get a faint trailing badge. Designed to live
+ * inside DetailLayout's `rail` slot.
+ */
+interface Item {
+  id: string;
+  label: string;
+  count?: number;
+}
+
+interface Props {
+  items: Item[];
+  title?: string;
+  class?: string;
+}
+
+const {
+  items,
+  title = "On this page",
+  class: className,
+} = Astro.props as Props;
+---
+
+<nav
+  class:list={["mb-4", className]}
+  aria-label={title}
+>
+  <p class="mb-2 text-eyebrow uppercase text-fg-muted">{title}</p>
+  <ul class="space-y-1.5 border-l border-rule pl-3 text-body-xs">
+    {items.map((item) => (
+      <li>
+        <a
+          href={`#${item.id}`}
+          class="block text-fg-secondary no-underline hover:text-accent"
+        >
+          <span>{item.label}</span>
+          {item.count !== undefined ? (
+            <span class="ml-1 text-fg-muted">({item.count})</span>
+          ) : null}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
