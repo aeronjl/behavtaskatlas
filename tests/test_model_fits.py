@@ -2,6 +2,7 @@ import csv
 import json
 from datetime import date
 
+import numpy as np
 import pytest
 
 from behavtaskatlas.model_fits import clicks as clicks_module
@@ -182,10 +183,7 @@ def test_bernoulli_saturated_fits_per_condition_hit_rates() -> None:
     assert [p["y"] for p in result["predictions"]] == pytest.approx([0.2, 0.5, 0.9])
 
 
-def test_click_summary_baselines_fit_per_subject_trials(
-    tmp_path, monkeypatch
-) -> None:
-    trials_path = tmp_path / "trials.csv"
+def _demo_click_rows() -> list[dict[str, str]]:
     rows = []
     for choice in ["left", "left", "left", "left"]:
         rows.append(
@@ -232,6 +230,12 @@ def test_click_summary_baselines_fit_per_subject_trials(
                 ),
             }
         )
+    return rows
+
+
+def _write_demo_click_trials(
+    trials_path, rows: list[dict[str, str]]
+) -> None:
     with trials_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
@@ -245,6 +249,48 @@ def test_click_summary_baselines_fit_per_subject_trials(
         writer.writeheader()
         writer.writerows(rows)
 
+
+def _write_demo_compact_click_trials(
+    compact_path, rows: list[dict[str, str]]
+) -> None:
+    subject_labels = ["R1"]
+    subject_code = []
+    stimulus_values = []
+    choices = []
+    durations = []
+    right_offsets = [0]
+    left_offsets = [0]
+    right_times_all = []
+    left_times_all = []
+    for row in rows:
+        task_variables = json.loads(row["task_variables_json"])
+        right_times = [float(value) for value in task_variables["right_click_times"]]
+        left_times = [float(value) for value in task_variables["left_click_times"]]
+        subject_code.append(0)
+        stimulus_values.append(float(row["stimulus_value"]))
+        choices.append(1 if row["choice"] == "right" else 0)
+        durations.append(float(task_variables["stimulus_duration"]))
+        right_times_all.extend(right_times)
+        left_times_all.extend(left_times)
+        right_offsets.append(len(right_times_all))
+        left_offsets.append(len(left_times_all))
+    np.savez_compressed(
+        compact_path,
+        schema_version=np.array(["0.1.0"]),
+        source_path=np.array(["test"]),
+        subject_labels=np.asarray(subject_labels, dtype=str),
+        subject_code=np.asarray(subject_code, dtype=np.int16),
+        stimulus_values=np.asarray(stimulus_values, dtype=np.float64),
+        choices=np.asarray(choices, dtype=np.int8),
+        durations=np.asarray(durations, dtype=np.float64),
+        right_offsets=np.asarray(right_offsets, dtype=np.int64),
+        left_offsets=np.asarray(left_offsets, dtype=np.int64),
+        right_times=np.asarray(right_times_all, dtype=np.float64),
+        left_times=np.asarray(left_times_all, dtype=np.float64),
+    )
+
+
+def _demo_click_finding() -> Finding:
     finding = _yes_no_finding(
         [
             CurvePoint(x=-2.0, n=4, y=0.0),
@@ -269,6 +315,17 @@ def test_click_summary_baselines_fit_per_subject_trials(
             ),
         }
     )
+    return finding
+
+
+def test_click_summary_baselines_fit_per_subject_trials(
+    tmp_path, monkeypatch
+) -> None:
+    trials_path = tmp_path / "trials.csv"
+    rows = _demo_click_rows()
+    _write_demo_click_trials(trials_path, rows)
+
+    finding = _demo_click_finding()
 
     monkeypatch.setattr(clicks_module, "SLICE_TRIALS_PATH", trials_path)
     clicks_module._TRIAL_CACHE.clear()
@@ -284,6 +341,49 @@ def test_click_summary_baselines_fit_per_subject_trials(
     assert logistic["quality"]["aic"] < rate_null["quality"]["aic"]
     predictions = [point["y"] for point in logistic["predictions"]]
     assert predictions == sorted(predictions)
+
+
+def test_click_forwards_use_compact_cache_when_trials_csv_missing(
+    tmp_path, monkeypatch
+) -> None:
+    rows = _demo_click_rows()
+    trials_path = tmp_path / "trials.csv"
+    compact_path = tmp_path / "trials_compact.npz"
+    _write_demo_click_trials(trials_path, rows)
+    _write_demo_compact_click_trials(compact_path, rows)
+    finding = _demo_click_finding()
+    leaky_params = {
+        "input_gain": 1.4,
+        "leak": 0.3,
+        "noise_input": 0.4,
+        "noise_accumulator": 0.2,
+        "bias": 0.0,
+        "lapse": 0.05,
+    }
+    logistic_params = {
+        "sensitivity": 1.2,
+        "bias": 0.0,
+        "lapse": 0.05,
+    }
+
+    monkeypatch.setattr(clicks_module, "SLICE_TRIALS_PATH", trials_path)
+    monkeypatch.setattr(clicks_module, "COMPACT_CLICK_TRIALS_PATH", compact_path)
+    clicks_module._TRIAL_CACHE.clear()
+    raw_leaky = clicks_module.forward(leaky_params, finding)
+    raw_logistic = clicks_module.forward_count_logistic(logistic_params, finding)
+
+    monkeypatch.setattr(clicks_module, "SLICE_TRIALS_PATH", tmp_path / "missing.csv")
+    clicks_module._TRIAL_CACHE.clear()
+    compact_leaky = clicks_module.forward(leaky_params, finding)
+    compact_logistic = clicks_module.forward_count_logistic(logistic_params, finding)
+
+    assert [point.y for point in compact_leaky] == pytest.approx(
+        [point.y for point in raw_leaky]
+    )
+    assert [point.y for point in compact_logistic] == pytest.approx(
+        [point.y for point in raw_logistic]
+    )
+    assert [point.y for point in compact_leaky] != [0.5, 0.5, 0.5]
 
 
 def test_chance_floor_accuracy_logistic_fits_strength_curve() -> None:

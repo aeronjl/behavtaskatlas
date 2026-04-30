@@ -2,6 +2,15 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:03:33 BST - Made click model audits clean-checkout reproducible
+
+Added a tracked compact Brunton click-trial cache and wired click forward
+evaluation to use it when the ignored full `derived/auditory_clicks/trials.csv`
+is absent. This fixed the GitHub-only audit drift where click-summary forwards
+collapsed to chance in clean checkouts. Immediate MVP implication: release CI
+can still forward-evaluate timing-sensitive click models without committing the
+large generated trial CSV.
+
 ## 2026-04-30 12:52:28 BST - Made Odoemene a non-blocking release follow-up
 
 Marked the Odoemene visual evidence accumulation slice as adapter-ready

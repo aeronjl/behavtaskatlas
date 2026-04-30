@@ -16,9 +16,11 @@ input_gain (B), leak (λ), noise_input (σ_a), noise_accumulator (σ_s),
 bias (b), lapse (λ_lapse).
 
 Fits and forward both read the slice-level concatenated `trials.csv`
-(produced by `clicks-aggregate`) and filter by subject_id. Forward at
-audit time reproduces the predictions if the trial table is unchanged;
-the model audit therefore catches any harmonization drift.
+(produced by `clicks-aggregate`) and filter by subject_id. If that
+ignored derived artifact is unavailable, forward evaluation falls back
+to a tracked compact trial cache with the same click-timing fields. The
+model audit therefore still catches harmonization drift in clean CI
+checkouts.
 """
 
 from __future__ import annotations
@@ -57,6 +59,7 @@ PARAM_ORDER = (
 COUNT_LOGISTIC_PARAM_ORDER = ("sensitivity", "bias", "lapse")
 CHOICE_RATE_NULL_PARAM_ORDER = ("response_rate",)
 SLICE_TRIALS_PATH = Path("derived/auditory_clicks/trials.csv")
+COMPACT_CLICK_TRIALS_PATH = Path("model_inputs/auditory_clicks/trials_compact.npz")
 
 
 def _load_clicks(
@@ -110,6 +113,50 @@ def _load_clicks(
         "right_times": right_times,
         "left_times": left_times,
         "n_trials": n,
+    }
+
+
+def _load_compact_clicks(
+    compact_path: Path, subject_id: str | None
+) -> dict[str, Any]:
+    with np.load(compact_path, allow_pickle=False) as payload:
+        subject_labels = [str(value) for value in payload["subject_labels"]]
+        subject_codes = payload["subject_code"].astype(np.int64, copy=False)
+        if subject_id is None:
+            row_indices = np.arange(subject_codes.size)
+        else:
+            normalized_subject_id = subject_id.upper()
+            label_by_id = {label.upper(): i for i, label in enumerate(subject_labels)}
+            if normalized_subject_id not in label_by_id:
+                row_indices = np.array([], dtype=np.int64)
+            else:
+                code = label_by_id[normalized_subject_id]
+                row_indices = np.flatnonzero(subject_codes == code)
+
+        stim_values = payload["stimulus_values"][row_indices].astype(float, copy=True)
+        choices = payload["choices"][row_indices].astype(np.int8, copy=True)
+        durations = payload["durations"][row_indices].astype(float, copy=True)
+        right_offsets = payload["right_offsets"].astype(np.int64, copy=False)
+        left_offsets = payload["left_offsets"].astype(np.int64, copy=False)
+        right_times_all = payload["right_times"].astype(float, copy=False)
+        left_times_all = payload["left_times"].astype(float, copy=False)
+
+        right_times = [
+            right_times_all[right_offsets[i] : right_offsets[i + 1]].copy()
+            for i in row_indices
+        ]
+        left_times = [
+            left_times_all[left_offsets[i] : left_offsets[i + 1]].copy()
+            for i in row_indices
+        ]
+
+    return {
+        "stimulus_values": stim_values,
+        "choices": choices,
+        "durations": durations,
+        "right_times": right_times,
+        "left_times": left_times,
+        "n_trials": int(row_indices.size),
     }
 
 
@@ -201,12 +248,18 @@ _TRIAL_CACHE: dict[tuple[str, str | None], dict[str, Any]] = {}
 
 
 def _load_cached(subject_id: str | None) -> dict[str, Any] | None:
-    key = (str(SLICE_TRIALS_PATH), subject_id)
+    if SLICE_TRIALS_PATH.exists():
+        source_path = SLICE_TRIALS_PATH
+        loader = _load_clicks
+    elif COMPACT_CLICK_TRIALS_PATH.exists():
+        source_path = COMPACT_CLICK_TRIALS_PATH
+        loader = _load_compact_clicks
+    else:
+        return None
+    key = (str(source_path), subject_id)
     if key in _TRIAL_CACHE:
         return _TRIAL_CACHE[key]
-    if not SLICE_TRIALS_PATH.exists():
-        return None
-    data = _load_clicks(SLICE_TRIALS_PATH, subject_id)
+    data = loader(source_path, subject_id)
     _TRIAL_CACHE[key] = data
     return data
 
