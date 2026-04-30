@@ -2,6 +2,16 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 13:45:26 BST - Classified zero-finding paper gaps
+
+The ten curated papers without standardized findings split into two gap types:
+five literature/protocol records still need source-trial access or author
+requests, while five already have data-linked slice artifacts but need
+promotion from slice summaries into curated `Finding` YAML. Immediate MVP
+implication: the next depth work should prioritize the promotion-ready
+Fritsche/IBL/Steinmetz/Zatka-Haas outputs separately from source-acquisition
+requests for Busse, Burgess, Pho, and Lak.
+
 ## 2026-04-30 13:40:09 BST - Made paper coverage generated-index driven
 
 Moved `/papers`, paper detail routes, and headline paper counts onto the
