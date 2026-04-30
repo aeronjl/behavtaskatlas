@@ -161,6 +161,17 @@
   --color-encoding-node-dataset: #246b3b;
   --color-encoding-node-slice: #b35c00;
 
+  /* Paper coverage status (the depth axis used by paper-coverage strips
+   * and tone bars on /papers). Each level reuses a hue from another
+   * encoding axis where the semantic overlap is real (findings ↔ curve
+   * blue, data ↔ raw-trial green) but is held as its own token so
+   * coverage can drift independently if needed. */
+  --color-encoding-coverage-findings: #2563eb;     /* blue-600 */
+  --color-encoding-coverage-analysis: #14b8a6;     /* teal-500 */
+  --color-encoding-coverage-data: #10b981;         /* emerald-500 */
+  --color-encoding-coverage-protocol: #f59e0b;     /* amber-500 */
+  --color-encoding-coverage-bibliography: #cbd5e1; /* slate-300 */
+
   /* ─────────────────────────────────────────────────────────────────────
    * SOFT CHIP VARIANTS — paired tokens for the chip pattern
    * (bg-{soft} text-{strong} ring-{edge}). Derived from the base via

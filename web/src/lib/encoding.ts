@@ -65,6 +65,16 @@ export function nodeColors(): Record<string, string> {
   };
 }
 
+export function coverageColors(): Record<string, string> {
+  return {
+    findings: readVar("--color-encoding-coverage-findings", "#2563eb"),
+    "analysis-linked": readVar("--color-encoding-coverage-analysis", "#14b8a6"),
+    "data-linked": readVar("--color-encoding-coverage-data", "#10b981"),
+    "protocol-linked": readVar("--color-encoding-coverage-protocol", "#f59e0b"),
+    "bibliography-only": readVar("--color-encoding-coverage-bibliography", "#cbd5e1"),
+  };
+}
+
 export function modelColors(): Record<string, string> {
   return {
     sdt: readVar("--color-encoding-model-sdt", "#0ea5e9"),

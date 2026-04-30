@@ -145,15 +145,12 @@
     return "bg-fg-muted";
   }
 
-  // Coverage axis: each step in the strip reuses an encoding hue for
-  // the closest semantic match (curves for findings, source for data,
-  // model for analysis-linked).
   function coverageTone(status: string): string {
-    if (status === "findings") return "bg-encoding-curve-psychometric";
-    if (status === "analysis-linked") return "bg-encoding-curve-chronometric";
-    if (status === "data-linked") return "bg-encoding-source-raw";
-    if (status === "protocol-linked") return "bg-encoding-source-figure";
-    return "bg-rule-strong";
+    if (status === "findings") return "bg-encoding-coverage-findings";
+    if (status === "analysis-linked") return "bg-encoding-coverage-analysis";
+    if (status === "data-linked") return "bg-encoding-coverage-data";
+    if (status === "protocol-linked") return "bg-encoding-coverage-protocol";
+    return "bg-encoding-coverage-bibliography";
   }
 
   function coverageStepClass(active: boolean, tone: string): string {
