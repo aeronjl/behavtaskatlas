@@ -2,6 +2,17 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-04-30 15:04:02 BST - Published v0.2.0 release
+
+Tagged commit `ef129ff` as `v0.2.0` and published the GitHub Release after the
+release commit passed local validation and remote CI. The release-check gate
+reported zero blocking errors and the same three known non-blocking warnings:
+Odoemene remains a follow-up, six normal-priority curation items remain open,
+and ignored per-slice provenance must be regenerated when needed. Immediate MVP
+implication: the visual-contrast depth release is now externally citable while
+the next roadmap work can return to source-access requests and remaining
+family-depth coverage.
+
 ## 2026-04-30 14:58:18 BST - Prepared v0.2.0 release metadata
 
 Promoted the visual-contrast depth and model catch-up work into a formal
