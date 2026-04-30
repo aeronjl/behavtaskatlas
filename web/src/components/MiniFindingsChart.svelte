@@ -326,15 +326,15 @@
 </script>
 
 {#if findings.length === 0}
-  <p class="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500">
+  <p class="rounded-md border border-rule bg-surface-raised p-3 text-xs text-fg-muted">
     No findings linked yet.
   </p>
 {:else}
-  <div class="rounded-md border border-slate-200 bg-white p-3">
+  <div class="rounded-md border border-rule bg-surface-raised p-3">
     {#if title || allCurveTypes.length > 1 || anyFitsAvailable || traceControlsVisible}
       <header class="mb-2 flex flex-wrap items-center gap-2">
         {#if title}
-          <h3 class="text-sm font-semibold text-slate-700">{title}</h3>
+          <h3 class="text-sm font-semibold text-fg-secondary">{title}</h3>
         {/if}
         {#if allCurveTypes.length > 1}
           <div class="flex flex-wrap gap-1 {title ? '' : 'mr-auto'}">
@@ -345,7 +345,7 @@
                   "rounded border px-2 py-0.5 text-[11px]",
                   type === currentCurveType
                     ? "border-accent bg-accent text-white"
-                    : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                    : "border-rule-strong text-fg-secondary hover:bg-surface",
                 ]}
                 onclick={() => (currentCurveType = type)}
               >
@@ -362,7 +362,7 @@
                 "rounded border px-2 py-0.5",
                 traceMode === "aggregate"
                   ? "border-accent bg-accent text-white"
-                  : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                  : "border-rule-strong text-fg-secondary hover:bg-surface",
               ]}
               onclick={() => (traceMode = "aggregate")}
               title="One trace per paper × condition; subject curves are pooled when needed."
@@ -375,7 +375,7 @@
                 "rounded border px-2 py-0.5",
                 traceMode === "all"
                   ? "border-accent bg-accent text-white"
-                  : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                  : "border-rule-strong text-fg-secondary hover:bg-surface",
               ]}
               onclick={() => (traceMode = "all")}
               title="Show every curated finding separately."
@@ -388,7 +388,7 @@
                 "rounded border px-2 py-0.5",
                 traceMode === "pooled"
                   ? "border-accent bg-accent text-white"
-                  : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                  : "border-rule-strong text-fg-secondary hover:bg-surface",
               ]}
               onclick={() => (traceMode = "pooled")}
               title="Only show published pooled curves."
@@ -398,7 +398,7 @@
           </div>
         {/if}
         {#if anyFitsAvailable}
-          <label class="{traceControlsVisible ? '' : 'ml-auto'} flex items-center gap-1 text-[11px] text-slate-700">
+          <label class="{traceControlsVisible ? '' : 'ml-auto'} flex items-center gap-1 text-[11px] text-fg-secondary">
             <input type="checkbox" bind:checked={fitsEnabled} />
             <span>show fits</span>
           </label>
@@ -406,7 +406,7 @@
       </header>
     {/if}
     {#if visibleFindings.length !== rawVisibleFindings.length}
-      <p class="mb-2 text-[11px] text-slate-500">
+      <p class="mb-2 text-[11px] text-fg-muted">
         Showing {visibleFindings.length} trace{visibleFindings.length === 1 ? "" : "s"}
         from {rawVisibleFindings.length} finding{rawVisibleFindings.length === 1 ? "" : "s"}.
       </p>

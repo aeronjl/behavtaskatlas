@@ -1,0 +1,155 @@
+---
+/**
+ * Glossary — labelled definition list for in-page jargon.
+ *
+ * The atlas leans on several small taxonomies (caveat tags, AIC
+ * confidence labels, comparison scopes) where a tooltip-only
+ * description is invisible to keyboard users, mobile users, and print.
+ * `Glossary` renders them inline as a `<dl>` grid, optionally collapsed
+ * inside a `<details>` so the page stays scannable until a reader
+ * actually wants the definitions.
+ *
+ *   <Glossary
+ *     title="Comparison scopes"
+ *     terms={[
+ *       { label: "direct_choice", description: "..." },
+ *       { label: "joint_choice_rt", description: "...", tone: "accent" },
+ *     ]}
+ *     collapsible
+ *   />
+ *
+ * Each term renders as an `<dt>`/`<dd>` pair. Tones colour the term
+ * label so a glossary that mirrors a chip palette (e.g. confidence
+ * decisive/supported/close/single) reads consistently with the chips
+ * elsewhere on the page.
+ */
+
+type GlossaryTone =
+  | "neutral"
+  | "accent"
+  | "ok"
+  | "warn"
+  | "bad"
+  | "decisive"
+  | "supported"
+  | "close"
+  | "single";
+
+interface Term {
+  /** Term key as displayed (e.g. "direct_choice", "decisive"). */
+  label: string;
+  /** Human-readable description of the term. */
+  description: string;
+  /** Optional count rendered after the label. */
+  count?: number;
+  /** Optional tone token; controls the term-label colour. */
+  tone?: GlossaryTone;
+}
+
+interface Props {
+  /** Heading rendered above the dl grid. */
+  title?: string;
+  /** Optional one-line description shown under the title. */
+  description?: string;
+  terms: Term[];
+  /** Wrap the body in a `<details>` so the glossary is collapsed by
+   * default. The title becomes the `<summary>`. */
+  collapsible?: boolean;
+  /** When `collapsible`, whether the details element starts open. */
+  defaultOpen?: boolean;
+  /** Grid columns at md+. Mobile is always single-column. */
+  cols?: 1 | 2 | 3;
+  class?: string;
+}
+
+const {
+  title,
+  description,
+  terms,
+  collapsible = false,
+  defaultOpen = false,
+  cols = 2,
+  class: className,
+} = Astro.props as Props;
+
+const colsClass = {
+  1: "",
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-2 lg:grid-cols-3",
+}[cols];
+
+const toneClass: Record<GlossaryTone, string> = {
+  neutral: "text-fg",
+  accent: "text-accent",
+  ok: "text-ok",
+  warn: "text-warn",
+  bad: "text-bad",
+  decisive: "text-confidence-decisive-strong",
+  supported: "text-confidence-supported-strong",
+  close: "text-confidence-close-strong",
+  single: "text-confidence-single-strong",
+};
+
+function termTone(term: Term): string {
+  return toneClass[term.tone ?? "neutral"];
+}
+---
+
+{collapsible ? (
+  <details
+    class:list={["rounded-md border border-rule bg-surface-raised p-4", className]}
+    open={defaultOpen}
+  >
+    <summary class="cursor-pointer text-body font-semibold text-fg-secondary hover:text-accent">
+      {title ?? "Glossary"}
+      <span class="ml-2 text-body-xs font-normal text-fg-muted">
+        ({terms.length} term{terms.length === 1 ? "" : "s"})
+      </span>
+    </summary>
+    {description ? (
+      <p class="mt-2 max-w-prose text-body-xs text-fg-secondary">{description}</p>
+    ) : null}
+    <dl class:list={["mt-3 grid grid-cols-1 gap-x-6 gap-y-3", colsClass]}>
+      {terms.map((term) => (
+        <div>
+          <dt class:list={["font-mono text-mono-num font-semibold", termTone(term)]}>
+            {term.label}
+            {term.count !== undefined ? (
+              <span class="ml-2 font-mono text-mono-id text-fg-muted">
+                {term.count.toLocaleString()}
+              </span>
+            ) : null}
+          </dt>
+          <dd class="mt-0.5 text-body-xs text-fg-secondary">{term.description}</dd>
+        </div>
+      ))}
+    </dl>
+  </details>
+) : (
+  <section
+    class:list={["rounded-md border border-rule bg-surface-raised p-4", className]}
+    aria-label={title ?? "Glossary"}
+  >
+    {title ? (
+      <h2 class="text-eyebrow uppercase text-fg-muted">{title}</h2>
+    ) : null}
+    {description ? (
+      <p class="mt-1 max-w-prose text-body-xs text-fg-secondary">{description}</p>
+    ) : null}
+    <dl class:list={[title ? "mt-3" : "", "grid grid-cols-1 gap-x-6 gap-y-3", colsClass]}>
+      {terms.map((term) => (
+        <div>
+          <dt class:list={["font-mono text-mono-num font-semibold", termTone(term)]}>
+            {term.label}
+            {term.count !== undefined ? (
+              <span class="ml-2 font-mono text-mono-id text-fg-muted">
+                {term.count.toLocaleString()}
+              </span>
+            ) : null}
+          </dt>
+          <dd class="mt-0.5 text-body-xs text-fg-secondary">{term.description}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+)}

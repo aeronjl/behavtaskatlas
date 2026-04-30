@@ -159,7 +159,7 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/30 px-4 pt-20"
+    class="fixed inset-0 z-50 flex items-start justify-center bg-fg/30 px-4 pt-20"
     onclick={close}
     onkeydown={(event) => {
       if (event.key === "Escape") close();
@@ -170,52 +170,52 @@
     tabindex="-1"
   >
     <div
-      class="w-full max-w-xl overflow-hidden rounded-md border border-slate-200 bg-white shadow-2xl"
+      class="w-full max-w-xl overflow-hidden rounded-md border border-rule bg-surface-raised shadow-2xl"
       role="presentation"
       onclick={(event) => event.stopPropagation()}
       onkeydown={(event) => event.stopPropagation()}
     >
-      <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
-        <span class="text-slate-400" aria-hidden="true">🔍</span>
+      <div class="flex items-center gap-2 border-b border-rule px-4 py-3">
+        <span class="text-fg-subtle" aria-hidden="true">🔍</span>
         <input
           bind:this={inputEl}
           bind:value={query}
           type="search"
           placeholder="Search papers, findings, models, stories…"
-          class="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          class="w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-subtle"
           autocomplete="off"
           autocapitalize="none"
           spellcheck="false"
         />
-        <kbd class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+        <kbd class="rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">
           Esc
         </kbd>
       </div>
 
       {#if tokens.length === 0}
-        <div class="px-4 py-6 text-sm text-slate-500">
+        <div class="px-4 py-6 text-sm text-fg-muted">
           <p>{payload.counts.total} indexed records.</p>
           <p class="mt-2 text-xs">
             Type to search across papers, task families, protocols, datasets,
             slices, findings, models, stories, data requests, and comparisons. <kbd
-              class="rounded bg-slate-100 px-1 font-mono text-[10px]"
+              class="rounded bg-surface-sunken px-1 font-mono text-[10px]"
               >↑</kbd
             >
-            <kbd class="rounded bg-slate-100 px-1 font-mono text-[10px]">↓</kbd>
-            navigate, <kbd class="rounded bg-slate-100 px-1 font-mono text-[10px]"
+            <kbd class="rounded bg-surface-sunken px-1 font-mono text-[10px]">↓</kbd>
+            navigate, <kbd class="rounded bg-surface-sunken px-1 font-mono text-[10px]"
               >↵</kbd
             >
             opens.
           </p>
         </div>
       {:else if results.length === 0}
-        <p class="px-4 py-6 text-sm text-slate-500">
+        <p class="px-4 py-6 text-sm text-fg-muted">
           No matches for "{query}".
         </p>
       {:else}
         <ul
           bind:this={listEl}
-          class="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto"
+          class="max-h-[60vh] divide-y divide-rule overflow-y-auto"
         >
           {#each results as entry, index (entry.id)}
             {@const isActive = index === activeIndex}
@@ -225,20 +225,20 @@
                 data-active={isActive ? "true" : "false"}
                 class={[
                   "flex flex-col gap-0.5 px-4 py-2.5 no-underline",
-                  isActive ? "bg-accent-soft" : "hover:bg-slate-50",
+                  isActive ? "bg-accent-soft" : "hover:bg-surface",
                 ]}
                 onmouseenter={() => (activeIndex = index)}
               >
                 <div class="flex items-baseline justify-between gap-3">
-                  <span class="text-sm text-slate-900">{entry.title}</span>
+                  <span class="text-sm text-fg">{entry.title}</span>
                   <span
-                    class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500"
+                    class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-fg-muted"
                   >
                     {TYPE_LABEL[entry.type] ?? entry.type}
                   </span>
                 </div>
                 {#if entry.subtitle}
-                  <p class="text-xs text-slate-500">{entry.subtitle}</p>
+                  <p class="text-xs text-fg-muted">{entry.subtitle}</p>
                 {/if}
               </a>
             </li>
@@ -247,11 +247,11 @@
       {/if}
 
       <footer
-        class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] text-slate-500"
+        class="flex items-center justify-between border-t border-rule bg-surface px-4 py-2 text-[11px] text-fg-muted"
       >
         <span>
-          <kbd class="rounded bg-white px-1 font-mono">⌘</kbd>+<kbd
-            class="rounded bg-white px-1 font-mono">K</kbd
+          <kbd class="rounded bg-surface-raised px-1 font-mono">⌘</kbd>+<kbd
+            class="rounded bg-surface-raised px-1 font-mono">K</kbd
           > to toggle
         </span>
         <a class="text-accent" href="/search?q={encodeURIComponent(query)}"

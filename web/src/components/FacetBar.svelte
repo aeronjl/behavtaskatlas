@@ -168,11 +168,12 @@
         {@const isOn = isPresetActive ? isPresetActive(preset.key) : false}
         <button
           type="button"
+          aria-pressed={isOn}
           title={preset.description}
           class={[
             "rounded border px-2 py-1",
             isOn
-              ? "border-accent bg-accent text-white"
+              ? "border-accent bg-accent text-fg-inverse"
               : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
           ]}
           onclick={() => onPreset?.(preset.key)}
@@ -227,16 +228,17 @@
                 {@const sel = (selected[facet.key] ?? new Set()).has(option.value)}
                 <button
                   type="button"
+                  aria-pressed={sel}
                   class={[
                     "max-w-full rounded border px-2 py-0.5 text-left text-mono-id",
                     sel
-                      ? "border-accent bg-accent text-white"
+                      ? "border-accent bg-accent text-fg-inverse"
                       : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
                   ]}
                   onclick={() => toggleFacet(facet.key, option.value)}
                 >
                   <span class="inline-block max-w-[15rem] truncate align-bottom">{option.label}</span>
-                  <span class={["ml-1 font-mono", sel ? "text-white" : "text-fg-muted"]}>
+                  <span class={["ml-1 font-mono", sel ? "text-fg-inverse" : "text-fg-muted"]}>
                     {option.count}
                   </span>
                 </button>

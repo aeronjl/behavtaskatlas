@@ -72,35 +72,39 @@ function nextAction(row: FamilyRow): { label: string; href: string; tone: string
     return {
       label: "extract findings",
       href: row.links.slices,
-      tone: "bg-amber-50 text-amber-800 ring-amber-200",
+      tone: "bg-warn-soft text-warn",
     };
   }
   if (row.modelFits.length === 0 && row.findings.length > 0) {
     return {
       label: "fit models",
       href: row.links.findings,
-      tone: "bg-violet-50 text-violet-800 ring-violet-200",
+      tone: "bg-encoding-model-ddm-soft text-encoding-model-ddm-strong",
     };
   }
   if (row.reportCount < row.slices.length) {
     return {
       label: "finish reports",
       href: href("/slices", { family: row.family.name, report: "missing" }),
-      tone: "bg-rose-50 text-rose-800 ring-rose-200",
+      tone: "bg-bad-soft text-bad",
     };
   }
   return {
     label: row.findings.length >= 20 ? "inspect depth" : "inspect coverage",
     href: row.findings.length > 0 ? row.links.findings : row.links.catalog,
-    tone: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    tone: "bg-ok-soft text-ok",
   };
 }
 
-function heatStyle(value: number, max: number, rgb: string): string {
+// Heat-map cell style. Mixes a CSS encoding token with white via
+// color-mix() so a single token swap propagates everywhere. Alpha floors
+// at 20% for non-empty cells (keeps cells visually distinguishable from
+// white at the lowest count) and 4% for empty (effectively no fill).
+function heatStyle(value: number, max: number, varName: string): string {
   const ratio = max > 0 ? value / max : 0;
-  const alpha = value > 0 ? 0.1 + 0.62 * ratio : 0.045;
-  const border = value > 0 ? 0.2 + 0.5 * ratio : 0.12;
-  return `background-color: rgba(${rgb}, ${alpha.toFixed(3)}); border-color: rgba(${rgb}, ${border.toFixed(3)});`;
+  const fillPct = value > 0 ? Math.round(20 + 50 * ratio) : 4;
+  const borderPct = value > 0 ? Math.round(28 + 40 * ratio) : 12;
+  return `background-color: color-mix(in srgb, var(${varName}) ${fillPct}%, white); border-color: color-mix(in srgb, var(${varName}) ${borderPct}%, white);`;
 }
 
 function barWidth(value: number, max: number): string {
@@ -171,193 +175,91 @@ const familyRows: FamilyRow[] = catalog.task_families
       a.family.name.localeCompare(b.family.name),
   );
 
-const maxProtocols = Math.max(1, ...familyRows.map((row) => row.protocols.length));
-const maxDatasets = Math.max(1, ...familyRows.map((row) => row.datasets.length));
-const maxReports = Math.max(1, ...familyRows.map((row) => row.reportCount));
 const maxFindings = Math.max(1, ...familyRows.map((row) => row.findings.length));
 const maxModels = Math.max(1, ...familyRows.map((row) => row.modelFits.length));
-const maxPapers = Math.max(1, ...familyRows.map((row) => row.papers.length));
 
 const sourceOrder = ["raw-trial", "processed-trial", "figure-source-data"];
-const headlineStats = [
-  { label: "families", value: catalog.counts.task_families ?? familyRows.length, href: "/catalog", color: "bg-teal-500" },
-  { label: "protocols", value: catalog.counts.protocols ?? catalog.protocols.length, href: "/catalog?type=protocol", color: "bg-sky-500" },
-  { label: "datasets", value: catalog.counts.datasets ?? catalog.datasets.length, href: "/catalog?type=dataset", color: "bg-emerald-500" },
-  { label: "papers", value: papers.counts.papers ?? papers.papers.length, href: "/papers", color: "bg-indigo-500" },
-  { label: "findings", value: findings.counts.findings ?? findingRows.length, href: "/findings", color: "bg-blue-600" },
-  { label: "slices", value: catalog.counts.vertical_slices ?? catalog.vertical_slices.length, href: "/slices", color: "bg-amber-500" },
-  { label: "model fits", value: models.counts.fits ?? modelFitRows.length, href: "/models", color: "bg-violet-500" },
-];
-const maxHeadline = Math.max(1, ...headlineStats.map((stat) => stat.value));
 const deepestRows = familyRows.filter((row) => row.findings.length > 0).slice(0, 3);
 const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slices.length > 0);
 ---
 
 <section data-testid="atlas-overview" class="mb-12 min-w-0">
-  <header class="mb-4">
-    <p class="text-xs uppercase tracking-wide text-accent">Atlas overview</p>
-    <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-      Coverage shape at a glance
-    </h2>
-    <p class="mt-2 max-w-3xl text-sm text-slate-700">
-      Task families are arranged by finding depth. The matrix separates source
-      depth, reports, extracted curves, and model fits so density and gaps are
-      visible before opening individual records.
-    </p>
+  <header class="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-eyebrow uppercase text-fg-muted">Family coverage</p>
+      <h2 class="mt-1 text-h2 text-fg">
+        Where the atlas runs deep, where it doesn't
+      </h2>
+    </div>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-xs text-fg-muted">
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 rounded-full bg-encoding-source-raw"></span> raw
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 rounded-full bg-encoding-source-processed"></span> processed
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 rounded-full bg-encoding-source-figure"></span> figure
+      </span>
+    </div>
   </header>
 
-  <div class="mb-5 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
-    {headlineStats.map((stat) => (
-      <a
-        href={stat.href}
-        class="rounded-md border border-slate-200 bg-white p-3 no-underline transition-colors hover:border-accent"
-      >
-        <span class="block text-[11px] uppercase tracking-wide text-slate-500">
-          {stat.label}
-        </span>
-        <span class="mt-1 block font-mono text-xl font-semibold text-slate-950">
-          {stat.value.toLocaleString()}
-        </span>
-        <span class="mt-2 block h-1.5 rounded-full bg-slate-100">
-          <span
-            class:list={["block h-1.5 rounded-full", stat.color]}
-            style={`width: ${barWidth(stat.value, maxHeadline)}`}
-          />
-        </span>
-      </a>
-    ))}
-  </div>
-
   <div class="grid min-w-0 grid-cols-1 gap-4">
-    <article class="min-w-0 rounded-md border border-slate-200 bg-white p-4">
-      <header class="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 class="text-base font-semibold text-slate-900">
-            Family Coverage Matrix
-          </h3>
-          <p class="mt-1 text-xs text-slate-600">
-            Darker cells mark deeper coverage; every count links to a filtered
-            browse surface.
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-          <span class="inline-flex items-center gap-1">
-            <span class="h-2 w-2 rounded-full bg-emerald-500"></span> raw
-          </span>
-          <span class="inline-flex items-center gap-1">
-            <span class="h-2 w-2 rounded-full bg-sky-500"></span> processed
-          </span>
-          <span class="inline-flex items-center gap-1">
-            <span class="h-2 w-2 rounded-full bg-amber-500"></span> figure
-          </span>
-        </div>
-      </header>
-
-      <div class="-mx-4 max-w-full overflow-x-auto px-4">
-        <table class="min-w-[56rem] w-full border-separate border-spacing-y-1 text-xs">
+    <article class="min-w-0 overflow-hidden rounded-md border border-rule bg-surface-raised">
+      <div class="-mx-px max-w-full overflow-x-auto">
+        <table class="min-w-[44rem] w-full border-separate border-spacing-y-1 text-body-xs">
           <thead>
-            <tr class="text-left text-[11px] uppercase tracking-wide text-slate-500">
-              <th class="w-[16rem] px-2 py-1 font-medium">Family</th>
-              <th class="px-2 py-1 font-medium">Species / modality</th>
-              <th class="px-2 py-1 text-right font-medium">Papers</th>
-              <th class="px-2 py-1 text-right font-medium">Protocols</th>
-              <th class="px-2 py-1 text-right font-medium">Datasets</th>
-              <th class="px-2 py-1 text-right font-medium">Reports</th>
-              <th class="px-2 py-1 text-right font-medium">Findings</th>
-              <th class="px-2 py-1 text-right font-medium">Models</th>
-              <th class="px-2 py-1 font-medium">Source</th>
-              <th class="px-2 py-1 font-medium">Next</th>
+            <tr class="text-left text-eyebrow uppercase text-fg-muted">
+              <th class="w-[18rem] px-3 py-2 font-medium">Family</th>
+              <th class="px-2 py-2 text-right font-medium">Findings</th>
+              <th class="px-2 py-2 text-right font-medium">Models</th>
+              <th class="px-3 py-2 font-medium">Source</th>
+              <th class="px-3 py-2 font-medium">Next</th>
             </tr>
           </thead>
           <tbody>
             {familyRows.map((row) => {
               const action = nextAction(row);
+              const tags = [...row.species, ...row.modalities];
               return (
                 <tr data-testid="atlas-overview-row" class="align-middle">
-                  <th class="rounded-l-md border-y border-l border-slate-200 bg-slate-50 px-2 py-2 text-left">
-                    <a href={row.links.catalog} class="font-semibold text-slate-900">
+                  <th class="rounded-l-md border-y border-l border-rule bg-surface px-3 py-2 text-left">
+                    <a href={row.links.catalog} class="font-semibold text-fg">
                       {row.family.name}
                     </a>
-                    <div class="mt-1 flex flex-wrap items-center gap-1">
-                      <span class="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500 ring-1 ring-slate-200">
+                    <p class="mt-1 text-mono-id text-fg-muted">
+                      <span class="rounded bg-surface-raised px-1.5 py-0.5 ring-1 ring-rule">
                         {rowDepthLabel(row)}
                       </span>
-                      <span class="font-mono text-[10px] text-slate-500">
-                        {row.family.family_id.replace("family.", "")}
-                      </span>
-                    </div>
-                  </th>
-                  <td class="border-y border-slate-200 bg-white px-2 py-2">
-                    <div class="flex max-w-[13rem] flex-wrap gap-1">
-                      {[...row.species, ...row.modalities].map((value) => (
-                        <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700">
-                          {readable(value)}
+                      {tags.length > 0 ? (
+                        <span class="ml-2">
+                          {tags.map(readable).join(" · ")}
                         </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
-                    <a
-                      href={row.links.papers}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.papers.length, maxPapers, "79, 70, 229")}
-                      aria-label={`${row.family.name}: ${row.papers.length} papers`}
-                    >
-                      {row.papers.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
-                    <a
-                      href={row.links.catalog}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.protocols.length, maxProtocols, "14, 165, 233")}
-                      aria-label={`${row.family.name}: ${row.protocols.length} protocols`}
-                    >
-                      {row.protocols.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
-                    <a
-                      href={row.links.catalog}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.datasets.length, maxDatasets, "16, 185, 129")}
-                      aria-label={`${row.family.name}: ${row.datasets.length} datasets`}
-                    >
-                      {row.datasets.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
-                    <a
-                      href={row.links.reports}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.reportCount, maxReports, "20, 184, 166")}
-                      aria-label={`${row.family.name}: ${row.reportCount} reports`}
-                    >
-                      {row.reportCount}/{row.slices.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
+                      ) : null}
+                    </p>
+                  </th>
+                  <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
                     <a
                       href={row.links.findings}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.findings.length, maxFindings, "37, 99, 235")}
+                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
+                      style={heatStyle(row.findings.length, maxFindings, "--color-encoding-coverage-findings")}
                       aria-label={`${row.family.name}: ${row.findings.length} findings`}
                     >
                       {row.findings.length}
                     </a>
                   </td>
-                  <td class="border-y border-slate-200 bg-white px-1 py-2 text-right">
+                  <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
                     <a
                       href={row.links.models}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-slate-900 no-underline"
-                      style={heatStyle(row.modelFits.length, maxModels, "124, 58, 237")}
+                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
+                      style={heatStyle(row.modelFits.length, maxModels, "--color-encoding-model-ddm")}
                       aria-label={`${row.family.name}: ${row.modelFits.length} model fits`}
                     >
                       {row.modelFits.length}
                     </a>
                   </td>
-                  <td class="border-y border-slate-200 bg-white px-2 py-2">
-                    <div class="flex min-w-24 overflow-hidden rounded-full border border-slate-200 bg-slate-100" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
+                  <td class="border-y border-rule bg-surface-raised px-3 py-2">
+                    <div class="flex min-w-24 overflow-hidden rounded-full border border-rule bg-surface-sunken" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
                       {sourceOrder.map((level) => (
                         <a
                           href={href("/catalog", { q: row.family.name, source: level })}
@@ -365,10 +267,10 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
                             "h-2 flex-1",
                             row.sourceLevels.includes(level)
                               ? level === "raw-trial"
-                                ? "bg-emerald-500"
+                                ? "bg-encoding-source-raw"
                                 : level === "processed-trial"
-                                  ? "bg-sky-500"
-                                  : "bg-amber-500"
+                                  ? "bg-encoding-source-processed"
+                                  : "bg-encoding-source-figure"
                               : "bg-transparent",
                           ]}
                           aria-label={`${row.family.name}: ${readable(level)} ${row.sourceLevels.includes(level) ? "available" : "missing"}`}
@@ -377,11 +279,11 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
                     </div>
                     <span class="sr-only">source rank {sourceRank(row.sourceLevels)}</span>
                   </td>
-                  <td class="rounded-r-md border-y border-r border-slate-200 bg-white px-2 py-2">
+                  <td class="rounded-r-md border-y border-r border-rule bg-surface-raised px-3 py-2">
                     <a
                       href={action.href}
                       class:list={[
-                        "inline-flex whitespace-nowrap rounded px-2 py-1 text-[11px] no-underline ring-1",
+                        "inline-flex whitespace-nowrap rounded px-2 py-1 text-body-xs no-underline",
                         action.tone,
                       ]}
                     >
@@ -397,19 +299,19 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
     </article>
 
     <aside class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <section class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="text-sm font-semibold text-slate-900">Deepest Families</h3>
+      <section class="rounded-md border border-rule bg-surface-raised p-4">
+        <h3 class="text-h3 text-fg">Deepest Families</h3>
         <ul class="mt-3 space-y-3">
           {deepestRows.map((row) => (
             <li>
               <a href={row.links.findings} class="block no-underline">
-                <span class="flex items-baseline justify-between gap-3 text-xs">
-                  <span class="font-medium text-slate-800">{row.family.name}</span>
-                  <span class="font-mono text-slate-600">{row.findings.length} findings</span>
+                <span class="flex items-baseline justify-between gap-3 text-body-xs">
+                  <span class="font-medium text-fg">{row.family.name}</span>
+                  <span class="font-mono text-fg-secondary">{row.findings.length} findings</span>
                 </span>
-                <span class="mt-1 block h-1.5 rounded-full bg-slate-100">
+                <span class="mt-1 block h-1.5 rounded-full bg-surface-sunken">
                   <span
-                    class="block h-1.5 rounded-full bg-blue-600"
+                    class="block h-1.5 rounded-full bg-encoding-coverage-findings"
                     style={`width: ${barWidth(row.findings.length, maxFindings)}`}
                   />
                 </span>
@@ -419,23 +321,23 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
         </ul>
       </section>
 
-      <section class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="text-sm font-semibold text-slate-900">Source-Backed Gaps</h3>
+      <section class="rounded-md border border-rule bg-surface-raised p-4">
+        <h3 class="text-h3 text-fg">Source-Backed Gaps</h3>
         {gapRows.length > 0 ? (
-          <ul class="mt-3 space-y-2 text-xs">
+          <ul class="mt-3 space-y-2 text-body-xs">
             {gapRows.map((row) => (
               <li class="flex items-start justify-between gap-3">
-                <a href={row.links.slices} class="text-slate-800">
+                <a href={row.links.slices} class="text-fg">
                   {row.family.name}
                 </a>
-                <span class="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 font-mono text-amber-800">
+                <span class="shrink-0 rounded bg-warn-soft px-1.5 py-0.5 font-mono text-warn">
                   {row.slices.length}s / 0f
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p class="mt-2 text-xs text-slate-600">
+          <p class="mt-2 text-body-xs text-fg-secondary">
             Every source-backed family has at least one extracted finding.
           </p>
         )}
@@ -443,13 +345,3 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
     </aside>
   </div>
 </section>
-
-<style>
-  a.no-underline {
-    text-decoration: none;
-  }
-
-  a.no-underline:hover {
-    text-decoration: none;
-  }
-</style>

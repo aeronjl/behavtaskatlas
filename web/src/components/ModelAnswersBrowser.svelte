@@ -561,25 +561,25 @@
 
 <section class="space-y-4">
   <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs uppercase tracking-wide text-slate-500">Finding winners</p>
-      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{rows.length}</p>
-      <p class="mt-1 text-xs text-slate-500">{decisiveCount} decisive</p>
+    <div class="rounded-md border border-rule bg-surface-raised p-3">
+      <p class="text-xs uppercase tracking-wide text-fg-muted">Finding winners</p>
+      <p class="mt-1 font-mono text-2xl font-semibold text-fg">{rows.length}</p>
+      <p class="mt-1 text-xs text-fg-muted">{decisiveCount} decisive</p>
     </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs uppercase tracking-wide text-slate-500">Close calls</p>
-      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{closeCount}</p>
-      <p class="mt-1 text-xs text-slate-500">low AIC separation</p>
+    <div class="rounded-md border border-rule bg-surface-raised p-3">
+      <p class="text-xs uppercase tracking-wide text-fg-muted">Close calls</p>
+      <p class="mt-1 font-mono text-2xl font-semibold text-fg">{closeCount}</p>
+      <p class="mt-1 text-xs text-fg-muted">low AIC separation</p>
     </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs uppercase tracking-wide text-slate-500">Caveated rows</p>
-      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{caveatedRowCount}</p>
-      <p class="mt-1 text-xs text-slate-500">source or proxy caveats</p>
+    <div class="rounded-md border border-rule bg-surface-raised p-3">
+      <p class="text-xs uppercase tracking-wide text-fg-muted">Caveated rows</p>
+      <p class="mt-1 font-mono text-2xl font-semibold text-fg">{caveatedRowCount}</p>
+      <p class="mt-1 text-xs text-fg-muted">source or proxy caveats</p>
     </div>
-    <div class="rounded-md border border-slate-200 bg-white p-3">
-      <p class="text-xs uppercase tracking-wide text-slate-500">Process winners</p>
-      <p class="mt-1 font-mono text-2xl font-semibold text-slate-900">{processCount}</p>
-      <p class="mt-1 text-xs text-slate-500">DDM, click, RT models</p>
+    <div class="rounded-md border border-rule bg-surface-raised p-3">
+      <p class="text-xs uppercase tracking-wide text-fg-muted">Process winners</p>
+      <p class="mt-1 font-mono text-2xl font-semibold text-fg">{processCount}</p>
+      <p class="mt-1 text-xs text-fg-muted">DDM, click, RT models</p>
     </div>
   </div>
 
@@ -616,15 +616,15 @@
 
   <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(17rem,0.65fr)]">
     <div class="space-y-3">
-      <p class="text-sm text-slate-600">
-        Showing <span class="font-mono font-semibold text-slate-900">{filteredRows.length}</span>
-        of <span class="font-mono text-slate-900">{rows.length}</span> finding-level winners.
+      <p class="text-sm text-fg-muted">
+        Showing <span class="font-mono font-semibold text-fg">{filteredRows.length}</span>
+        of <span class="font-mono text-fg">{rows.length}</span> finding-level winners.
       </p>
       {#if filteredRows.length === 0}
-        <section class="rounded-md border border-slate-200 bg-white p-5 text-sm text-slate-600">
+        <section class="rounded-md border border-rule bg-surface-raised p-5 text-sm text-fg-muted">
           <p>No model-selection rows match the current filters.</p>
           {#if activeFilterCount > 0}
-            <button type="button" class="mt-3 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-800 hover:border-accent hover:text-accent" onclick={clearAll}>
+            <button type="button" class="mt-3 rounded border border-rule-strong bg-surface px-2 py-1 text-xs font-semibold text-fg hover:border-accent hover:text-accent" onclick={clearAll}>
               Clear filters
             </button>
           {/if}
@@ -632,15 +632,15 @@
       {:else}
         <ul class="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {#each filteredRows.slice(0, 24) as row (row.selection_id)}
-            <li class="rounded-md border border-slate-200 bg-white p-4">
+            <li class="rounded-md border border-rule bg-surface-raised p-4">
               <header class="flex min-w-0 items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <h3 class="text-sm font-semibold leading-snug text-slate-900">
+                  <h3 class="text-sm font-semibold leading-snug text-fg">
                     <a class="no-underline hover:text-accent" href={row.finding_href}>
                       {row.paper_label} · {row.stratification_label}
                     </a>
                   </h3>
-                  <p class="mt-1 text-xs text-slate-500">
+                  <p class="mt-1 text-xs text-fg-muted">
                     {row.task_family} · {row.protocol_name}
                   </p>
                 </div>
@@ -656,13 +656,13 @@
 
               <div
                 data-testid="model-glyph-strip"
-                class="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+                class="mt-3 rounded-md border border-rule bg-surface p-3"
                 aria-label={`${row.paper_label} model-selection glyphs`}
               >
                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   <div class="min-w-0">
                     <div class="mb-1 flex items-baseline gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Winner</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">Winner</span>
                     </div>
                     <div
                       class={[
@@ -678,11 +678,11 @@
 
                   <div>
                     <div class="mb-1 flex items-baseline justify-between gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">AIC gap</span>
-                      <span class="font-mono text-xs text-slate-900">{fmt(row.delta_aic_to_next)}</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">AIC gap</span>
+                      <span class="font-mono text-xs text-fg">{fmt(row.delta_aic_to_next)}</span>
                     </div>
                     <div
-                      class="h-2 rounded-full bg-white"
+                      class="h-2 rounded-full bg-surface-raised"
                       title={`Delta AIC to next candidate: ${fmt(row.delta_aic_to_next)}`}
                     >
                       <span
@@ -694,14 +694,14 @@
 
                   <div>
                     <div class="mb-1 flex items-baseline gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Confidence</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">Confidence</span>
                     </div>
                     <div class="grid grid-cols-4 gap-1">
                       {#each confidenceSteps as step (step)}
                         <span
                           class={[
                             "h-2 rounded-full",
-                            row.confidence_label === step ? confidenceClass(step) : "bg-white",
+                            row.confidence_label === step ? confidenceClass(step) : "bg-surface-raised",
                           ]}
                           title={labelForConfidence(step)}
                         ></span>
@@ -711,15 +711,15 @@
 
                   <div>
                     <div class="mb-1 flex items-baseline justify-between gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Candidates</span>
-                      <span class="font-mono text-xs text-slate-900">{row.n_candidate_fits}</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">Candidates</span>
+                      <span class="font-mono text-xs text-fg">{row.n_candidate_fits}</span>
                     </div>
                     <div class="flex gap-1" title={`${row.n_candidate_fits} candidate fit${row.n_candidate_fits === 1 ? "" : "s"}`}>
                       {#each candidatePips(row, maxCandidateCount) as pip (pip.index)}
                         <span
                           class={[
                             "h-2 flex-1 rounded-full",
-                            pip.active ? "bg-slate-700" : "bg-white",
+                            pip.active ? "bg-fg-secondary" : "bg-surface-raised",
                           ]}
                         ></span>
                       {/each}
@@ -728,7 +728,7 @@
 
                   <div>
                     <div class="mb-1 flex items-baseline gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Source</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">Source</span>
                     </div>
                     <div
                       class={[
@@ -744,8 +744,8 @@
 
                   <div>
                     <div class="mb-1 flex items-baseline justify-between gap-2">
-                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Caveats</span>
-                      <span class="font-mono text-xs text-slate-900">{caveatCount(row)}</span>
+                      <span class="text-[11px] uppercase tracking-wide text-fg-muted">Caveats</span>
+                      <span class="font-mono text-xs text-fg">{caveatCount(row)}</span>
                     </div>
                     <div class="flex min-h-6 flex-wrap items-center gap-1">
                       {#if caveatCount(row) > 0}
@@ -761,11 +761,11 @@
                           <span class="font-mono text-[10px] text-warn">+{caveatCount(row) - 3}</span>
                         {/if}
                       {:else}
-                        <span class="h-2 flex-1 rounded-full bg-white" title="no caveat tags"></span>
+                        <span class="h-2 flex-1 rounded-full bg-surface-raised" title="no caveat tags"></span>
                       {/if}
                       {#if row.has_mixed_aic_scopes}
                         <span
-                          class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-amber-100 px-1 font-mono text-[10px] font-semibold text-amber-800"
+                          class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-warn-soft px-1 font-mono text-mono-id font-semibold text-warn"
                           title="mixed AIC comparison scopes"
                         >
                           M
@@ -778,27 +778,27 @@
 
               <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                 <div>
-                  <dt class="text-slate-500">Winner</dt>
-                  <dd class="font-mono text-slate-900">{row.best_variant_label}</dd>
+                  <dt class="text-fg-muted">Winner</dt>
+                  <dd class="font-mono text-fg">{row.best_variant_label}</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500">Delta AIC</dt>
-                  <dd class="font-mono text-slate-900">{fmt(row.delta_aic_to_next)}</dd>
+                  <dt class="text-fg-muted">Delta AIC</dt>
+                  <dd class="font-mono text-fg">{fmt(row.delta_aic_to_next)}</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500">Scope</dt>
-                  <dd class="text-slate-700">{labelForScope(row.comparison_scope)}</dd>
+                  <dt class="text-fg-muted">Scope</dt>
+                  <dd class="text-fg-secondary">{labelForScope(row.comparison_scope)}</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500">Candidates</dt>
-                  <dd class="font-mono text-slate-900">{row.n_candidate_fits}</dd>
+                  <dt class="text-fg-muted">Candidates</dt>
+                  <dd class="font-mono text-fg">{row.n_candidate_fits}</dd>
                 </div>
               </dl>
 
               <div class="mt-3 flex flex-wrap gap-1 text-[11px]">
-                <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{readable(row.species)}</span>
-                <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{readable(row.curve_type)}</span>
-                <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{readable(row.source_data_level)}</span>
+                <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">{readable(row.species)}</span>
+                <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">{readable(row.curve_type)}</span>
+                <span class="rounded bg-surface-sunken px-2 py-0.5 text-fg-secondary">{readable(row.source_data_level)}</span>
                 {#if row.has_mixed_aic_scopes}
                   <span class="rounded bg-warn-soft px-2 py-0.5 text-warn">mixed scopes</span>
                 {/if}
@@ -817,30 +817,30 @@
               <div class="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs">
                 <a class="font-semibold text-accent" href={row.finding_href}>Finding</a>
                 <a class="text-accent" href={row.paper_href}>Paper</a>
-                <span class="font-mono text-slate-500">AIC {fmt(row.best_aic)}</span>
+                <span class="font-mono text-fg-muted">AIC {fmt(row.best_aic)}</span>
               </div>
             </li>
           {/each}
         </ul>
         {#if filteredRows.length > 24}
-          <p class="text-xs text-slate-500">Showing first 24 matching winners; use the detailed table below for the full filtered workflow.</p>
+          <p class="text-xs text-fg-muted">Showing first 24 matching winners; use the detailed table below for the full filtered workflow.</p>
         {/if}
       {/if}
     </div>
 
     <aside class="space-y-4">
-      <section class="rounded-md border border-slate-200 bg-white p-4" data-testid="family-verdicts">
-        <h3 class="text-sm font-semibold text-slate-900">Family Verdicts</h3>
+      <section class="rounded-md border border-rule bg-surface-raised p-4" data-testid="family-verdicts">
+        <h3 class="text-sm font-semibold text-fg">Family Verdicts</h3>
         <ul class="mt-3 space-y-3">
           {#each familyVerdicts as group (group.family)}
             <li>
               <div class="flex items-baseline justify-between gap-3">
-                <p class="text-xs font-semibold text-slate-800">{group.family}</p>
-                <span class="font-mono text-xs text-slate-500">{group.n}</span>
+                <p class="text-xs font-semibold text-fg">{group.family}</p>
+                <span class="font-mono text-xs text-fg-muted">{group.n}</span>
               </div>
 
               <div
-                class="mt-2 flex h-2 overflow-hidden rounded-full bg-slate-100"
+                class="mt-2 flex h-2 overflow-hidden rounded-full bg-surface-sunken"
                 title="winner family distribution"
               >
                 {#each group.winnerSegments as segment (`${group.family}-${segment.key}`)}
@@ -868,30 +868,30 @@
 
               <div class="mt-2 grid grid-cols-3 gap-2">
                 <div title={`${group.close} close model-selection rows`}>
-                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-fg-muted">
                     <span>Close</span>
                     <span class="font-mono">{group.close}</span>
                   </div>
-                  <div class="h-1.5 rounded-full bg-slate-100">
-                    <span class="block h-1.5 rounded-full bg-amber-500" style={`width: ${percent(group.close, group.n)}`}></span>
+                  <div class="h-1.5 rounded-full bg-surface-sunken">
+                    <span class="block h-1.5 rounded-full bg-encoding-coverage-protocol" style={`width: ${percent(group.close, group.n)}`}></span>
                   </div>
                 </div>
                 <div title={`${group.caveats} caveated model-selection rows`}>
-                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-fg-muted">
                     <span>Caveat</span>
                     <span class="font-mono">{group.caveats}</span>
                   </div>
-                  <div class="h-1.5 rounded-full bg-slate-100">
+                  <div class="h-1.5 rounded-full bg-surface-sunken">
                     <span class="block h-1.5 rounded-full bg-warn" style={`width: ${percent(group.caveats, group.n)}`}></span>
                   </div>
                 </div>
                 <div title={`${group.mixed} mixed-scope model-selection rows`}>
-                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-slate-500">
+                  <div class="mb-0.5 flex justify-between gap-1 text-[10px] text-fg-muted">
                     <span>Mixed</span>
                     <span class="font-mono">{group.mixed}</span>
                   </div>
-                  <div class="h-1.5 rounded-full bg-slate-100">
-                    <span class="block h-1.5 rounded-full bg-slate-600" style={`width: ${percent(group.mixed, group.n)}`}></span>
+                  <div class="h-1.5 rounded-full bg-surface-sunken">
+                    <span class="block h-1.5 rounded-full bg-fg-muted" style={`width: ${percent(group.mixed, group.n)}`}></span>
                   </div>
                 </div>
               </div>
@@ -900,24 +900,24 @@
         </ul>
       </section>
 
-      <section class="rounded-md border border-slate-200 bg-white p-4">
-        <h3 class="text-sm font-semibold text-slate-900">Next Model Work</h3>
+      <section class="rounded-md border border-rule bg-surface-raised p-4">
+        <h3 class="text-sm font-semibold text-fg">Next Model Work</h3>
         <ul class="mt-3 space-y-3">
           {#each topRoadmapItems as item (item.rank)}
             <li>
               <div class="flex items-baseline justify-between gap-2">
-                <p class="text-xs font-semibold text-slate-800">
+                <p class="text-xs font-semibold text-fg">
                   {readable(item.issue_type)}
                 </p>
-                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600">
+                <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase text-fg-muted">
                   {item.priority_label}
                 </span>
               </div>
-              <p class="mt-1 break-all font-mono text-[10px] text-slate-500">
+              <p class="mt-1 break-all font-mono text-[10px] text-fg-muted">
                 {item.target_id.replace("finding.", "").replace("slice.", "")}
               </p>
               {#if item.recommended_action}
-                <p class="mt-1 line-clamp-2 text-[11px] text-slate-600">
+                <p class="mt-1 line-clamp-2 text-[11px] text-fg-muted">
                   {item.recommended_action}
                 </p>
               {/if}

@@ -289,10 +289,11 @@
       {@const active = activeTypes.has(type)}
       <button
         type="button"
+        aria-pressed={active}
         class={[
           "rounded border px-2 py-0.5",
           active
-            ? "border-accent bg-accent text-white"
+            ? "border-accent bg-accent text-fg-inverse"
             : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
         ]}
         onclick={() => toggleType(type)}

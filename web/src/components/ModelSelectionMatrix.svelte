@@ -128,13 +128,13 @@
     if (label === "decisive") return "bg-ok-soft text-ok";
     if (label === "supported") return "bg-accent-soft text-accent";
     if (label === "close") return "bg-warn-soft text-warn";
-    return "bg-slate-100 text-slate-600";
+    return "bg-surface-sunken text-fg-muted";
   }
 
   function sourceClass(status: string): string {
     if (status === "trial-backed") return "bg-ok-soft text-ok";
     if (status === "proxy-backed") return "bg-warn-soft text-warn";
-    return "bg-slate-100 text-slate-600";
+    return "bg-surface-sunken text-fg-muted";
   }
 
   function scopeClass(value: string): string {
@@ -143,14 +143,14 @@
     if (value === "chronometric_summary" || value === "accuracy_summary") {
       return "bg-warn-soft text-warn";
     }
-    return "bg-slate-100 text-slate-600";
+    return "bg-surface-sunken text-fg-muted";
   }
 
   function cellClass(cell: MatrixCell | null): string {
     const base = "min-w-36 px-3 py-2 align-top";
-    if (!cell) return `${base} bg-slate-50 text-slate-400`;
+    if (!cell) return `${base} bg-surface text-fg-subtle`;
     if (cell.is_winner) return `${base} bg-ok-soft`;
-    return `${base} bg-white`;
+    return `${base} bg-surface-raised`;
   }
 
   function haystack(row: MatrixRow): string {
@@ -219,72 +219,72 @@
 
 <div class="space-y-3">
   <div class="grid grid-cols-1 gap-2 lg:grid-cols-[1.4fr_repeat(7,minmax(0,1fr))]">
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Search</span>
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Search</span>
       <input
         bind:value={query}
         type="search"
-        class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         placeholder="finding, paper, model, caveat"
       />
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Species</span>
-      <select bind:value={species} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Species</span>
+      <select bind:value={species} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All species</option>
         {#each speciesOptions as value (value)}
           <option value={value}>{value}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Family</span>
-      <select bind:value={taskFamily} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Family</span>
+      <select bind:value={taskFamily} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All families</option>
         {#each familyOptions as value (value)}
           <option value={value}>{value}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Curve</span>
-      <select bind:value={curveType} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Curve</span>
+      <select bind:value={curveType} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All curves</option>
         {#each curveOptions as value (value)}
           <option value={value}>{value}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Source</span>
-      <select bind:value={sourceStatus} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Source</span>
+      <select bind:value={sourceStatus} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All sources</option>
         {#each sourceOptions as value (value)}
           <option value={value}>{value}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Confidence</span>
-      <select bind:value={confidence} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Confidence</span>
+      <select bind:value={confidence} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All labels</option>
         {#each confidenceOptions as value (value)}
           <option value={value}>{labelForConfidence(value)}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Scope</span>
-      <select bind:value={scope} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Scope</span>
+      <select bind:value={scope} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="all">All scopes</option>
         {#each scopeOptions as value (value)}
           <option value={value}>{labelForScope(value)}</option>
         {/each}
       </select>
     </label>
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Sort</span>
-      <select bind:value={sortMode} class="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Sort</span>
+      <select bind:value={sortMode} class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1.5 text-sm">
         <option value="triage">Close and thin first</option>
         <option value="confidence-strong">Strongest first</option>
         <option value="candidates-desc">Most candidates</option>
@@ -293,15 +293,15 @@
     </label>
   </div>
 
-  <p class="text-xs text-slate-500">
+  <p class="text-xs text-fg-muted">
     Showing {filteredRows.length} of {rows.length} scope-matched AIC rows.
   </p>
 
-  <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+  <div class="overflow-x-auto rounded-md border border-rule bg-surface-raised">
     <table class="w-full min-w-[1120px] border-collapse text-sm">
-      <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+      <thead class="bg-surface text-left text-xs uppercase text-fg-muted">
         <tr>
-          <th class="sticky left-0 z-10 w-80 bg-slate-50 px-3 py-2 shadow-[1px_0_0_0_#e2e8f0]">Finding</th>
+          <th class="sticky left-0 z-10 w-80 bg-surface px-3 py-2 shadow-[1px_0_0_0_#e2e8f0]">Finding</th>
           <th class="px-3 py-2">Confidence</th>
           {#each columns as column (column.id)}
             <th class="min-w-36 px-3 py-2" title={column.description}>
@@ -310,23 +310,23 @@
           {/each}
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-200">
+      <tbody class="divide-y divide-rule">
         {#each filteredRows as row (row.selection_id)}
           <tr>
-            <td class="sticky left-0 z-10 w-80 bg-white px-3 py-2 align-top shadow-[1px_0_0_0_#e2e8f0]">
-              <a class="font-mono text-[11px] text-slate-900" href={row.finding_href}>
+            <td class="sticky left-0 z-10 w-80 bg-surface-raised px-3 py-2 align-top shadow-[1px_0_0_0_#e2e8f0]">
+              <a class="font-mono text-[11px] text-fg" href={row.finding_href}>
                 {row.finding_id.replace("finding.", "")}
               </a>
-              <p class="mt-1 text-[11px] text-slate-500">
-                <a class="text-slate-600 hover:text-accent" href={row.paper_href}>
+              <p class="mt-1 text-[11px] text-fg-muted">
+                <a class="text-fg-muted hover:text-accent" href={row.paper_href}>
                   {row.paper_label}
                 </a>
               </p>
               <div class="mt-2 flex flex-wrap gap-1">
-                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] text-fg-muted">
                   {row.species}
                 </span>
-                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] text-fg-muted">
                   {row.curve_type.replace(/_/g, " ")}
                 </span>
                 <span class={`rounded px-1.5 py-0.5 text-[10px] ${sourceClass(row.source_status)}`}>
@@ -341,7 +341,7 @@
               >
                 {labelForConfidence(row.confidence_label)}
               </span>
-              <p class="mt-1 text-[11px] text-slate-500">
+              <p class="mt-1 text-[11px] text-fg-muted">
                 {row.n_candidate_fits} candidates
               </p>
               <span
@@ -365,20 +365,20 @@
                 {#if cell}
                   <div class="flex items-start justify-between gap-2">
                     <div>
-                      <p class="font-mono text-xs text-slate-900">
+                      <p class="font-mono text-xs text-fg">
                         {fmt(cell.aic)}
                       </p>
-                      <p class="mt-0.5 text-[11px] text-slate-500">
+                      <p class="mt-0.5 text-[11px] text-fg-muted">
                         dAIC {fmt(cell.delta_from_best)}
                       </p>
                     </div>
                     {#if cell.is_winner}
-                      <span class="rounded bg-white px-1.5 py-0.5 text-[10px] uppercase text-ok">
+                      <span class="rounded bg-surface-raised px-1.5 py-0.5 text-[10px] uppercase text-ok">
                         winner
                       </span>
                     {/if}
                   </div>
-                  <p class="mt-1 max-w-36 truncate font-mono text-[10px] text-slate-500" title={cell.variant_id}>
+                  <p class="mt-1 max-w-36 truncate font-mono text-[10px] text-fg-muted" title={cell.variant_id}>
                     {cell.variant_label}
                   </p>
                   {#if cell.caveat_tags.length > 0}
@@ -394,7 +394,7 @@
                     </ul>
                   {/if}
                 {:else}
-                  <span class="text-xs text-slate-400">-</span>
+                  <span class="text-xs text-fg-subtle">-</span>
                 {/if}
               </td>
             {/each}

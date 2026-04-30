@@ -135,7 +135,7 @@
   function priorityClass(value: string): string {
     if (value === "high") return "bg-warn-soft text-warn";
     if (value === "medium" || value === "normal") return "bg-accent-soft text-accent";
-    return "bg-slate-100 text-slate-600";
+    return "bg-surface-sunken text-fg-muted";
   }
 
   function cellLabel(value: CellState): string {
@@ -151,34 +151,34 @@
   function cellClass(value: CellState): string {
     if (value === "ok") return "bg-ok-soft text-ok ring-ok/20";
     if (value === "partial") return "bg-accent-soft text-accent ring-accent/20";
-    if (value === "ready") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    if (value === "missing") return "bg-slate-100 text-slate-600 ring-slate-200";
+    if (value === "ready") return "bg-ok-soft text-ok ring-ok";
+    if (value === "missing") return "bg-surface-sunken text-fg-muted ring-rule";
     if (value === "blocked") return "bg-bad-soft text-bad ring-bad/20";
-    if (value === "na") return "bg-white text-slate-400 ring-slate-200";
-    return "bg-slate-50 text-slate-500 ring-slate-200";
+    if (value === "na") return "bg-surface-raised text-fg-subtle ring-rule";
+    return "bg-surface text-fg-muted ring-rule";
   }
 
   function cellDotClass(value: CellState): string {
     if (value === "ok") return "bg-ok";
     if (value === "partial") return "bg-accent";
-    if (value === "ready") return "bg-emerald-500";
-    if (value === "missing") return "bg-slate-300";
+    if (value === "ready") return "bg-ok";
+    if (value === "missing") return "bg-rule-strong";
     if (value === "blocked") return "bg-bad";
-    if (value === "na") return "bg-white ring-1 ring-slate-300";
-    return "bg-slate-400";
+    if (value === "na") return "bg-surface-raised ring-1 ring-rule-strong";
+    return "bg-fg-subtle";
   }
 </script>
 
-<section class="rounded-md border border-slate-200 bg-white p-4" data-testid="coverage-gap-matrix">
+<section class="rounded-md border border-rule bg-surface-raised p-4" data-testid="coverage-gap-matrix">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h3 class="text-base font-semibold text-slate-900">Coverage Gap Matrix</h3>
-      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+      <h3 class="text-base font-semibold text-fg">Coverage Gap Matrix</h3>
+      <p class="mt-1 max-w-3xl text-sm text-fg-muted">
         Visual triage across source data, trial tables, extracted findings, model fits,
         reports, and request state.
       </p>
     </div>
-    <span class="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+    <span class="rounded bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-secondary">
       {filteredRows.length}/{rows.length}
     </span>
   </div>
@@ -191,12 +191,12 @@
           "rounded border px-2.5 py-1 font-semibold",
           view === option.value
             ? "border-accent bg-accent text-white"
-            : "border-slate-300 bg-white text-slate-700 hover:border-accent hover:text-accent",
+            : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-accent hover:text-accent",
         ]}
         onclick={() => (view = option.value)}
       >
         {option.label}
-        <span class={view === option.value ? "text-white/80" : "text-slate-500"}>
+        <span class={view === option.value ? "text-white/80" : "text-fg-muted"}>
           {viewCount(option.value)}
         </span>
       </button>
@@ -204,13 +204,13 @@
   </div>
 
   <div class="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1fr)]">
-    <label class="text-xs text-slate-600">
-      <span class="mb-1 block font-semibold text-slate-700">Search gaps</span>
+    <label class="text-xs text-fg-muted">
+      <span class="mb-1 block font-semibold text-fg-secondary">Search gaps</span>
       <input
         value={query}
         oninput={(event) => (query = (event.currentTarget as HTMLInputElement).value)}
         type="search"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        class="w-full rounded-md border border-rule-strong bg-surface-raised px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         placeholder="paper, protocol, slice, blocker"
         autocomplete="off"
         autocapitalize="none"
@@ -228,13 +228,13 @@
   </div>
 
   {#if filteredRows.length === 0}
-    <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+    <p class="mt-4 rounded-md border border-rule bg-surface p-4 text-sm text-fg-muted">
       No coverage gaps match the current filters.
     </p>
   {:else}
-    <div class="mt-4 hidden overflow-x-auto rounded-md border border-slate-200 md:block">
+    <div class="mt-4 hidden overflow-x-auto rounded-md border border-rule md:block">
       <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <thead class="bg-surface text-left text-xs uppercase tracking-wide text-fg-muted">
           <tr>
             <th class="px-3 py-2">Target</th>
             <th class="px-3 py-2">State</th>
@@ -245,20 +245,20 @@
             <th class="px-3 py-2">Next action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200">
+        <tbody class="divide-y divide-rule">
           {#each filteredRows as row (row.id)}
             <tr>
               <td class="max-w-xs px-3 py-3 align-top">
-                <a class="font-semibold text-slate-900 no-underline hover:text-accent" href={row.href}>
+                <a class="font-semibold text-fg no-underline hover:text-accent" href={row.href}>
                   {row.target_label}
                 </a>
-                <p class="mt-1 font-mono text-[11px] text-slate-500">{row.target_id}</p>
+                <p class="mt-1 font-mono text-[11px] text-fg-muted">{row.target_id}</p>
                 <div class="mt-2 flex flex-wrap gap-1">
-                  <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600">
+                  <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase text-fg-muted">
                     {readable(row.target_type)}
                   </span>
                   {#each row.chips.slice(0, 4) as chip (chip)}
-                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{chip}</span>
+                    <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] text-fg-muted">{chip}</span>
                   {/each}
                 </div>
               </td>
@@ -269,8 +269,8 @@
                 <span class={["mt-1 block w-fit rounded px-2 py-0.5 text-[10px] uppercase", priorityClass(row.priority)]}>
                   {readable(row.priority)}
                 </span>
-                <p class="mt-1 text-[11px] text-slate-500">{readable(row.status)}</p>
-                <p class="mt-1 text-[11px] text-slate-500">{row.source}</p>
+                <p class="mt-1 text-[11px] text-fg-muted">{readable(row.status)}</p>
+                <p class="mt-1 text-[11px] text-fg-muted">{row.source}</p>
               </td>
               {#each columns as column (column.key)}
                 <td class="px-2 py-3 text-center align-top">
@@ -283,18 +283,18 @@
                   </span>
                 </td>
               {/each}
-              <td class="max-w-xs px-3 py-3 align-top text-xs text-slate-700">
-                <span class="font-semibold text-slate-800">{readable(row.blocker)}</span>
+              <td class="max-w-xs px-3 py-3 align-top text-xs text-fg-secondary">
+                <span class="font-semibold text-fg">{readable(row.blocker)}</span>
                 {#if row.detail}
-                  <p class="mt-1 line-clamp-3 text-slate-500">{row.detail}</p>
+                  <p class="mt-1 line-clamp-3 text-fg-muted">{row.detail}</p>
                 {/if}
                 {#if row.request_href}
-                  <a class="mt-2 inline-flex rounded border border-slate-300 px-2 py-0.5 text-[10px] no-underline hover:border-accent hover:text-accent" href={row.request_href}>
+                  <a class="mt-2 inline-flex rounded border border-rule-strong px-2 py-0.5 text-[10px] no-underline hover:border-accent hover:text-accent" href={row.request_href}>
                     {row.request_label ?? "request"}
                   </a>
                 {/if}
               </td>
-              <td class="max-w-sm px-3 py-3 align-top text-xs text-slate-700">
+              <td class="max-w-sm px-3 py-3 align-top text-xs text-fg-secondary">
                 {row.next_action}
               </td>
             </tr>
@@ -305,13 +305,13 @@
 
     <ul class="mt-4 space-y-3 md:hidden">
       {#each filteredRows as row (row.id)}
-        <li class="rounded-md border border-slate-200 bg-slate-50 p-3">
+        <li class="rounded-md border border-rule bg-surface p-3">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <a class="font-semibold text-slate-900 no-underline hover:text-accent" href={row.href}>
+              <a class="font-semibold text-fg no-underline hover:text-accent" href={row.href}>
                 {row.target_label}
               </a>
-              <p class="mt-1 font-mono text-[11px] text-slate-500">{row.target_id}</p>
+              <p class="mt-1 font-mono text-[11px] text-fg-muted">{row.target_id}</p>
             </div>
             <span class={["shrink-0 rounded px-2 py-1 text-[10px] uppercase ring-1", viewClass(row.view)]}>
               {viewLabel(row.view)}
@@ -320,7 +320,7 @@
           <div class="mt-3 grid grid-cols-2 gap-2">
             {#each columns as column (column.key)}
               <div>
-                <div class="mb-1 text-[10px] uppercase tracking-wide text-slate-500">{column.label}</div>
+                <div class="mb-1 text-[10px] uppercase tracking-wide text-fg-muted">{column.label}</div>
                 <span class={["inline-flex w-full items-center justify-center gap-1 rounded px-1.5 py-1 text-[10px] ring-1", cellClass(row.cells[column.key])]}>
                   <span class={["h-2 w-2 rounded-full", cellDotClass(row.cells[column.key])]}></span>
                   {cellLabel(row.cells[column.key])}
@@ -328,8 +328,8 @@
               </div>
             {/each}
           </div>
-          <p class="mt-3 text-xs font-semibold text-slate-800">{readable(row.blocker)}</p>
-          <p class="mt-1 text-xs text-slate-600">{row.next_action}</p>
+          <p class="mt-3 text-xs font-semibold text-fg">{readable(row.blocker)}</p>
+          <p class="mt-1 text-xs text-fg-muted">{row.next_action}</p>
         </li>
       {/each}
     </ul>

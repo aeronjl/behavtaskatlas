@@ -536,25 +536,25 @@
                   class="grid grid-cols-6 gap-1"
                   title="bibliography, protocol, source, slice, finding, model coverage"
                 >
-                  <span class="h-2 rounded-full bg-slate-500" title="bibliography curated"></span>
+                  <span class="h-2 rounded-full bg-surface0" title="bibliography curated"></span>
                   <span
-                    class={["h-2 rounded-full", coverageStepClass((row.protocols?.length ?? 0) > 0, "bg-sky-500")]}
+                    class={["h-2 rounded-full", coverageStepClass((row.protocols?.length ?? 0) > 0, "bg-encoding-coverage-protocol")]}
                     title={`${row.protocols?.length ?? 0} linked protocol${(row.protocols?.length ?? 0) === 1 ? "" : "s"}`}
                   ></span>
                   <span
-                    class={["h-2 rounded-full", coverageStepClass((row.source_data_levels?.length ?? 0) > 0, "bg-emerald-500")]}
+                    class={["h-2 rounded-full", coverageStepClass((row.source_data_levels?.length ?? 0) > 0, "bg-encoding-coverage-data")]}
                     title={`${row.source_data_levels?.length ?? 0} source level${(row.source_data_levels?.length ?? 0) === 1 ? "" : "s"}`}
                   ></span>
                   <span
-                    class={["h-2 rounded-full", coverageStepClass(sliceCount(row) > 0, "bg-teal-500")]}
+                    class={["h-2 rounded-full", coverageStepClass(sliceCount(row) > 0, "bg-encoding-coverage-analysis")]}
                     title={`${sliceCount(row)} linked slice${sliceCount(row) === 1 ? "" : "s"}`}
                   ></span>
                   <span
-                    class={["h-2 rounded-full", coverageStepClass(row.finding_count > 0, "bg-blue-600")]}
+                    class={["h-2 rounded-full", coverageStepClass(row.finding_count > 0, "bg-encoding-coverage-findings")]}
                     title={`${row.finding_count} extracted finding${row.finding_count === 1 ? "" : "s"}`}
                   ></span>
                   <span
-                    class={["h-2 rounded-full", coverageStepClass(modelFitCount(row) > 0, "bg-violet-500")]}
+                    class={["h-2 rounded-full", coverageStepClass(modelFitCount(row) > 0, "bg-encoding-model-ddm")]}
                     title={`${modelFitCount(row)} model fit${modelFitCount(row) === 1 ? "" : "s"}`}
                   ></span>
                 </div>
@@ -588,7 +588,7 @@
                 </span>
                 <span class="mt-1 block h-1.5 rounded-full bg-surface-raised">
                   <span
-                    class="block h-1.5 rounded-full bg-violet-500"
+                    class="block h-1.5 rounded-full bg-encoding-model-ddm"
                     style={`width: ${stripWidth(modelFitCount(row), maxModels)}`}
                   ></span>
                 </span>
@@ -605,7 +605,7 @@
                 </span>
                 <span class="mt-1 block h-1.5 rounded-full bg-surface-raised">
                   <span
-                    class="block h-1.5 rounded-full bg-teal-500"
+                    class="block h-1.5 rounded-full bg-encoding-coverage-analysis"
                     style={`width: ${stripWidth(sliceCount(row), maxSlices)}`}
                   ></span>
                 </span>
@@ -622,7 +622,7 @@
                       <span class={["h-2 flex-1 rounded-full", curveClass(curve)]} title={readable(curve)}></span>
                     {/each}
                   {:else}
-                    <span class="h-2 flex-1 rounded-full bg-slate-100" title="no curves extracted"></span>
+                    <span class="h-2 flex-1 rounded-full bg-surface-sunken" title="no curves extracted"></span>
                   {/if}
                 </div>
               </div>
@@ -638,7 +638,7 @@
                       <span class={["h-2 flex-1 rounded-full", sourceClass(level)]} title={readable(level)}></span>
                     {/each}
                   {:else}
-                    <span class="h-2 flex-1 rounded-full bg-slate-100" title="no linked source data"></span>
+                    <span class="h-2 flex-1 rounded-full bg-surface-sunken" title="no linked source data"></span>
                   {/if}
                 </div>
               </div>

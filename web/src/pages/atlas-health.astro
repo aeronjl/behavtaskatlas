@@ -62,7 +62,7 @@ const curationGrouped = priorityOrder
 const priorityClasses: Record<CurationItem["priority"], string> = {
   high: "bg-warn-soft text-warn",
   normal: "bg-accent-soft text-accent",
-  low: "bg-slate-100 text-slate-600",
+  low: "bg-surface-sunken text-fg-muted",
 };
 
 type RoadmapItem = {
@@ -383,7 +383,7 @@ function statusClass(status: string): string {
   if (status === "ok") return "bg-ok-soft text-ok";
   if (status === "drift") return "bg-bad-soft text-bad";
   if (status === "ambiguous") return "bg-warn-soft text-warn";
-  return "bg-slate-100 text-slate-700";
+  return "bg-surface-sunken text-fg-secondary";
 }
 function fmt(value: number | null | undefined, digits = 6): string {
   if (value === null || value === undefined) return "—";
@@ -392,7 +392,7 @@ function fmt(value: number | null | undefined, digits = 6): string {
 function priorityClass(priority: string): string {
   if (priority === "high") return "bg-warn-soft text-warn";
   if (priority === "medium") return "bg-accent-soft text-accent";
-  return "bg-slate-100 text-slate-600";
+  return "bg-surface-sunken text-fg-muted";
 }
 function roadmapStatusClass(status: string | undefined): string {
   if (status === "blocked_external_data") return "bg-bad-soft text-bad";
@@ -654,7 +654,7 @@ const headlineCounts = {
       </div>
     </Card>
     {auditReports.length === 0 ? (
-      <p class="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <p class="rounded-md border border-rule bg-surface-raised p-4 text-sm text-fg-muted">
         No groups currently meet the audit criteria (≥1 pooled + ≥2 per-subject).
       </p>
     ) : (
@@ -694,14 +694,14 @@ const headlineCounts = {
       {auditReports
         .filter((r) => r.status !== "ok" && Array.isArray(r.per_point))
         .map((r) => (
-          <details class="rounded-md border border-slate-200 bg-white p-4">
-            <summary class="cursor-pointer text-sm font-semibold text-slate-700">
+          <details class="rounded-md border border-rule bg-surface-raised p-4">
+            <summary class="cursor-pointer text-sm font-semibold text-fg-secondary">
               {r.paper_id} · {r.curve_type}
               {r.condition ? ` · ${r.condition}` : ""} — per-point detail
             </summary>
             <div class="mt-3 overflow-x-auto">
               <table class="w-full text-xs">
-                <thead class="text-left text-[11px] uppercase tracking-wide text-slate-500">
+                <thead class="text-left text-[11px] uppercase tracking-wide text-fg-muted">
                   <tr>
                     <th class="px-2 py-1 text-right">x</th>
                     <th class="px-2 py-1 text-right">pooled y</th>
@@ -709,7 +709,7 @@ const headlineCounts = {
                     <th class="px-2 py-1 text-right">|diff|</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-rule">
                   {(r.per_point as AuditPerPoint[]).map((p) => (
                     <tr>
                       <td class="px-2 py-1 text-right font-mono">{p.x}</td>
@@ -764,15 +764,15 @@ const headlineCounts = {
         </div>
         {curationGrouped.map((group) => (
           <div class="mb-6">
-            <h3 class="mb-2 text-base font-semibold capitalize text-slate-800">
+            <h3 class="mb-2 text-base font-semibold capitalize text-fg">
               {group.priority} priority{" "}
-              <span class="text-sm font-normal text-slate-500">
+              <span class="text-sm font-normal text-fg-muted">
                 ({group.items.length})
               </span>
             </h3>
             <ul class="space-y-2">
               {group.items.map((item) => (
-                <li class="rounded-md border border-slate-200 bg-white p-3 text-sm">
+                <li class="rounded-md border border-rule bg-surface-raised p-3 text-sm">
                   <header class="mb-1 flex items-baseline justify-between gap-2">
                     <span class="font-medium">{item.action_type}</span>
                     <span
@@ -784,10 +784,10 @@ const headlineCounts = {
                       {item.priority}
                     </span>
                   </header>
-                  <p class="mb-1 text-slate-700">{item.message}</p>
-                  <p class="text-xs text-slate-500">Next: {item.suggested_next_step}</p>
+                  <p class="mb-1 text-fg-secondary">{item.message}</p>
+                  <p class="text-xs text-fg-muted">Next: {item.suggested_next_step}</p>
                   {item.node_id ? (
-                    <p class="mt-1 font-mono text-xs text-slate-500">{item.node_id}</p>
+                    <p class="mt-1 font-mono text-xs text-fg-muted">{item.node_id}</p>
                   ) : null}
                 </li>
               ))}
@@ -830,34 +830,34 @@ const headlineCounts = {
 
     {requestQueueGroups.length > 0 ? (
       <div class="mb-6">
-        <h3 class="mb-3 text-base font-semibold text-slate-800">Request queue</h3>
+        <h3 class="mb-3 text-base font-semibold text-fg">Request queue</h3>
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {requestQueueGroups.map((group) => (
-            <section class="rounded-md border border-slate-200 bg-white p-4">
+            <section class="rounded-md border border-rule bg-surface-raised p-4">
               <div class="flex items-start justify-between gap-3">
                 <div>
-                  <p class="text-xs uppercase tracking-wide text-slate-500">Queue state</p>
-                  <h4 class="mt-1 text-sm font-semibold text-slate-800">
+                  <p class="text-xs uppercase tracking-wide text-fg-muted">Queue state</p>
+                  <h4 class="mt-1 text-sm font-semibold text-fg">
                     {label(group.actionState)}
                   </h4>
                 </div>
-                <span class="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+                <span class="rounded bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-secondary">
                   {group.requests.length}
                 </span>
               </div>
-              <ul class="mt-3 divide-y divide-slate-200 text-sm">
+              <ul class="mt-3 divide-y divide-rule text-sm">
                 {group.requests.map((request) => (
                   <li class="py-3 first:pt-0 last:pb-0">
                     <div class="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         {request.request_export_path ? (
-                          <a class="font-semibold text-slate-800" href={request.request_export_path}>
+                          <a class="font-semibold text-fg" href={request.request_export_path}>
                             {request.title}
                           </a>
                         ) : (
-                          <span class="font-semibold text-slate-800">{request.title}</span>
+                          <span class="font-semibold text-fg">{request.title}</span>
                         )}
-                        <p class="mt-0.5 font-mono text-[11px] text-slate-500">
+                        <p class="mt-0.5 font-mono text-[11px] text-fg-muted">
                           {compactId(request.request_id)}
                         </p>
                       </div>
@@ -866,12 +866,12 @@ const headlineCounts = {
                       </span>
                     </div>
                     {request.action_summary ? (
-                      <p class="mt-2 text-xs text-slate-700">{request.action_summary}</p>
+                      <p class="mt-2 text-xs text-fg-secondary">{request.action_summary}</p>
                     ) : null}
                     <dl class="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                       <div>
-                        <dt class="uppercase text-slate-500">Last event</dt>
-                        <dd class="mt-0.5 text-slate-700">
+                        <dt class="uppercase text-fg-muted">Last event</dt>
+                        <dd class="mt-0.5 text-fg-secondary">
                           {label(request.last_event_type)}
                           {request.days_since_last_event !== null && request.days_since_last_event !== undefined
                             ? ` · ${request.days_since_last_event} day(s)`
@@ -879,8 +879,8 @@ const headlineCounts = {
                         </dd>
                       </div>
                       <div>
-                        <dt class="uppercase text-slate-500">Follow-up</dt>
-                        <dd class="mt-0.5 text-slate-700">
+                        <dt class="uppercase text-fg-muted">Follow-up</dt>
+                        <dd class="mt-0.5 text-fg-secondary">
                           {formatDate(request.next_follow_up_date)}
                           {request.days_until_follow_up !== null && request.days_until_follow_up !== undefined
                             ? ` · ${request.days_until_follow_up} day(s)`
@@ -889,7 +889,7 @@ const headlineCounts = {
                       </div>
                     </dl>
                     {request.suggested_command ? (
-                      <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-slate-50 p-2 font-mono text-[11px] text-slate-700">{request.suggested_command}</pre>
+                      <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-surface p-2 font-mono text-[11px] text-fg-secondary">{request.suggested_command}</pre>
                     ) : null}
                   </li>
                 ))}
@@ -913,13 +913,13 @@ const headlineCounts = {
               <header class="border-b border-rule p-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p class="text-xs uppercase tracking-wide text-slate-500">
+                    <p class="text-xs uppercase tracking-wide text-fg-muted">
                       {label(group.blocker_type)}
                     </p>
                     <h3 class="mt-1 text-base font-semibold">
                       <a href={group.dataset_href}>{group.dataset_name}</a>
                     </h3>
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p class="mt-1 text-xs text-fg-muted">
                       {group.species} · {group.protocol_name} · {group.source_data_level}
                     </p>
                   </div>
@@ -930,29 +930,29 @@ const headlineCounts = {
               </header>
               <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_0.75fr]">
                 <div>
-                  <h4 class="text-sm font-semibold text-slate-700">Blocker</h4>
-                  <p class="mt-1 text-sm text-slate-700">{group.blocker_detail}</p>
-                  <h4 class="mt-4 text-sm font-semibold text-slate-700">Next action</h4>
-                  <p class="mt-1 text-sm text-slate-700">{group.next_action}</p>
+                  <h4 class="text-sm font-semibold text-fg-secondary">Blocker</h4>
+                  <p class="mt-1 text-sm text-fg-secondary">{group.blocker_detail}</p>
+                  <h4 class="mt-4 text-sm font-semibold text-fg-secondary">Next action</h4>
+                  <p class="mt-1 text-sm text-fg-secondary">{group.next_action}</p>
                   <div class="mt-4 flex flex-wrap gap-2 text-xs">
-                    <a class="rounded bg-slate-100 px-2 py-1" href={group.paper_href}>
+                    <a class="rounded bg-surface-sunken px-2 py-1" href={group.paper_href}>
                       {group.paper_label}
                     </a>
-                    <a class="rounded bg-slate-100 px-2 py-1" href={group.slice_href}>
+                    <a class="rounded bg-surface-sunken px-2 py-1" href={group.slice_href}>
                       {compactId(group.slice_id)}
                     </a>
                     {group.source_url ? (
-                      <a class="rounded bg-slate-100 px-2 py-1" href={group.source_url}>
+                      <a class="rounded bg-surface-sunken px-2 py-1" href={group.source_url}>
                         source package
                       </a>
                     ) : null}
                   </div>
                   {request ? (
-                    <section class="mt-5 rounded border border-slate-200 p-3">
+                    <section class="mt-5 rounded border border-rule p-3">
                       <div class="flex flex-wrap items-baseline justify-between gap-3">
                         <div>
-                          <p class="text-xs uppercase tracking-wide text-slate-500">Tracked request</p>
-                          <h4 class="mt-1 text-sm font-semibold text-slate-800">{request.title}</h4>
+                          <p class="text-xs uppercase tracking-wide text-fg-muted">Tracked request</p>
+                          <h4 class="mt-1 text-sm font-semibold text-fg">{request.title}</h4>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                           {request.request_export_path ? (
@@ -968,33 +968,33 @@ const headlineCounts = {
                           </span>
                         </div>
                       </div>
-                      <p class="mt-2 text-sm text-slate-700">{request.purpose}</p>
+                      <p class="mt-2 text-sm text-fg-secondary">{request.purpose}</p>
                       {request.action_summary ? (
                         <p class="mt-2 text-xs text-accent">{request.action_summary}</p>
                       ) : null}
                       {request.suggested_command ? (
-                        <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-slate-50 p-2 font-mono text-[11px] text-slate-700">{request.suggested_command}</pre>
+                        <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-surface p-2 font-mono text-[11px] text-fg-secondary">{request.suggested_command}</pre>
                       ) : null}
                       {(request.events ?? []).length > 0 ? (
                         <details class="mt-3">
-                          <summary class="cursor-pointer text-xs font-semibold text-slate-700">
+                          <summary class="cursor-pointer text-xs font-semibold text-fg-secondary">
                             Timeline ({(request.events ?? []).length})
                           </summary>
-                          <ol class="mt-2 space-y-2 border-l border-slate-200 pl-3 text-xs">
+                          <ol class="mt-2 space-y-2 border-l border-rule pl-3 text-xs">
                             {(request.events ?? []).map((event) => (
                               <li>
                                 <div class="flex flex-wrap items-baseline gap-2">
-                                  <span class="font-semibold text-slate-700">
+                                  <span class="font-semibold text-fg-secondary">
                                     {label(event.event_type)}
                                   </span>
-                                  <span class="font-mono text-[11px] text-slate-500">
+                                  <span class="font-mono text-[11px] text-fg-muted">
                                     {event.event_date}
                                   </span>
-                                  <span class="text-[11px] text-slate-500">
+                                  <span class="text-[11px] text-fg-muted">
                                     {event.actor}
                                   </span>
                                 </div>
-                                <p class="mt-0.5 text-slate-600">{event.notes}</p>
+                                <p class="mt-0.5 text-fg-muted">{event.notes}</p>
                                 {event.next_follow_up_date ? (
                                   <p class="mt-0.5 text-[11px] text-accent">
                                     Follow up {event.next_follow_up_date}
@@ -1005,7 +1005,7 @@ const headlineCounts = {
                                     evidence
                                   </a>
                                 ) : event.evidence_path ? (
-                                  <p class="font-mono text-[11px] text-slate-500">
+                                  <p class="font-mono text-[11px] text-fg-muted">
                                     {event.evidence_path}
                                   </p>
                                 ) : null}
@@ -1015,37 +1015,37 @@ const headlineCounts = {
                         </details>
                       ) : null}
                       {request.request_draft ? (
-                        <details class="mt-3 rounded border border-slate-200 p-3">
-                          <summary class="cursor-pointer text-xs font-semibold text-slate-700">
+                        <details class="mt-3 rounded border border-rule p-3">
+                          <summary class="cursor-pointer text-xs font-semibold text-fg-secondary">
                             Ready-to-send request draft
                           </summary>
-                          <p class="mt-3 text-xs font-semibold text-slate-700">
+                          <p class="mt-3 text-xs font-semibold text-fg-secondary">
                             {request.request_draft.subject}
                           </p>
-                          <pre class="mt-2 whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs text-slate-700">{request.request_draft.body}</pre>
+                          <pre class="mt-2 whitespace-pre-wrap rounded bg-surface p-3 text-xs text-fg-secondary">{request.request_draft.body}</pre>
                         </details>
                       ) : null}
                     </section>
                   ) : null}
                 </div>
-                <aside class="rounded border border-slate-200 p-3">
+                <aside class="rounded border border-rule p-3">
                   <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-                    <dt class="text-slate-500">Roadmap rows</dt>
-                    <dd class="font-mono text-slate-900">{group.items.length}</dd>
-                    <dt class="text-slate-500">Findings</dt>
-                    <dd class="font-mono text-slate-900">{group.finding_ids.length}</dd>
-                    <dt class="text-slate-500">Σ trials</dt>
-                    <dd class="font-mono text-slate-900">
+                    <dt class="text-fg-muted">Roadmap rows</dt>
+                    <dd class="font-mono text-fg">{group.items.length}</dd>
+                    <dt class="text-fg-muted">Findings</dt>
+                    <dd class="font-mono text-fg">{group.finding_ids.length}</dd>
+                    <dt class="text-fg-muted">Σ trials</dt>
+                    <dd class="font-mono text-fg">
                       {group.total_trials.toLocaleString()}
                     </dd>
-                    <dt class="text-slate-500">Dataset</dt>
-                    <dd class="font-mono text-[11px] text-slate-700">
+                    <dt class="text-fg-muted">Dataset</dt>
+                    <dd class="font-mono text-[11px] text-fg-secondary">
                       {compactId(group.dataset_id)}
                     </dd>
                   </dl>
                   {group.comparison_scopes.length > 0 ? (
                     <>
-                      <h4 class="mt-4 text-xs font-semibold uppercase text-slate-500">Scopes</h4>
+                      <h4 class="mt-4 text-xs font-semibold uppercase text-fg-muted">Scopes</h4>
                       <ul class="mt-2 flex flex-wrap gap-1">
                         {group.comparison_scopes.map((scope) => (
                           <li class="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] text-accent">
@@ -1057,7 +1057,7 @@ const headlineCounts = {
                   ) : null}
                   {group.caveat_tags.length > 0 ? (
                     <>
-                      <h4 class="mt-4 text-xs font-semibold uppercase text-slate-500">Caveats</h4>
+                      <h4 class="mt-4 text-xs font-semibold uppercase text-fg-muted">Caveats</h4>
                       <ul class="mt-2 flex flex-wrap gap-1">
                         {group.caveat_tags.map((tag) => (
                           <li class="rounded bg-warn-soft px-1.5 py-0.5 text-[10px] text-warn">
@@ -1130,9 +1130,9 @@ const headlineCounts = {
         </StatusPill>
       </div>
     </Fragment>
-    <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+    <div class="overflow-x-auto rounded-md border border-rule bg-surface-raised">
       <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <thead class="bg-surface text-left text-xs uppercase tracking-wide text-fg-muted">
           <tr>
             <th class="px-3 py-2">Rank</th>
             <th class="px-3 py-2">Target</th>
@@ -1141,7 +1141,7 @@ const headlineCounts = {
             <th class="px-3 py-2">Impact</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200">
+        <tbody class="divide-y divide-rule">
           {topRoadmapItems.map((item) => (
             <tr>
               <td class="px-3 py-2 align-top">
@@ -1157,14 +1157,14 @@ const headlineCounts = {
                 <a class="font-mono text-[11px]" href={roadmapHref(item)}>
                   {item.target_id.replace(/^(finding|slice)\./, "")}
                 </a>
-                <p class="mt-1 text-[11px] text-slate-500">{item.target_type}</p>
+                <p class="mt-1 text-[11px] text-fg-muted">{item.target_type}</p>
               </td>
               <td class="px-3 py-2 align-top">
-                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-600">
+                <span class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase text-fg-muted">
                   {issueLabel(item.issue_type)}
                 </span>
               </td>
-              <td class="px-3 py-2 align-top text-xs text-slate-700">
+              <td class="px-3 py-2 align-top text-xs text-fg-secondary">
                 {item.recommended_action}
                 {item.blocker_type ? (
                   <p class="mt-1 text-[11px] uppercase text-bad">
@@ -1172,7 +1172,7 @@ const headlineCounts = {
                   </p>
                 ) : null}
               </td>
-              <td class="px-3 py-2 align-top text-xs text-slate-600">{item.impact}</td>
+              <td class="px-3 py-2 align-top text-xs text-fg-muted">{item.impact}</td>
             </tr>
           ))}
         </tbody>
@@ -1186,15 +1186,15 @@ const headlineCounts = {
     title="Link integrity"
     description="Internal links checked against the set of generated routes (search, graph, curation queue, finding provenance, model selection)."
   >
-    <div class="mb-4 rounded-md border border-slate-200 bg-white p-4">
+    <div class="mb-4 rounded-md border border-rule bg-surface-raised p-4">
       <div class="flex flex-wrap items-baseline gap-3">
         <span class={`rounded px-2 py-0.5 text-xs uppercase ${statusClass(linkIntegrity.overall_status)}`}>
           {linkIntegrity.overall_status}
         </span>
-        <p class="text-sm text-slate-700">
+        <p class="text-sm text-fg-secondary">
           {linkIntegrity.counts.checked_links} link{linkIntegrity.counts.checked_links === 1 ? "" : "s"} checked against {linkIntegrity.counts.known_routes} routes.
         </p>
-        <p class="text-xs text-slate-500">
+        <p class="text-xs text-fg-muted">
           {linkIntegrity.counts.issues} issue{linkIntegrity.counts.issues === 1 ? "" : "s"}.
         </p>
       </div>

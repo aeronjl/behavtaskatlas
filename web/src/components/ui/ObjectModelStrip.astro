@@ -1,0 +1,134 @@
+---
+/**
+ * ObjectModelStrip — a horizontal chip-flow that names the five record
+ * types in the atlas's data model so a first-time visitor can see the
+ * shape of the project before they read anything else.
+ *
+ *   Family  →  Protocol  →  Dataset  →  Slice  →  Finding
+ *
+ * Each node is a small linked card showing the type name, a one-line
+ * description (always visible — not a tooltip), an encoding-token
+ * colour swatch, and a current count. Hovering a card highlights its
+ * accent edge; clicking opens the relevant browse surface.
+ *
+ * Layout: at md+ the cards sit in one row with chevron arrows between;
+ * on mobile they stack vertically with downward arrows so the flow
+ * direction is preserved. The strip is intended for the top of `/`,
+ * `/catalog`, and `/atlas-health` so the same vocabulary anchors every
+ * scientist-facing page.
+ *
+ *   <ObjectModelStrip
+ *     counts={{
+ *       families: 7, protocols: 18, datasets: 16, slices: 17, findings: 91,
+ *     }}
+ *   />
+ */
+
+interface Counts {
+  families: number;
+  protocols: number;
+  datasets: number;
+  slices: number;
+  findings: number;
+}
+
+interface Props {
+  counts: Counts;
+  class?: string;
+  /** Render a small heading above the strip. */
+  title?: string;
+}
+
+const { counts, class: className, title } = Astro.props as Props;
+
+const NODES = [
+  {
+    key: "family",
+    label: "Family",
+    count: counts.families,
+    href: "/catalog?type=family",
+    color: "bg-encoding-node-task-family",
+    description: "Reusable operational task idea.",
+  },
+  {
+    key: "protocol",
+    label: "Protocol",
+    count: counts.protocols,
+    href: "/catalog?type=protocol",
+    color: "bg-encoding-node-protocol",
+    description: "One concrete variant with species, stimulus, choice.",
+  },
+  {
+    key: "dataset",
+    label: "Dataset",
+    count: counts.datasets,
+    href: "/catalog?type=dataset",
+    color: "bg-encoding-node-dataset",
+    description: "Pointer to public or private behavioural data.",
+  },
+  {
+    key: "slice",
+    label: "Slice",
+    count: counts.slices,
+    href: "/slices",
+    color: "bg-encoding-node-slice",
+    description: "One protocol × dataset bound to a reproducible pipeline.",
+  },
+  {
+    key: "finding",
+    label: "Finding",
+    count: counts.findings,
+    href: "/findings",
+    color: "bg-encoding-coverage-findings",
+    description: "One curve, on shared signed-evidence axes.",
+  },
+] as const;
+---
+
+<section
+  class:list={["min-w-0", className]}
+  aria-label={title ?? "Object model"}
+>
+  {title ? (
+    <p class="mb-2 text-eyebrow uppercase text-fg-muted">{title}</p>
+  ) : null}
+  <ol class="object-model-strip flex flex-col gap-2 md:flex-row md:items-stretch md:gap-0">
+    {NODES.map((node, index) => (
+      <>
+        <li class="flex-1 min-w-0">
+          <a
+            href={node.href}
+            class="group flex h-full min-w-0 flex-col rounded-md border border-rule bg-surface-raised p-3 no-underline transition-colors hover:border-rule-emphasis"
+          >
+            <span class="flex items-baseline justify-between gap-2">
+              <span class="flex min-w-0 items-baseline gap-1.5">
+                <span
+                  class:list={["h-2 w-2 shrink-0 rounded-full", node.color]}
+                  aria-hidden="true"
+                ></span>
+                <span class="text-eyebrow uppercase text-fg-muted">
+                  {node.label}
+                </span>
+              </span>
+              <span class="font-mono text-mono-num font-semibold text-fg">
+                {node.count.toLocaleString()}
+              </span>
+            </span>
+            <span class="mt-2 block text-body-xs text-fg-secondary">
+              {node.description}
+            </span>
+          </a>
+        </li>
+        {index < NODES.length - 1 ? (
+          <li
+            class="flex shrink-0 items-center justify-center text-fg-subtle md:px-1"
+            aria-hidden="true"
+          >
+            <span class="md:hidden">↓</span>
+            <span class="hidden md:inline">→</span>
+          </li>
+        ) : null}
+      </>
+    ))}
+  </ol>
+</section>

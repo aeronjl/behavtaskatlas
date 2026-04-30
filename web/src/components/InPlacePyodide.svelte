@@ -656,22 +656,22 @@ def _lsp_query(kind, code, line, col):
   );
 </script>
 
-<div class="rounded-md border border-slate-200 bg-white p-4">
+<div class="rounded-md border border-rule bg-surface-raised p-4">
   <header class="mb-2 flex items-baseline justify-between gap-2">
-    <h3 class="text-sm font-semibold text-slate-700">{title}</h3>
-    <span class="text-xs text-slate-500">Pyodide {PYODIDE_VERSION}</span>
+    <h3 class="text-sm font-semibold text-fg-secondary">{title}</h3>
+    <span class="text-xs text-fg-muted">Pyodide {PYODIDE_VERSION}</span>
   </header>
   {#if description}
-    <p class="mb-3 text-sm text-slate-700">{description}</p>
+    <p class="mb-3 text-sm text-fg-secondary">{description}</p>
   {/if}
   <div class="mb-3">
-    <span class="mb-1 block text-xs font-medium text-slate-600"
+    <span class="mb-1 block text-xs font-medium text-fg-muted"
       >Python (df is a pandas DataFrame loaded from the trials CSV;
       ⌘/Ctrl-Enter to run)</span
     >
     <div
       bind:this={editorContainer}
-      class="overflow-hidden rounded border border-slate-200 bg-white"
+      class="overflow-hidden rounded border border-rule bg-surface-raised"
     ></div>
   </div>
   <div class="flex flex-wrap items-center gap-3">
@@ -686,14 +686,14 @@ def _lsp_query(kind, code, line, col):
     {#if edited}
       <button
         type="button"
-        class="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
+        class="rounded-md border border-rule-strong px-2.5 py-1 text-xs text-fg-secondary hover:bg-surface"
         onclick={resetSnippet}
         disabled={inFlight}
       >
         Reset
       </button>
     {/if}
-    <span class="text-xs text-slate-500">
+    <span class="text-xs text-fg-muted">
       {STATUS_LABELS[status]}{elapsedMs !== null
         ? ` · ${elapsedMs} ms`
         : ""}{edited ? " · edited" : ""}
@@ -713,20 +713,20 @@ def _lsp_query(kind, code, line, col):
       <span>
         {STATUS_LABELS[status]}
         {#if status === "loading-runtime"}
-          <span class="text-slate-500">— first run downloads ~10 MB; subsequent runs are instant</span>
+          <span class="text-fg-muted">— first run downloads ~10 MB; subsequent runs are instant</span>
         {:else if status === "loading-packages"}
-          <span class="text-slate-500">— numpy, pandas, matplotlib (cached after first run)</span>
+          <span class="text-fg-muted">— numpy, pandas, matplotlib (cached after first run)</span>
         {/if}
       </span>
     </div>
   {/if}
   {#if output}
     <pre
-      class="mt-3 max-h-96 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800">{output}</pre>
+      class="mt-3 max-h-96 overflow-auto rounded border border-rule bg-surface p-3 text-xs text-fg">{output}</pre>
   {/if}
   {#if svgOutput}
     <div
-      class="mt-3 overflow-x-auto rounded border border-slate-200 bg-white p-3"
+      class="mt-3 overflow-x-auto rounded border border-rule bg-surface-raised p-3"
     >
       {@html svgOutput}
     </div>
@@ -738,7 +738,7 @@ def _lsp_query(kind, code, line, col):
       {errorMessage}
     </p>
   {/if}
-  <p class="mt-3 text-xs text-slate-500">
+  <p class="mt-3 text-xs text-fg-muted">
     Runs entirely in your browser. First click downloads ~10 MB of Pyodide and
     pandas; subsequent runs reuse the cached runtime.
   </p>

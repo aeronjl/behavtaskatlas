@@ -2,6 +2,118 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 00:35:23 BST - Tier 2 of UI critique landed: home rebuild, /models exec summary, /findings refit CTA, generative OG cards
+
+Followed Tier 1 with the second tier from `UI.md`. The shape of the
+work: progressive disclosure on the heaviest pages, plus the first
+generation of per-record OpenGraph cards so shared links of finding /
+paper / slice pages get bespoke previews instead of the generic brand
+SVG.
+
+Concrete moves:
+
+- **`ObjectModelStrip` primitive** at `web/src/components/ui/ObjectModelStrip.astro`.
+  Five linked cards Family → Protocol → Dataset → Slice → Finding with
+  encoding-token swatches, counts, descriptions, and chevron connectors
+  (downward on mobile, rightward at md+). Sets the same vocabulary
+  anchor the user critiqued as missing across the site.
+- **Home page rebuilt around the strip.** Removed the duplicate 7-tile
+  KPI bar (`AtlasOverview` no longer renders headline counts — they
+  live in the strip), shortened the `PageHeader` lede, and pulled the
+  build-state aside into a single footer ribbon. The Featured
+  Comparison Card is now the first chart a visitor sees.
+- **`AtlasOverview` matrix slimmed from 10 columns to 5.** Family /
+  Findings / Models / Source / Next. Species/modality moved inline
+  under the family name; protocols/datasets/papers/reports columns
+  removed (already covered by the ObjectModelStrip + per-family
+  drill-in). Reads as a coverage scan instead of a spreadsheet.
+- **`/models` executive summary + question-named sections.** New
+  top-of-page Section ("What the AIC ranking says") computes the
+  decisive/supported/close/single counts and the top-three winning
+  variants in one prose sentence; lifts both the comparison-scope
+  Glossary and a new caveat-tag Glossary inline. Section labels in
+  `SectionAnchorNav` and `<Section title=>` renamed from artifact
+  names ("Per-finding selection", "Selection matrix", "DDM
+  cross-species") to questions ("Where do the data point?", "How
+  decisive are the calls?", "How does evidence accumulation differ?").
+  The two reference blocks ("Families & variants", "All fits") moved
+  inside a single `id="reference"` Section behind two `<details>`
+  reveals with count cues.
+- **`/findings` controls consolidated.** Curve type and stimulus axis
+  are now a two-tier "View" affordance — curve-type chips on top,
+  axis chips visually indented on a left rule as the contextual
+  second tier. Presets demoted from a pill row to a single
+  `<select>` "Quick view" dropdown. The Pyodide refit toggle promoted
+  from a corner checkbox to a proper accent-coloured CTA button
+  (`▶ Refit live in your browser` when off, `● Refit on` when on).
+- **Per-record OpenGraph cards.** New `lib/og.ts` renders a
+  1200×630 SVG with brand mark + serif title + subtitle + monospace
+  footer + an optional sparkline of the observed curve. Three
+  endpoints — `pages/og/findings/[id].svg.ts`, `papers/[id].svg.ts`,
+  `slices/[id].svg.ts` — emit one SVG per record at build time
+  (91 + 18 + 17 = 126 cards). `BaseLayout` derives the OG URL from
+  the path so detail pages auto-pick the per-record image; everything
+  else falls back to the generic `/og.svg`. Confirmed in build
+  output: `/findings/<slug>` HTML now references
+  `/og/findings/<slug>.svg` in its `og:image` meta.
+
+`bash scripts/ci.sh` passes end-to-end (validate + audits + site-index +
+Astro typecheck + build, 175 pages including the 126 OG SVGs). Tiers 3
+and 4 from `UI.md` remain — saved views, keyboard nav, layered graph,
+ambient micro-animations, in-browser model selection, paper-comparison
+heatmaps — and stay scoped for later sessions.
+
+## 2026-05-01 00:20:39 BST - Tier 1 of UI critique landed: token coherence + accessibility + nav restructure + glossary primitive
+
+Recorded a thorough UI critique in `UI.md` (themes, per-page sketches,
+accessibility gaps, prioritized roadmap) and shipped Tier 1 against it. The
+shape of the work: every page now drives its colour, surface, rule, and
+typography decisions through the design tokens already declared in
+`web/src/styles/global.css`, with no `slate-*` / `bg-white` / raw-tinted
+literal escaping into components. The system gains coherence; the visual cost
+is small (every replaced literal had a same-pixel token equivalent).
+
+Concrete moves:
+
+- **Token sweep across 18 files.** `Nav.astro`, `AtlasOverview.astro`,
+  `atlas-health.astro` were hand-migrated; the remaining components
+  (`ModelAnswersBrowser`, `ModelSelectionMatrix/Table`, `FindingsOverlay`,
+  `CoverageGapMatrix`, `models.astro`, `SearchPalette`, `CurveGallery`,
+  `SearchPanel`, `InPlacePyodide`, `MiniFindingsChart`, `RecordChip`,
+  `CopyCitation`, `Breadcrumbs`, `PapersBrowser`, `DataExport`,
+  `CitationDownloads`, `Term`) were swept with sed for the exact same set
+  of substitutions. Heat-map cells in `AtlasOverview` switched from inline
+  `rgba(literal, alpha)` to `color-mix(in srgb, var(--token) Npct, white)`
+  with the alpha floor raised to 20% for non-empty cells (low-coverage
+  rows remain visually distinguishable from empty).
+- **Accessibility primitives.** Added `aria-pressed` to every toggle
+  button in `FindingsOverlay`, `CatalogBrowser`, `FacetBar`, and
+  `RelationshipGraph`. Added a focus-visible halo circle to graph nodes
+  (browser default outlines were boxy on circular SVG nodes). Wrapped the
+  d3-force simulation in a `prefers-reduced-motion` guard so OS-level
+  reduce-motion users get a static layered layout instead of an animated
+  relaxation. `DataTable` now accepts `stickyFirstColumn` so wide tables
+  (model fits, audit reports) keep the row label visible during horizontal
+  scroll; opt-in to keep existing tables unchanged.
+- **Nav restructure.** Renamed "References" → "Network" (the URL stays
+  `/graph` so external links are stable). Moved "Atlas health" out of the
+  secondary nav into the footer alongside "About" and "GitHub" — it's
+  contributor-facing, not scientist-facing, and demoting it sharpens the
+  primary nav's editorial focus.
+- **Glossary primitive.** New `web/src/components/ui/Glossary.astro`
+  renders inline, accessible definition lists for jargon (caveat tags,
+  AIC confidence labels, comparison scopes) where the prior pattern was
+  tooltip `title` attributes invisible to keyboard, mobile, and print
+  users. First consumer is the comparison-scope reference on `/models`;
+  the same component is intended for caveat definitions on
+  `/models`/`/compare` and for inline glossary cards on detail pages.
+
+`bash scripts/ci.sh` passes end-to-end (validate + audits + site-index +
+Astro typecheck + build). Tiers 2–4 of the roadmap remain in `UI.md` —
+landing-page hero refactor, `/models` and `/findings` progressive
+disclosure, generative OG images, saved views, keyboard nav, layered
+graph redesign — and are left for later sessions.
+
 ## 2026-04-30 20:24:15 BST - Hardened the visual UI batch for release
 
 Ran a release-hardening pass across the visual roadmap surfaces and fixed the

@@ -45,6 +45,11 @@ interface Props {
    * used for things like {variant} above {AIC, params} sub-columns). */
   headerRows?: Column[][];
   density?: "compact" | "md";
+  /** When true, the first column stays put as the table scrolls
+   * horizontally — essential on wide tables with named row keys (e.g.
+   * model-fit tables, reproducibility audits). Off by default to keep
+   * existing tables unchanged. */
+  stickyFirstColumn?: boolean;
   /** Layout-mode override for the wrapping div. */
   class?: string;
 }
@@ -53,6 +58,7 @@ const {
   columns,
   headerRows,
   density = "md",
+  stickyFirstColumn = false,
   class: className,
 } = Astro.props as Props;
 
@@ -70,6 +76,7 @@ function alignClass(align: Column["align"]): string {
 <div
   class:list={[
     "overflow-x-auto rounded-md border border-rule bg-surface-raised",
+    stickyFirstColumn ? "data-table-sticky-first" : "",
     className,
   ]}
 >
@@ -99,3 +106,24 @@ function alignClass(align: Column["align"]): string {
     </tbody>
   </table>
 </div>
+
+<style is:global>
+  /* Sticky first column. Applied at table scope so the styling reaches
+   * slot-rendered <td>s without each consumer needing to know about it.
+   * `is:global` is necessary because Astro's scoped styles don't pierce
+   * Svelte islands or slotted content. The selector is specific enough
+   * (.data-table-sticky-first descendant) that it can't collide with
+   * unrelated tables. */
+  .data-table-sticky-first table > thead > tr > :first-child,
+  .data-table-sticky-first table > tbody > tr > :first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+  .data-table-sticky-first table > thead > tr > :first-child {
+    background-color: var(--color-surface);
+  }
+  .data-table-sticky-first table > tbody > tr > :first-child {
+    background-color: var(--color-surface-raised);
+  }
+</style>

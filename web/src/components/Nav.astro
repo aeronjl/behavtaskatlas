@@ -7,11 +7,14 @@ const primary = [
   { href: "/compare", label: "Compare" },
 ];
 
+// Secondary nav stays on the page for first-time orientation: stories
+// (editorial), catalog (full directory), network (relationship graph
+// across the four record types). Atlas-health is operational state for
+// contributors and lives in the footer instead.
 const secondary = [
   { href: "/stories", label: "Stories" },
   { href: "/catalog", label: "Catalog" },
-  { href: "/graph", label: "References" },
-  { href: "/atlas-health", label: "Atlas health" },
+  { href: "/graph", label: "Network" },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
@@ -22,12 +25,12 @@ function isActive(href: string): boolean {
 }
 ---
 
-<nav class="border-b border-slate-200 bg-white">
+<nav class="border-b border-rule bg-surface-raised">
   <div class="mx-auto max-w-5xl px-4 py-3">
     <div class="flex items-center gap-3">
       <a
         href="/"
-        class="shrink-0 font-semibold tracking-tight text-slate-900 no-underline"
+        class="shrink-0 font-semibold tracking-tight text-fg no-underline"
         aria-label="behavtaskatlas home"
       >
         behavtaskatlas
@@ -40,11 +43,11 @@ function isActive(href: string): boolean {
           type="search"
           name="q"
           placeholder="Search…"
-          class="w-full rounded-md border border-slate-300 bg-white px-2 py-1 pr-9 text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          class="w-full rounded-md border border-rule-strong bg-surface-raised px-2 py-1 pr-9 text-body-xs focus:border-rule-emphasis focus:outline-none focus:ring-1 focus:ring-accent"
           autocomplete="off"
         />
         <kbd
-          class="pointer-events-none absolute right-1.5 top-1/2 hidden -translate-y-1/2 rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500 sm:inline-block"
+          class="pointer-events-none absolute right-1.5 top-1/2 hidden -translate-y-1/2 rounded bg-surface-sunken px-1 py-0.5 font-mono text-mono-id text-fg-muted sm:inline-block"
           aria-hidden="true"
         >⌘K</kbd>
       </form>
@@ -52,7 +55,7 @@ function isActive(href: string): boolean {
 
     <div class="mt-2 -mx-4 overflow-x-auto px-4">
       <div class="flex w-max items-baseline gap-x-5">
-        <ul class="flex items-center gap-x-5 text-sm">
+        <ul class="flex items-center gap-x-5 text-body">
           {
             primary.map((item) => (
               <li>
@@ -62,8 +65,8 @@ function isActive(href: string): boolean {
                   class:list={[
                     "no-underline transition-colors whitespace-nowrap",
                     isActive(item.href)
-                      ? "border-b-2 border-accent pb-0.5 text-slate-900 font-medium"
-                      : "text-slate-700 hover:text-accent",
+                      ? "border-b-2 border-accent pb-0.5 text-fg font-medium"
+                      : "text-fg-secondary hover:text-accent",
                   ]}
                 >
                   {item.label}
@@ -73,7 +76,7 @@ function isActive(href: string): boolean {
           }
         </ul>
 
-        <ul class="flex items-center gap-x-3 text-xs text-slate-500">
+        <ul class="flex items-center gap-x-3 text-body-xs text-fg-muted">
           {
             secondary.map((item) => (
               <li>
@@ -83,7 +86,7 @@ function isActive(href: string): boolean {
                   class:list={[
                     "no-underline whitespace-nowrap",
                     isActive(item.href)
-                      ? "text-slate-900 font-medium"
+                      ? "text-fg font-medium"
                       : "hover:text-accent",
                   ]}
                 >

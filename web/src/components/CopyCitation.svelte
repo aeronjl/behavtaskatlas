@@ -18,22 +18,22 @@
   }
 </script>
 
-<div class="rounded-md border border-slate-200 bg-white p-4">
+<div class="rounded-md border border-rule bg-surface-raised p-4">
   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-    <h2 class="text-sm font-semibold text-slate-700">Cite this finding</h2>
+    <h2 class="text-sm font-semibold text-fg-secondary">Cite this finding</h2>
     <button
       type="button"
-      class="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+      class="rounded-md border border-rule-strong bg-surface-raised px-2 py-1 text-xs text-fg-secondary hover:bg-surface"
       onclick={copyCitation}
     >
       {copied ? "Copied" : "Copy citation"}
     </button>
   </div>
-  <p class="mb-2 break-all font-mono text-xs text-slate-500">{url}</p>
+  <p class="mb-2 break-all font-mono text-xs text-fg-muted">{url}</p>
   <textarea
     readonly
     rows="4"
-    class="w-full resize-y rounded-md border border-slate-300 bg-slate-50 px-2 py-1.5 font-mono text-xs text-slate-700"
+    class="w-full resize-y rounded-md border border-rule-strong bg-surface px-2 py-1.5 font-mono text-xs text-fg-secondary"
     value={text}
   ></textarea>
 </div>

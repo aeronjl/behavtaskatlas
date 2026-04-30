@@ -4,11 +4,12 @@ import AtlasOverview from "../components/AtlasOverview.astro";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
 import Card from "../components/ui/Card.astro";
 import DataTable from "../components/ui/DataTable.astro";
+import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import Section from "../components/ui/Section.astro";
 import Stat from "../components/ui/Stat.astro";
 import StatGrid from "../components/ui/StatGrid.astro";
-import { manifest } from "../lib/data";
+import { catalog, manifest, papers } from "../lib/data";
 import {
   comparisons,
   findings,
@@ -16,6 +17,14 @@ import {
 } from "../lib/findings";
 
 const sliceCount = manifest.slices.length;
+
+const objectModelCounts = {
+  families: catalog.counts.task_families ?? catalog.task_families.length,
+  protocols: catalog.counts.protocols ?? catalog.protocols.length,
+  datasets: catalog.counts.datasets ?? catalog.datasets.length,
+  slices: catalog.counts.vertical_slices ?? catalog.vertical_slices.length,
+  findings: findings.counts.findings ?? findings.findings.length,
+};
 
 const entryPoints = [
   {
@@ -138,20 +147,29 @@ function fmt(value: number | null, digits = 2): string {
 }
 
 const generated = manifest.generated_at?.slice(0, 10) ?? "";
-
+const paperCount = papers.counts.papers ?? papers.papers.length;
 ---
 
 <BaseLayout
   title={manifest.title}
-  description="A file-first atlas of sensory-guided decision-making tasks in behavioral neuroscience. Browse curated task families, protocols, datasets, vertical slices, and cross-paper findings on shared axes."
+  description="A file-first atlas of sensory-guided decision-making tasks in behavioral neuroscience. Browse curated task families, protocols, datasets, vertical slices, and cross-paper findings on shared signed-evidence axes."
   width="wide"
 >
   <PageHeader
     title="A file-first atlas of behavioral neuroscience tasks."
-    lede="Curated task families, protocols, datasets, and reproducible analyses, paired with a meta-analysis layer of cross-paper findings on shared signed-evidence axes. Every record is YAML in git, validated by Pydantic, and rebuilt on every commit."
-  />
+  >
+    <Fragment slot="lede">
+      Curated task records, harmonised data, and cross-paper findings on shared
+      axes — every record is YAML in git, every analysis is reproducible, every
+      number links back to the dataset that produced it.
+    </Fragment>
+  </PageHeader>
 
-  <AtlasOverview />
+  <ObjectModelStrip
+    counts={objectModelCounts}
+    title="The shape of the atlas"
+    class="mb-10"
+  />
 
   {featuredComparison && featuredFindings.length > 0 ? (
     <Section spacing="lg">
@@ -159,7 +177,7 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
         <header class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <p class="text-eyebrow uppercase text-accent">Featured comparison</p>
-            <h2 class="mt-1 text-h3 text-fg">{featuredComparison.question}</h2>
+            <h2 class="mt-1 text-h2 text-fg">{featuredComparison.question}</h2>
           </div>
           <a
             class="text-body-xs no-underline text-accent hover:underline"
@@ -180,11 +198,13 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
               | "condition"
               | "curve_type"
           }
-          height={300}
+          height={320}
         />
       </Card>
     </Section>
   ) : null}
+
+  <AtlasOverview />
 
   <Section eyebrow="Where to start" spacing="lg">
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -225,16 +245,20 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
     </p>
   </Section>
 
-  <section class="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+  <Section spacing="lg">
     <Card padding="lg">
-      <header class="mb-3 flex items-baseline justify-between">
-        <h2 class="text-h3 text-fg">Across the literature</h2>
+      <header class="mb-3 flex items-baseline justify-between gap-3">
+        <div>
+          <p class="text-eyebrow uppercase text-fg-muted">Across the literature</p>
+          <h2 class="mt-1 text-h3 text-fg">
+            {aggregateStats.n_psychometric_findings} psychometric fits, {paperCount} papers
+          </h2>
+        </div>
         <a class="text-body-xs text-accent" href="/findings">/findings →</a>
       </header>
-      <p class="mb-4 text-body text-fg-secondary">
-        Aggregate stats over the {aggregateStats.n_psychometric_findings}{" "}
-        psychometric findings currently in the index, computed from build-time
-        4-parameter logistic fits.
+      <p class="mb-4 max-w-prose text-body text-fg-secondary">
+        Aggregate stats over every psychometric finding currently in the
+        index, computed from build-time 4-parameter logistic fits.
       </p>
       <StatGrid cols={4} class="mb-5">
         <Stat label="Median bias (μ)" value={fmt(aggregateStats.median_bias)} />
@@ -268,27 +292,19 @@ const generated = manifest.generated_at?.slice(0, 10) ?? "";
         ))}
       </DataTable>
     </Card>
+  </Section>
 
-    <aside class="space-y-3">
-      <Card padding="md" class="text-body-xs text-fg-muted">
-        <h2 class="mb-2 text-eyebrow uppercase text-fg-muted">Build state</h2>
-        <p>
-          Generated {generated}
-          {manifest.behavtaskatlas_commit ? (
-            <>
-              {" · "}
-              <code class="rounded bg-surface-sunken px-1 py-0.5 text-mono-id">
-                {manifest.behavtaskatlas_commit}
-              </code>
-            </>
-          ) : null}
-          {manifest.behavtaskatlas_git_dirty ? " (dirty)" : null}
-        </p>
-        <p class="mt-2">
-          Operational status on{" "}
-          <a class="text-accent" href="/atlas-health">/atlas-health</a>.
-        </p>
-      </Card>
-    </aside>
-  </section>
+  <p class="mt-8 text-body-xs text-fg-muted">
+    Built {generated}{manifest.behavtaskatlas_commit ? (
+      <>
+        {" · "}
+        <code class="rounded bg-surface-sunken px-1 py-0.5 text-mono-id">
+          {manifest.behavtaskatlas_commit}
+        </code>
+      </>
+    ) : null}{manifest.behavtaskatlas_git_dirty ? " (dirty)" : null}
+    {" · "}
+    Operational status on
+    <a class="text-accent" href="/atlas-health">/atlas-health</a>.
+  </p>
 </BaseLayout>

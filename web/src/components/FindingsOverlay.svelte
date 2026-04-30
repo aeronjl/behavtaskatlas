@@ -1234,96 +1234,101 @@ def fit_curves(payload_json):
   });
 </script>
 
-<div class="rounded-md border border-slate-200 bg-white p-4">
-  <div class="mb-3 flex flex-wrap items-center gap-2">
-    <span class="text-xs font-semibold text-slate-700">Curve type:</span>
-    {#each allCurveTypes as type (type)}
+<div class="rounded-md border border-rule bg-surface-raised p-4">
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+    <fieldset class="flex flex-wrap items-center gap-2">
+      <legend class="sr-only">View</legend>
+      <span class="text-body-xs font-semibold text-fg-secondary">View:</span>
+      {#each allCurveTypes as type (type)}
+        <button
+          type="button"
+          aria-pressed={type === currentCurveType}
+          class={[
+            "rounded-md border px-2.5 py-1 text-body-xs",
+            type === currentCurveType
+              ? "border-accent bg-accent text-fg-inverse"
+              : "border-rule-strong text-fg-secondary hover:bg-surface",
+          ]}
+          onclick={() => (currentCurveType = type)}
+        >
+          {type.replace(/_/g, " ")}
+        </button>
+      {/each}
+    </fieldset>
+    <div class="flex flex-wrap items-center gap-2">
       <button
         type="button"
-        class={[
-          "rounded-md border px-2.5 py-1 text-xs",
-          type === currentCurveType
-            ? "border-accent bg-accent text-white"
-            : "border-slate-300 text-slate-700 hover:bg-slate-50",
-        ]}
-        onclick={() => (currentCurveType = type)}
+        class="rounded-md border border-rule-strong px-2.5 py-1 text-body-xs text-fg-secondary hover:bg-surface"
+        onclick={copyLink}
+        title="Copy a shareable URL of the current view"
       >
-        {type.replace(/_/g, " ")}
+        {copyState === "copied"
+          ? "Copied ✓"
+          : copyState === "error"
+            ? "Copy failed"
+            : "Copy link"}
       </button>
-    {/each}
-    <button
-      type="button"
-      class="ml-auto rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
-      onclick={copyLink}
-      title="Copy a shareable URL of the current view"
-    >
-      {copyState === "copied"
-        ? "Copied ✓"
-        : copyState === "error"
-          ? "Copy failed"
-          : "Copy link"}
-    </button>
-    <button
-      type="button"
-      class="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50"
-      onclick={resetFilters}
-    >
-      Reset filters
-    </button>
+      <button
+        type="button"
+        class="rounded-md border border-rule-strong px-2.5 py-1 text-body-xs text-fg-secondary hover:bg-surface"
+        onclick={resetFilters}
+      >
+        Reset filters
+      </button>
+    </div>
   </div>
 
   {#if axisOptionsForCurve.length > 1}
-    <div class="mb-3 flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-slate-700">Stimulus axis:</span>
+    <fieldset
+      class="mb-3 ml-3 flex flex-wrap items-center gap-2 border-l-2 border-rule pl-3"
+      title="Findings on different stimulus axes are kept apart — units are not comparable across paradigms."
+    >
+      <legend class="sr-only">Stimulus axis</legend>
+      <span class="text-body-xs text-fg-muted">on axis</span>
       {#each axisOptionsForCurve as option (option.label)}
         {@const isOn = option.label === activeXLabel}
         <button
           type="button"
+          aria-pressed={isOn}
           title={option.units ? `${option.label} · ${option.units}` : option.label}
           class={[
-            "rounded-md border px-2.5 py-1 text-xs",
+            "rounded-md border px-2 py-0.5 text-mono-id",
             isOn
-              ? "border-accent bg-accent text-white"
-              : "border-slate-300 text-slate-700 hover:bg-slate-50",
+              ? "border-accent bg-accent-soft text-accent"
+              : "border-rule text-fg-secondary hover:border-rule-emphasis hover:text-accent",
           ]}
           onclick={() => (activeXLabel = option.label)}
         >
           {option.label}
-          <span class={isOn ? "ml-1 text-white/80" : "ml-1 text-slate-500"}>
+          <span class={isOn ? "ml-1 font-mono text-accent" : "ml-1 font-mono text-fg-muted"}>
             {option.count}
           </span>
         </button>
       {/each}
-      <span class="ml-auto max-w-md text-[11px] text-slate-500">
-        Findings on different stimulus axes are kept apart — units are
-        not comparable across paradigms.
-      </span>
-    </div>
+    </fieldset>
   {/if}
 
-  <div class="mb-4 flex flex-wrap items-center gap-2">
-    <span class="text-xs font-semibold text-slate-700">Preset:</span>
-    {#each presets as preset (preset.key)}
-      {@const isOn = isPresetActive(preset.key)}
-      <button
-        type="button"
-        title={preset.description}
-        class={[
-          "rounded-full border px-3 py-1 text-xs",
-          isOn
-            ? "border-slate-900 bg-slate-900 text-white"
-            : "border-slate-300 text-slate-700 hover:border-accent hover:text-accent",
-        ]}
-        onclick={() => applyPreset(preset.key)}
+  <div class="mb-4 flex flex-wrap items-center gap-2 text-body-xs">
+    <label class="flex items-center gap-2 text-fg-secondary">
+      <span class="font-semibold">Quick view:</span>
+      <select
+        class="rounded-md border border-rule-strong bg-surface-raised px-2 py-1 text-body-xs"
+        value={presets.find((p) => isPresetActive(p.key))?.key ?? "all"}
+        onchange={(event) => applyPreset((event.currentTarget as HTMLSelectElement).value as PresetKey)}
       >
-        {preset.label}
-      </button>
-    {/each}
+        {#each presets as preset (preset.key)}
+          <option value={preset.key} title={preset.description}>{preset.label}</option>
+        {/each}
+      </select>
+    </label>
+    <span class="text-fg-muted">
+      Pick a hand-rolled view, or use Refine below for full filter control.
+    </span>
   </div>
 
   <button
     type="button"
-    class="mb-3 flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:border-accent"
+    class="mb-3 flex w-full items-center justify-between rounded-md border border-rule bg-surface px-3 py-2 text-xs text-fg-secondary hover:border-accent"
     onclick={() => (filtersExpanded = !filtersExpanded)}
     aria-expanded={filtersExpanded}
   >
@@ -1334,7 +1339,7 @@ def fit_curves(payload_json):
           {activeFilterCount} active
         </span>
       {:else}
-        <span class="ml-1 text-[11px] text-slate-500">
+        <span class="ml-1 text-[11px] text-fg-muted">
           species · source · evidence · response · year · search
         </span>
       {/if}
@@ -1345,13 +1350,13 @@ def fit_curves(payload_json):
   <div class={[filtersExpanded ? "block" : "hidden"]}>
     <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
       {#each Object.entries(filterOptions) as [key, values] (key)}
-        <fieldset class="rounded border border-slate-200 p-3">
-          <legend class="px-1 text-xs font-semibold text-slate-700">
+        <fieldset class="rounded border border-rule p-3">
+          <legend class="px-1 text-xs font-semibold text-fg-secondary">
             {filterLabels[key as FilterKey]}
           </legend>
           <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
             {#each values as value (value)}
-              <label class="flex items-center gap-1 text-xs text-slate-700">
+              <label class="flex items-center gap-1 text-xs text-fg-secondary">
                 <input
                   type="checkbox"
                   checked={active[key as FilterKey].has(value)}
@@ -1382,15 +1387,15 @@ def fit_curves(payload_json):
     </div>
 
     <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-      <fieldset class="rounded border border-slate-200 p-3">
-        <legend class="px-1 text-xs font-semibold text-slate-700">Year range</legend>
-        <div class="mt-1 flex items-center gap-2 text-xs text-slate-700">
+      <fieldset class="rounded border border-rule p-3">
+        <legend class="px-1 text-xs font-semibold text-fg-secondary">Year range</legend>
+        <div class="mt-1 flex items-center gap-2 text-xs text-fg-secondary">
           <input
             type="number"
             min={minYear}
             max={maxYear}
             bind:value={yearStart}
-            class="w-20 rounded border border-slate-200 px-1 py-0.5"
+            class="w-20 rounded border border-rule px-1 py-0.5"
           />
           <span>–</span>
           <input
@@ -1398,32 +1403,32 @@ def fit_curves(payload_json):
             min={minYear}
             max={maxYear}
             bind:value={yearEnd}
-            class="w-20 rounded border border-slate-200 px-1 py-0.5"
+            class="w-20 rounded border border-rule px-1 py-0.5"
           />
-          <span class="ml-2 text-[11px] text-slate-500">
+          <span class="ml-2 text-[11px] text-fg-muted">
             (atlas: {minYear}–{maxYear})
           </span>
         </div>
       </fieldset>
-      <fieldset class="rounded border border-slate-200 p-3">
-        <legend class="px-1 text-xs font-semibold text-slate-700">Search</legend>
+      <fieldset class="rounded border border-rule p-3">
+        <legend class="px-1 text-xs font-semibold text-fg-secondary">Search</legend>
         <input
           type="search"
           placeholder="paper / protocol / finding id…"
           bind:value={searchText}
-          class="mt-1 w-full rounded border border-slate-200 px-2 py-1 text-xs"
+          class="mt-1 w-full rounded border border-rule px-2 py-1 text-xs"
         />
       </fieldset>
     </div>
   </div>
 
-  <div class="mb-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
-    <p class="text-sm text-slate-700">
-      <span class="font-semibold text-slate-900">
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-3">
+    <p class="text-body text-fg-secondary">
+      <span class="font-semibold text-fg">
         {displayEntries.length}
         {displayEntries.length === 1 ? "trace" : "traces"}
       </span>
-      <span class="text-slate-500">
+      <span class="text-fg-muted">
         {#if traceMode === "aggregate" && displayEntries.length !== filteredEntries.length}
           · from {filteredEntries.length}
           {currentCurveType.replace(/_/g, " ")} finding{filteredEntries.length === 1 ? "" : "s"}
@@ -1436,18 +1441,19 @@ def fit_curves(payload_json):
       </span>
     </p>
     <div class="flex flex-wrap items-center gap-3">
-      <fieldset class="flex flex-wrap items-center gap-1 text-xs">
+      <fieldset class="flex flex-wrap items-center gap-1 text-body-xs">
         <legend class="sr-only">Trace level</legend>
         {#each traceModeOptions as option (option.key)}
           {@const isOn = traceMode === option.key}
           <button
             type="button"
+            aria-pressed={isOn}
             title={option.description}
             class={[
               "rounded-md border px-2 py-1",
               isOn
-                ? "border-accent bg-accent text-white"
-                : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                ? "border-accent bg-accent text-fg-inverse"
+                : "border-rule-strong text-fg-secondary hover:bg-surface",
             ]}
             onclick={() => (traceMode = option.key)}
           >
@@ -1455,18 +1461,28 @@ def fit_curves(payload_json):
           </button>
         {/each}
       </fieldset>
-      <label
-        class="flex items-center gap-2 text-xs text-slate-700"
-        title="Refits each visible curve in your browser with a 4-parameter logistic; the dark line is the n-weighted pooled fit across the same axis"
+      <button
+        type="button"
+        aria-pressed={fitEnabled}
+        title={fitEnabled
+          ? "Hide the per-axis pooled fit and the per-curve refits."
+          : "Refit every visible curve with a 4-parameter logistic in your browser; first toggle downloads ~10 MB of Pyodide."}
+        class={[
+          "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-body-xs font-semibold transition-colors",
+          fitEnabled
+            ? "border-accent bg-accent text-fg-inverse hover:opacity-90"
+            : "border-accent text-accent hover:bg-accent-soft",
+        ]}
+        onclick={() => (fitEnabled = !fitEnabled)}
       >
-        <input type="checkbox" bind:checked={fitEnabled} />
-        <span>
-          Fit + aggregate
-          <span class="text-[11px] text-slate-500">
-            (per-axis pool)
-          </span>
-        </span>
-      </label>
+        {#if fitEnabled}
+          <span class="inline-block h-2 w-2 rounded-full bg-fg-inverse" aria-hidden="true"></span>
+          <span>Refit on</span>
+        {:else}
+          <span aria-hidden="true">▶</span>
+          <span>Refit live in your browser</span>
+        {/if}
+      </button>
     </div>
   </div>
 
@@ -1490,7 +1506,7 @@ def fit_curves(payload_json):
       <span>
         {fitStatusLabel || "Working…"}
         {#if fitStatus === "loading-runtime"}
-          <span class="text-slate-500">— first toggle downloads ~10 MB Pyodide; subsequent fits are fast</span>
+          <span class="text-fg-muted">— first toggle downloads ~10 MB Pyodide; subsequent fits are fast</span>
         {/if}
       </span>
     </div>
@@ -1498,21 +1514,21 @@ def fit_curves(payload_json):
 
   {#if filteredEntries.length === 0}
     <div
-      class="flex flex-col items-center justify-center gap-3 rounded border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center"
+      class="flex flex-col items-center justify-center gap-3 rounded border border-dashed border-rule-strong bg-surface px-4 py-10 text-center"
     >
-      <p class="text-sm text-slate-700">
+      <p class="text-sm text-fg-secondary">
         No findings match these filters.
       </p>
       {#if activeFilterCount > 0}
         <button
           type="button"
-          class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:border-accent hover:text-accent"
+          class="rounded-md border border-rule-strong bg-surface-raised px-3 py-1.5 text-xs text-fg-secondary hover:border-accent hover:text-accent"
           onclick={resetFilters}
         >
           Clear {activeFilterCount} active filter{activeFilterCount === 1 ? "" : "s"}
         </button>
       {:else}
-        <p class="text-xs text-slate-500">
+        <p class="text-xs text-fg-muted">
           Try a different curve type above.
         </p>
       {/if}
@@ -1526,19 +1542,19 @@ def fit_curves(payload_json):
   </div>
 
   {#if filteredEntries.length > 0}
-    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
       <span>
-        <span class="font-semibold text-slate-700">color</span> = paper
+        <span class="font-semibold text-fg-secondary">color</span> = paper
       </span>
       <span>
-        <span class="font-semibold text-slate-700">shape</span> = source-data level
+        <span class="font-semibold text-fg-secondary">shape</span> = source-data level
       </span>
       <span>
-        <span class="font-semibold text-slate-700">trace</span> = one finding (paper × stratification)
+        <span class="font-semibold text-fg-secondary">trace</span> = one finding (paper × stratification)
       </span>
       {#if fitEnabled}
         <span>
-          <span class="font-semibold text-slate-700">fit line</span> = 4-parameter logistic;
+          <span class="font-semibold text-fg-secondary">fit line</span> = 4-parameter logistic;
           dark line = pooled fit
         </span>
       {/if}
@@ -1547,10 +1563,10 @@ def fit_curves(payload_json):
 
   {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
     <div class="mt-4">
-      <h3 class="mb-1 text-xs font-semibold text-slate-700">
+      <h3 class="mb-1 text-xs font-semibold text-fg-secondary">
         Cross-paper disagreement
       </h3>
-      <p class="mb-2 text-[11px] text-slate-500">
+      <p class="mb-2 text-[11px] text-fg-muted">
         At each x, the orange band spans the per-curve fitted y values across
         the {DISAGREEMENT_VALUES[0]?.n_curves ?? 0} selected papers; the line
         is the across-curve standard deviation. High σ regions are where the
@@ -1562,7 +1578,7 @@ def fit_curves(payload_json):
     </div>
   {/if}
 
-  <p class="mt-3 text-[11px] text-slate-500">
+  <p class="mt-3 text-[11px] text-fg-muted">
     Curves at different source-data levels are shown on shared axes for visual
     comparison; point shape encodes the source level. Values for figure-source-
     data findings should be read as published rather than as a complete raw
@@ -1571,16 +1587,16 @@ def fit_curves(payload_json):
 
   {#if fitEnabled && fitRows.length > 0}
     <div class="mt-6">
-      <h3 class="mb-2 text-sm font-semibold text-slate-700">Fit parameters</h3>
-      <p class="mb-2 text-[11px] text-slate-500">
+      <h3 class="mb-2 text-sm font-semibold text-fg-secondary">Fit parameters</h3>
+      <p class="mb-2 text-[11px] text-fg-muted">
         Per-curve 4-parameter logistic. μ is the bias (mid-asymptote crossing);
         σ is the slope; threshold is the {fitData?.targetY === 0.84 ? "84%" : "75%"} crossing
         (in the same units as the x-axis); γ is the lower lapse, λ the upper
         lapse.
       </p>
-      <div class="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <div class="overflow-x-auto rounded-md border border-rule bg-surface-raised">
         <table class="w-full text-xs">
-          <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+          <thead class="bg-surface text-left uppercase tracking-wide text-fg-muted">
             <tr>
               {@render sortHeader("paper_citation", "Paper", "left")}
               {@render sortHeader("paper_year", "Year", "right")}
@@ -1595,12 +1611,12 @@ def fit_curves(payload_json):
               {@render sortHeader("lapse", "λ (upper lapse)", "right")}
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200">
+          <tbody class="divide-y divide-rule">
             {#each fitRows as row (row.finding_id)}
               <tr>
                 <td class="px-3 py-2">
                   <span class="block">{row.paper_citation}</span>
-                  <span class="text-[11px] text-slate-500">{row.species ?? "—"}</span>
+                  <span class="text-[11px] text-fg-muted">{row.species ?? "—"}</span>
                 </td>
                 <td class="px-3 py-2 text-right font-mono">{row.paper_year || "—"}</td>
                 <td class="px-3 py-2 text-right font-mono">{row.n_trials?.toLocaleString() ?? "—"}</td>
