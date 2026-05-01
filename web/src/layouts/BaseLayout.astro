@@ -1,7 +1,12 @@
 ---
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
+import KeyboardNav from "../components/KeyboardNav.svelte";
 import SearchPalette from "../components/SearchPalette.svelte";
+import WhatsChangedBanner from "../components/WhatsChangedBanner.svelte";
+import { catalog, manifest, papers } from "../lib/data";
+import { findings } from "../lib/findings";
+import { models } from "../lib/data";
 
 interface Props {
   title: string;
@@ -45,6 +50,20 @@ const widthClass = {
   wide: "max-w-wide",
   full: "max-w-full",
 }[width];
+
+// Counts surfaced to the what's-changed banner. The banner only renders
+// when localStorage holds a previous snapshot whose commit differs from
+// the build's commit — first-time visitors see nothing.
+const whatsChangedCounts = {
+  findings: findings.counts.findings ?? findings.findings.length,
+  papers: papers.counts.papers ?? papers.papers.length,
+  fits: models.counts?.fits ?? 0,
+  slices: catalog.counts.vertical_slices ?? catalog.vertical_slices.length,
+  protocols: catalog.counts.protocols ?? catalog.protocols.length,
+  datasets: catalog.counts.datasets ?? catalog.datasets.length,
+  families: catalog.counts.task_families ?? catalog.task_families.length,
+};
+const whatsChangedCommit = manifest.behavtaskatlas_commit ?? null;
 ---
 
 <!doctype html>
@@ -71,7 +90,13 @@ const widthClass = {
   </head>
   <body class="min-h-screen overflow-x-hidden bg-surface text-fg">
     <Nav />
+    <WhatsChangedBanner
+      client:idle
+      commit={whatsChangedCommit}
+      counts={whatsChangedCounts}
+    />
     <SearchPalette client:idle />
+    <KeyboardNav client:idle />
     <main class:list={["mx-auto w-full min-w-0 px-4 py-8", widthClass]}>
       <slot />
     </main>

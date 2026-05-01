@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import InPlacePyodide from "../../components/InPlacePyodide.svelte";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
+import ReproductionRecipe from "../../components/ReproductionRecipe.svelte";
 import Card from "../../components/ui/Card.astro";
 import DetailLayout from "../../components/ui/DetailLayout.astro";
 import DetailToc from "../../components/ui/DetailToc.astro";
@@ -395,8 +396,11 @@ const tocItems: TocItem[] = [
     ? { id: "metrics", label: "Metrics", count: metrics.length }
     : null,
   { id: "profile", label: "Slice profile" } as TocItem,
+  { id: "reproduce", label: "Reproduce locally" } as TocItem,
   { id: "artifacts", label: "Artifacts" } as TocItem,
 ].filter((item): item is TocItem => item !== null);
+
+const buildCommit = manifest.behavtaskatlas_commit ?? null;
 
 const reportTone = reportAvailable ? "ok" : "warn";
 const protocolHref = protocol
@@ -539,6 +543,15 @@ const datasetHref = dataset
           </tbody>
         </table>
       </Card>
+    </Section>
+
+    <Section
+      id="reproduce"
+      spacing="md"
+      title="Reproduce locally"
+      description="Copy this recipe to rebuild the slice's artifacts on your machine at the exact commit deployed here."
+    >
+      <ReproductionRecipe sliceId={slice.id} commit={buildCommit} client:idle />
     </Section>
 
     <Section id="artifacts" spacing="md" title="Artifacts">

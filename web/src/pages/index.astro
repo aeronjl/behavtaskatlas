@@ -15,6 +15,9 @@ import {
   findings,
   type FindingsEntry,
 } from "../lib/findings";
+import { storyOfTheWeek } from "../lib/stories";
+
+const featuredStory = storyOfTheWeek();
 
 const sliceCount = manifest.slices.length;
 
@@ -224,21 +227,30 @@ const paperCount = papers.counts.papers ?? papers.papers.length;
   </Section>
 
   <Section spacing="lg">
-    <Card href="/stories/visual-contrast" padding="lg" class="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
-      <div class="max-w-2xl">
-        <p class="text-eyebrow uppercase text-accent">Latest story</p>
-        <h2 class="mt-1 text-h3 text-fg">
-          Visual contrast discrimination now has a family map
-        </h2>
-        <p class="mt-2 text-body text-fg-secondary">
-          Timeline, coverage matrix, curve scan, small multiples, source
-          depth, and model ambiguity are now visible in one scannable view.
-        </p>
+    <Card href={featuredStory.href} padding="none" class="overflow-hidden">
+      <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div class="aspect-[1200/630] w-full bg-surface-sunken md:aspect-auto md:h-full">
+          <img
+            src={`/og/stories/${featuredStory.slug}.svg`}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="block h-full w-full object-cover"
+          />
+        </div>
+        <div class="flex flex-col gap-2 p-5">
+          <p class="text-eyebrow uppercase text-accent">
+            Story of the week · {featuredStory.readMinutes} min read
+          </p>
+          <h2 class="text-h3 text-fg">{featuredStory.title}</h2>
+          <p class="text-body text-fg-secondary">{featuredStory.lead}</p>
+          <p class="mt-auto pt-2 text-body-xs text-fg-muted">
+            {featuredStory.surface}
+            {" "}
+            <span class="ml-2 text-fg-subtle transition-colors group-hover:text-accent" aria-hidden="true">→</span>
+          </p>
+        </div>
       </div>
-      <span
-        class="shrink-0 self-start text-body text-fg-subtle transition-colors group-hover:text-accent sm:self-baseline"
-        aria-hidden="true"
-      >→</span>
     </Card>
     <p class="mt-2 text-body-xs text-fg-muted">
       All stories at <a class="text-accent" href="/stories">/stories</a>.

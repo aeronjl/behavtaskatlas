@@ -1,0 +1,82 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import PageHeader from "../../components/ui/PageHeader.astro";
+import PaperPairCompare from "../../components/PaperPairCompare.svelte";
+import { papers, slugForId } from "../../lib/data";
+import { findings, type FindingsEntry } from "../../lib/findings";
+
+// Restrict the picker to papers with at least one curated finding —
+// otherwise the compare view would always be empty for them.
+const findingsByPaper = new Map<string, FindingsEntry[]>();
+for (const entry of findings.findings as FindingsEntry[]) {
+  const list = findingsByPaper.get(entry.paper_id) ?? [];
+  list.push(entry);
+  findingsByPaper.set(entry.paper_id, list);
+}
+
+const pickerPapers = papers.papers
+  .filter((paper) => (findingsByPaper.get(paper.id) ?? []).length > 0)
+  .map((paper) => ({
+    id: paper.id,
+    slug: paper.slug ?? slugForId(paper.id),
+    label: paper.citation?.split(".")[0] ?? paper.id,
+    year: paper.year,
+    species: paper.species ?? [],
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
+// Trim the finding payload to what the comparison view actually needs
+// — keeps the page's hydration cost roughly O(papers) instead of
+// shipping every detail field across the wire.
+const findingsForCompare = (findings.findings as FindingsEntry[])
+  .filter((entry) => findingsByPaper.has(entry.paper_id))
+  .map((entry) => ({
+    finding_id: entry.finding_id,
+    paper_id: entry.paper_id,
+    paper_year: entry.paper_year,
+    paper_citation: entry.paper_citation,
+    species: entry.species ?? null,
+    protocol_id: entry.protocol_id,
+    protocol_name: entry.protocol_name,
+    curve_type: entry.curve_type,
+    x_label: entry.x_label,
+    x_units: entry.x_units,
+    y_label: entry.y_label,
+    n_trials: entry.n_trials ?? null,
+    stratification: entry.stratification,
+    points: entry.points,
+    fit: (entry as FindingsEntry & { fit?: unknown }).fit ?? null,
+  }));
+---
+
+<BaseLayout
+  title="Compare papers · behavtaskatlas"
+  description="Pick any two papers and overlay their findings on shared evidence axes with parameter deltas."
+  width="wide"
+>
+  <Breadcrumbs
+    crumbs={[
+      { label: "Compare", href: "/compare" },
+      { label: "Paper × Paper" },
+    ]}
+  />
+
+  <PageHeader
+    title="Compare two papers"
+    lede="Pick any two papers from the bibliography. The atlas overlays their findings on every shared evidence axis (same curve type + x-axis units) and reports parameter deltas where both have psychometric fits."
+  />
+
+  <PaperPairCompare
+    client:load
+    papers={pickerPapers}
+    findings={findingsForCompare}
+  />
+
+  <p class="mt-6 max-w-prose text-body-xs text-fg-muted">
+    The pooled-curve fit is preferred when a paper has one; otherwise the
+    per-condition fit with the broadest coverage stands in. For the
+    pre-baked editorial comparisons (prior shifts, species differences,
+    cueing effects) see <a class="text-accent" href="/compare">/compare</a>.
+  </p>
+</BaseLayout>

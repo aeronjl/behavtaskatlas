@@ -2,6 +2,89 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 01:07:11 BST - Tier 3 + 4 of UI critique landed: saved views, keyboard nav, layered graph, paper-pair compare, live AIC ranking, reproduction recipe
+
+Closed the remaining ten items from `UI.md`. The shape of the work is
+"capability surfaces" — features the project's data already supports
+but never previously exposed at the UI layer.
+
+Concrete moves:
+
+- **Pinned views on `/findings`.** The URL-sync I'd already wired now
+  doubles as the persistence format for a localStorage-backed pin tray.
+  A `★ Pin view` button next to Copy/Reset captures the active filter
+  combination with a derived label (e.g. "psychometric · macaque",
+  "psychometric · Walsh prior-cue"); pinned views appear as a chip
+  strip below the curve-type row and survive reload. Twelve-pin cap to
+  avoid an unbounded localStorage growth.
+- **Wilson 95% CIs as static uncertainty bands.** `MiniFindingsChart`
+  and the `FindingsOverlay` main chart both compute Wilson intervals
+  at render time from each point's `n` for binary curve types
+  (psychometric, accuracy_by_strength, hit_rate, yes_no_change_detection).
+  Authored `y_lower` / `y_upper` always win when present — leaving the
+  schema escape hatch intact for curators who have a better CI
+  (bootstrap, mixed-effects). Bands hide when the Pyodide refit's
+  pooled band is on, so the two uncertainty signals never overlap.
+- **Site-wide keyboard navigation.** New `KeyboardNav.svelte` mounted
+  in `BaseLayout` listens at document level for two-key chords
+  (`g f` / `g p` / `g m` / `g s` / `g c` / `g t` / `g o` / `g n` /
+  `g a` / `g h`) plus `?` for a help overlay. Inputs and ⌘-prefixed
+  keys are excluded so typing into a search field never navigates. A
+  small bottom-of-screen hint shows the available second-key letters
+  while a chord is pending.
+- **Editorial story layer.** New `lib/stories.ts` module + per-story
+  OG endpoint at `pages/og/stories/[slug].svg.ts` so each story has a
+  generative cover. `/stories` is now a 2-column magazine grid using
+  the OG SVGs as thumbnails with publication date + read-time. The
+  home's "Latest story" hero rotates by ISO week (`storyOfTheWeek`)
+  so the featured piece changes naturally without an editorial
+  calendar.
+- **Ambient micro-animations.** Added a 200ms `animate-fade-in`
+  utility for chip / banner / table-section appearances and a global
+  `prefers-reduced-motion: reduce` guard that collapses every
+  transition and animation to ~0ms. Pinned-view chips, the
+  what's-changed banner, the live AIC ranking, paper-pair compare
+  results, and the layered-graph path-mode hint all use it.
+- **Layered RelationshipGraph.** `RelationshipGraph.svelte` rewritten
+  from a d3-force layout to a deterministic 4-column layered graph
+  (one column per node type), with a search input that dims
+  non-matching nodes and a "Find path" mode toggle. Path mode runs a
+  BFS over the (undirected) edge set when two nodes are picked and
+  highlights the connecting chain. d3-force is no longer imported;
+  the package can be removed once we're sure nothing else needs it.
+- **What's-changed banner.** New `WhatsChangedBanner.svelte` mounted
+  globally in `BaseLayout`. Stores a `{commit, seenAt, counts}`
+  snapshot in localStorage on first visit; on subsequent visits with
+  a different manifest commit, surfaces a small accent banner with
+  per-type deltas (`+3 findings, +12 model fits since 4 days ago`).
+  Dismiss snapshots the current state so the next diff starts here.
+- **Paper-pair compare.** New `/compare/papers` page +
+  `PaperPairCompare.svelte` lets a user pick any two papers from the
+  bibliography and overlays their findings on every shared evidence
+  axis (curve type × x_label × x_units). Where both have psychometric
+  fits, a delta table reports B − A on μ, σ, and threshold. URL state
+  (`?a=…&b=…`) makes the view shareable.
+- **Live AIC ranking on the pooled refit.** Extended the existing
+  Pyodide `fit_curves` Python with `_rank_variants` that fits four
+  nested logistic / null variants on the pooled curve and AIC-ranks
+  them by Bernoulli log-likelihood: bernoulli-rate (k=1),
+  logistic-2param (k=2), logistic-3param-symmetric (k=3),
+  logistic-4param (k=4). `FindingsOverlay` renders the ranking
+  inline below the chart whenever `Refit live` is on; the in-browser
+  ranking mirrors the build-time selection on `/models`.
+- **Per-slice reproduction recipe.** New `ReproductionRecipe.svelte`
+  on slice detail pages renders a copy-paste shell snippet with
+  `git clone` + `git checkout <commit>` + `uv sync --extra <group>`
+  + the four pipeline subcommands (`-download` / `-harmonize` /
+  `-analyze` / `-report`). The `extra` group is heuristically
+  derived from the slice id (ibl / clicks / rdm / visual). The recipe
+  is pinned to the manifest commit so a teammate runs the same code
+  path the deploy used.
+
+`bash scripts/ci.sh` passes end-to-end (176 pages including the now
+expanded /og/ tree with story cards). UI.md's full roadmap (Tiers 1
+through 4) is now landed.
+
 ## 2026-05-01 00:35:23 BST - Tier 2 of UI critique landed: home rebuild, /models exec summary, /findings refit CTA, generative OG cards
 
 Followed Tier 1 with the second tier from `UI.md`. The shape of the

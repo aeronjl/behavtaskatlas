@@ -2,45 +2,12 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Card from "../../components/ui/Card.astro";
 import PageHeader from "../../components/ui/PageHeader.astro";
+import { stories } from "../../lib/stories";
 
-type Story = {
-  href: string;
-  title: string;
-  lead: string;
-  surface: string;
-  speciesCount?: number;
-  tags: string[];
-};
-
-const stories: Story[] = [
-  {
-    href: "/stories/visual-contrast",
-    title: "Visual contrast family map",
-    lead:
-      "The atlas's deepest family becomes a visual coverage map: notable papers, protocols, source-data depth, findings, slices, and model-selection ambiguity in one scan.",
-    surface: "Timeline + coverage matrix + curve scan + small multiples",
-    speciesCount: 2,
-    tags: ["visual contrast", "coverage", "family depth"],
-  },
-  {
-    href: "/stories/rdm",
-    title: "Cross-species random-dot motion",
-    lead:
-      "Classic macaque RDM, human reaction-time RDM, and macaque confidence-wagering RDM live on one canonical signed-coherence axis. DDM fits give a single drift parameter to read off across species — and the spread is bigger than you'd expect.",
-    surface: "Psychometric + chronometric + DDM cross-species fits",
-    speciesCount: 2,
-    tags: ["random-dot motion", "DDM", "cross-species"],
-  },
-  {
-    href: "/stories/prior-shifts",
-    title: "Prior conditioning shifts the psychometric, not the slope",
-    lead:
-      "IBL biases mouse choice via three-block left-prior schedules; Walsh 2024 biases human choice with trial-by-trial valid/neutral/invalid cues. Both predict μ moves and σ stays put. The atlas measures both directly.",
-    surface: "Psychometric μ vs σ across mouse blocks and human cues",
-    speciesCount: 2,
-    tags: ["prior conditioning", "psychometric", "cross-species"],
-  },
-];
+// Sort newest-first so the freshest piece anchors the grid.
+const ordered = [...stories].sort((a, b) =>
+  b.publishedAt.localeCompare(a.publishedAt),
+);
 ---
 
 <BaseLayout
@@ -53,26 +20,40 @@ const stories: Story[] = [
     lede="Curated long-form views that follow a question across the atlas — same canonical axes, multiple papers, both choice and process-level evidence where available. Each story embeds the relevant findings and fits so you can read the punchline without opening a paper."
   />
 
-  <ul class="grid grid-cols-1 gap-4">
-    {stories.map((story) => (
+  <ul class="grid grid-cols-1 gap-5 md:grid-cols-2">
+    {ordered.map((story) => (
       <li>
-        <Card href={story.href} padding="lg">
-          <header class="mb-2 flex items-baseline justify-between gap-3">
-            <h2 class="text-h2 text-fg">{story.title}</h2>
-            <span
-              class="text-body-lg text-fg-subtle transition-colors group-hover:text-accent"
-              aria-hidden="true"
-            >→</span>
-          </header>
-          <p class="mb-3 text-body text-fg-secondary">{story.lead}</p>
-          <p class="text-body-xs text-fg-muted">{story.surface}</p>
-          <ul class="mt-3 flex flex-wrap gap-1">
-            {story.tags.map((tag) => (
-              <li class="rounded bg-surface-sunken px-2 py-0.5 text-mono-id text-fg-secondary">
-                {tag}
-              </li>
-            ))}
-          </ul>
+        <Card href={story.href} padding="none" class="overflow-hidden">
+          <div class="aspect-[1200/630] w-full bg-surface-sunken">
+            <img
+              src={`/og/stories/${story.slug}.svg`}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              class="block h-full w-full object-cover"
+            />
+          </div>
+          <div class="p-5">
+            <header class="mb-2 flex flex-wrap items-baseline justify-between gap-3">
+              <p class="text-eyebrow uppercase text-fg-muted">
+                {story.publishedAt} · {story.readMinutes} min read
+              </p>
+              <span
+                class="text-body-lg text-fg-subtle transition-colors group-hover:text-accent"
+                aria-hidden="true"
+              >→</span>
+            </header>
+            <h2 class="text-h3 text-fg">{story.title}</h2>
+            <p class="mt-2 text-body text-fg-secondary">{story.lead}</p>
+            <p class="mt-3 text-body-xs text-fg-muted">{story.surface}</p>
+            <ul class="mt-3 flex flex-wrap gap-1">
+              {story.tags.map((tag) => (
+                <li class="rounded bg-surface-sunken px-2 py-0.5 text-mono-id text-fg-secondary">
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          </div>
         </Card>
       </li>
     ))}

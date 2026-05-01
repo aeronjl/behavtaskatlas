@@ -143,25 +143,84 @@
         traceMode !== "aggregate"),
   );
 
+  // Curve types whose y values are sample proportions of binary trial
+  // outcomes — Wilson 95% CIs are well-defined when n is known. RT-based
+  // curves (chronometric, etc.) need a separate distributional assumption
+  // and are left without computed bounds.
+  const BINARY_CURVE_TYPES = new Set([
+    "psychometric",
+    "accuracy_by_strength",
+    "hit_rate",
+    "yes_no_change_detection",
+  ]);
+
+  function wilsonInterval(p: number, n: number): { lower: number; upper: number } | null {
+    if (!Number.isFinite(p) || !Number.isFinite(n) || n <= 0) return null;
+    if (p < 0 || p > 1) return null;
+    const z = 1.96;
+    const z2 = z * z;
+    const denom = n + z2;
+    const center = (n * p + z2 / 2) / denom;
+    const half = (z / denom) * Math.sqrt(n * p * (1 - p) + z2 / 4);
+    return {
+      lower: Math.max(0, center - half),
+      upper: Math.min(1, center + half),
+    };
+  }
+
+  // Resolve a CI for a single observed point. Prefer authored bounds
+  // (`y_lower` / `y_upper` on the YAML record) over our runtime Wilson
+  // estimate so a curator can override the default CI when they have
+  // a better one (bootstrap, mixed-effects, etc.). Returns null when
+  // the curve type isn't binary and no authored bounds exist.
+  function pointBounds(
+    curveType: string,
+    point: FindingsEntry["points"][number],
+  ): { lower: number; upper: number } | null {
+    const lower = (point as { y_lower?: number | null }).y_lower;
+    const upper = (point as { y_upper?: number | null }).y_upper;
+    if (
+      lower !== null &&
+      lower !== undefined &&
+      upper !== null &&
+      upper !== undefined
+    ) {
+      return { lower, upper };
+    }
+    if (BINARY_CURVE_TYPES.has(curveType)) {
+      return wilsonInterval(point.y, point.n);
+    }
+    return null;
+  }
+
   const flatPoints = $derived.by(() =>
     visibleFindings.flatMap((entry) =>
-      entry.points.map((p) => ({
-        finding_id: entry.finding_id,
-        paper_citation: entry.paper_citation,
-        paper_year: entry.paper_year,
-        curve_type: entry.curve_type,
-        condition_label:
-          entry.stratification?.condition ??
-          entry.stratification?.subject_id ??
-          entry.protocol_name,
-        species: entry.species ?? "unknown",
-        source_data_level: entry.source_data_level,
-        protocol_name: entry.protocol_name,
-        x: p.x,
-        y: p.y,
-        n: p.n,
-      })),
+      entry.points.map((p) => {
+        const bounds = pointBounds(entry.curve_type, p);
+        return {
+          finding_id: entry.finding_id,
+          paper_citation: entry.paper_citation,
+          paper_year: entry.paper_year,
+          curve_type: entry.curve_type,
+          condition_label:
+            entry.stratification?.condition ??
+            entry.stratification?.subject_id ??
+            entry.protocol_name,
+          species: entry.species ?? "unknown",
+          source_data_level: entry.source_data_level,
+          protocol_name: entry.protocol_name,
+          x: p.x,
+          y: p.y,
+          n: p.n,
+          y_lower: bounds?.lower ?? null,
+          y_upper: bounds?.upper ?? null,
+        };
+      }),
     ),
+  );
+
+  const flatBoundedPoints = $derived(
+    flatPoints.filter((p) => p.y_lower !== null && p.y_upper !== null),
   );
 
   const flatFitPoints = $derived.by(() =>
@@ -261,7 +320,34 @@
       },
     };
 
-    const layers: Array<Record<string, unknown>> = [dataLayer];
+    const layers: Array<Record<string, unknown>> = [];
+
+    // CI rule layer first so it sits behind the line + dots.
+    if (flatBoundedPoints.length > 0) {
+      layers.push({
+        data: { values: flatBoundedPoints },
+        transform: [
+          {
+            filter:
+              "isValid(datum.y_lower) && isValid(datum.y_upper) && datum.y_lower !== datum.y_upper",
+          },
+        ],
+        mark: { type: "rule", strokeWidth: 1.4, opacity: 0.45 },
+        encoding: {
+          x: { field: "x", type: "quantitative" },
+          y: { field: "y_lower", type: "quantitative" },
+          y2: { field: "y_upper" },
+          color: {
+            field: colorFieldFor[colorBy],
+            type: "nominal",
+            scale: { scheme: "tableau10" },
+          },
+          detail: { field: "finding_id", type: "nominal" },
+        },
+      });
+    }
+
+    layers.push(dataLayer);
 
     if (fitsEnabled && flatFitPoints.length > 0) {
       layers.push({

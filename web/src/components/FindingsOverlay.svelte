@@ -306,22 +306,74 @@
     return out;
   });
 
+  // Curve types whose y values are sample proportions (binary trial
+  // outcomes). Wilson 95% CIs are well-defined when n is known; we
+  // compute them at chart-time so static views show uncertainty even
+  // when the upstream YAML didn't provide y_lower / y_upper.
+  const BINARY_CURVE_TYPES = new Set([
+    "psychometric",
+    "accuracy_by_strength",
+    "hit_rate",
+    "yes_no_change_detection",
+  ]);
+
+  function wilsonInterval(p: number, n: number): { lower: number; upper: number } | null {
+    if (!Number.isFinite(p) || !Number.isFinite(n) || n <= 0) return null;
+    if (p < 0 || p > 1) return null;
+    const z = 1.96;
+    const z2 = z * z;
+    const denom = n + z2;
+    const center = (n * p + z2 / 2) / denom;
+    const half = (z / denom) * Math.sqrt(n * p * (1 - p) + z2 / 4);
+    return {
+      lower: Math.max(0, center - half),
+      upper: Math.min(1, center + half),
+    };
+  }
+
   const flatPoints = $derived.by(() =>
     displayEntries.flatMap((entry) =>
-      entry.points.map((p) => ({
-        finding_id: entry.finding_id,
-        paper_citation: entry.paper_citation,
-        paper_year: entry.paper_year,
-        species: entry.species ?? "unknown",
-        source_data_level: entry.source_data_level,
-        evidence_type: entry.evidence_type ?? "unknown",
-        response_modality: entry.response_modality ?? "unknown",
-        protocol_name: entry.protocol_name,
-        x: p.x,
-        y: p.y,
-        n: p.n,
-      }))
+      entry.points.map((p) => {
+        const authoredLower = (p as { y_lower?: number | null }).y_lower;
+        const authoredUpper = (p as { y_upper?: number | null }).y_upper;
+        let lower: number | null = null;
+        let upper: number | null = null;
+        if (
+          authoredLower !== null &&
+          authoredLower !== undefined &&
+          authoredUpper !== null &&
+          authoredUpper !== undefined
+        ) {
+          lower = authoredLower;
+          upper = authoredUpper;
+        } else if (BINARY_CURVE_TYPES.has(entry.curve_type)) {
+          const ci = wilsonInterval(p.y, p.n);
+          if (ci) {
+            lower = ci.lower;
+            upper = ci.upper;
+          }
+        }
+        return {
+          finding_id: entry.finding_id,
+          paper_citation: entry.paper_citation,
+          paper_year: entry.paper_year,
+          species: entry.species ?? "unknown",
+          source_data_level: entry.source_data_level,
+          evidence_type: entry.evidence_type ?? "unknown",
+          response_modality: entry.response_modality ?? "unknown",
+          protocol_name: entry.protocol_name,
+          x: p.x,
+          y: p.y,
+          n: p.n,
+          y_lower: lower,
+          y_upper: upper,
+        };
+      })
     )
+  );
+
+  const flatBoundedPoints = $derived(
+    flatPoints.filter((p) => p.y_lower !== null && p.y_upper !== null),
   );
 
   const yLabel = $derived.by(() => {
@@ -522,6 +574,113 @@
     }
   }
 
+  // ── Pinned views ────────────────────────────────────────────────────────
+  // The user already gets shareable URLs via the URL-sync effect; pinned
+  // views are the personal-bookmark companion. Each pin captures the
+  // current search portion of the URL plus a derived label (curve type,
+  // active filters) and persists in localStorage so the user's tray
+  // survives reloads and follows their browser. No server.
+
+  type PinnedView = {
+    id: string;
+    name: string;
+    search: string; // URL search part, e.g. "?curve=accuracy_by_strength&species=mouse"
+    curveType: string;
+    filterCount: number;
+    savedAt: number;
+  };
+
+  const PINNED_KEY = "behavtaskatlas:pinnedViews:findings";
+  let pinnedViews = $state<PinnedView[]>([]);
+
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(PINNED_KEY);
+      if (raw) pinnedViews = JSON.parse(raw) as PinnedView[];
+    } catch (err) {
+      console.error("Failed to read pinned views", err);
+    }
+  });
+
+  function persistPinned(next: PinnedView[]) {
+    pinnedViews = next;
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PINNED_KEY, JSON.stringify(next));
+    } catch (err) {
+      console.error("Failed to persist pinned views", err);
+    }
+  }
+
+  // Derive a display name from current filter state. Prefers an active
+  // preset's label; falls back to the curve type plus a short "X filters"
+  // tag so the pinned-views tray reads like a list of meaningful queries
+  // rather than a wall of UUIDs.
+  function deriveViewName(): string {
+    for (const preset of presets) {
+      if (isPresetActive(preset.key)) {
+        return preset.key === "all"
+          ? `${currentCurveType.replace(/_/g, " ")} · all`
+          : `${currentCurveType.replace(/_/g, " ")} · ${preset.label}`;
+      }
+    }
+    const parts: string[] = [currentCurveType.replace(/_/g, " ")];
+    if (active.species.size === 1) parts.push(Array.from(active.species)[0]);
+    else if (active.species.size < filterOptions.species.length)
+      parts.push(`${active.species.size} species`);
+    if (
+      active.source_data_level.size <
+      filterOptions.source_data_level.length
+    ) {
+      parts.push(`${active.source_data_level.size} source levels`);
+    }
+    if (searchText.trim().length > 0) parts.push(`"${searchText.trim()}"`);
+    if (parts.length === 1) parts.push("default");
+    return parts.join(" · ");
+  }
+
+  function pinCurrentView() {
+    if (typeof window === "undefined") return;
+    const search = buildUrlState().toString();
+    const view: PinnedView = {
+      id: `view-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: deriveViewName(),
+      search,
+      curveType: currentCurveType,
+      filterCount: activeFilterCount,
+      savedAt: Date.now(),
+    };
+    // Avoid duplicates: if a pin already matches the same search string,
+    // refresh its savedAt timestamp instead of stacking another row.
+    const existing = pinnedViews.find((v) => v.search === search);
+    if (existing) {
+      persistPinned(
+        pinnedViews.map((v) =>
+          v.id === existing.id ? { ...v, savedAt: Date.now(), name: view.name } : v,
+        ),
+      );
+      return;
+    }
+    persistPinned([view, ...pinnedViews].slice(0, 12));
+  }
+
+  function removePinnedView(id: string) {
+    persistPinned(pinnedViews.filter((v) => v.id !== id));
+  }
+
+  function loadPinnedView(view: PinnedView) {
+    if (typeof window === "undefined") return;
+    const search = view.search.length > 0 ? `?${view.search}` : "";
+    window.location.href = `${window.location.pathname}${search}`;
+  }
+
+  const isCurrentViewPinned = $derived.by(() => {
+    if (typeof window === "undefined") return false;
+    const search = buildUrlState().toString();
+    return pinnedViews.some((v) => v.search === search);
+  });
+
   const filteredSummary = $derived.by(() => {
     const papers = new Set<string>();
     const species = new Set<string>();
@@ -635,10 +794,20 @@
     max: number;
     n_curves: number;
   };
+  type SelectionRanking = {
+    variant: string;
+    label: string;
+    n_params: number;
+    params: Record<string, number>;
+    log_likelihood: number;
+    aic: number;
+    delta_aic: number;
+  };
   let fitData = $state<{
     perCurve: PerCurveFit[];
     pooled: { line: Array<{ x: number; y: number }>; ci_band: Array<{ x: number; y: number; lower: number; upper: number }> | null; params: FitParams } | null;
     disagreement: DisagreementPoint[];
+    selectionRanking: SelectionRanking[];
     curveType: string;
     filterSignature: string;
     targetY: number;
@@ -729,6 +898,127 @@ def _threshold_at(params, target_y, force_lower=None):
         return None
     sig = max(float(params["sigma"]), 1e-6)
     return float(params["mu"] - sig * np.log((1.0 - z) / z))
+
+
+def _bernoulli_loglik(points, predictor):
+    """Aggregated Bernoulli log-likelihood for a vector of (y, n) per
+    x. Used to AIC-rank model variants on the pooled curve."""
+    eps = 1e-10
+    ll = 0.0
+    for p in points:
+        n = max(p.get("n", 1), 1)
+        y = float(p["y"])
+        p_hat = float(predictor(p["x"]))
+        p_hat = max(min(p_hat, 1 - eps), eps)
+        ll += n * (y * np.log(p_hat) + (1 - y) * np.log(1 - p_hat))
+    return float(ll)
+
+
+def _rank_variants(points):
+    """Fit four nested logistic / null variants on the same pooled data
+    and AIC-rank them. Returns a list ordered by AIC ascending; each
+    item has variant id, free-parameter count, fitted parameters,
+    log-likelihood, and AIC. The ranking is the in-browser analogue of
+    the build-time AIC selection on /models."""
+    if not points:
+        return []
+    xs = np.array([p["x"] for p in points], dtype=float)
+    ys = np.array([p["y"] for p in points], dtype=float)
+    ns = np.array([max(p.get("n", 1), 1) for p in points], dtype=float)
+    if len(xs) < 4:
+        return []
+    sigma_weight = 1.0 / np.sqrt(ns)
+    mu0 = float(np.mean(xs))
+    span = float(np.max(xs) - np.min(xs)) or 1.0
+    sigma0 = max(span / 4.0, 1e-3)
+    eps = 1e-10
+
+    results = []
+
+    # 1. Bernoulli rate (null): single p across all data, no x dependence.
+    p_rate = float(np.average(ys, weights=ns))
+    p_rate_clipped = max(min(p_rate, 1 - eps), eps)
+    rate_predictor = lambda _x, p=p_rate_clipped: p
+    rate_ll = _bernoulli_loglik(points, rate_predictor)
+    results.append({
+        "variant": "bernoulli-rate",
+        "label": "Constant rate",
+        "n_params": 1,
+        "params": {"p": p_rate},
+        "log_likelihood": rate_ll,
+        "aic": 2 * 1 - 2 * rate_ll,
+    })
+
+    # 2. Logistic-2param: mu, sigma; lapse and gamma pinned at 0.
+    try:
+        def _model2(x, mu, sigma):
+            return _logistic4(x, mu, sigma, 0.0, 0.0)
+        popt2, _ = optimize.curve_fit(
+            _model2, xs, ys, p0=[mu0, sigma0],
+            sigma=sigma_weight, absolute_sigma=False,
+            bounds=([-np.inf, 1e-3], [np.inf, np.inf]),
+            maxfev=4000,
+        )
+        mu, sigma = popt2
+        params = {"mu": float(mu), "sigma": float(sigma), "gamma": 0.0, "lapse": 0.0}
+        predictor = lambda x, p=params: _logistic4(np.array([x]), p["mu"], p["sigma"], 0.0, 0.0)[0]
+        ll = _bernoulli_loglik(points, predictor)
+        results.append({
+            "variant": "logistic-2param",
+            "label": "Logistic μ, σ",
+            "n_params": 2,
+            "params": params,
+            "log_likelihood": ll,
+            "aic": 2 * 2 - 2 * ll,
+        })
+    except Exception:
+        pass
+
+    # 3. Logistic-3param: mu, sigma, symmetric lapse (gamma = lapse).
+    try:
+        def _model3(x, mu, sigma, lapse):
+            return _logistic4(x, mu, sigma, lapse, lapse)
+        popt3, _ = optimize.curve_fit(
+            _model3, xs, ys, p0=[mu0, sigma0, 0.05],
+            sigma=sigma_weight, absolute_sigma=False,
+            bounds=([-np.inf, 1e-3, 0.0], [np.inf, np.inf, 0.49]),
+            maxfev=4000,
+        )
+        mu, sigma, lapse = popt3
+        params = {"mu": float(mu), "sigma": float(sigma), "gamma": float(lapse), "lapse": float(lapse)}
+        predictor = lambda x, p=params: _logistic4(np.array([x]), p["mu"], p["sigma"], p["gamma"], p["lapse"])[0]
+        ll = _bernoulli_loglik(points, predictor)
+        results.append({
+            "variant": "logistic-3param-symmetric",
+            "label": "Logistic μ, σ, symmetric lapse",
+            "n_params": 3,
+            "params": params,
+            "log_likelihood": ll,
+            "aic": 2 * 3 - 2 * ll,
+        })
+    except Exception:
+        pass
+
+    # 4. Logistic-4param: full mu, sigma, gamma, lapse.
+    full = _fit_one(points)
+    if full is not None:
+        predictor = lambda x, p=full: _logistic4(np.array([x]), p["mu"], p["sigma"], p["gamma"], p["lapse"])[0]
+        ll = _bernoulli_loglik(points, predictor)
+        results.append({
+            "variant": "logistic-4param",
+            "label": "Logistic μ, σ, γ, λ",
+            "n_params": 4,
+            "params": full,
+            "log_likelihood": ll,
+            "aic": 2 * 4 - 2 * ll,
+        })
+
+    results.sort(key=lambda r: r["aic"])
+    if results:
+        best = results[0]["aic"]
+        for r in results:
+            r["delta_aic"] = float(r["aic"] - best)
+    return results
 
 
 def fit_curves(payload_json):
@@ -832,10 +1122,18 @@ def fit_curves(payload_json):
                     "n_curves": len(ys),
                 })
 
+    selection_ranking = []
+    if pin_lower is None and all_points:
+        try:
+            selection_ranking = _rank_variants(all_points)
+        except Exception:
+            selection_ranking = []
+
     return _fit_json.dumps({
         "per_curve": per_curve,
         "pooled": pooled,
         "disagreement": disagreement,
+        "selection_ranking": selection_ranking,
     })
 `;
 
@@ -917,6 +1215,7 @@ def fit_curves(payload_json):
         perCurve: parsed.per_curve ?? [],
         pooled: parsed.pooled ?? null,
         disagreement: parsed.disagreement ?? [],
+        selectionRanking: parsed.selection_ranking ?? [],
         curveType: currentCurveType,
         filterSignature: signature,
         targetY,
@@ -1150,6 +1449,35 @@ def fit_curves(payload_json):
       });
     }
 
+    // Per-point Wilson 95% CI rules. Drawn behind the line + dots so
+    // they read as a quiet uncertainty signal rather than another data
+    // series. Hidden when the refit pooled band is on (the band already
+    // communicates uncertainty at the population level).
+    const flatBoundedValues = flatBoundedPoints;
+    if (!fitEnabled && flatBoundedValues.length > 0) {
+      layers.push({
+        data: { values: flatBoundedValues },
+        transform: [
+          {
+            filter:
+              "isValid(datum.y_lower) && isValid(datum.y_upper) && datum.y_lower !== datum.y_upper",
+          },
+        ],
+        mark: { type: "rule", strokeWidth: 1.4, opacity: 0.4 },
+        encoding: {
+          x: { field: "x", type: "quantitative" },
+          y: { field: "y_lower", type: "quantitative" },
+          y2: { field: "y_upper" },
+          color: {
+            field: "paper_citation",
+            type: "nominal",
+            scale: { scheme: "tableau10" },
+          },
+          detail: { field: "finding_id", type: "nominal" },
+        },
+      });
+    }
+
     layers.push({
       data: { values: points },
       transform: [{ filter: "isValid(datum.x) && isValid(datum.y)" }],
@@ -1258,6 +1586,23 @@ def fit_curves(payload_json):
     <div class="flex flex-wrap items-center gap-2">
       <button
         type="button"
+        aria-pressed={isCurrentViewPinned}
+        class={[
+          "rounded-md border px-2.5 py-1 text-body-xs",
+          isCurrentViewPinned
+            ? "border-accent bg-accent-soft text-accent"
+            : "border-rule-strong text-fg-secondary hover:bg-surface",
+        ]}
+        onclick={pinCurrentView}
+        title={isCurrentViewPinned
+          ? "View already pinned — clicking again refreshes its timestamp."
+          : "Save this filter combination to your browser for quick recall."}
+      >
+        <span aria-hidden="true">{isCurrentViewPinned ? "★" : "☆"}</span>
+        <span class="ml-1">{isCurrentViewPinned ? "Pinned" : "Pin view"}</span>
+      </button>
+      <button
+        type="button"
         class="rounded-md border border-rule-strong px-2.5 py-1 text-body-xs text-fg-secondary hover:bg-surface"
         onclick={copyLink}
         title="Copy a shareable URL of the current view"
@@ -1277,6 +1622,36 @@ def fit_curves(payload_json):
       </button>
     </div>
   </div>
+
+  {#if pinnedViews.length > 0}
+    <div class="mb-3 flex flex-wrap items-center gap-2 text-body-xs animate-fade-in">
+      <span class="text-fg-muted">Pinned:</span>
+      {#each pinnedViews as view (view.id)}
+        <span
+          class="inline-flex items-center gap-1 rounded-full border border-rule bg-surface-raised px-2 py-0.5 animate-fade-in"
+        >
+          <button
+            type="button"
+            class="text-fg-secondary hover:text-accent"
+            onclick={() => loadPinnedView(view)}
+            title={`Saved ${new Date(view.savedAt).toLocaleString()} · ${view.filterCount} filter${view.filterCount === 1 ? "" : "s"} active`}
+          >
+            <span aria-hidden="true" class="text-accent">★</span>
+            <span class="ml-1">{view.name}</span>
+          </button>
+          <button
+            type="button"
+            class="text-fg-subtle hover:text-bad"
+            onclick={() => removePinnedView(view.id)}
+            aria-label={`Remove pinned view "${view.name}"`}
+            title="Remove this pin"
+          >
+            ×
+          </button>
+        </span>
+      {/each}
+    </div>
+  {/if}
 
   {#if axisOptionsForCurve.length > 1}
     <fieldset
@@ -1561,9 +1936,59 @@ def fit_curves(payload_json):
     </div>
   {/if}
 
+  {#if fitEnabled && fitData?.selectionRanking && fitData.selectionRanking.length > 0}
+    <div class="mt-4 animate-fade-in">
+      <h3 class="mb-1 text-body-xs font-semibold text-fg-secondary">
+        Live AIC ranking on the pooled curve
+      </h3>
+      <p class="mb-2 text-mono-id text-fg-muted">
+        Each variant is fitted to the {flatPoints.length.toLocaleString()}
+        pooled points using a Bernoulli log-likelihood weighted by trial count.
+        The winner is the lowest-AIC entry; Δ AIC ≥ 10 is decisive, ≥ 2 is
+        supported, &lt; 2 is a close call.
+      </p>
+      <div class="overflow-x-auto rounded-md border border-rule bg-surface-raised">
+        <table class="w-full text-body-xs">
+          <thead class="bg-surface text-left text-eyebrow uppercase text-fg-muted">
+            <tr>
+              <th class="px-3 py-2">Variant</th>
+              <th class="px-3 py-2 text-right">k</th>
+              <th class="px-3 py-2 text-right">log L</th>
+              <th class="px-3 py-2 text-right">AIC</th>
+              <th class="px-3 py-2 text-right">Δ AIC</th>
+              <th class="px-3 py-2">Parameters</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-rule">
+            {#each fitData.selectionRanking as row, i (row.variant)}
+              {@const isWinner = i === 0}
+              <tr class={isWinner ? "bg-ok-soft" : ""}>
+                <td class="px-3 py-2 font-mono text-fg">
+                  {#if isWinner}<span aria-hidden="true">★</span>{/if}
+                  {row.label}
+                </td>
+                <td class="px-3 py-2 text-right font-mono">{row.n_params}</td>
+                <td class="px-3 py-2 text-right font-mono">{row.log_likelihood.toFixed(1)}</td>
+                <td class="px-3 py-2 text-right font-mono">{row.aic.toFixed(1)}</td>
+                <td class="px-3 py-2 text-right font-mono">
+                  {isWinner ? "—" : `+${row.delta_aic.toFixed(1)}`}
+                </td>
+                <td class="px-3 py-2 font-mono text-mono-id text-fg-secondary">
+                  {Object.entries(row.params)
+                    .map(([k, v]) => `${k}=${v.toFixed(3)}`)
+                    .join(" · ")}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
+
   {#if fitEnabled && DISAGREEMENT_VALUES.length > 0}
     <div class="mt-4">
-      <h3 class="mb-1 text-xs font-semibold text-fg-secondary">
+      <h3 class="mb-1 text-body-xs font-semibold text-fg-secondary">
         Cross-paper disagreement
       </h3>
       <p class="mb-2 text-[11px] text-fg-muted">
