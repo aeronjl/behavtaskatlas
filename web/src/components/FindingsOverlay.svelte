@@ -706,6 +706,121 @@
     return n;
   });
 
+  // ── Empty-state suggestions ────────────────────────────────────────────
+  // When the current filter combination yields no findings, compute
+  // which single relaxation would unlock the most. Lets the empty
+  // state offer "Drop the X filter to see Y more findings" instead of
+  // a dead end.
+
+  type RelaxKey =
+    | "species"
+    | "source_data_level"
+    | "evidence_type"
+    | "response_modality"
+    | "year"
+    | "search"
+    | "trace_mode";
+
+  const RELAX_LABELS: Record<RelaxKey, string> = {
+    species: "species",
+    source_data_level: "source level",
+    evidence_type: "evidence type",
+    response_modality: "response modality",
+    year: "year range",
+    search: "search text",
+    trace_mode: "trace mode",
+  };
+
+  function entryMatchesExcept(entry: FindingsEntry, skip: RelaxKey | null): boolean {
+    if (entry.curve_type !== currentCurveType) return false;
+    if (activeXLabel && (entry.x_label ?? "x") !== activeXLabel) return false;
+    if (skip !== "trace_mode" && traceMode === "pooled" && isSubjectLevel(entry))
+      return false;
+    if (
+      skip !== "species" &&
+      entry.species &&
+      !active.species.has(entry.species)
+    )
+      return false;
+    if (
+      skip !== "source_data_level" &&
+      entry.source_data_level &&
+      !active.source_data_level.has(entry.source_data_level)
+    )
+      return false;
+    if (
+      skip !== "evidence_type" &&
+      entry.evidence_type &&
+      !active.evidence_type.has(entry.evidence_type)
+    )
+      return false;
+    if (
+      skip !== "response_modality" &&
+      entry.response_modality &&
+      !active.response_modality.has(entry.response_modality)
+    )
+      return false;
+    if (skip !== "year" && (entry.paper_year < yearStart || entry.paper_year > yearEnd))
+      return false;
+    if (skip !== "search") {
+      const needle = searchText.trim().toLowerCase();
+      if (needle) {
+        const haystack = [
+          entry.paper_citation,
+          entry.protocol_name,
+          entry.family_name ?? "",
+          entry.finding_id,
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
+    }
+    return true;
+  }
+
+  type Relaxation = { key: RelaxKey; label: string; count: number };
+
+  const relaxationSuggestions = $derived.by<Relaxation[]>(() => {
+    if (filteredEntries.length > 0) return [];
+    const candidates: Array<{ key: RelaxKey; active: boolean }> = [
+      { key: "species", active: active.species.size !== filterOptions.species.length },
+      { key: "source_data_level", active: active.source_data_level.size !== filterOptions.source_data_level.length },
+      { key: "evidence_type", active: active.evidence_type.size !== filterOptions.evidence_type.length },
+      { key: "response_modality", active: active.response_modality.size !== filterOptions.response_modality.length },
+      { key: "year", active: yearStart !== minYear || yearEnd !== maxYear },
+      { key: "search", active: searchText.trim().length > 0 },
+      { key: "trace_mode", active: traceMode !== "aggregate" },
+    ];
+    const out: Relaxation[] = [];
+    for (const cand of candidates) {
+      if (!cand.active) continue;
+      const count = allEntries.reduce(
+        (acc, entry) => (entryMatchesExcept(entry, cand.key) ? acc + 1 : acc),
+        0,
+      );
+      if (count > 0) {
+        out.push({ key: cand.key, label: RELAX_LABELS[cand.key], count });
+      }
+    }
+    return out.sort((a, b) => b.count - a.count).slice(0, 3);
+  });
+
+  function relaxFilter(key: RelaxKey) {
+    if (key === "species") active = { ...active, species: new Set(filterOptions.species) };
+    else if (key === "source_data_level")
+      active = { ...active, source_data_level: new Set(filterOptions.source_data_level) };
+    else if (key === "evidence_type")
+      active = { ...active, evidence_type: new Set(filterOptions.evidence_type) };
+    else if (key === "response_modality")
+      active = { ...active, response_modality: new Set(filterOptions.response_modality) };
+    else if (key === "year") {
+      yearStart = minYear;
+      yearEnd = maxYear;
+    } else if (key === "search") searchText = "";
+    else if (key === "trace_mode") traceMode = "aggregate";
+  }
+
   function isPresetActive(key: PresetKey): boolean {
     const hasFullSet = (filterKey: FilterKey) =>
       active[filterKey].size === filterOptions[filterKey].length;
@@ -1891,19 +2006,42 @@ def fit_curves(payload_json):
     <div
       class="flex flex-col items-center justify-center gap-3 rounded border border-dashed border-rule-strong bg-surface px-4 py-10 text-center"
     >
-      <p class="text-sm text-fg-secondary">
+      <p class="text-body text-fg-secondary">
         No findings match these filters.
       </p>
-      {#if activeFilterCount > 0}
+      {#if relaxationSuggestions.length > 0}
+        <p class="text-body-xs text-fg-muted">Try dropping one filter:</p>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          {#each relaxationSuggestions as suggestion (suggestion.key)}
+            <button
+              type="button"
+              class="rounded-md border border-accent bg-accent-soft px-3 py-1.5 text-body-xs text-accent hover:opacity-90"
+              onclick={() => relaxFilter(suggestion.key)}
+            >
+              Drop {suggestion.label}
+              <span class="ml-1 font-mono">+{suggestion.count}</span>
+            </button>
+          {/each}
+        </div>
+        {#if activeFilterCount > 0}
+          <button
+            type="button"
+            class="rounded-md border border-rule-strong bg-surface-raised px-3 py-1 text-body-xs text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+            onclick={resetFilters}
+          >
+            Or reset all {activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"}
+          </button>
+        {/if}
+      {:else if activeFilterCount > 0}
         <button
           type="button"
-          class="rounded-md border border-rule-strong bg-surface-raised px-3 py-1.5 text-xs text-fg-secondary hover:border-accent hover:text-accent"
+          class="rounded-md border border-rule-strong bg-surface-raised px-3 py-1.5 text-body-xs text-fg-secondary hover:border-accent hover:text-accent"
           onclick={resetFilters}
         >
           Clear {activeFilterCount} active filter{activeFilterCount === 1 ? "" : "s"}
         </button>
       {:else}
-        <p class="text-xs text-fg-muted">
+        <p class="text-body-xs text-fg-muted">
           Try a different curve type above.
         </p>
       {/if}

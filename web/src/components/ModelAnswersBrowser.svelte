@@ -632,6 +632,32 @@
         Showing <span class="font-mono font-semibold text-fg">{filteredRows.length}</span>
         of <span class="font-mono text-fg">{rows.length}</span> finding-level winners.
       </p>
+
+      <div
+        class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-rule bg-surface px-3 py-2 text-mono-id text-fg-muted"
+        aria-label="Legend for caveat symbols on the cards below"
+      >
+        <span class="font-semibold text-fg-secondary">Legend:</span>
+        <span class="inline-flex items-center gap-1.5">
+          <span
+            class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-warn-soft px-1 text-[10px] font-semibold text-warn"
+            aria-hidden="true"
+          >!</span>
+          <span>source or proxy caveat tag (hover for full description)</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span
+            class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-warn-soft px-1 font-mono text-mono-id font-semibold text-warn"
+            aria-hidden="true"
+          >M</span>
+          <span>mixed AIC comparison scopes — the winner came from a different likelihood than the runners-up</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span aria-hidden="true">★</span>
+          <span>winner row in the same-likelihood ranking</span>
+        </span>
+      </div>
+
       {#if filteredRows.length === 0}
         <section class="rounded-md border border-rule bg-surface-raised p-5 text-sm text-fg-muted">
           <p>No model-selection rows match the current filters.</p>

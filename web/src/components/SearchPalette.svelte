@@ -97,6 +97,64 @@
     else if (activeIndex >= results.length) activeIndex = results.length - 1;
   });
 
+  // ── Did-you-mean suggestions for the no-match state ────────────────────
+  // Strategy: when the strict all-tokens-must-match query yields nothing,
+  // relax to a single longest-token substring search across title +
+  // subtitle + keywords and surface up to 3 nearest matches. Cheap,
+  // typo-tolerant in the common case (a misspelled second token) and
+  // reuses the existing search index.
+
+  function lcs(a: string, b: string): number {
+    if (a.length === 0 || b.length === 0) return 0;
+    let max = 0;
+    const n = a.length;
+    const m = b.length;
+    const prev = new Array(m + 1).fill(0);
+    const curr = new Array(m + 1).fill(0);
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          curr[j] = prev[j - 1] + 1;
+          if (curr[j] > max) max = curr[j];
+        } else {
+          curr[j] = 0;
+        }
+      }
+      for (let j = 0; j <= m; j++) prev[j] = curr[j];
+    }
+    return max;
+  }
+
+  function fuzzyScore(haystack: string, needle: string): number {
+    const lc = haystack.toLowerCase();
+    const n = needle.toLowerCase();
+    if (lc.includes(n)) return n.length * 4 + (lc.startsWith(n) ? 5 : 0);
+    return lcs(lc, n);
+  }
+
+  const suggestions = $derived.by<SearchEntry[]>(() => {
+    if (tokens.length === 0 || results.length > 0) return [];
+    // Combine all tokens and find candidates whose title / subtitle /
+    // keywords have any meaningful character overlap.
+    const needle = tokens.join(" ");
+    const minOverlap = Math.max(2, Math.floor(needle.length * 0.5));
+    return payload.entries
+      .map((entry) => {
+        const title = entry.title.toLowerCase();
+        const subtitle = entry.subtitle.toLowerCase();
+        const keywords = entry.keywords.join(" ").toLowerCase();
+        const titleScore = fuzzyScore(title, needle);
+        const subtitleScore = fuzzyScore(subtitle, needle) * 0.7;
+        const keywordScore = fuzzyScore(keywords, needle) * 0.6;
+        const score = Math.max(titleScore, subtitleScore, keywordScore);
+        return { entry, score };
+      })
+      .filter((row) => row.score >= minOverlap)
+      .sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title))
+      .slice(0, 4)
+      .map((row) => row.entry);
+  });
+
   function handleKeydown(event: KeyboardEvent) {
     const isPaletteShortcut =
       (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
@@ -209,9 +267,37 @@
           </p>
         </div>
       {:else if results.length === 0}
-        <p class="px-4 py-6 text-sm text-fg-muted">
-          No matches for "{query}".
-        </p>
+        <div class="px-4 py-6 text-sm text-fg-muted">
+          <p>No exact matches for <span class="font-mono text-fg">"{query}"</span>.</p>
+          {#if suggestions.length > 0}
+            <p class="mt-3 text-xs">Did you mean:</p>
+            <ul class="mt-2 space-y-1">
+              {#each suggestions as entry (entry.id)}
+                <li>
+                  <a
+                    href={entry.href}
+                    class="flex items-baseline justify-between gap-3 rounded px-2 py-1 text-sm text-fg hover:bg-accent-soft"
+                  >
+                    <span class="truncate">{entry.title}</span>
+                    <span
+                      class="shrink-0 rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-fg-muted"
+                    >
+                      {TYPE_LABEL[entry.type] ?? entry.type}
+                    </span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <p class="mt-3 text-xs">
+              Try a shorter query, or browse
+              <a class="text-accent" href="/findings">/findings</a>,
+              <a class="text-accent" href="/papers">/papers</a>,
+              <a class="text-accent" href="/models">/models</a>,
+              or <a class="text-accent" href="/stories">/stories</a>.
+            </p>
+          {/if}
+        </div>
       {:else}
         <ul
           bind:this={listEl}

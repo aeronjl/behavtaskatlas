@@ -1,0 +1,239 @@
+<!--
+  CoverSheetExport — generates a portable Markdown "cover sheet" for
+  the active finding. The output is short enough to paste into a notebook
+  or supplemental, and self-contained: citation, finding metadata,
+  observed points table, fit parameters, caveats, and a provenance
+  footer pinning the cover sheet to the deploy commit.
+
+  The component renders three controls — Copy, Download (.md), and a
+  collapsed preview — so the user can scan the output before saving.
+-->
+<script lang="ts">
+  type Point = { x: number; y: number; n: number };
+  type FitRow = {
+    variant: string;
+    aic: number | null;
+    delta_aic: number | null;
+    rmse: number | null;
+    is_winner: boolean;
+    parameters: Record<string, number>;
+    caveats: string[];
+  };
+
+  interface Props {
+    findingId: string;
+    citation: string;
+    canonicalUrl: string;
+    species: string | null;
+    curveType: string;
+    stratification: string;
+    protocolName: string;
+    sourceLevel: string;
+    sourceStatus: string;
+    nTrials: number | null;
+    xLabel: string;
+    yLabel: string;
+    points: Point[];
+    fits: FitRow[];
+    caveatTags: string[];
+    buildCommit: string | null;
+    buildDirty: boolean;
+    buildDate: string | null;
+    bestVariantLabel?: string | null;
+    bestConfidenceLabel?: string | null;
+    bestDeltaAic?: number | null;
+  }
+
+  let {
+    findingId,
+    citation,
+    canonicalUrl,
+    species,
+    curveType,
+    stratification,
+    protocolName,
+    sourceLevel,
+    sourceStatus,
+    nTrials,
+    xLabel,
+    yLabel,
+    points,
+    fits,
+    caveatTags,
+    buildCommit,
+    buildDirty,
+    buildDate,
+    bestVariantLabel = null,
+    bestConfidenceLabel = null,
+    bestDeltaAic = null,
+  }: Props = $props();
+
+  function fmt(value: number | null | undefined, digits = 3): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+    return value.toFixed(digits);
+  }
+
+  function paramRow(params: Record<string, number>): string {
+    return Object.entries(params)
+      .map(([k, v]) => `${k}=${fmt(v)}`)
+      .join(", ");
+  }
+
+  const markdown = $derived.by(() => {
+    const lines: string[] = [];
+    lines.push(`# ${findingId}`);
+    lines.push("");
+    lines.push(`> ${citation}`);
+    lines.push(`> Source: <${canonicalUrl}>`);
+    lines.push("");
+    lines.push("## Finding metadata");
+    lines.push("");
+    const meta: Array<[string, string]> = [
+      ["Species", species ?? "—"],
+      ["Curve type", curveType.replace(/_/g, " ")],
+      ["Stratification", stratification],
+      ["Protocol", protocolName],
+      ["Source data level", sourceLevel],
+      ["Source strength", sourceStatus],
+      ["Trials", typeof nTrials === "number" ? nTrials.toLocaleString() : "—"],
+      ["x axis", xLabel],
+      ["y axis", yLabel],
+    ];
+    lines.push("| Field | Value |");
+    lines.push("|---|---|");
+    for (const [k, v] of meta) lines.push(`| ${k} | ${v} |`);
+    lines.push("");
+    if (bestVariantLabel) {
+      lines.push("## Best model fit");
+      lines.push("");
+      lines.push(`- **Winner:** \`${bestVariantLabel}\``);
+      if (bestConfidenceLabel)
+        lines.push(`- **Confidence:** ${bestConfidenceLabel.replace(/_/g, " ")}`);
+      if (bestDeltaAic !== null && bestDeltaAic !== undefined && Number.isFinite(bestDeltaAic))
+        lines.push(`- **Δ AIC to next:** ${fmt(bestDeltaAic, 1)}`);
+      lines.push("");
+    }
+    if (fits.length > 0) {
+      lines.push("## Model-fit ranking");
+      lines.push("");
+      lines.push("| Variant | AIC | Δ AIC | RMSE | Caveats | Parameters |");
+      lines.push("|---|---:|---:|---:|---|---|");
+      for (const fit of fits) {
+        const row = [
+          `${fit.is_winner ? "★ " : ""}\`${fit.variant}\``,
+          fmt(fit.aic, 1),
+          fmt(fit.delta_aic, 1),
+          fmt(fit.rmse, 4),
+          fit.caveats.length === 0 ? "—" : fit.caveats.join(", "),
+          paramRow(fit.parameters),
+        ];
+        lines.push(`| ${row.join(" | ")} |`);
+      }
+      lines.push("");
+    }
+    if (points.length > 0) {
+      lines.push("## Observed points");
+      lines.push("");
+      lines.push(`| ${xLabel} | ${yLabel} | n |`);
+      lines.push("|---:|---:|---:|");
+      for (const p of points) {
+        lines.push(`| ${fmt(p.x)} | ${fmt(p.y, 4)} | ${p.n.toLocaleString()} |`);
+      }
+      lines.push("");
+    }
+    if (caveatTags.length > 0) {
+      lines.push("## Caveats");
+      lines.push("");
+      for (const tag of caveatTags) lines.push(`- ${tag.replace(/_/g, " ")}`);
+      lines.push("");
+    }
+    lines.push("## Provenance");
+    lines.push("");
+    if (buildCommit) {
+      lines.push(
+        `- Atlas commit: \`${buildCommit}\`${buildDirty ? " (dirty tree)" : ""}`,
+      );
+    }
+    if (buildDate) lines.push(`- Build date: ${buildDate}`);
+    lines.push(`- Cover sheet generated: ${new Date().toISOString().slice(0, 10)}`);
+    lines.push("");
+    lines.push(
+      `_Generated by behavtaskatlas. Cite the canonical URL above to refer to a specific revision._`,
+    );
+    return lines.join("\n");
+  });
+
+  let copied = $state(false);
+
+  async function copy() {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(markdown);
+      copied = true;
+      window.setTimeout(() => (copied = false), 1500);
+    } catch (err) {
+      console.error("Cover sheet copy failed", err);
+    }
+  }
+
+  function download() {
+    if (typeof window === "undefined") return;
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const slug = findingId.replace(/^[^.]+\./, "");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-cover-sheet.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  let previewOpen = $state(false);
+</script>
+
+<section class="rounded-md border border-rule bg-surface-raised">
+  <header class="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule px-4 py-3">
+    <div>
+      <p class="text-eyebrow uppercase text-fg-muted">Cover sheet</p>
+      <h3 class="mt-1 text-body font-semibold text-fg">
+        Self-contained Markdown for citation, slides, or notebooks
+      </h3>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="rounded-md border border-rule-strong bg-surface-raised px-2.5 py-1 text-body-xs text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+        onclick={copy}
+      >
+        {copied ? "Copied ✓" : "Copy markdown"}
+      </button>
+      <button
+        type="button"
+        class="rounded-md border border-accent bg-accent px-2.5 py-1 text-body-xs font-semibold text-fg-inverse hover:opacity-90"
+        onclick={download}
+      >
+        Download .md
+      </button>
+    </div>
+  </header>
+  <div class="px-4 py-3 text-body-xs text-fg-secondary">
+    The cover sheet pins the finding to the atlas commit and includes
+    the observed points, fit ranking, caveats, and provenance —
+    everything needed to drop into a paper or notebook without losing
+    the trail back to the deploy.
+    <button
+      type="button"
+      class="ml-2 text-accent hover:underline"
+      onclick={() => (previewOpen = !previewOpen)}
+    >
+      {previewOpen ? "Hide preview" : "Preview"}
+    </button>
+  </div>
+  {#if previewOpen}
+    <pre
+      class="max-h-80 overflow-auto border-t border-rule bg-surface px-4 py-3 font-mono text-mono-num leading-5 text-fg-secondary"
+    >{markdown}</pre>
+  {/if}
+</section>

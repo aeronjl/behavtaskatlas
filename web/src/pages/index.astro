@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import AtlasOverview from "../components/AtlasOverview.astro";
 import LiveFitHero from "../components/LiveFitHero.svelte";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
+import ThresholdDistribution from "../components/ThresholdDistribution.svelte";
 import Card from "../components/ui/Card.astro";
 import DataTable from "../components/ui/DataTable.astro";
 import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
@@ -170,6 +171,52 @@ const aggregateStats = {
     0,
   ),
 };
+
+// Threshold distribution chart — pool on the dominant stimulus axis so
+// the points are actually comparable. Different axes (signed coherence,
+// signed contrast, signed click difference) have incommensurate units
+// and would mislead if mixed. Group by (x_label, x_units), pick the
+// largest group, plot the rest as a strip.
+type ThresholdRow = {
+  finding_id: string;
+  href: string;
+  paper_label: string;
+  species: string;
+  threshold: number;
+};
+
+const axisCounts = new Map<
+  string,
+  { label: string; units: string; rows: ThresholdRow[] }
+>();
+for (const f of psychometricFits) {
+  if (f.stratification?.subject_id) continue; // only pooled / per-condition
+  const fit = (f as FindingsEntry & { fit: FitFields }).fit;
+  if (!Number.isFinite(fit.threshold ?? NaN)) continue;
+  const label = f.x_label ?? "x";
+  const units = f.x_units ?? "";
+  const key = `${label}|${units}`;
+  const bucket =
+    axisCounts.get(key) ?? { label, units, rows: [] as ThresholdRow[] };
+  bucket.rows.push({
+    finding_id: f.finding_id,
+    href: `/findings/${f.finding_id.replace("finding.", "")}`,
+    paper_label: f.paper_citation.split(".")[0] ?? f.paper_id,
+    species: f.species ?? "unknown",
+    threshold: fit.threshold as number,
+  });
+  axisCounts.set(key, bucket);
+}
+const dominantAxisEntry = Array.from(axisCounts.values()).sort(
+  (a, b) => b.rows.length - a.rows.length,
+)[0];
+const thresholdRows = dominantAxisEntry?.rows ?? [];
+const thresholdAxisLabel = dominantAxisEntry
+  ? dominantAxisEntry.units
+    ? `x at 75% (${dominantAxisEntry.label}, ${dominantAxisEntry.units})`
+    : `x at 75% (${dominantAxisEntry.label})`
+  : "x at 75%";
+const thresholdMedian = median(thresholdRows.map((r) => r.threshold));
 
 const featuredComparison = comparisons.comparisons[0] ?? null;
 const featuredFindingIds = ((featuredComparison?.finding_ids ?? []) as string[]);
@@ -364,6 +411,25 @@ const blockerHighCount = (
         <Stat label="Median 75% threshold" value={fmt(aggregateStats.median_threshold)} />
         <Stat label="Σ trials" value={aggregateStats.total_trials_psychometric} />
       </StatGrid>
+      {thresholdRows.length > 1 ? (
+        <div class="mb-6">
+          <h3 class="mb-1 flex items-baseline justify-between gap-3 text-eyebrow uppercase text-fg-muted">
+            <span>
+              Threshold distribution · {thresholdRows.length} fits
+            </span>
+            <span class="text-mono-id text-fg-muted">
+              dominant axis only
+            </span>
+          </h3>
+          <ThresholdDistribution
+            client:visible
+            rows={thresholdRows}
+            median={thresholdMedian}
+            xLabel={thresholdAxisLabel}
+            height={200}
+          />
+        </div>
+      ) : null}
       <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">By species</h3>
       <DataTable
         density="compact"

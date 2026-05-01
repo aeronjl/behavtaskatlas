@@ -3,6 +3,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import ConfidenceChip from "../../components/ui/ConfidenceChip.svelte";
 import CopyCitation from "../../components/CopyCitation.svelte";
+import CoverSheetExport from "../../components/CoverSheetExport.svelte";
+import MiniRelationshipSlice from "../../components/MiniRelationshipSlice.svelte";
+import { getPaper } from "../../lib/data";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
 import RecordChip from "../../components/RecordChip.astro";
 import ResidualPlot from "../../components/ResidualPlot.svelte";
@@ -19,6 +22,7 @@ import {
   slugForId,
 } from "../../lib/data";
 import { findings as findingsIndex, type FindingsEntry } from "../../lib/findings";
+import { manifest } from "../../lib/data";
 
 type CurvePoint = { x: number; y: number; n: number };
 type FitPoint = { x: number; y: number; n: number };
@@ -255,7 +259,52 @@ const tocItems: TocItem[] = [
     ? { id: "fits", label: "Fit parameters and provenance" }
     : null,
   { id: "points", label: "Observed points", count: entry.points.length } as TocItem,
+  { id: "cover-sheet", label: "Take it with you" } as TocItem,
 ].filter((item): item is TocItem => item !== null);
+
+// Cover-sheet payload — the export component renders this without
+// re-fetching anything else, so we precompute the shape it expects.
+const coverFitRows = fitRows.map((row) => ({
+  variant: row.fit.variant_id.replace("model_variant.", ""),
+  aic: row.aic,
+  delta_aic: row.deltaAic,
+  rmse: row.diagnostics.rmse,
+  is_winner: row.isWinner,
+  parameters: row.fit.parameters,
+  caveats: row.tags,
+}));
+const buildCommit = manifest.behavtaskatlas_commit ?? null;
+const buildDirty = Boolean(manifest.behavtaskatlas_git_dirty);
+const buildDate = manifest.generated_at?.slice(0, 10) ?? null;
+const bestVariantLabel = selection
+  ? selection.best_variant_id.replace("model_variant.", "")
+  : null;
+const bestConfidenceLabel = selection?.confidence_label ?? null;
+const bestDeltaAic = selection?.delta_aic_to_next ?? null;
+
+// Pull the parent paper record so the rail can render the
+// finding's neighbourhood — paper → protocols → datasets → slices —
+// with this finding's element highlighted in each column.
+const paperRecord = getPaper(entry.paper_id);
+type RelLink = { id: string; label: string; href: string | null; isFocus: boolean };
+const relProtocols: RelLink[] = (paperRecord?.protocols ?? []).map((p) => ({
+  id: p.protocol_id,
+  label: p.name ?? p.protocol_id,
+  href: `/protocols/${slugForId(p.protocol_id)}`,
+  isFocus: p.protocol_id === entry.protocol_id,
+}));
+const relDatasets: RelLink[] = (paperRecord?.datasets ?? []).map((d) => ({
+  id: d.dataset_id,
+  label: d.name ?? d.dataset_id,
+  href: `/datasets/${slugForId(d.dataset_id)}`,
+  isFocus: d.dataset_id === entry.dataset_id,
+}));
+const relSlices: RelLink[] = (paperRecord?.vertical_slices ?? []).map((s) => ({
+  id: s.slice_id,
+  label: s.title ?? s.slice_id,
+  href: `/slices/${slugForId(s.slice_id)}`,
+  isFocus: s.slice_id === entry.slice_id,
+}));
 
 const sourceTone =
   sourceStatusLabel === "trial-backed"
@@ -354,6 +403,24 @@ const sourceTone =
           ) : null}
         </ul>
       </Card>
+
+      {paperRecord ? (
+        <div class="mt-3">
+          <MiniRelationshipSlice
+            client:visible
+            paper={{
+              id: entry.paper_id,
+              label: entry.paper_citation.split(".")[0] ?? entry.paper_id,
+              href: `/papers/${slugForId(entry.paper_id)}`,
+            }}
+            protocols={relProtocols}
+            datasets={relDatasets}
+            slices={relSlices}
+            findingId={entry.finding_id.replace("finding.", "")}
+            findingLabel={entry.protocol_name ?? entry.finding_id}
+          />
+        </div>
+      ) : null}
 
       <Card padding="md" class="mt-3 text-body-xs">
         <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">
@@ -625,6 +692,37 @@ const sourceTone =
           </tr>
         ))}
       </DataTable>
+    </Section>
+
+    <Section id="cover-sheet" spacing="md" title="Take it with you">
+      <CoverSheetExport
+        client:idle
+        findingId={entry.finding_id}
+        citation={entry.paper_citation}
+        canonicalUrl={canonicalUrl}
+        species={entry.species ?? null}
+        curveType={entry.curve_type}
+        stratification={stratificationLabel(entry)}
+        protocolName={entry.protocol_name}
+        sourceLevel={entry.source_data_level}
+        sourceStatus={sourceStatusLabel}
+        nTrials={entry.n_trials ?? null}
+        xLabel={entry.x_label}
+        yLabel={entry.y_label}
+        points={(entry.points as CurvePoint[]).map((p) => ({
+          x: p.x,
+          y: p.y,
+          n: p.n,
+        }))}
+        fits={coverFitRows}
+        caveatTags={allCaveatTags}
+        buildCommit={buildCommit}
+        buildDirty={buildDirty}
+        buildDate={buildDate}
+        bestVariantLabel={bestVariantLabel}
+        bestConfidenceLabel={bestConfidenceLabel}
+        bestDeltaAic={bestDeltaAic}
+      />
     </Section>
   </DetailLayout>
 </BaseLayout>

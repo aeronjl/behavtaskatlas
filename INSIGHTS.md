@@ -2,6 +2,68 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 08:48:54 BST - UI Round B (delight): threshold violin, did-you-mean, cover-sheet export, caveat legend, neighbourhood mini-graph
+
+After the previous follow-up sweep, audited UI.md again, then worked
+through the five "delight" items the user wanted closed. The shape of
+this batch is "the data was already there — we just hadn't surfaced
+it for the reader."
+
+Concrete moves:
+
+- **Distribution-of-thresholds chart on /.** New
+  `ThresholdDistribution.svelte` renders one jittered point per
+  pooled-curve psychometric finding, coloured by species, with a
+  vertical median rule. Pools only on the dominant stimulus axis
+  (currently signed contrast in percent — most psychometric findings
+  share that axis) so the points are actually comparable. Click a
+  point to open that finding. Replaces the lonely "median 75%
+  threshold = 0.27" stat with the distribution it summarises.
+- **Did-you-mean empty states.** `SearchPalette` no-match now runs a
+  fuzzy longest-common-substring score against title / subtitle /
+  keywords and surfaces up to 4 nearest matches; falls back to a
+  list of browse links when nothing scores high enough.
+  `FindingsOverlay` no-match computes "drop the X filter to see Y
+  more findings" for each currently-active filter category by
+  re-evaluating membership with that one category disabled, ranks the
+  options, and renders one-click relax buttons (top 3) plus the
+  existing reset-all.
+- **Per-finding cover-sheet export.** New
+  `CoverSheetExport.svelte` builds a self-contained Markdown cover
+  sheet for any finding — citation + canonical URL + finding metadata
+  (species, curve type, stratification, source level, source
+  strength, trial count, axes) + AIC-ranking table + observed-points
+  table + caveat list + provenance footer pinned to the build commit.
+  Renders in a new "Take it with you" Section on `/findings/[id]`
+  with Copy / Download .md buttons and a collapsible preview. Pairs
+  with the existing CopyCitation card on the rail.
+- **Caveat-symbol legend on `/models`.** Added an inline legend strip
+  at the top of `ModelAnswersBrowser`'s answer grid explaining the
+  three symbols that show up across the cards: `!` (per-tag source
+  or proxy caveat), `M` (mixed AIC comparison scopes — winner came
+  from a different likelihood than the runners-up), and `★` (winner
+  in the same-likelihood ranking). Closes the doc's complaint that
+  the symbols were rendered without context.
+- **Neighbourhood mini-graph on `/findings/[id]` rail.** New
+  `MiniRelationshipSlice.svelte` renders a 4-column inline diagram
+  (paper → protocols → datasets → slices) for the parent paper of
+  the active finding, colour-coding each column with the matching
+  encoding-node token and highlighting the entry that belongs to
+  this finding with an accent ring. Cheap to render — all the
+  required data sits in `paperRecord.protocols` /
+  `.datasets` / `.vertical_slices` already passed to the page —
+  and gives the rail's Linked-records chip list a visible
+  "neighbourhood" preview.
+
+`bash scripts/ci.sh` passes end-to-end (176 pages). The remaining
+unfinished items from the original critique fall into Rounds A
+(accessibility polish: aria-pressed on Model* browsers, redundant
+glyphs on coverage strips, sticky first column on /models DDM
+table, caveat chips off tooltip-only on /findings/[id]) and C
+(structural leftovers: zoom/pan on /graph, /findings flat-table
+retire + summary headline, /slices/[id] comparison_rows eyebrow
+restyle, home matrix expand-on-click).
+
 ## 2026-05-01 01:46:21 BST - UI critique follow-ups: live-fit hero, ConfidenceChip everywhere, slice rail provenance, /atlas-health and /compare graduated entry, /catalog cleanup, /findings/[id] table trim
 
 After the Tier 1–4 sweep, audited `UI.md` against what had actually
