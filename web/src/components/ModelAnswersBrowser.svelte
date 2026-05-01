@@ -1,5 +1,17 @@
 <script lang="ts">
   import FacetBar from "./FacetBar.svelte";
+  import ConfidenceChip from "./ui/ConfidenceChip.svelte";
+
+  // Progressive-fill ladder: how many of the 4 segments to fill for
+  // each confidence level. Matches the dedicated ConfidenceChip
+  // primitive so the header pill and the inline glyph strip read the
+  // same way.
+  const CONFIDENCE_FILLED: Record<string, number> = {
+    decisive: 4,
+    supported: 3,
+    close: 2,
+    single_candidate: 1,
+  };
 
   type CaveatDefinition = {
     label: string;
@@ -646,11 +658,15 @@
                 </div>
                 <span
                   class={[
-                    "shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase ring-1",
+                    "shrink-0 rounded px-1.5 py-0.5 ring-1",
                     confidenceSoftClass(row.confidence_label),
                   ]}
                 >
-                  {labelForConfidence(row.confidence_label)}
+                  <ConfidenceChip
+                    confidence={row.confidence_label}
+                    delta={row.delta_aic_to_next}
+                    showLabel={true}
+                  />
                 </span>
               </header>
 
@@ -696,17 +712,23 @@
                     <div class="mb-1 flex items-baseline gap-2">
                       <span class="text-[11px] uppercase tracking-wide text-fg-muted">Confidence</span>
                     </div>
-                    <div class="grid grid-cols-4 gap-1">
-                      {#each confidenceSteps as step (step)}
-                        <span
-                          class={[
-                            "h-2 rounded-full",
-                            row.confidence_label === step ? confidenceClass(step) : "bg-surface-raised",
-                          ]}
-                          title={labelForConfidence(step)}
-                        ></span>
-                      {/each}
-                    </div>
+                    {#snippet confidenceSegments()}
+                      {@const filled =
+                        CONFIDENCE_FILLED[row.confidence_label ?? ""] ?? 0}
+                      <div class="grid grid-cols-4 gap-1" title={labelForConfidence(row.confidence_label)}>
+                        {#each [0, 1, 2, 3] as i (i)}
+                          <span
+                            class={[
+                              "h-2 rounded-full",
+                              i < filled
+                                ? confidenceClass(row.confidence_label)
+                                : "bg-surface-raised",
+                            ]}
+                          ></span>
+                        {/each}
+                      </div>
+                    {/snippet}
+                    {@render confidenceSegments()}
                   </div>
 
                   <div>

@@ -401,6 +401,22 @@ const tocItems: TocItem[] = [
 ].filter((item): item is TocItem => item !== null);
 
 const buildCommit = manifest.behavtaskatlas_commit ?? null;
+const buildDirty = manifest.behavtaskatlas_git_dirty ?? false;
+const generatedAt = manifest.generated_at ?? null;
+const generatedDay = generatedAt ? generatedAt.slice(0, 10) : null;
+const manifestSchemaVersion =
+  (manifest as unknown as { manifest_schema_version?: string }).manifest_schema_version ??
+  null;
+// Pick the per-slice provenance JSON link, when bundled. Adapters
+// commit it alongside their other artifacts so a teammate can read the
+// dataset hash, adapter version, and pipeline run timestamp directly.
+type SliceLinkRow = { href: string; label: string };
+const provenanceLinkRaw = (links as SliceLinkRow[]).find((link) =>
+  link.href.toLowerCase().includes("provenance"),
+);
+const provenanceLinkHref = provenanceLinkRaw
+  ? resolveArtifactHref(provenanceLinkRaw.href)
+  : null;
 
 const reportTone = reportAvailable ? "ok" : "warn";
 const protocolHref = protocol
@@ -455,6 +471,75 @@ const datasetHref = dataset
             <dt class="text-fg-muted">Slice id</dt>
             <dd class="mt-0.5 break-all font-mono text-mono-id text-fg-muted">{slice.id}</dd>
           </div>
+        </dl>
+      </Card>
+      <Card padding="md" class="mt-3 text-body-xs">
+        <h3 class="mb-3 text-eyebrow uppercase text-fg-muted">Provenance</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-fg-muted">Atlas commit</dt>
+            <dd class="mt-1 flex flex-wrap items-center gap-2">
+              <code class="rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-mono-id text-fg">
+                {buildCommit ?? "unknown"}
+              </code>
+              {buildDirty ? (
+                <StatusPill tone="warn">dirty tree</StatusPill>
+              ) : (
+                <StatusPill tone="ok">clean</StatusPill>
+              )}
+            </dd>
+          </div>
+          {generatedDay ? (
+            <div>
+              <dt class="text-fg-muted">Build date</dt>
+              <dd class="mt-0.5 font-mono text-fg">{generatedDay}</dd>
+            </div>
+          ) : null}
+          {manifestSchemaVersion ? (
+            <div>
+              <dt class="text-fg-muted">Manifest schema</dt>
+              <dd class="mt-0.5 font-mono text-mono-id text-fg-muted">
+                {manifestSchemaVersion}
+              </dd>
+            </div>
+          ) : null}
+          {reportAvailable ? (
+            <div>
+              <dt class="text-fg-muted">Artifacts</dt>
+              <dd class="mt-0.5 text-fg">
+                Local pipeline ran cleanly; trial-level CSV, plots, and
+                provenance JSON are bundled into this deploy.
+              </dd>
+            </div>
+          ) : (
+            <div>
+              <dt class="text-fg-muted">Artifacts</dt>
+              <dd class="mt-0.5 text-fg-secondary">
+                Not bundled — run the recipe below to regenerate locally.
+              </dd>
+            </div>
+          )}
+          {provenanceLinkHref ? (
+            <div>
+              <dt class="text-fg-muted">Per-run details</dt>
+              <dd class="mt-0.5 break-all">
+                <a class="text-accent" href={provenanceLinkHref}>
+                  {provenanceLinkRaw?.label ?? "Open provenance JSON"}
+                </a>
+                <p class="mt-1 text-mono-id text-fg-muted">
+                  Dataset hash, adapter version, and pipeline timestamp
+                  live in the per-slice provenance JSON.
+                </p>
+              </dd>
+            </div>
+          ) : (
+            <div>
+              <dt class="text-fg-muted">Per-run details</dt>
+              <dd class="mt-0.5 text-fg-muted">
+                Per-slice provenance JSON not bundled into this deploy.
+              </dd>
+            </div>
+          )}
         </dl>
       </Card>
     </Fragment>

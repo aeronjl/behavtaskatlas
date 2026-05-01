@@ -259,7 +259,27 @@
   }
 
   const filteredRows = $derived(sorted(rows.filter(rowMatches)));
-  const visibleRows = $derived(filteredRows.slice(0, 80));
+
+  // Pagination — slice in pages of 80 with a "Show next 80" button so
+  // the browser stays responsive when 200+ records match. Reset the
+  // page count when the filter signature changes.
+  const PAGE_SIZE = 80;
+  let pageCount = $state(1);
+  const filterSignature = $derived(
+    `${query}|${sortMode}|${Array.from(activeTypes).sort().join(",")}|` +
+      `${[...(selected.species ?? [])].join(",")}|` +
+      `${[...(selected.modality ?? [])].join(",")}|` +
+      `${[...(selected.source ?? [])].join(",")}|` +
+      `${[...(selected.status ?? [])].join(",")}`,
+  );
+  $effect(() => {
+    void filterSignature;
+    pageCount = 1;
+  });
+  const visibleRows = $derived(filteredRows.slice(0, pageCount * PAGE_SIZE));
+  const remainingCount = $derived(
+    Math.max(0, filteredRows.length - visibleRows.length),
+  );
 
   const summary = $derived.by(() => {
     const counts = new Map<CatalogRow["record_type"], number>();
@@ -356,8 +376,21 @@
         </li>
       {/each}
     </ul>
-    {#if filteredRows.length > 80}
-      <p class="mt-2 text-body-xs text-fg-muted">Showing first 80 matching records.</p>
+    {#if remainingCount > 0}
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-body-xs">
+        <p class="text-fg-muted">
+          Showing <span class="font-mono text-fg">{visibleRows.length}</span> of
+          <span class="font-mono text-fg">{filteredRows.length}</span> matching
+          records.
+        </p>
+        <button
+          type="button"
+          class="rounded-md border border-rule-strong bg-surface-raised px-3 py-1 text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          onclick={() => (pageCount += 1)}
+        >
+          Show next {Math.min(PAGE_SIZE, remainingCount)}
+        </button>
+      </div>
     {/if}
   {/if}
 </section>

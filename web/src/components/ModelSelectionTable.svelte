@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ConfidenceChip from "./ui/ConfidenceChip.svelte";
+
   type CaveatDefinition = {
     label: string;
     description: string;
@@ -339,10 +341,12 @@
             </td>
             <td class="px-3 py-2">
               <span
-                class="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] uppercase text-fg-muted"
                 title={confidenceDefinitions[row.confidence_label ?? ""]?.description ?? ""}
               >
-                {labelForConfidence(row.confidence_label, row.delta_aic_to_next)}
+                <ConfidenceChip
+                  confidence={row.confidence_label}
+                  delta={row.delta_aic_to_next}
+                />
               </span>
             </td>
             <td class="px-3 py-2">

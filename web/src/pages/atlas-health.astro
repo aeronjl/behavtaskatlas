@@ -567,13 +567,17 @@ for (const item of curationItems.filter((entry) => entry.status === "open")) {
   });
 }
 
+// Section labels match the question a contributor arrives with rather
+// than the artifact they show. Anchors stay stable so old links still
+// resolve.
 const sectionLinks = [
-  { id: "gap-matrix", label: "Gap matrix" },
-  { id: "audit", label: "Reproducibility audit" },
-  { id: "curation", label: "Curation queue" },
-  { id: "blockers", label: "External data blockers" },
-  { id: "roadmap", label: "Coverage roadmap" },
-  { id: "links", label: "Link integrity" },
+  { id: "summary", label: "Where do we stand?" },
+  { id: "gap-matrix", label: "What's blocked, what's ready?" },
+  { id: "audit", label: "Are the curves reproducible?" },
+  { id: "curation", label: "What needs cleaning?" },
+  { id: "blockers", label: "Which data can't we publish?" },
+  { id: "roadmap", label: "What's the next pass?" },
+  { id: "links", label: "Are internal links healthy?" },
 ];
 
 const headlineCounts = {
@@ -583,6 +587,13 @@ const headlineCounts = {
   roadmap_total: roadmapItems.length,
   link_issues: linkIntegrity.counts.issues,
 };
+
+// One-sentence executive summary. Reads off the most-actionable signal
+// for each axis so a contributor can decide in one paragraph whether to
+// keep reading. The components below stay as-is — this is just the lede.
+const blockerHighCount = blockedItems.filter(
+  (item) => item.priority_label?.toLowerCase().includes("high"),
+).length;
 ---
 
 <BaseLayout
@@ -596,6 +607,25 @@ const headlineCounts = {
   />
 
   <SectionAnchorNav items={sectionLinks} />
+
+  <Section id="summary" spacing="lg" title="Where do we stand?">
+    <p class="mb-4 max-w-prose text-body-lg text-fg-secondary">
+      Reproducibility audit is{" "}
+      <strong class="font-semibold text-fg">{audit.overall_status}</strong>;
+      the curation queue has
+      <strong class="font-semibold text-fg">{curationCounts.open ?? 0}</strong>
+      open task{(curationCounts.open ?? 0) === 1 ? "" : "s"};
+      <strong class="font-semibold text-fg">{blockerGroups.length}</strong>
+      blocker group{blockerGroups.length === 1 ? "" : "s"} are waiting on
+      external data ({blockerHighCount} high-priority); the model-coverage
+      roadmap has
+      <strong class="font-semibold text-fg">{roadmapItems.length}</strong>
+      item{roadmapItems.length === 1 ? "" : "s"};
+      link integrity finds
+      <strong class="font-semibold text-fg">{linkIntegrity.counts.issues}</strong>
+      issue{linkIntegrity.counts.issues === 1 ? "" : "s"}.
+    </p>
+  </Section>
 
   <StatGrid cols={5} class="mb-10">
     <Card href="#audit" padding="sm">
@@ -625,7 +655,7 @@ const headlineCounts = {
   <Section
     id="gap-matrix"
     spacing="lg"
-    title="Gap matrix"
+    title="What's blocked, what's ready?"
     description="One board for local implementation targets, external data blockers, and extraction gaps. Rows are generated from the curation queue, data-request records, and model-coverage roadmap."
   >
     <CoverageGapMatrix client:load rows={coverageGapRows} />
@@ -634,7 +664,7 @@ const headlineCounts = {
   <Section
     id="audit"
     spacing="lg"
-    title="Reproducibility audit"
+    title="Are the curves reproducible?"
     description="For each (paper × curve type × condition) group with both a pooled finding and ≥2 per-subject findings, the audit recomputes the n-weighted aggregate of the subject curves and compares to the pooled curve at every matching x."
   >
     <Card padding="md" class="mb-4">
@@ -729,7 +759,7 @@ const headlineCounts = {
   <Section
     id="curation"
     spacing="lg"
-    title="Curation queue"
+    title="What needs cleaning?"
     description={`${curationCounts.open ?? 0} open of ${curationCounts.items ?? 0} total · generated ${curationQueue.generated_at}. Items come from the relationship-graph QA pass: orphan records, missing reciprocal links, coverage gaps.`}
   >
     {curationItems.length === 0 ? (
@@ -801,7 +831,7 @@ const headlineCounts = {
   <Section
     id="blockers"
     spacing="lg"
-    title="External data blockers"
+    title="Which data can't we publish?"
   >
     <Fragment slot="action">
       <a class="text-body-xs text-accent" href="/data_requests.csv">data_requests.csv</a>
@@ -1117,7 +1147,7 @@ const headlineCounts = {
   <Section
     id="roadmap"
     spacing="lg"
-    title="Coverage roadmap"
+    title="What's the next pass?"
     description={`Ranked from coverage gaps, comparison-scope warnings, caveats, and near-miss slice capabilities. Top ${topRoadmapItems.length} shown; full export: model_roadmap.csv.`}
   >
     <Fragment slot="action">
@@ -1183,7 +1213,7 @@ const headlineCounts = {
   <Section
     id="links"
     spacing="md"
-    title="Link integrity"
+    title="Are internal links healthy?"
     description="Internal links checked against the set of generated routes (search, graph, curation queue, finding provenance, model selection)."
   >
     <div class="mb-4 rounded-md border border-rule bg-surface-raised p-4">

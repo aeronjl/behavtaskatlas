@@ -3,7 +3,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import CatalogBrowser from "../components/CatalogBrowser.svelte";
 import RecordChip from "../components/RecordChip.astro";
 import Card from "../components/ui/Card.astro";
-import DataTable from "../components/ui/DataTable.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import Section from "../components/ui/Section.astro";
 import SectionAnchorNav from "../components/ui/SectionAnchorNav.astro";
@@ -46,6 +45,26 @@ const familyCards = catalog.task_families.map((family) => {
     datasets,
   };
 });
+
+// Maxes for the per-family count strip-chart on each card. Each axis
+// gets its own max so a family with one big modality doesn't drown out
+// the others.
+const maxFamilyProtocols = Math.max(
+  1,
+  ...familyCards.map((row) => row.family.protocol_count),
+);
+const maxFamilyDatasets = Math.max(
+  1,
+  ...familyCards.map((row) => row.family.dataset_count),
+);
+const maxFamilySlices = Math.max(
+  1,
+  ...familyCards.map((row) => row.family.slice_count),
+);
+function pct(value: number, max: number): string {
+  if (max <= 0 || value <= 0) return "0%";
+  return `${Math.max(6, Math.round((value / max) * 100))}%`;
+}
 
 const orphanProtocols = catalog.protocols.filter(
   (p) => !catalog.task_families.some((f) => f.family_id === p.family_id),
@@ -192,7 +211,7 @@ const catalogRows = [
               {family.curation_status}
             </StatusPill>
           </div>
-          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-body-xs sm:grid-cols-4">
+          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-body-xs sm:grid-cols-3">
             <div>
               <dt class="text-fg-muted">Modalities</dt>
               <dd class="mt-0.5 text-fg-secondary">
@@ -203,13 +222,6 @@ const catalogRows = [
               <dt class="text-fg-muted">Choice types</dt>
               <dd class="mt-0.5 text-fg-secondary">
                 {family.choice_types.join(", ")}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-fg-muted">Counts</dt>
-              <dd class="mt-0.5 font-mono text-fg-secondary">
-                {family.protocol_count}p · {family.dataset_count}d ·{" "}
-                {family.slice_count}s
               </dd>
             </div>
             <div>
@@ -230,6 +242,44 @@ const catalogRows = [
               </dd>
             </div>
           </dl>
+          <div class="mt-4 grid grid-cols-3 gap-3 text-body-xs">
+            <div>
+              <p class="flex items-baseline justify-between">
+                <span class="text-fg-muted">Protocols</span>
+                <span class="font-mono font-semibold text-fg">{family.protocol_count}</span>
+              </p>
+              <span class="mt-1 block h-1.5 rounded-full bg-surface-sunken">
+                <span
+                  class="block h-1.5 rounded-full bg-encoding-node-protocol"
+                  style={`width: ${pct(family.protocol_count, maxFamilyProtocols)}`}
+                ></span>
+              </span>
+            </div>
+            <div>
+              <p class="flex items-baseline justify-between">
+                <span class="text-fg-muted">Datasets</span>
+                <span class="font-mono font-semibold text-fg">{family.dataset_count}</span>
+              </p>
+              <span class="mt-1 block h-1.5 rounded-full bg-surface-sunken">
+                <span
+                  class="block h-1.5 rounded-full bg-encoding-node-dataset"
+                  style={`width: ${pct(family.dataset_count, maxFamilyDatasets)}`}
+                ></span>
+              </span>
+            </div>
+            <div>
+              <p class="flex items-baseline justify-between">
+                <span class="text-fg-muted">Slices</span>
+                <span class="font-mono font-semibold text-fg">{family.slice_count}</span>
+              </p>
+              <span class="mt-1 block h-1.5 rounded-full bg-surface-sunken">
+                <span
+                  class="block h-1.5 rounded-full bg-encoding-node-slice"
+                  style={`width: ${pct(family.slice_count, maxFamilySlices)}`}
+                ></span>
+              </span>
+            </div>
+          </div>
         </header>
 
         <div class="p-5">
@@ -340,90 +390,12 @@ const catalogRows = [
     </Section>
   ) : null}
 
-  <details class="mt-12 rounded-md border border-rule bg-surface-raised">
-    <summary class="cursor-pointer px-4 py-3 text-body font-semibold text-fg-secondary hover:text-accent">
-      Browse all records as flat tables
-      <span class="ml-2 text-body-xs font-normal text-fg-muted">
-        ({catalog.protocols.length} protocols · {catalog.datasets.length} datasets · {catalog.vertical_slices.length} slices)
-      </span>
-    </summary>
-    <div class="border-t border-rule p-4">
-      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Protocols</h3>
-      <DataTable
-        class="mb-6"
-        columns={[
-          { label: "Name" },
-          { label: "Family" },
-          { label: "Species" },
-          { label: "Evidence" },
-          { label: "Choice" },
-          { label: "Status" },
-        ]}
-      >
-        {catalog.protocols.map((protocol) => (
-          <tr>
-            <td class="px-3 py-2">
-              <a href={`/protocols/${slugForId(protocol.protocol_id)}`}>
-                {protocol.name}
-              </a>
-            </td>
-            <td class="px-3 py-2 text-fg-secondary">
-              {protocol.family_name ?? protocol.family_id}
-            </td>
-            <td class="px-3 py-2">{protocol.species.join(", ")}</td>
-            <td class="px-3 py-2">{protocol.evidence_type}</td>
-            <td class="px-3 py-2">{protocol.choice_type}</td>
-            <td class="px-3 py-2 text-body-xs text-fg-secondary">
-              {protocol.curation_status}
-            </td>
-          </tr>
-        ))}
-      </DataTable>
-
-      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Datasets</h3>
-      <DataTable
-        class="mb-6"
-        columns={[
-          { label: "Name" },
-          { label: "Source level" },
-          { label: "Species" },
-          { label: "License" },
-          { label: "Status" },
-        ]}
-      >
-        {catalog.datasets.map((dataset) => (
-          <tr>
-            <td class="px-3 py-2">
-              <a href={`/datasets/${slugForId(dataset.dataset_id)}`}>
-                {dataset.name}
-              </a>
-            </td>
-            <td class="px-3 py-2">{dataset.source_data_level}</td>
-            <td class="px-3 py-2">{dataset.species.join(", ")}</td>
-            <td class="px-3 py-2 text-body-xs text-fg-secondary">
-              {dataset.license ?? "—"}
-            </td>
-            <td class="px-3 py-2 text-body-xs text-fg-secondary">
-              {dataset.curation_status}
-            </td>
-          </tr>
-        ))}
-      </DataTable>
-
-      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Vertical slices</h3>
-      <ul class="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {catalog.vertical_slices.map((slice) => (
-          <Card as="li" padding="sm">
-            <div class="flex items-baseline justify-between gap-2">
-              <span class="font-medium">{slice.title}</span>
-              <StatusPill tone={slice.report_status === "available" ? "ok" : "neutral"}>
-                {slice.report_status}
-              </StatusPill>
-            </div>
-            <div class="mt-1 text-body-xs text-fg-secondary">{slice.slice_id}</div>
-          </Card>
-        ))}
-      </ul>
-    </div>
-  </details>
+  <p class="mt-12 max-w-prose text-body-xs text-fg-muted">
+    The browser at the top of the page is the canonical flat-table view —
+    the type chips toggle protocols / datasets / slices, the sort
+    dropdown switches ordering, and the search box matches family,
+    protocol, dataset, slice id, modality, evidence type, choice, and
+    source-level fields together. The grouped family cards above keep
+    the hierarchy visible.
+  </p>
 </BaseLayout>

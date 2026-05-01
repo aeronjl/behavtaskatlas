@@ -350,6 +350,7 @@
     layers.push(dataLayer);
 
     if (fitsEnabled && flatFitPoints.length > 0) {
+      // Dashed line for the predicted curve.
       layers.push({
         data: { values: flatFitPoints },
         transform: [{ filter: "isValid(datum.x) && isValid(datum.y)" }],
@@ -367,6 +368,31 @@
             field: "variant",
             type: "nominal",
             title: "Fit variant",
+            scale: { scheme: "tableau20" },
+          },
+        },
+      });
+      // Triangle markers at each predicted (x, y) — the residual to the
+      // observed dot at the same x is the visible vertical gap. Lets a
+      // reader gauge fit quality at a glance without scrolling to the
+      // dedicated residual plot.
+      layers.push({
+        data: { values: flatFitPoints },
+        transform: [{ filter: "isValid(datum.x) && isValid(datum.y)" }],
+        mark: {
+          type: "point",
+          shape: "triangle-up",
+          filled: true,
+          size: 60,
+          opacity: 0.9,
+        },
+        encoding: {
+          x: { field: "x", type: "quantitative" },
+          y: { field: "y", type: "quantitative" },
+          detail: { field: "fit_key", type: "nominal" },
+          color: {
+            field: "variant",
+            type: "nominal",
             scale: { scheme: "tableau20" },
           },
           tooltip: [

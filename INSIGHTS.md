@@ -2,6 +2,88 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 01:46:21 BST - UI critique follow-ups: live-fit hero, ConfidenceChip everywhere, slice rail provenance, /atlas-health and /compare graduated entry, /catalog cleanup, /findings/[id] table trim
+
+After the Tier 1–4 sweep, audited `UI.md` against what had actually
+shipped and worked through the four highest-leverage follow-ups the
+audit surfaced. Highlights: a Pyodide demo on the home page that
+takes a refit from cold to live in ~10 seconds, a four-segment
+confidence chip wired across every place the AIC ranking is
+expressed, a provenance Card on every slice page, and graduated
+entry treatments for `/atlas-health` and `/compare`.
+
+Concrete moves:
+
+- **Live-fit hero on `/`.** New `LiveFitHero.svelte` picks the
+  highest-resolution pooled psychometric (deterministic — same
+  finding every visit) and renders observed points with Wilson 95%
+  CI rules. A primary accent CTA loads Pyodide + numpy + scipy on
+  first click (~10 MB, status copy walks the user through each
+  stage), runs a 4-parameter logistic fit, animates the accent line
+  onto the chart, and slides μ / σ / γ / λ / x-at-75% in beside it.
+  Subsequent refits are instant.
+- **ConfidenceChip primitive everywhere.** New
+  `ui/ConfidenceChip.svelte` renders the standard ΔAIC ladder as a
+  4-segment chip
+  (decisive 4 / 4, supported 3 / 4, close 2 / 4, single 1 / 4) using
+  the existing `--color-confidence-*` tokens. Wired into
+  `ModelSelectionTable`, `ModelAnswersBrowser` (header pill + the
+  inline glyph strip's progressive fill), and the `/findings/[id]`
+  rail's selection summary so 100-row tables and detail-page rails
+  share one scannable encoding.
+- **Slice rail provenance.** New Provenance Card on `/slices/[id]`
+  surfaces the atlas commit + dirty/clean StatusPill + build date +
+  manifest schema version + a link to the per-slice `provenance.json`
+  (when bundled) so a teammate can read the dataset hash, adapter
+  version, and pipeline run timestamp without leaving the page. The
+  reproduction recipe section sits one anchor below for the actual
+  copy-paste.
+- **/atlas-health graduated entry.** New "Where do we stand?"
+  executive-summary section reads the most-actionable signal off
+  every axis in one sentence (audit status, open curation count,
+  high-priority blockers, roadmap items, link issues). Section
+  labels in the anchor nav and `<Section title=>` swapped from
+  artifact names ("Reproducibility audit", "Curation queue",
+  "External data blockers", "Coverage roadmap", "Link integrity")
+  to questions ("Are the curves reproducible?", "What needs
+  cleaning?", "Which data can't we publish?", "What's the next
+  pass?", "Are internal links healthy?"). The home page footer ribbon
+  was promoted into a small status Card mirroring the same headline
+  numbers + a `/atlas-health →` jump link.
+- **/compare tabbed interior + permalink polish.** Each comparison's
+  two table sections (model-fit comparison, fitted parameters)
+  collapsed behind their own `<details>` reveals with count cues so
+  the chart stays always-on and a reader scrolling for the next
+  question doesn't have to skim through dense AIC tables. The `#`
+  permalink anchor next to each question is now a visible
+  bordered link ("# link") that lights up on hover/focus instead of
+  hiding behind opacity.
+- **/catalog cleanup.** `CatalogBrowser` now paginates in 80-row
+  pages with a "Show next 80" button and resets to page 1 on every
+  filter change — replaces the silent 80-row truncation. Each Family
+  Card now carries a 3-axis count strip-chart (protocols / datasets
+  / slices) coloured by the corresponding encoding-node tokens, so
+  scanning the family stack visually telegraphs depth. The duplicate
+  flat-table `<details>` at the bottom of the page (which mirrored
+  data already in the browser) was removed and replaced with a one-
+  paragraph note pointing at the browser as the canonical flat view.
+- **/findings/[id] polish.** The fit-diagnostics table dropped from
+  9 columns to 5 priority columns (Variant, AIC, Δ AIC, RMSE,
+  Caveats) and gained the opt-in `stickyFirstColumn`; the secondary
+  stats (logL, n, free params, max |error|, predicted points) live
+  in a "Full diagnostics" `<details>` reveal directly below.
+  `MiniFindingsChart` now overlays predicted-points as filled
+  triangle markers on top of the dashed fit line whenever
+  `showFits` is on — observed-vs-predicted residual is visible at
+  every observed x without scrolling to the dedicated residual plot.
+
+`bash scripts/ci.sh` passes end-to-end (176 pages). UI.md's "what we
+missed" punch list is now closed; remaining items from the original
+critique that weren't promoted to follow-ups (e.g. inline-expand
+rows on home matrix, hover-a-chip-lights-up-graph delight, violin of
+thresholds, scientific cover sheet PDF) stay parked for future
+sessions.
+
 ## 2026-05-01 01:07:11 BST - Tier 3 + 4 of UI critique landed: saved views, keyboard nav, layered graph, paper-pair compare, live AIC ranking, reproduction recipe
 
 Closed the remaining ten items from `UI.md`. The shape of the work is
