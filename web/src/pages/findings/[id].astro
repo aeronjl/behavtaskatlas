@@ -4,6 +4,7 @@ import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import ConfidenceChip from "../../components/ui/ConfidenceChip.svelte";
 import CopyCitation from "../../components/CopyCitation.svelte";
 import CoverSheetExport from "../../components/CoverSheetExport.svelte";
+import Glossary from "../../components/ui/Glossary.astro";
 import MiniRelationshipSlice from "../../components/MiniRelationshipSlice.svelte";
 import { getPaper } from "../../lib/data";
 import MiniFindingsChart from "../../components/MiniFindingsChart.svelte";
@@ -529,6 +530,21 @@ const sourceTone =
         </Card>
       ) : (
         <>
+          {allCaveatTags.length > 0 ? (
+            <Glossary
+              class="mb-3"
+              title="Caveats on these fits"
+              description="Each tag below is attached to one or more candidate fits for this finding. The chip column in the table flags which row carries which tag."
+              collapsible
+              defaultOpen
+              cols={2}
+              terms={allCaveatTags.map((tag) => ({
+                label: caveatLabel(tag),
+                description: caveatTitle(tag),
+                tone: "warn",
+              }))}
+            />
+          ) : null}
           <DataTable
             stickyFirstColumn
             columns={[

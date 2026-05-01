@@ -192,14 +192,17 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
       </h2>
     </div>
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-xs text-fg-muted">
-      <span class="inline-flex items-center gap-1">
-        <span class="h-2 w-2 rounded-full bg-encoding-source-raw"></span> raw
+      <span class="inline-flex items-center gap-1.5">
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded border border-encoding-source-raw bg-encoding-source-raw font-mono text-mono-id font-semibold text-fg-inverse">R</span>
+        raw
       </span>
-      <span class="inline-flex items-center gap-1">
-        <span class="h-2 w-2 rounded-full bg-encoding-source-processed"></span> processed
+      <span class="inline-flex items-center gap-1.5">
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded border border-encoding-source-processed bg-encoding-source-processed font-mono text-mono-id font-semibold text-fg-inverse">P</span>
+        processed
       </span>
-      <span class="inline-flex items-center gap-1">
-        <span class="h-2 w-2 rounded-full bg-encoding-source-figure"></span> figure
+      <span class="inline-flex items-center gap-1.5">
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded border border-encoding-source-figure bg-encoding-source-figure font-mono text-mono-id font-semibold text-fg-inverse">F</span>
+        figure
       </span>
     </div>
   </header>
@@ -279,23 +282,30 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
                       </a>
                     </td>
                     <td class="border-y border-rule bg-surface-raised px-3 py-2">
-                      <div class="flex min-w-24 overflow-hidden rounded-full border border-rule bg-surface-sunken" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
-                        {sourceOrder.map((level) => (
-                          <a
-                            href={href("/catalog", { q: row.family.name, source: level })}
-                            class:list={[
-                              "h-2 flex-1",
-                              row.sourceLevels.includes(level)
-                                ? level === "raw-trial"
-                                  ? "bg-encoding-source-raw"
-                                  : level === "processed-trial"
-                                    ? "bg-encoding-source-processed"
-                                    : "bg-encoding-source-figure"
-                                : "bg-transparent",
-                            ]}
-                            aria-label={`${row.family.name}: ${readable(level)} ${row.sourceLevels.includes(level) ? "available" : "missing"}`}
-                          />
-                        ))}
+                      <div class="flex min-w-24 items-center gap-1" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
+                        {sourceOrder.map((level) => {
+                          const present = row.sourceLevels.includes(level);
+                          const letter = level === "raw-trial" ? "R" : level === "processed-trial" ? "P" : "F";
+                          const fillClass = present
+                            ? level === "raw-trial"
+                              ? "bg-encoding-source-raw text-fg-inverse border-encoding-source-raw"
+                              : level === "processed-trial"
+                                ? "bg-encoding-source-processed text-fg-inverse border-encoding-source-processed"
+                                : "bg-encoding-source-figure text-fg-inverse border-encoding-source-figure"
+                            : "bg-surface-sunken text-fg-subtle border-rule";
+                          return (
+                            <a
+                              href={href("/catalog", { q: row.family.name, source: level })}
+                              class:list={[
+                                "inline-flex h-5 w-5 items-center justify-center rounded border font-mono text-mono-id font-semibold no-underline",
+                                fillClass,
+                              ]}
+                              aria-label={`${row.family.name}: ${readable(level)} ${present ? "available" : "missing"}`}
+                            >
+                              <span aria-hidden="true">{letter}</span>
+                            </a>
+                          );
+                        })}
                       </div>
                       <span class="sr-only">source rank {sourceRank(row.sourceLevels)}</span>
                     </td>

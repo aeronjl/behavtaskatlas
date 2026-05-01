@@ -595,14 +595,16 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap gap-2 text-body-xs">
+  <fieldset class="flex flex-wrap gap-2 text-body-xs">
+    <legend class="sr-only">Question filter</legend>
     {#each Object.entries(questionLabels) as [value, label] (value)}
       <button
         type="button"
+        aria-pressed={question === value}
         class={[
           "rounded border px-2.5 py-1 font-semibold",
           question === value
-            ? "border-accent bg-accent text-white"
+            ? "border-accent bg-accent text-fg-inverse"
             : "border-rule-strong bg-surface-raised text-fg-secondary hover:border-rule-emphasis hover:text-accent",
         ]}
         onclick={() => (question = value)}
@@ -610,7 +612,7 @@
         {label}
       </button>
     {/each}
-  </div>
+  </fieldset>
 
   <FacetBar
     searchPlaceholder="paper, task, model, caveat"

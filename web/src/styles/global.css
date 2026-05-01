@@ -328,14 +328,31 @@ nav a:hover {
     width: 100% !important;
     font-size: 11pt;
   }
-  details {
-    display: block;
-  }
+  /* `<details>` handling in print:
+   * - User-opened details render their body normally; their summary
+   *   acts as a section heading (no clickable affordance, no triangle).
+   * - Closed details still render their summary so the reader sees
+   *   what was collapsed, with a small "(collapsed)" note so they
+   *   know content is missing — preferred over forcing every detail
+   *   open, which would leak admin / debug panels into the print. */
   details > summary {
+    cursor: default;
+    list-style: none;
+    font-weight: 600;
+  }
+  details > summary::-webkit-details-marker,
+  details > summary::marker {
     display: none;
   }
-  details > * {
-    display: block !important;
+  details:not([open]) > summary::after {
+    content: " (collapsed in print)";
+    color: #666;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.85em;
+  }
+  details[open] > summary::after {
+    content: "";
   }
   .shadow-2xl,
   .shadow-sm {

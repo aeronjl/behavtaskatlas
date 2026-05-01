@@ -2,6 +2,56 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 09:14:43 BST - UI Round A (accessibility): aria-pressed on Model browsers, sticky first column on wide tables, caveat glossary on findings detail, source-strip glyphs, print details handling
+
+Final round of the UI critique — the accessibility finishing touches
+the doc flagged. Each item is small in isolation; together they close
+the gap between "renders" and "renders correctly for keyboard, mobile,
+print, and colour-vision users."
+
+Concrete moves:
+
+- **aria-pressed on `ModelAnswersBrowser` question chips.** Wrapped
+  the question filter pills in a `<fieldset>` with `aria-pressed`
+  on each button so the question filter is announced as a
+  toggle group. The other Model* surfaces
+  (`ModelSelectionMatrix`, `ModelSelectionTable`) already route
+  through `FacetBar`, which carries `aria-pressed` from the earlier
+  pass.
+- **`stickyFirstColumn` on the remaining wide tables.** Wired the
+  opt-in into `/models` DDM fit table, slice fittability, all-fits
+  reference, and the `/compare` model-fit comparison so the row
+  label (variant / slice / fit id / group) stays visible when these
+  tables overflow horizontally on smaller laptops. The DataTable
+  primitive already had the `is:global` style hook from Tier 1.
+- **Caveat glossary on `/findings/[id]`.** Added an inline
+  `<Glossary>` block at the top of the Fit-diagnostics section
+  listing every caveat tag attached to any candidate fit on the
+  current finding, with the full description visible (warn-toned).
+  Closes the doc's complaint that caveat descriptions were
+  trapped in `title=` tooltips. The chip column in the diagnostics
+  table still renders the tags so each row's caveats are scannable;
+  the glossary explains them once at the top.
+- **Redundant glyphs on the source strip.** `AtlasOverview`'s
+  3-segment source-level strip swapped from a colour-only flat bar
+  to three labelled badges (R / P / F) — filled badges show the
+  encoding-token colour with the letter in the inverse foreground;
+  unfilled badges show a muted grey letter. Letter encodes the
+  state independently of hue so colour-vision-deficient readers get
+  the same signal. The legend strip in the matrix header was
+  updated to match.
+- **Print stylesheet `<details>` handling.** Replaced the
+  brute-force "force every details open in print" rule with
+  `[open]`-aware CSS: open details print their body with the
+  summary as a section heading (no triangle); closed details print
+  their summary plus a small italic "(collapsed in print)" note so
+  the reader knows there's content collapsed without it leaking
+  admin or debug panels into a printed PDF.
+
+`bash scripts/ci.sh` passes (176 pages). All four rounds of UI
+follow-ups (B → C → A) are now landed and the original critique's
+punch list is closed.
+
 ## 2026-05-01 09:09:36 BST - UI Round C (structural leftovers): slice profile, /findings headline + flat-table retire, /graph zoom-pan, home matrix expand-on-click
 
 Worked through the four remaining structural items from the original

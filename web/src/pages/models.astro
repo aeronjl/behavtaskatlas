@@ -761,6 +761,7 @@ const singleCount = confidenceCounts.single_candidate ?? 0;
         <div class="border-t border-rule">
           <DataTable
             class="rounded-none border-0"
+            stickyFirstColumn
             columns={[
               { label: "Variant" },
               { label: "Paper" },
@@ -962,6 +963,7 @@ const singleCount = confidenceCounts.single_candidate ?? 0;
     description="Mapping from canonical-trial coverage in each slice's harmonized trials.csv to the variants whose data requirements it satisfies. Slices with empty fittability lack the right canonical fields (RT, signed choice, click times) or need adapter fixes."
   >
     <DataTable
+      stickyFirstColumn
       columns={[
         { label: "Slice" },
         { label: "Trials", align: "right" },
@@ -1091,6 +1093,7 @@ const singleCount = confidenceCounts.single_candidate ?? 0;
         <div class="border-t border-rule">
           <DataTable
             class="rounded-none border-0"
+            stickyFirstColumn
             columns={[
               { label: "Fit" },
               { label: "Variant" },
