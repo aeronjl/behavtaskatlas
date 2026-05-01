@@ -2,23 +2,11 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FindingsOverlay from "../components/FindingsOverlay.svelte";
 import Card from "../components/ui/Card.astro";
-import DataTable from "../components/ui/DataTable.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import { findings } from "../lib/findings";
-import { hrefForFinding } from "../lib/data";
 
 const counts = findings.counts as Record<string, number>;
 const findingPaperCount = counts.finding_papers ?? counts.papers ?? 0;
-const findingsList = findings.findings as Array<{
-  finding_id: string;
-  paper_citation: string;
-  paper_year: number;
-  species: string | null;
-  protocol_name: string;
-  source_data_level: string;
-  curve_type: string;
-  n_trials: number | null;
-}>;
 ---
 
 <BaseLayout
@@ -45,57 +33,11 @@ const findingsList = findings.findings as Array<{
     )
   }
 
-  {findingsList.length > 0 ? (
-    <details class="mt-10 rounded-md border border-rule bg-surface-raised">
-      <summary class="cursor-pointer px-4 py-3 text-body font-semibold text-fg-secondary hover:text-accent">
-        Browse all findings as a table
-        <span class="ml-2 text-body-xs font-normal text-fg-muted">
-          ({findingsList.length} rows)
-        </span>
-      </summary>
-      <div class="border-t border-rule">
-        <DataTable
-          class="rounded-none border-0"
-          columns={[
-            { label: "Finding" },
-            { label: "Paper" },
-            { label: "Year" },
-            { label: "Species" },
-            { label: "Protocol" },
-            { label: "Curve" },
-            { label: "Source level" },
-            { label: "Trials", align: "right" },
-          ]}
-        >
-          {findingsList.map((entry) => (
-            <tr>
-              <td class="max-w-64 px-3 py-2">
-                <a
-                  class="font-mono text-mono-id text-fg"
-                  href={hrefForFinding(entry.finding_id)}
-                >
-                  {entry.finding_id.replace("finding.", "")}
-                </a>
-              </td>
-              <td class="px-3 py-2">{entry.paper_citation}</td>
-              <td class="px-3 py-2 text-fg-secondary">{entry.paper_year}</td>
-              <td class="px-3 py-2 text-fg-secondary">
-                {entry.species ?? "—"}
-              </td>
-              <td class="px-3 py-2 text-fg-secondary">
-                {entry.protocol_name}
-              </td>
-              <td class="px-3 py-2 text-fg-secondary">{entry.curve_type}</td>
-              <td class="px-3 py-2 text-fg-secondary">
-                {entry.source_data_level}
-              </td>
-              <td class="px-3 py-2 text-right font-mono text-fg-secondary">
-                {entry.n_trials ?? "—"}
-              </td>
-            </tr>
-          ))}
-        </DataTable>
-      </div>
-    </details>
-  ) : null}
+  <p class="mt-6 max-w-prose text-body-xs text-fg-muted">
+    For a flat-table view of every finding alongside protocols, datasets,
+    and slices, use the search and type filters on
+    <a class="text-accent" href="/catalog?type=family">/catalog</a>.
+    Each finding's permalink lives at
+    <code class="rounded bg-surface-sunken px-1 text-mono-id">/findings/&lt;id&gt;</code>.
+  </p>
 </BaseLayout>

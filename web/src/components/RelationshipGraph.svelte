@@ -231,6 +231,10 @@
   }
 
   function onNodeClick(node: GraphNode) {
+    if (suppressNextNodeClick) {
+      suppressNextNodeClick = false;
+      return;
+    }
     if (mode === "path") {
       if (!pathSource) {
         pathSource = node.node_id;
@@ -322,6 +326,119 @@
     const colWidth =
       (width - padding.left - padding.right) / visibleColumns.length;
     return padding.left + colWidth * (idx + 0.5);
+  }
+
+  // ── Zoom / pan ────────────────────────────────────────────────────────
+  // Manipulate the SVG viewBox to give the user wheel-zoom and
+  // drag-to-pan. Bounds keep the user from zooming out so far the whole
+  // layout becomes a dot, or so far in that nodes leave the viewport.
+  // Reset returns to the deterministic full layout.
+
+  let vbX = $state(0);
+  let vbY = $state(0);
+  let vbW = $state(width);
+  let vbH = $state(height);
+  let svgEl: SVGSVGElement | null = $state(null);
+  let dragging = $state(false);
+  let suppressNextNodeClick = $state(false);
+  let dragStart = { x: 0, y: 0, vbX: 0, vbY: 0, distance: 0 };
+
+  $effect(() => {
+    // Re-anchor viewBox when the container resizes — the graph re-lays
+    // out with the new width, so keeping the zoomed window would
+    // crop arbitrary parts of the new layout.
+    void width;
+    vbX = 0;
+    vbY = 0;
+    vbW = width;
+    vbH = height;
+  });
+
+  const zoomPercent = $derived(
+    Math.round((width / Math.max(vbW, 1)) * 100),
+  );
+  const isZoomed = $derived(
+    Math.abs(vbW - width) > 1 ||
+      Math.abs(vbH - height) > 1 ||
+      Math.abs(vbX) > 1 ||
+      Math.abs(vbY) > 1,
+  );
+
+  function resetZoom() {
+    vbX = 0;
+    vbY = 0;
+    vbW = width;
+    vbH = height;
+  }
+
+  function onWheel(event: WheelEvent) {
+    if (!svgEl) return;
+    event.preventDefault();
+    const factor = event.deltaY > 0 ? 1.12 : 1 / 1.12;
+    const rect = svgEl.getBoundingClientRect();
+    const sx = (event.clientX - rect.left) / Math.max(rect.width, 1);
+    const sy = (event.clientY - rect.top) / Math.max(rect.height, 1);
+    const minZoomFactor = 0.3; // don't shrink below 30% of native
+    const maxZoomFactor = 6; // don't zoom past 600%
+    const newW = Math.min(
+      width / minZoomFactor,
+      Math.max(width / maxZoomFactor, vbW * factor),
+    );
+    const newH = newW * (height / width);
+    vbX = vbX + (vbW - newW) * sx;
+    vbY = vbY + (vbH - newH) * sy;
+    vbW = newW;
+    vbH = newH;
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    if (!svgEl) return;
+    if (event.button !== 0) return;
+    // Ignore drags that originate inside a graph node — those are
+    // navigate clicks. Pan only when the press starts on the SVG
+    // background.
+    const target = event.target as Element | null;
+    if (target && target.closest && target.closest(".graph-node")) return;
+    dragging = true;
+    suppressNextNodeClick = false;
+    dragStart = {
+      x: event.clientX,
+      y: event.clientY,
+      vbX,
+      vbY,
+      distance: 0,
+    };
+    svgEl.setPointerCapture(event.pointerId);
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    if (!dragging || !svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const dx = (dragStart.x - event.clientX) * (vbW / Math.max(rect.width, 1));
+    const dy = (dragStart.y - event.clientY) * (vbH / Math.max(rect.height, 1));
+    vbX = dragStart.vbX + dx;
+    vbY = dragStart.vbY + dy;
+    dragStart.distance = Math.max(
+      dragStart.distance,
+      Math.abs(event.clientX - dragStart.x) + Math.abs(event.clientY - dragStart.y),
+    );
+  }
+
+  function onPointerUp(event: PointerEvent) {
+    if (!dragging) return;
+    dragging = false;
+    if (svgEl?.releasePointerCapture) {
+      try {
+        svgEl.releasePointerCapture(event.pointerId);
+      } catch {
+        // pointer already released
+      }
+    }
+    if (dragStart.distance > 4) {
+      // The drag actually moved — suppress the upcoming click on a
+      // node so the user doesn't accidentally navigate after panning.
+      suppressNextNodeClick = true;
+    }
   }
 </script>
 
@@ -422,13 +539,34 @@
     </p>
   {/if}
 
-  <div class="overflow-hidden rounded-md border border-rule bg-surface-raised">
+  <div class="relative overflow-hidden rounded-md border border-rule bg-surface-raised">
+    <div class="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-2 text-mono-id">
+      <span class="rounded bg-surface-raised/90 px-2 py-0.5 text-fg-muted ring-1 ring-rule">
+        zoom {zoomPercent}%
+      </span>
+      {#if isZoomed}
+        <button
+          type="button"
+          class="pointer-events-auto rounded bg-surface-raised px-2 py-0.5 text-fg-secondary ring-1 ring-rule-strong hover:text-accent"
+          onclick={resetZoom}
+        >
+          Reset
+        </button>
+      {/if}
+    </div>
     <svg
-      viewBox={`0 0 ${width} ${height}`}
+      bind:this={svgEl}
+      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width="100%"
       height={height}
       role="img"
       aria-label="Layered relationship graph across task families, protocols, datasets, and slices"
+      onwheel={onWheel}
+      onpointerdown={onPointerDown}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onpointercancel={onPointerUp}
+      style={dragging ? "cursor: grabbing;" : "cursor: grab;"}
     >
       <g>
         {#each visibleColumns as type (type)}
@@ -521,6 +659,7 @@
   <p class="mt-2 text-mono-id text-fg-muted">
     {layout.size} node{layout.size === 1 ? "" : "s"} ·
     {layoutEdges.length} edge{layoutEdges.length === 1 ? "" : "s"}.
+    Scroll to zoom, drag the background to pan.
     {#if mode === "navigate"}
       Tab or hover a node to highlight neighbours; press Enter or click to open
       its detail page. Use Find path to trace the shortest connection between

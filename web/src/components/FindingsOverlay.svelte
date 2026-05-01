@@ -1678,6 +1678,34 @@ def fit_curves(payload_json):
 </script>
 
 <div class="rounded-md border border-rule bg-surface-raised p-4">
+  <p
+    class="mb-3 text-body-lg text-fg-secondary"
+    aria-live="polite"
+    data-testid="findings-overlay-headline"
+  >
+    <span class="font-mono text-h2 font-semibold text-fg">
+      {displayEntries.length.toLocaleString()}
+    </span>
+    {displayEntries.length === 1 ? "trace" : "traces"}
+    {#if traceMode === "aggregate" && displayEntries.length !== filteredEntries.length}
+      <span class="text-fg-muted">
+        from <span class="font-mono text-fg">{filteredEntries.length}</span>
+        finding{filteredEntries.length === 1 ? "" : "s"}
+      </span>
+    {/if}
+    <span class="ml-2 text-fg-muted">·</span>
+    <span class="ml-1 font-mono text-fg">{filteredSummary.papers}</span>
+    paper{filteredSummary.papers === 1 ? "" : "s"}
+    <span class="ml-2 text-fg-muted">·</span>
+    <span class="ml-1 font-mono text-fg">{filteredSummary.species}</span>
+    species
+    <span class="ml-2 text-fg-muted">·</span>
+    <span class="ml-1 font-mono text-fg">{flatPoints.length.toLocaleString()}</span>
+    points
+    <span class="ml-2 text-fg-muted">·</span>
+    <span class="ml-1 text-fg">{currentCurveType.replace(/_/g, " ")}</span>
+  </p>
+
   <div class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
     <fieldset class="flex flex-wrap items-center gap-2">
       <legend class="sr-only">View</legend>
@@ -1913,22 +1941,8 @@ def fit_curves(payload_json):
   </div>
 
   <div class="mb-2 flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-3">
-    <p class="text-body text-fg-secondary">
-      <span class="font-semibold text-fg">
-        {displayEntries.length}
-        {displayEntries.length === 1 ? "trace" : "traces"}
-      </span>
-      <span class="text-fg-muted">
-        {#if traceMode === "aggregate" && displayEntries.length !== filteredEntries.length}
-          · from {filteredEntries.length}
-          {currentCurveType.replace(/_/g, " ")} finding{filteredEntries.length === 1 ? "" : "s"}
-        {:else}
-          · {currentCurveType.replace(/_/g, " ")}
-        {/if}
-        · {filteredSummary.papers} paper{filteredSummary.papers === 1 ? "" : "s"}
-        · {filteredSummary.species} species
-        · {flatPoints.length.toLocaleString()} points
-      </span>
+    <p class="text-body-xs text-fg-muted">
+      Trace level + live refit
     </p>
     <div class="flex flex-wrap items-center gap-3">
       <fieldset class="flex flex-wrap items-center gap-1 text-body-xs">

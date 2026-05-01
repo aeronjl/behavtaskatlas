@@ -2,6 +2,55 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 09:09:36 BST - UI Round C (structural leftovers): slice profile, /findings headline + flat-table retire, /graph zoom-pan, home matrix expand-on-click
+
+Worked through the four remaining structural items from the original
+critique. Mostly tightening: making the headline-summary on /findings
+visibly the page's living centerpiece, retiring duplicate flat-table
+views, adding mouse-driven zoom + pan to the relationship graph, and
+restoring per-row depth on the home matrix without re-bloating the
+default 5-column grid.
+
+Concrete moves:
+
+- **Slice profile breathing room.** `/slices/[id]` profile table
+  flipped from a `<table>` to a `<dl>` grid: label column at
+  10rem with `text-eyebrow uppercase`, value column at
+  `text-body-lg` so the operational variables read as the
+  primary content. The label was already eyebrow-styled from the
+  earlier token sweep, but the value side wasn't carrying any
+  visual weight — fixed.
+- **/findings headline.** `FindingsOverlay` opens with a living
+  `text-h2`-sized count of currently-shown traces + paper / species /
+  point breakdown + curve type, before any control. Replaces the
+  bottom-strip secondary summary with a one-line "Trace level + live
+  refit" placeholder so the page reads top-to-bottom: headline →
+  controls → chart → controls. The 90-row flat-table `<details>` at
+  the bottom of `/findings` is retired in favour of a one-line
+  pointer to `/catalog?type=family` for tabular browsing.
+- **/graph zoom + pan.** `RelationshipGraph` now exposes wheel zoom
+  (centred on cursor) and pointer-based pan over the SVG viewBox.
+  Bounds keep zoom in [30%, 600%]; a small "zoom N%" badge shows in
+  the top-right corner; a "Reset" button appears when the user has
+  panned or zoomed away from the static layout. Pointer drags that
+  travel more than a few pixels suppress the next node click so a
+  pan doesn't accidentally navigate. The static layered layout is
+  unchanged so reduced-motion behaviour stays correct.
+- **Home matrix expand-on-click.** `AtlasOverview`'s 5-column
+  family-coverage matrix can now expand each row inline via a small
+  `+` toggle in the family cell. The expanded panel shows the four
+  columns we dropped during the slim — Papers, Protocols, Datasets,
+  Reports — as a 4-up grid with the same heat-style numbers, plus
+  an "Open this family on /catalog" jump. Inline `<script>` wires
+  the toggles so the matrix stays an Astro static surface; no
+  Svelte hydration cost on the home page.
+
+`bash scripts/ci.sh` passes (176 pages). Round A (accessibility
+finishing items: aria-pressed on Model* browsers, redundant glyphs on
+coverage strips, sticky first column on the remaining wide tables,
+caveat chips off tooltip-only on /findings/[id], print details
+handling) is the last open round.
+
 ## 2026-05-01 08:48:54 BST - UI Round B (delight): threshold violin, did-you-mean, cover-sheet export, caveat legend, neighbourhood mini-graph
 
 After the previous follow-up sweep, audited UI.md again, then worked

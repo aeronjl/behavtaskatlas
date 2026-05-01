@@ -218,79 +218,151 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
             </tr>
           </thead>
           <tbody>
-            {familyRows.map((row) => {
+            {familyRows.map((row, rowIndex) => {
               const action = nextAction(row);
               const tags = [...row.species, ...row.modalities];
+              const rowId = `atlas-row-${rowIndex}`;
+              const extraId = `${rowId}-extra`;
               return (
-                <tr data-testid="atlas-overview-row" class="align-middle">
-                  <th class="rounded-l-md border-y border-l border-rule bg-surface px-3 py-2 text-left">
-                    <a href={row.links.catalog} class="font-semibold text-fg">
-                      {row.family.name}
-                    </a>
-                    <p class="mt-1 text-mono-id text-fg-muted">
-                      <span class="rounded bg-surface-raised px-1.5 py-0.5 ring-1 ring-rule">
-                        {rowDepthLabel(row)}
-                      </span>
-                      {tags.length > 0 ? (
-                        <span class="ml-2">
-                          {tags.map(readable).join(" · ")}
+                <>
+                  <tr
+                    data-testid="atlas-overview-row"
+                    class="align-middle atlas-row"
+                    id={rowId}
+                    data-expanded="false"
+                  >
+                    <th class="rounded-l-md border-y border-l border-rule bg-surface px-3 py-2 text-left">
+                      <div class="flex items-baseline gap-2">
+                        <button
+                          type="button"
+                          class="atlas-row-toggle inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-rule-strong bg-surface-raised text-fg-muted transition-colors hover:border-rule-emphasis hover:text-accent"
+                          aria-controls={extraId}
+                          aria-expanded="false"
+                          aria-label={`Show extra metrics for ${row.family.name}`}
+                          data-target={extraId}
+                        >
+                          <span aria-hidden="true">+</span>
+                        </button>
+                        <a href={row.links.catalog} class="font-semibold text-fg">
+                          {row.family.name}
+                        </a>
+                      </div>
+                      <p class="mt-1 ml-7 text-mono-id text-fg-muted">
+                        <span class="rounded bg-surface-raised px-1.5 py-0.5 ring-1 ring-rule">
+                          {rowDepthLabel(row)}
                         </span>
-                      ) : null}
-                    </p>
-                  </th>
-                  <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
-                    <a
-                      href={row.links.findings}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
-                      style={heatStyle(row.findings.length, maxFindings, "--color-encoding-coverage-findings")}
-                      aria-label={`${row.family.name}: ${row.findings.length} findings`}
-                    >
-                      {row.findings.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
-                    <a
-                      href={row.links.models}
-                      class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
-                      style={heatStyle(row.modelFits.length, maxModels, "--color-encoding-model-ddm")}
-                      aria-label={`${row.family.name}: ${row.modelFits.length} model fits`}
-                    >
-                      {row.modelFits.length}
-                    </a>
-                  </td>
-                  <td class="border-y border-rule bg-surface-raised px-3 py-2">
-                    <div class="flex min-w-24 overflow-hidden rounded-full border border-rule bg-surface-sunken" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
-                      {sourceOrder.map((level) => (
-                        <a
-                          href={href("/catalog", { q: row.family.name, source: level })}
-                          class:list={[
-                            "h-2 flex-1",
-                            row.sourceLevels.includes(level)
-                              ? level === "raw-trial"
-                                ? "bg-encoding-source-raw"
-                                : level === "processed-trial"
-                                  ? "bg-encoding-source-processed"
-                                  : "bg-encoding-source-figure"
-                              : "bg-transparent",
-                          ]}
-                          aria-label={`${row.family.name}: ${readable(level)} ${row.sourceLevels.includes(level) ? "available" : "missing"}`}
-                        />
-                      ))}
-                    </div>
-                    <span class="sr-only">source rank {sourceRank(row.sourceLevels)}</span>
-                  </td>
-                  <td class="rounded-r-md border-y border-r border-rule bg-surface-raised px-3 py-2">
-                    <a
-                      href={action.href}
-                      class:list={[
-                        "inline-flex whitespace-nowrap rounded px-2 py-1 text-body-xs no-underline",
-                        action.tone,
-                      ]}
-                    >
-                      {action.label}
-                    </a>
-                  </td>
-                </tr>
+                        {tags.length > 0 ? (
+                          <span class="ml-2">
+                            {tags.map(readable).join(" · ")}
+                          </span>
+                        ) : null}
+                      </p>
+                    </th>
+                    <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
+                      <a
+                        href={row.links.findings}
+                        class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
+                        style={heatStyle(row.findings.length, maxFindings, "--color-encoding-coverage-findings")}
+                        aria-label={`${row.family.name}: ${row.findings.length} findings`}
+                      >
+                        {row.findings.length}
+                      </a>
+                    </td>
+                    <td class="border-y border-rule bg-surface-raised px-2 py-2 text-right">
+                      <a
+                        href={row.links.models}
+                        class="inline-flex min-w-10 justify-end rounded border px-2 py-1 font-mono text-fg no-underline"
+                        style={heatStyle(row.modelFits.length, maxModels, "--color-encoding-model-ddm")}
+                        aria-label={`${row.family.name}: ${row.modelFits.length} model fits`}
+                      >
+                        {row.modelFits.length}
+                      </a>
+                    </td>
+                    <td class="border-y border-rule bg-surface-raised px-3 py-2">
+                      <div class="flex min-w-24 overflow-hidden rounded-full border border-rule bg-surface-sunken" title={row.sourceLevels.map(readable).join(", ") || "no source level"}>
+                        {sourceOrder.map((level) => (
+                          <a
+                            href={href("/catalog", { q: row.family.name, source: level })}
+                            class:list={[
+                              "h-2 flex-1",
+                              row.sourceLevels.includes(level)
+                                ? level === "raw-trial"
+                                  ? "bg-encoding-source-raw"
+                                  : level === "processed-trial"
+                                    ? "bg-encoding-source-processed"
+                                    : "bg-encoding-source-figure"
+                                : "bg-transparent",
+                            ]}
+                            aria-label={`${row.family.name}: ${readable(level)} ${row.sourceLevels.includes(level) ? "available" : "missing"}`}
+                          />
+                        ))}
+                      </div>
+                      <span class="sr-only">source rank {sourceRank(row.sourceLevels)}</span>
+                    </td>
+                    <td class="rounded-r-md border-y border-r border-rule bg-surface-raised px-3 py-2">
+                      <a
+                        href={action.href}
+                        class:list={[
+                          "inline-flex whitespace-nowrap rounded px-2 py-1 text-body-xs no-underline",
+                          action.tone,
+                        ]}
+                      >
+                        {action.label}
+                      </a>
+                    </td>
+                  </tr>
+                  <tr
+                    id={extraId}
+                    class="atlas-row-extra hidden"
+                    aria-hidden="true"
+                  >
+                    <td colspan="5" class="rounded-md border border-rule bg-surface px-3 pb-3 pt-2">
+                      <p class="mb-2 text-eyebrow uppercase text-fg-muted">
+                        Extra metrics for {row.family.name}
+                      </p>
+                      <dl class="grid grid-cols-2 gap-3 text-body-xs sm:grid-cols-4">
+                        <div>
+                          <dt class="text-fg-muted">Papers</dt>
+                          <dd class="mt-0.5">
+                            <a href={row.links.papers} class="font-mono text-h3 font-semibold text-fg">
+                              {row.papers.length}
+                            </a>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt class="text-fg-muted">Protocols</dt>
+                          <dd class="mt-0.5">
+                            <a href={row.links.catalog} class="font-mono text-h3 font-semibold text-fg">
+                              {row.protocols.length}
+                            </a>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt class="text-fg-muted">Datasets</dt>
+                          <dd class="mt-0.5">
+                            <a href={row.links.catalog} class="font-mono text-h3 font-semibold text-fg">
+                              {row.datasets.length}
+                            </a>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt class="text-fg-muted">Reports</dt>
+                          <dd class="mt-0.5 font-mono">
+                            <a href={row.links.reports} class="text-h3 font-semibold text-fg">
+                              {row.reportCount}
+                            </a>
+                            <span class="text-fg-muted"> / {row.slices.length}</span>
+                          </dd>
+                        </div>
+                      </dl>
+                      <p class="mt-3 text-mono-id text-fg-muted">
+                        <a class="text-accent" href={row.links.catalog}>
+                          Open this family on /catalog →
+                        </a>
+                      </p>
+                    </td>
+                  </tr>
+                </>
               );
             })}
           </tbody>
@@ -345,3 +417,31 @@ const gapRows = familyRows.filter((row) => row.findings.length === 0 && row.slic
     </aside>
   </div>
 </section>
+
+<script>
+  // Per-row expand-on-click for the family coverage matrix. Each
+  // toggle button has data-target pointing at the hidden extras row;
+  // clicking flips the hidden state and updates aria-expanded so AT
+  // users hear the panel state correctly. Static script so this
+  // works without Svelte hydration.
+  const toggles = document.querySelectorAll<HTMLButtonElement>(
+    "button.atlas-row-toggle",
+  );
+  toggles.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.dataset.target;
+      if (!targetId) return;
+      const extraRow = document.getElementById(targetId);
+      if (!extraRow) return;
+      const open = extraRow.classList.contains("hidden");
+      extraRow.classList.toggle("hidden", !open);
+      extraRow.setAttribute("aria-hidden", open ? "false" : "true");
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      button.querySelector("span[aria-hidden]")!.textContent = open ? "−" : "+";
+      const parentRow = button.closest("tr");
+      if (parentRow) {
+        parentRow.setAttribute("data-expanded", open ? "true" : "false");
+      }
+    });
+  });
+</script>
