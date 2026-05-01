@@ -25,7 +25,7 @@
     { keys: "g t", label: "Stories", href: "/stories" },
     { keys: "g o", label: "Catalog", href: "/catalog" },
     { keys: "g n", label: "Network", href: "/graph" },
-    { keys: "g a", label: "Atlas health", href: "/atlas-health" },
+    { keys: "g a", label: "Atlas health", href: "/project-health" },
   ];
   const destByLetter = new Map<string, string>(
     shortcuts.map((s) => [s.keys.split(" ")[1], s.href]),

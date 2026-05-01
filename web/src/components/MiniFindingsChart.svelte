@@ -422,6 +422,17 @@
         },
       },
     };
+    // Soft tween-on-update: dim the chart container before re-embed,
+    // then fade back in once Vega returns. Doesn't true-tween marks
+    // (Vega-Lite doesn't expose Vega's update encoding), but feels
+    // smoother than the abrupt swap the chart used to do. The
+    // prefers-reduced-motion guard in global.css zeros these
+    // transitions for users who request it.
+    const isFirstMount = chartView === null;
+    if (!isFirstMount && chartContainer) {
+      chartContainer.style.transition = "opacity 200ms ease";
+      chartContainer.style.opacity = "0.35";
+    }
     (async () => {
       try {
         const result = await vegaEmbed(chartContainer, spec, {
@@ -432,6 +443,12 @@
         chartView = result.view;
       } catch (err) {
         console.error("vega-embed (mini) failed", err);
+      }
+      if (chartContainer) {
+        // Allow paint, then ease back to full opacity.
+        requestAnimationFrame(() => {
+          if (chartContainer) chartContainer.style.opacity = "1";
+        });
       }
     })();
   });

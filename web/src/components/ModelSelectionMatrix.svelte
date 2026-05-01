@@ -20,6 +20,26 @@
     description: string;
   };
 
+  type FamilyEntry = {
+    id: string;
+    name: string;
+    description: string;
+    parameter_definitions: Array<{
+      name: string;
+      symbol?: string | null;
+      units?: string | null;
+    }>;
+    applicable_curve_types: string[];
+    requires: string[];
+  };
+
+  type VariantEntry = {
+    id: string;
+    family_id: string;
+    name: string;
+    free_parameters: string[];
+  };
+
   type MatrixCell = {
     fit_id: string;
     variant_id: string;
@@ -63,13 +83,62 @@
     caveatDefinitions = {},
     confidenceDefinitions = {},
     scopeDefinitions = {},
+    families = [],
+    variants = [],
   }: {
     rows: MatrixRow[];
     columns: MatrixColumn[];
     caveatDefinitions?: Record<string, CaveatDefinition>;
     confidenceDefinitions?: Record<string, ConfidenceDefinition>;
     scopeDefinitions?: Record<string, ScopeDefinition>;
+    families?: FamilyEntry[];
+    variants?: VariantEntry[];
   } = $props();
+
+  // Click-to-define: clicking any variant label in a cell opens a
+  // small drawer with that variant's family description, parameters,
+  // requirements, and sibling variants. Replaces the standalone
+  // "Families & variants" reveal with a contextual lookup that's one
+  // click from the data the reader is staring at.
+  const variantsById = $derived(new Map(variants.map((v) => [v.id, v])));
+  const familiesById = $derived(new Map(families.map((f) => [f.id, f])));
+  const variantsByFamily = $derived.by(() => {
+    const map = new Map<string, VariantEntry[]>();
+    for (const variant of variants) {
+      const list = map.get(variant.family_id) ?? [];
+      list.push(variant);
+      map.set(variant.family_id, list);
+    }
+    return map;
+  });
+
+  let openVariantId = $state<string | null>(null);
+  const openVariant = $derived(
+    openVariantId ? variantsById.get(openVariantId) ?? null : null,
+  );
+  const openFamily = $derived(
+    openVariant ? familiesById.get(openVariant.family_id) ?? null : null,
+  );
+  const openSiblings = $derived(
+    openVariant ? variantsByFamily.get(openVariant.family_id) ?? [] : [],
+  );
+
+  function openDefinition(variantId: string) {
+    openVariantId = variantId;
+  }
+  function closeDefinition() {
+    openVariantId = null;
+  }
+
+  $effect(() => {
+    if (!openVariantId) return;
+    if (typeof document === "undefined") return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") closeDefinition();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
 
   let query = $state("");
   let species = $state("all");
@@ -378,9 +447,14 @@
                       </span>
                     {/if}
                   </div>
-                  <p class="mt-1 max-w-36 truncate font-mono text-[10px] text-fg-muted" title={cell.variant_id}>
+                  <button
+                    type="button"
+                    class="mt-1 inline-flex max-w-36 truncate rounded border border-rule bg-surface-raised px-1.5 py-0.5 font-mono text-[10px] text-fg-muted transition-colors hover:border-accent hover:text-accent"
+                    title={`${cell.variant_id} — click for family definition`}
+                    onclick={() => openDefinition(cell.variant_id)}
+                  >
                     {cell.variant_label}
-                  </p>
+                  </button>
                   {#if cell.caveat_tags.length > 0}
                     <ul class="mt-1 flex flex-wrap gap-1">
                       {#each cell.caveat_tags as tag (tag)}
@@ -404,3 +478,107 @@
     </table>
   </div>
 </div>
+
+{#if openVariantId && openFamily && openVariant}
+  <div
+    class="fixed inset-0 z-40 flex items-stretch justify-end bg-fg/30 animate-fade-in"
+    onclick={closeDefinition}
+    onkeydown={(event) => event.key === "Escape" && closeDefinition()}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="family-popover-title"
+    tabindex="-1"
+  >
+    <aside
+      class="flex w-full max-w-md flex-col gap-3 overflow-y-auto border-l border-rule bg-surface-raised p-5 shadow-2xl"
+      onclick={(event) => event.stopPropagation()}
+      onkeydown={(event) => event.stopPropagation()}
+      role="presentation"
+    >
+      <header class="flex items-baseline justify-between gap-3">
+        <div>
+          <p class="text-eyebrow uppercase text-fg-muted">
+            {openFamily.applicable_curve_types.join(" · ")}
+          </p>
+          <h2 id="family-popover-title" class="mt-1 text-h3 text-fg">
+            {openFamily.name}
+          </h2>
+          <p class="mt-1 font-mono text-mono-id text-fg-muted">{openFamily.id}</p>
+        </div>
+        <button
+          type="button"
+          class="rounded border border-rule-strong bg-surface-raised px-2 py-1 text-body-xs text-fg-secondary hover:border-rule-emphasis hover:text-accent"
+          onclick={closeDefinition}
+          aria-label="Close family definition"
+        >
+          Close
+        </button>
+      </header>
+      <p class="text-body text-fg-secondary">{openFamily.description}</p>
+
+      <section>
+        <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">Parameters</h3>
+        <ul class="space-y-1 text-body-xs">
+          {#each openFamily.parameter_definitions as p (p.name)}
+            <li>
+              <span class="font-mono font-semibold text-fg">{p.symbol ?? p.name}</span>
+              <span class="ml-1 text-fg-secondary">{p.name}</span>
+              {#if p.units}
+                <span class="ml-1 text-fg-muted">[{p.units}]</span>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </section>
+
+      <section>
+        <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">Requires</h3>
+        <ul class="flex flex-wrap gap-1">
+          {#each openFamily.requires as requirement (requirement)}
+            <li class="rounded bg-surface-sunken px-2 py-0.5 font-mono text-mono-id text-fg-secondary">
+              {requirement}
+            </li>
+          {/each}
+        </ul>
+      </section>
+
+      <section>
+        <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
+          Variants ({openSiblings.length})
+        </h3>
+        <ul class="space-y-1.5 text-body-xs">
+          {#each openSiblings as sibling (sibling.id)}
+            {@const isCurrent = sibling.id === openVariantId}
+            <li
+              class={[
+                "rounded border px-2 py-1.5",
+                isCurrent
+                  ? "border-accent bg-accent-soft"
+                  : "border-rule bg-surface",
+              ]}
+            >
+              <p class="flex items-baseline justify-between gap-2">
+                <span class="font-mono text-fg">
+                  {sibling.id.replace("model_variant.", "")}
+                </span>
+                {#if isCurrent}
+                  <span class="text-mono-id text-accent">selected</span>
+                {/if}
+              </p>
+              <p class="text-fg-secondary">{sibling.name}</p>
+              <p class="font-mono text-mono-id text-fg-muted">
+                free = [{sibling.free_parameters.join(", ")}]
+              </p>
+            </li>
+          {/each}
+        </ul>
+      </section>
+
+      <p class="mt-auto text-mono-id text-fg-muted">
+        Press Esc to close. Family definitions live under
+        <code class="rounded bg-surface-sunken px-1">model_families/</code>
+        in the repo.
+      </p>
+    </aside>
+  </div>
+{/if}

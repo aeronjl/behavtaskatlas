@@ -118,7 +118,7 @@
 
   /* ─────────────────────────────────────────────────────────────────────
    * CONFIDENCE — AIC selection bands. Used on /models, /findings,
-   * /atlas-health for "decisive / supported / close / single" labels.
+   * /project-health for "decisive / supported / close / single" labels.
    * ───────────────────────────────────────────────────────────────────── */
 
   --color-confidence-decisive: #047857;   /* emerald-700 */

@@ -3,11 +3,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import CatalogBrowser from "../components/CatalogBrowser.svelte";
 import RecordChip from "../components/RecordChip.astro";
 import Card from "../components/ui/Card.astro";
+import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import Section from "../components/ui/Section.astro";
 import SectionAnchorNav from "../components/ui/SectionAnchorNav.astro";
 import StatusPill from "../components/ui/StatusPill.astro";
 import { catalog, manifest, slugForId } from "../lib/data";
+import { findings } from "../lib/findings";
+
+const objectModelCounts = {
+  families: catalog.counts.task_families ?? catalog.task_families.length,
+  protocols: catalog.counts.protocols ?? catalog.protocols.length,
+  datasets: catalog.counts.datasets ?? catalog.datasets.length,
+  slices: catalog.counts.vertical_slices ?? catalog.vertical_slices.length,
+  findings: findings.counts.findings ?? findings.findings.length,
+};
 
 const counts = (catalog.counts ?? {}) as Record<string, number>;
 
@@ -172,6 +182,12 @@ const catalogRows = [
       </p>
     </Fragment>
   </PageHeader>
+
+  <ObjectModelStrip
+    counts={objectModelCounts}
+    title="The shape of the catalog"
+    class="mb-8"
+  />
 
   <section class="mb-8">
     <CatalogBrowser rows={catalogRows} client:load />

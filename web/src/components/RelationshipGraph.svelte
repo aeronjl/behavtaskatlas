@@ -151,6 +151,36 @@
     return map;
   });
 
+  // Per-node degree, used to weight the sankey-style ribbons. A family
+  // that fans out into many protocols has a thicker outgoing river than
+  // a family with one protocol — the visual reads "this is where the
+  // atlas is busy."
+  const nodeDegree = $derived.by(() => {
+    const map = new Map<string, number>();
+    for (const edge of layoutEdges) {
+      map.set(edge.source.node_id, (map.get(edge.source.node_id) ?? 0) + 1);
+      map.set(edge.target.node_id, (map.get(edge.target.node_id) ?? 0) + 1);
+    }
+    return map;
+  });
+  const maxDegree = $derived(
+    Math.max(1, ...Array.from(nodeDegree.values())),
+  );
+
+  function edgeWidth(edge: LayoutEdge): number {
+    const a = nodeDegree.get(edge.source.node_id) ?? 1;
+    const b = nodeDegree.get(edge.target.node_id) ?? 1;
+    // Geometric mean of source/target degree, scaled into a bounded
+    // pixel range. sqrt softens the gap between popular and quiet
+    // nodes so the busiest river isn't 50× the others.
+    const weight = Math.sqrt(a * b) / Math.sqrt(maxDegree);
+    return 1.2 + weight * 5.2;
+  }
+
+  function edgeGradientId(edge: LayoutEdge): string {
+    return `edge-grad-${edge.source.node_id.replace(/\W+/g, "-")}-${edge.target.node_id.replace(/\W+/g, "-")}`;
+  }
+
   // ── Filter / search / interaction state ─────────────────────────────────
 
   let activeType = $state<string | null>(null);
@@ -584,18 +614,45 @@
           </text>
         {/each}
       </g>
+      <defs>
+        {#each layoutEdges as edge (edge.source.node_id + "->" + edge.target.node_id + ":grad")}
+          {@const sourceColor = typeColors[edge.source.node_type] ?? chrome.mutedFg}
+          {@const targetColor = typeColors[edge.target.node_type] ?? chrome.mutedFg}
+          <linearGradient
+            id={edgeGradientId(edge)}
+            x1={edge.source.x}
+            y1={edge.source.y}
+            x2={edge.target.x}
+            y2={edge.target.y}
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stop-color={sourceColor} stop-opacity="0.8" />
+            <stop offset="100%" stop-color={targetColor} stop-opacity="0.8" />
+          </linearGradient>
+        {/each}
+      </defs>
       <g>
         {#each layoutEdges as edge (edge.source.node_id + "->" + edge.target.node_id)}
           {@const dim = dimEdge(edge)}
           {@const onPath =
             pathEdgeKeys.size > 0 &&
             pathEdgeKeys.has(`${edge.source.node_id}|${edge.target.node_id}`)}
+          {@const baseWidth = edgeWidth(edge)}
           <path
             d={edgePath(edge)}
             fill="none"
-            stroke={onPath ? chrome.titleColor : dim ? chrome.gridColor : chrome.subtleFg}
-            stroke-width={onPath ? 2 : dim ? 0.7 : 1.2}
-            opacity={dim ? 0.35 : 0.9}
+            stroke={onPath
+              ? chrome.titleColor
+              : dim
+                ? chrome.gridColor
+                : `url(#${edgeGradientId(edge)})`}
+            stroke-width={onPath
+              ? Math.max(2.4, baseWidth + 0.6)
+              : dim
+                ? Math.max(0.5, baseWidth * 0.4)
+                : baseWidth}
+            stroke-linecap="round"
+            opacity={dim ? 0.4 : 0.9}
           />
         {/each}
       </g>

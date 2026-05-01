@@ -684,7 +684,13 @@ const singleCount = confidenceCounts.single_candidate ?? 0;
       caveatDefinitions={caveatDefinitions}
       confidenceDefinitions={confidenceDefinitions}
       scopeDefinitions={scopeDefinitions}
+      families={families}
+      variants={variants}
     />
+    <p class="mt-2 text-mono-id text-fg-muted">
+      Click any variant label in a cell to open its family definition,
+      parameters, and sibling variants in a side drawer.
+    </p>
 
     {interpretationWarnings.length > 0 ? (
       <details class="mt-4 rounded-md border border-rule bg-surface-raised p-4">
@@ -812,7 +818,7 @@ const singleCount = confidenceCounts.single_candidate ?? 0;
     id="coverage"
     spacing="lg"
     title="What's still missing?"
-    description="Findings without competing fits, single-candidate winners, proxy-backed wins, and slice capabilities one requirement away from supporting a variant. Roadmap of next-best work lives on /atlas-health."
+    description="Findings without competing fits, single-candidate winners, proxy-backed wins, and slice capabilities one requirement away from supporting a variant. Roadmap of next-best work lives on /project-health."
   >
     <StatGrid cols={4} class="mb-4">
       <Stat label="No fits" value={fmtCount(coverageGaps.counts?.findings_with_no_fits)} />

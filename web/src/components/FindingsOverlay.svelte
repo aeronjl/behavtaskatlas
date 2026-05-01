@@ -1662,6 +1662,14 @@ def fit_curves(payload_json):
         legend: { labelColor: chrome.labelColor, titleColor: chrome.titleColor },
       },
     };
+    // Soft tween-on-update — same pattern as MiniFindingsChart. Fades
+    // the chart while Vega re-mounts so filter changes don't read as
+    // an abrupt swap. Reduced-motion users get the global guard.
+    const isFirstMount = chartView === null;
+    if (!isFirstMount && chartContainer) {
+      chartContainer.style.transition = "opacity 200ms ease";
+      chartContainer.style.opacity = "0.35";
+    }
     (async () => {
       try {
         const result = await vegaEmbed(chartContainer, spec, {
@@ -1672,6 +1680,11 @@ def fit_curves(payload_json):
         chartView = result.view;
       } catch (err) {
         console.error("vega-embed failed", err);
+      }
+      if (chartContainer) {
+        requestAnimationFrame(() => {
+          if (chartContainer) chartContainer.style.opacity = "1";
+        });
       }
     })();
   });

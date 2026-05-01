@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import CoverageGapMatrix from "../components/CoverageGapMatrix.svelte";
 import Card from "../components/ui/Card.astro";
 import DataTable from "../components/ui/DataTable.astro";
+import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import Section from "../components/ui/Section.astro";
 import SectionAnchorNav from "../components/ui/SectionAnchorNav.astro";
@@ -594,6 +595,14 @@ const headlineCounts = {
 const blockerHighCount = blockedItems.filter(
   (item) => item.priority_label?.toLowerCase().includes("high"),
 ).length;
+
+const atlasHealthObjectModelCounts = {
+  families: catalog.counts.task_families ?? catalog.task_families.length,
+  protocols: catalog.counts.protocols ?? catalog.protocols.length,
+  datasets: catalog.counts.datasets ?? catalog.datasets.length,
+  slices: catalog.counts.vertical_slices ?? catalog.vertical_slices.length,
+  findings: (findingsIndex.counts ?? {}).findings ?? findings.length,
+};
 ---
 
 <BaseLayout
@@ -604,6 +613,12 @@ const blockerHighCount = blockedItems.filter(
   <PageHeader
     title="Atlas health"
     lede="Operational status of the atlas: pooled-vs-by-subject reconciliation, open curation tasks, external data blockers, the model-coverage roadmap, and internal link integrity. CI runs each check on every commit; this page is the latest committed result."
+  />
+
+  <ObjectModelStrip
+    counts={atlasHealthObjectModelCounts}
+    title="The shape of the atlas under check"
+    class="mb-8"
   />
 
   <SectionAnchorNav items={sectionLinks} />

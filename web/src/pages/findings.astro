@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FindingsOverlay from "../components/FindingsOverlay.svelte";
 import Card from "../components/ui/Card.astro";
+import Glossary from "../components/ui/Glossary.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import { findings } from "../lib/findings";
 
@@ -17,6 +18,49 @@ const findingPaperCount = counts.finding_papers ?? counts.papers ?? 0;
   <PageHeader
     title="Cross-paper findings"
     lede={`Behavioural curves from ${findingPaperCount} papers with extracted findings, plotted on shared signed-evidence axes. The generated bibliography tracks ${counts.papers ?? findingPaperCount} curated papers overall. Pick a curve type to switch view; use a preset to compare a slice of the literature; toggle Fit + aggregate to refit every curve interactively in your browser.`}
+  />
+
+  <Glossary
+    class="mb-6"
+    title="Reading the curves"
+    description="Each trace is one finding (paper × stratification). Filters narrow what's shown; the Refit live button below the chart fits a 4-parameter logistic in your browser."
+    collapsible
+    cols={2}
+    terms={[
+      {
+        label: "Curve type",
+        description:
+          "psychometric (P right by signed evidence), accuracy_by_strength (P correct by absolute evidence), chronometric (median RT by evidence), hit_rate (per-condition success rate). Pick one in the View row.",
+        tone: "accent",
+      },
+      {
+        label: "Stimulus axis",
+        description:
+          "Signed coherence, signed contrast, signed click difference, etc. — different paradigms calibrate evidence on different axes. The atlas keeps incompatible axes apart on purpose; only one at a time.",
+        tone: "accent",
+      },
+      {
+        label: "μ (bias)",
+        description:
+          "Mid-asymptote crossing of the psychometric. Positive μ means the curve sits to the right of zero — the subject leans toward 'right' even with no signed evidence.",
+      },
+      {
+        label: "σ (slope width)",
+        description:
+          "Width of the logistic. Larger σ = shallower psychometric = lower discriminability. Per-axis comparable; cross-axis values aren't.",
+      },
+      {
+        label: "x at 75%",
+        description:
+          "Threshold — the signed-evidence value at which the fitted curve crosses 0.75 P(right) (or 0.84 for accuracy). Reads in the same units as the x axis.",
+      },
+      {
+        label: "Source level",
+        description:
+          "Point shape on the chart: circle = raw or processed trials, square = figure source data, triangle = aggregate. Lower-strength sources should be read with more caution.",
+        tone: "warn",
+      },
+    ]}
   />
 
   {

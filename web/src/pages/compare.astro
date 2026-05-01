@@ -137,6 +137,38 @@ function paramSummary(params: Record<string, number>): string {
     .join(" · ");
 }
 
+// Source-strength badge: a single-letter chip paired with the
+// finding label so a reader sees "is this trial-level or
+// figure-source?" without hovering. Mirrors the R / P / F
+// convention used on the home matrix.
+function sourceBadge(level: string): { letter: string; tone: string; tooltip: string } {
+  if (level === "raw-trial")
+    return {
+      letter: "R",
+      tone: "bg-encoding-source-raw text-fg-inverse",
+      tooltip: "raw-trial source — full per-trial CSV from the dataset adapter",
+    };
+  if (level === "processed-trial")
+    return {
+      letter: "P",
+      tone: "bg-encoding-source-processed text-fg-inverse",
+      tooltip:
+        "processed-trial source — adapter-cleaned per-trial table, missing some raw fields",
+    };
+  if (level === "figure-source-data")
+    return {
+      letter: "F",
+      tone: "bg-encoding-source-figure text-fg-inverse",
+      tooltip:
+        "figure-source-data — extracted from a published figure, not raw trials",
+    };
+  return {
+    letter: "·",
+    tone: "bg-surface-sunken text-fg-muted",
+    tooltip: `source level: ${level || "unknown"}`,
+  };
+}
+
 const sections = COMPARISONS.map((spec) => {
   const entries = pickEntries(spec.finding_ids);
   const fits = entries
@@ -151,6 +183,8 @@ const sections = COMPARISONS.map((spec) => {
     label: entryLabel(row.entry),
     finding_id: row.entry.finding_id,
     paper_id: row.entry.paper_id,
+    species: row.entry.species ?? null,
+    source_data_level: row.entry.source_data_level,
     mu: row.fit.mu,
     sigma: row.fit.sigma,
     threshold: Number.isFinite(row.fit.threshold) ? row.fit.threshold : null,
@@ -272,70 +306,121 @@ const sections = COMPARISONS.map((spec) => {
   </Card>
 
   <div class="space-y-12">
-    {sections.map((section) => (
-      <Card
-        as="section"
-        padding="lg"
-        id={section.spec.id}
-        class="scroll-mt-20"
-      >
-        <header class="group/header mb-4 flex items-baseline justify-between gap-3">
-          <h2 class="text-h3 text-fg">{section.spec.question}</h2>
-          <a
-            class="shrink-0 rounded border border-rule bg-surface px-2 py-0.5 font-mono text-mono-id text-fg-muted no-underline transition-colors hover:border-accent hover:text-accent focus:border-accent focus:text-accent group-hover/header:text-fg-secondary"
-            href={`#${section.spec.id}`}
-            aria-label={`Permalink to ${section.spec.question}`}
-            title="Copy permalink"
+    {sections.map((section) => {
+      const tabSetId = `tabs-${section.spec.id}`;
+      const tabs = [
+        { key: "chart", label: "Chart", count: null as number | null },
+      ];
+      if (section.modelFitRows.length > 0)
+        tabs.push({
+          key: "models",
+          label: "Models",
+          count: section.modelFitRows.length,
+        });
+      if (section.has_fits)
+        tabs.push({
+          key: "parameters",
+          label: "Parameters",
+          count: section.deltas.length,
+        });
+      return (
+        <Card
+          as="section"
+          padding="lg"
+          id={section.spec.id}
+          class="scroll-mt-20"
+        >
+          <header class="group/header mb-4 flex items-baseline justify-between gap-3">
+            <h2 class="text-h3 text-fg">{section.spec.question}</h2>
+            <a
+              class="shrink-0 rounded border border-rule bg-surface px-2 py-0.5 font-mono text-mono-id text-fg-muted no-underline transition-colors hover:border-accent hover:text-accent focus:border-accent focus:text-accent group-hover/header:text-fg-secondary"
+              href={`#${section.spec.id}`}
+              aria-label={`Permalink to ${section.spec.question}`}
+              title="Copy permalink"
+            >
+              <span aria-hidden="true">#</span> link
+            </a>
+          </header>
+          <p class="mb-4 text-body text-fg-secondary">{section.spec.framing}</p>
+
+          {tabs.length > 1 ? (
+            <div
+              class="mb-3 flex flex-wrap items-center gap-1 border-b border-rule"
+              role="tablist"
+              aria-label={`Views for ${section.spec.question}`}
+              data-tab-set={tabSetId}
+            >
+              {tabs.map((tab, i) => (
+                <button
+                  type="button"
+                  role="tab"
+                  data-tab-target={tab.key}
+                  data-tab-default={i === 0 ? "true" : undefined}
+                  aria-selected={i === 0 ? "true" : "false"}
+                  aria-controls={`${tabSetId}-${tab.key}`}
+                  tabindex={i === 0 ? "0" : "-1"}
+                  class="border-b-2 border-transparent px-3 py-1.5 text-body-xs font-semibold text-fg-muted transition-colors hover:text-fg aria-selected:border-accent aria-selected:text-fg"
+                >
+                  {tab.label}
+                  {tab.count !== null ? (
+                    <span class="ml-1.5 font-mono text-mono-id text-fg-muted">
+                      {tab.count}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div
+            id={`${tabSetId}-chart`}
+            role="tabpanel"
+            aria-labelledby={`${tabSetId}-chart-tab`}
+            data-tab-panel="chart"
           >
-            <span aria-hidden="true">#</span> link
-          </a>
-        </header>
-        <p class="mb-4 text-body text-fg-secondary">{section.spec.framing}</p>
-        {section.entries.length > 0 ? (
-          <MiniFindingsChart
-            client:visible
-            findings={section.entries}
-            colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
-            height={320}
-          />
-        ) : section.modelFitRows.length === 0 ? (
-          <Card padding="sm" surface="warn" border="tinted" class="text-body-xs text-warn">
-            None of the referenced findings or fits are present in the
-            index. Edit the comparison's
-            <code class="ml-1 rounded bg-surface-sunken px-1">
-              comparisons/*.yaml
-            </code>
-            record or fix its
-            <code class="ml-1 rounded bg-surface-sunken px-1">finding_ids</code>
-            /
-            <code class="rounded bg-surface-sunken px-1">model_fit_ids</code>.
-          </Card>
-        ) : null}
+            {section.entries.length > 0 ? (
+              <MiniFindingsChart
+                client:visible
+                findings={section.entries}
+                colorBy={section.spec.color_by as "paper" | "condition" | "curve_type"}
+                height={320}
+              />
+            ) : section.modelFitRows.length === 0 ? (
+              <Card padding="sm" surface="warn" border="tinted" class="text-body-xs text-warn">
+                None of the referenced findings or fits are present in the
+                index. Edit the comparison's
+                <code class="ml-1 rounded bg-surface-sunken px-1">
+                  comparisons/*.yaml
+                </code>
+                record or fix its
+                <code class="ml-1 rounded bg-surface-sunken px-1">finding_ids</code>
+                /
+                <code class="rounded bg-surface-sunken px-1">model_fit_ids</code>.
+              </Card>
+            ) : null}
 
-        {section.isDdmHomogeneous && section.ddmRows.length > 0 ? (
-          <div class="mt-4">
-            <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
-              Parameter strip plot · {section.variants[0]}
-            </h3>
-            <p class="mb-2 text-mono-id text-fg-muted">
-              {section.ddmRows.length} fits, all sharing variant{" "}
-              <code class="font-mono">{section.variants[0]}</code>. Hover a
-              point for fit id, paper, and stratification.
-            </p>
-            <DdmParamScatter client:visible fits={section.ddmRows} height={240} />
+            {section.isDdmHomogeneous && section.ddmRows.length > 0 ? (
+              <div class="mt-4">
+                <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">
+                  Parameter strip plot · {section.variants[0]}
+                </h3>
+                <p class="mb-2 text-mono-id text-fg-muted">
+                  {section.ddmRows.length} fits, all sharing variant{" "}
+                  <code class="font-mono">{section.variants[0]}</code>. Hover a
+                  point for fit id, paper, and stratification.
+                </p>
+                <DdmParamScatter client:visible fits={section.ddmRows} height={240} />
+              </div>
+            ) : null}
           </div>
-        ) : null}
 
-        {section.modelFitRows.length > 0 ? (
-          <details class="mt-4 rounded-md border border-rule bg-surface-raised">
-            <summary class="cursor-pointer px-4 py-3 text-body font-semibold text-fg-secondary hover:text-accent">
-              Model-fit comparison
-              <span class="ml-2 text-body-xs font-normal text-fg-muted">
-                ({section.modelFitRows.length} fits across {section.variants.length}
-                variant{section.variants.length === 1 ? "" : "s"})
-              </span>
-            </summary>
-            <div class="border-t border-rule p-4">
+          {section.modelFitRows.length > 0 ? (
+            <div
+              id={`${tabSetId}-models`}
+              role="tabpanel"
+              data-tab-panel="models"
+              hidden
+            >
               <p class="mb-2 text-mono-id text-fg-muted">
                 Lower AIC wins (★). <span class="text-fg-secondary">{section.spec.hint}</span>
               </p>
@@ -393,18 +478,15 @@ const sections = COMPARISONS.map((spec) => {
                 ))}
               </DataTable>
             </div>
-          </details>
-        ) : null}
+          ) : null}
 
-        {section.has_fits ? (
-          <details class="mt-3 rounded-md border border-rule bg-surface-raised">
-            <summary class="cursor-pointer px-4 py-3 text-body font-semibold text-fg-secondary hover:text-accent">
-              Fitted parameters
-              <span class="ml-2 text-body-xs font-normal text-fg-muted">
-                ({section.deltas.length} row{section.deltas.length === 1 ? "" : "s"} · Δ relative to reference)
-              </span>
-            </summary>
-            <div class="border-t border-rule p-4">
+          {section.has_fits ? (
+            <div
+              id={`${tabSetId}-parameters`}
+              role="tabpanel"
+              data-tab-panel="parameters"
+              hidden
+            >
               <p class="mb-2 text-mono-id text-fg-muted">
                 Deltas relative to the first row.
                 <span class="text-fg-secondary">{section.spec.hint}</span>
@@ -421,9 +503,21 @@ const sections = COMPARISONS.map((spec) => {
                   { label: "Δ threshold", align: "right", title: "Threshold-crossing change relative to reference row" },
                 ]}
               >
-                {section.deltas.map((row) => (
+                {section.deltas.map((row) => {
+                  const badge = sourceBadge(row.source_data_level);
+                  return (
                   <tr class={row.is_reference ? "bg-surface" : ""}>
                     <td class="px-3 py-2">
+                      <span
+                        class:list={[
+                          "mr-2 inline-flex h-4 min-w-4 items-center justify-center rounded font-mono text-[10px] font-semibold align-middle",
+                          badge.tone,
+                        ]}
+                        title={badge.tooltip}
+                        aria-label={badge.tooltip}
+                      >
+                        {badge.letter}
+                      </span>
                       <a href={`/papers/${slugForId(row.paper_id)}`}>
                         {row.label}
                       </a>
@@ -448,19 +542,71 @@ const sections = COMPARISONS.map((spec) => {
                       {row.is_reference ? "—" : fmt(row.delta_threshold)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </DataTable>
             </div>
-          </details>
-        ) : (
-          <p class="mt-3 text-mono-id text-fg-muted">
-            No 4-parameter logistic fit applies (curve type does not support
-            it, or fits failed). Visual comparison only.
-          </p>
-        )}
-      </Card>
-    ))}
+          ) : (
+            <p class="mt-3 text-mono-id text-fg-muted">
+              No 4-parameter logistic fit applies (curve type does not support
+              it, or fits failed). Visual comparison only.
+            </p>
+          )}
+        </Card>
+      );
+    })}
   </div>
+
+  <script>
+    // Tab-set handlers — vanilla wiring keeps /compare a static Astro
+    // surface. Each tab list shares state only with its sibling
+    // panels, identified by data-tab-set on the list and matching
+    // data-tab-panel keys on the panels.
+    const tabLists = document.querySelectorAll<HTMLElement>("[data-tab-set]");
+    tabLists.forEach((list) => {
+      const tabs = Array.from(
+        list.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+      );
+      const setId = list.dataset.tabSet ?? "";
+      const card = list.closest("article, section");
+      const panels = Array.from(
+        card?.querySelectorAll<HTMLElement>("[data-tab-panel]") ?? [],
+      ).filter(
+        (panel) => (panel.id ?? "").startsWith(setId + "-"),
+      );
+
+      function activate(key: string) {
+        tabs.forEach((tab) => {
+          const isActive = tab.dataset.tabTarget === key;
+          tab.setAttribute("aria-selected", isActive ? "true" : "false");
+          tab.setAttribute("tabindex", isActive ? "0" : "-1");
+        });
+        panels.forEach((panel) => {
+          if (panel.dataset.tabPanel === key) {
+            panel.removeAttribute("hidden");
+          } else {
+            panel.setAttribute("hidden", "");
+          }
+        });
+      }
+
+      tabs.forEach((tab, i) => {
+        tab.addEventListener("click", () => {
+          const key = tab.dataset.tabTarget;
+          if (key) activate(key);
+        });
+        tab.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+            event.preventDefault();
+            const next = tabs[(i + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+            next.focus();
+            const key = next.dataset.tabTarget;
+            if (key) activate(key);
+          }
+        });
+      });
+    });
+  </script>
 
   <p class="mt-8 text-body-xs text-fg-muted">
     These comparisons are pre-baked at build time; the underlying logistic

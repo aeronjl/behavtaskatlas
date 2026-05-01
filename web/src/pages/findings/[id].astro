@@ -367,46 +367,52 @@ const sourceTone =
         </dl>
       </Card>
 
-      <Card padding="md" class="mt-3 text-body-xs">
-        <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Linked records</h3>
-        <ul class="flex flex-wrap gap-1.5">
-          <li>
-            <RecordChip
-              type="paper"
-              label={entry.paper_citation}
-              href={`/papers/${slugForId(entry.paper_id)}`}
-            />
-          </li>
-          <li>
-            <RecordChip
-              type="protocol"
-              label={entry.protocol_name}
-              href={protocolHref}
-            />
-          </li>
-          {datasetHref ? (
+      <div class="group/rel-host mt-3">
+        <Card padding="md" class="text-body-xs">
+          <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Linked records</h3>
+          <ul class="flex flex-wrap gap-1.5">
             <li>
               <RecordChip
-                type="dataset"
-                label={entry.dataset_id}
-                href={datasetHref}
+                type="paper"
+                label={entry.paper_citation}
+                href={`/papers/${slugForId(entry.paper_id)}`}
               />
             </li>
-          ) : null}
-          {sliceHref ? (
             <li>
               <RecordChip
-                type="slice"
-                label={entry.slice_id}
-                href={sliceHref}
+                type="protocol"
+                label={entry.protocol_name}
+                href={protocolHref}
               />
             </li>
+            {datasetHref ? (
+              <li>
+                <RecordChip
+                  type="dataset"
+                  label={entry.dataset_id}
+                  href={datasetHref}
+                />
+              </li>
+            ) : null}
+            {sliceHref ? (
+              <li>
+                <RecordChip
+                  type="slice"
+                  label={entry.slice_id}
+                  href={sliceHref}
+                />
+              </li>
+            ) : null}
+          </ul>
+          {paperRecord ? (
+            <p class="mt-2 text-mono-id text-fg-muted opacity-60 transition-opacity group-hover/rel-host:opacity-0 group-focus-within/rel-host:opacity-0">
+              Hover to see this finding's neighbourhood ↓
+            </p>
           ) : null}
-        </ul>
-      </Card>
+        </Card>
 
       {paperRecord ? (
-        <div class="mt-3">
+        <div class="mt-2 max-h-0 overflow-hidden opacity-0 transition-[max-height,opacity] duration-200 ease-out group-hover/rel-host:max-h-96 group-hover/rel-host:opacity-100 group-focus-within/rel-host:max-h-96 group-focus-within/rel-host:opacity-100">
           <MiniRelationshipSlice
             client:visible
             paper={{
@@ -422,6 +428,7 @@ const sourceTone =
           />
         </div>
       ) : null}
+      </div>
 
       <Card padding="md" class="mt-3 text-body-xs">
         <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">

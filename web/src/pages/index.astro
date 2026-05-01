@@ -5,7 +5,6 @@ import LiveFitHero from "../components/LiveFitHero.svelte";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
 import ThresholdDistribution from "../components/ThresholdDistribution.svelte";
 import Card from "../components/ui/Card.astro";
-import DataTable from "../components/ui/DataTable.astro";
 import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
 import Section from "../components/ui/Section.astro";
@@ -236,7 +235,7 @@ const paperCount = papers.counts.papers ?? papers.papers.length;
 
 // Atlas-health status strip — pulled into the home footer so a
 // scientist sees operational state at a glance without leaving the
-// page. Mirrors the headline counts on /atlas-health.
+// page. Mirrors the headline counts on /project-health.
 const auditStatus = audit.overall_status;
 const auditTone =
   auditStatus === "ok"
@@ -430,31 +429,53 @@ const blockerHighCount = (
           />
         </div>
       ) : null}
-      <h3 class="mb-1 text-eyebrow uppercase text-fg-muted">By species</h3>
-      <DataTable
-        density="compact"
-        columns={[
-          { label: "Species" },
-          { label: "Findings", align: "right" },
-          { label: "Median σ", align: "right" },
-          { label: "Median 75%", align: "right" },
-          { label: "Σ trials", align: "right" },
-        ]}
-      >
-        {speciesRows.map((row) => (
-          <tr>
-            <td class="px-2 py-1.5">{row.species}</td>
-            <td class="px-2 py-1.5 text-right font-mono">{row.count}</td>
-            <td class="px-2 py-1.5 text-right font-mono">{fmt(row.median_sigma)}</td>
-            <td class="px-2 py-1.5 text-right font-mono">
-              {fmt(row.median_threshold)}
-            </td>
-            <td class="px-2 py-1.5 text-right font-mono">
-              {row.total_trials.toLocaleString()}
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">By species</h3>
+      <ul class="space-y-2">
+        {(() => {
+          const maxFindings = Math.max(1, ...speciesRows.map((r) => r.count));
+          const maxTrials = Math.max(
+            1,
+            ...speciesRows.map((r) => r.total_trials),
+          );
+          return speciesRows.map((row) => (
+            <li class="grid grid-cols-1 gap-2 rounded border border-rule bg-surface px-3 py-2 text-body-xs sm:grid-cols-[8rem_minmax(0,1.4fr)_minmax(0,0.6fr)_minmax(0,0.6fr)_minmax(0,1.2fr)] sm:items-center sm:gap-4">
+              <span class="font-semibold text-fg">{row.species}</span>
+              <span class="flex items-center gap-2">
+                <span class="block h-1.5 flex-1 rounded-full bg-surface-sunken">
+                  <span
+                    class="block h-1.5 rounded-full bg-encoding-coverage-findings"
+                    style={`width: ${Math.max(6, Math.round((row.count / maxFindings) * 100))}%`}
+                  />
+                </span>
+                <span class="w-8 shrink-0 text-right font-mono text-fg">{row.count}</span>
+              </span>
+              <span class="flex items-baseline justify-between">
+                <span class="text-fg-muted">σ</span>
+                <span class="font-mono text-fg">{fmt(row.median_sigma)}</span>
+              </span>
+              <span class="flex items-baseline justify-between">
+                <span class="text-fg-muted">75%</span>
+                <span class="font-mono text-fg">{fmt(row.median_threshold)}</span>
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="block h-1.5 flex-1 rounded-full bg-surface-sunken">
+                  <span
+                    class="block h-1.5 rounded-full bg-fg-secondary"
+                    style={`width: ${Math.max(6, Math.round((row.total_trials / maxTrials) * 100))}%`}
+                  />
+                </span>
+                <span class="shrink-0 font-mono text-fg">
+                  {row.total_trials.toLocaleString()}
+                </span>
+              </span>
+            </li>
+          ));
+        })()}
+      </ul>
+      <p class="mt-2 text-mono-id text-fg-muted">
+        Findings · σ · x at 75% · Σ trials per species. Bars normalised to
+        the across-species maxima.
+      </p>
     </Card>
   </Section>
 
@@ -474,7 +495,7 @@ const blockerHighCount = (
         <span class="ml-3 font-mono text-fg">{linkIssues}</span>
         <span class="ml-1 text-fg-muted">link issue{linkIssues === 1 ? "" : "s"}</span>
       </p>
-      <a class="ml-auto text-accent" href="/atlas-health">/atlas-health →</a>
+      <a class="ml-auto text-accent" href="/project-health">/project-health →</a>
     </div>
     <p class="mt-2 text-mono-id text-fg-muted">
       Built {generated}{manifest.behavtaskatlas_commit ? (

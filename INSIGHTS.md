@@ -2,6 +2,75 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 10:20:39 BST - UI Round F (final): Object-model strip everywhere, species sparkline, /findings glossary, /compare tabs, /models family drawer, /atlas-health URL move, hover-only mini-graph, Vega tween, Sankey ribbons, source-strength chips
+
+After the last audit surfaced 10 genuine gaps between UI.md and what
+had shipped, worked through every one. This batch is the final round
+— every theme, per-page note, accessibility item, delight item, and
+roadmap entry is now landed or shipped as a documented near-equivalent.
+
+Concrete moves:
+
+- **F1: ObjectModelStrip on /catalog and /atlas-health.** The Tier 2
+  spec wanted the strip anchoring `/`, `/catalog`, and the operational
+  page; only the home had it. Mounted on both, with page-specific
+  titles ("The shape of the catalog" / "The shape of the atlas under
+  check").
+- **F2: Home species sparkline.** Replaced the standalone "By species"
+  DataTable with a stacked-row sparkline strip — each row carries the
+  species name, a findings-count bar, σ + 75% threshold values, and a
+  trials bar — so the by-species summary reads visually rather than
+  as a 5-column table.
+- **F3: /findings top glossary.** New collapsible Glossary at the top
+  of `/findings` mirroring the `/compare` "Reading the deltas" Card —
+  defines curve type, stimulus axis, μ / σ / x-at-75%, and source
+  level so a first-time visitor isn't decoding terms from the chart.
+- **F4: /compare true tabs.** Each comparison Card now uses a real
+  tablist (Chart / Models / Parameters) with arrow-key navigation,
+  `aria-selected`, and per-section panels. Replaces the `<details>`
+  reveals from Round C with the literal pattern the doc imagined.
+- **F5: /models family drawer.** ModelSelectionMatrix variant labels
+  are now buttons that open a slide-in drawer with that variant's
+  family description, parameters, requirements, and sibling variants
+  highlighted. The standalone "Families & variants" reveal is now a
+  second entry-point rather than the only path; click-from-matrix is
+  the primary affordance.
+- **F6: /atlas-health URL move.** Page renamed to `/project-health`
+  with an Astro-config redirect from `/atlas-health` → `/project-health`
+  (meta-refresh on the static build). Internal references updated;
+  the footer link still reads "Atlas health" since the human label
+  stayed familiar.
+- **F7: Hover-only neighbourhood slice.** MiniRelationshipSlice on
+  `/findings/[id]` is now collapsed by default, expanding via
+  CSS `group-hover` / `group-focus-within` on the Linked records
+  Card. A small "Hover to see this finding's neighbourhood ↓" hint
+  shows when collapsed; the slice tweens to full opacity + height on
+  hover or keyboard focus.
+- **F8: Soft Vega tween.** MiniFindingsChart and FindingsOverlay
+  now dim the chart container to 35% opacity before re-mount and
+  fade back to 100% after Vega returns. Approximates the
+  trace-tween-on-filter-change effect without dropping out of
+  Vega-Lite to the raw Vega update API. Reduced-motion preference
+  is respected via the global guard.
+- **F9: Sankey-weighted ribbons.** RelationshipGraph edges replaced
+  cubic Bezier strokes with gradient-filled paths whose stroke
+  width scales with the geometric mean of source × target degree.
+  Popular families now show as visibly thicker rivers leaving their
+  node; quiet ones thread through. Each edge has a per-edge
+  `<linearGradient>` blending source and target encoding-node
+  colours, giving the layout a sankey-river feel without dropping
+  into a full sankey area-chart.
+- **F10: Source-strength badges on /compare.** Each parameter-delta
+  row now leads with a single-letter source badge (R / P / F)
+  paired with the existing paper link, matching the visual
+  vocabulary on the home matrix. Tooltip + aria-label carry the
+  full description.
+
+`bash scripts/ci.sh` passes (176 pages). UI.md's punch list is now
+truly closed: every theme, per-page bullet, accessibility item,
+delight item, and roadmap entry is shipped or shipped-as-near-
+equivalent with the deviation documented in this log.
+
 ## 2026-05-01 09:14:43 BST - UI Round A (accessibility): aria-pressed on Model browsers, sticky first column on wide tables, caveat glossary on findings detail, source-strip glyphs, print details handling
 
 Final round of the UI critique — the accessibility finishing touches
