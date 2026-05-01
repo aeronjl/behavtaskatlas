@@ -20,9 +20,17 @@
   interface Props {
     commit: string | null;
     counts: Record<string, number>;
+    width?: "prose" | "content" | "wide" | "full";
   }
 
-  let { commit, counts }: Props = $props();
+  let { commit, counts, width = "content" }: Props = $props();
+
+  const widthClass: Record<NonNullable<Props["width"]>, string> = {
+    prose: "max-w-prose",
+    content: "max-w-content",
+    wide: "max-w-wide",
+    full: "max-w-full",
+  };
 
   const STORAGE_KEY = "behavtaskatlas:lastSeen";
 
@@ -128,7 +136,7 @@
     class="border-b border-rule bg-accent-soft text-fg animate-fade-in"
   >
     <div
-      class="mx-auto flex max-w-content flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-2 text-body-xs"
+      class="mx-auto flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-2 text-body-xs {widthClass[width]}"
     >
       <span class="font-semibold text-accent">New since {sinceLabel}:</span>
       {#each deltas as delta, i (delta.label)}

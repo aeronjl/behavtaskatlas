@@ -1,4 +1,19 @@
 ---
+interface Props {
+  /** Inner container width — must match the BaseLayout `width` prop so the
+   * nav rule, brand, and link rail align with the page's main content. */
+  width?: "prose" | "content" | "wide" | "full";
+}
+
+const { width = "content" } = Astro.props as Props;
+
+const widthClass = {
+  prose: "max-w-prose",
+  content: "max-w-content",
+  wide: "max-w-wide",
+  full: "max-w-full",
+}[width];
+
 const primary = [
   { href: "/findings", label: "Findings" },
   { href: "/papers", label: "Papers" },
@@ -26,7 +41,7 @@ function isActive(href: string): boolean {
 ---
 
 <nav class="border-b border-rule bg-surface-raised">
-  <div class="mx-auto max-w-5xl px-4 py-3">
+  <div class:list={["mx-auto px-4 py-3", widthClass]}>
     <div class="flex items-center gap-3">
       <a
         href="/"

@@ -2,6 +2,88 @@
 
 This file is the single chronological track of project insights. Add new entries at the top with a local timestamp.
 
+## 2026-05-01 11:14:46 BST - Landing page Round G: query-shaped entry, computed comparison deltas, recent-additions feed, story follows activity, aggregate-by-species chart
+
+Reframed the homepage from a directory of pages to a query-shaped
+landing surface. The previous structure put a single hero finding,
+then "Featured comparison", then AtlasOverview, then four generic
+"Where to start" page-link cards that duplicated the primary nav.
+The new structure leads with the demo, gives three query lanes
+(by question / by species / by source-data depth), then drops
+straight into AtlasOverview as the "by-family" deep dive.
+
+Concrete moves:
+
+- **G1: Width plumbing.** Nav, WhatsChangedBanner, footer were each
+  hardcoded to a different `max-w-*` (5xl / content / content) while
+  `<main>` followed BaseLayout's `width` prop. The header was 24rem
+  narrower than the page on `width="wide"` pages. Threaded the
+  `width` prop through Nav and WhatsChangedBanner; footer follows
+  the same token. Header rule, link rail, and content all align now.
+- **G2: Three-lane query entry (Tier 3 #13).** New `QueryLanes.astro`
+  renders three lanes shaped as queries: "Ask a question" (links to
+  the seven curated comparisons by title), "Browse by species"
+  (top-5 species with finding counts, deep-link to `/findings?q=...`),
+  and "Browse by source depth" (R/P/F glyph chips with dataset
+  counts). Replaces the four "Where to start" cards that were just
+  re-links to the primary nav.
+- **G3: Featured-comparison deltas (Tier 2 #11).** `comparisonDeltas`
+  computes Δμ / Δσ / Δthreshold across the comparison's findings at
+  build time and picks an axis to feature. The axis pick uses the
+  comparison record's `hint` field as the curator's signal — RDM's
+  hint reads "Compare Δσ", so the headline becomes "σ spans 4.11 to
+  5.04 (1.2× steeper at the steep end)". Falls back to a normalized-
+  spread heuristic when no hint axis is named, which matters for
+  uncurated comparisons where μ-near-zero would otherwise dominate.
+- **G4: Recent-additions feed (Tier 2 #8).** New
+  `recent_additions.py` runs a single `git log --diff-filter=A`
+  across `findings/`, `papers/`, `vertical_slices/` so each record
+  carries an honest add date, not a checkout mtime. Emits
+  `derived/recent.json` with the 12 most recent items plus a
+  `family_last_added` map. Slice paths use `_` directories vs
+  `-` ids so the helper rewrites slugs before grepping. Frontend
+  shows the top 4 as a full-bleed sunken strip with kind-tinted
+  pills (finding/paper/slice).
+- **G5: Story follows activity (Tier 3 #15).** Each Story now
+  declares the `familyIds` it covers. New `featuredStory()` reads
+  the `family_last_added` map from recent.json, finds the first
+  story whose familyIds includes the most-recently-extended family,
+  and returns it as the featured slot. Falls back to the calendar-
+  week rotation when nothing matches. Eyebrow flips from "Story of
+  the week" to "Recently active" + a one-liner naming which family
+  triggered the pick and on what date.
+- **G6: Aggregate by-species chart (Tier 3 #16).** Replaced the
+  per-species `<ul>` with `AggregateBySpecies.svelte` — a Vega-Lite
+  layer with light σ tick-marks per finding and a filled point at
+  the median, click-through to filtered findings. The list version
+  was hard to compare across rows; the chart reads the across-
+  species spread as one shape. Also added an interpretive
+  one-liner above the StatGrid ("Slope σ varies 2.8× across
+  species — rat fit steepest…") so the medians stop being just
+  numbers.
+- **G7: Visual rhythm (Tier 2 #9).** Recent-additions and atlas-
+  health are now full-bleed strips with sunken / raised
+  backgrounds, breaking the monotony of stacked raised Cards.
+  Atlas-health pills get tonal backgrounds when their counts are
+  non-zero (red for blockers, amber for link issues) instead of
+  plain text.
+- **G8: Hero ordering (Tier 1 #4).** Reordered so AtlasOverview
+  comes immediately after the live-fit demo and the query lanes,
+  with Featured comparison + Recent additions + Story below it.
+  AtlasOverview is the panel doing the most useful work; pulling
+  it forward cuts the previous "scroll past five surfaces to see
+  what's actually here" pattern.
+
+Why this matters: the previous landing optimised for "show
+everything we have" and ended up monotone — eight bordered Cards in
+sequence, three of which were either explainer chrome or duplicate
+page links. The new structure gives a working scientist three
+explicit ways to enter (by question / by species / by depth), an
+honest activity feed, and an editorial slot tied to actual recent
+additions rather than a hardcoded calendar. The hint-driven delta
+heuristic also prevents future curated comparisons from accidentally
+featuring noise on a near-zero parameter.
+
 ## 2026-05-01 10:20:39 BST - UI Round F (final): Object-model strip everywhere, species sparkline, /findings glossary, /compare tabs, /models family drawer, /atlas-health URL move, hover-only mini-graph, Vega tween, Sankey ribbons, source-strength chips
 
 After the last audit surfaced 10 genuine gaps between UI.md and what

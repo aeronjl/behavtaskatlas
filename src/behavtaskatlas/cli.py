@@ -6508,6 +6508,20 @@ def _site_index(
         encoding="utf-8",
     )
 
+    from behavtaskatlas.recent_additions import build_recent_additions_payload
+
+    recent_payload = build_recent_additions_payload(
+        repo_root=Path("."),
+        findings_index=findings_payload.get("findings", []),
+        papers_index=papers_payload.get("papers", []),
+        slices=slice_records,
+    )
+    recent_path = derived_dir / "recent.json"
+    recent_path.write_text(
+        json.dumps(recent_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     from behavtaskatlas.audit import audit_pooled_vs_by_subject
 
     audit_payload = audit_pooled_vs_by_subject(finding_records)

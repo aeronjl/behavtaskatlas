@@ -1,0 +1,96 @@
+---
+/**
+ * QueryLanes — three entry routes into the atlas, shaped as queries
+ * rather than page links. Replaces the older "Where to start" cards
+ * which duplicated the primary nav.
+ *
+ *   Ask a question     →  /compare with featured deltas
+ *   Browse by group    →  /findings filtered by species
+ *   Browse by depth    →  /catalog filtered by R / P / F
+ *
+ * Each lane shows: eyebrow + a numeric headline (so visitors see
+ * coverage at a glance), a chip strip with the most useful
+ * single-click destinations, and a "see all" footer link. Lanes are
+ * three Card-equivalent surfaces in a 3-up grid on lg+, stacked on
+ * mobile.
+ */
+import Card from "./ui/Card.astro";
+
+interface LaneChip {
+  label: string;
+  href: string;
+  count?: number | null;
+  /** Optional tone token for source-depth glyphs. */
+  glyph?: "R" | "P" | "F" | null;
+  active?: boolean;
+}
+
+interface Lane {
+  eyebrow: string;
+  headline: string;
+  subline: string;
+  chips: LaneChip[];
+  footerHref: string;
+  footerLabel: string;
+}
+
+interface Props {
+  lanes: [Lane, Lane, Lane];
+  class?: string;
+}
+
+const { lanes, class: className } = Astro.props as Props;
+---
+
+<section
+  class:list={["min-w-0", className]}
+  aria-label="Browse the atlas"
+>
+  <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    {lanes.map((lane) => (
+      <Card padding="md" class="flex h-full flex-col">
+        <p class="text-eyebrow uppercase text-fg-muted">{lane.eyebrow}</p>
+        <h3 class="mt-1 text-h3 text-fg">{lane.headline}</h3>
+        <p class="mt-1 text-body text-fg-secondary">{lane.subline}</p>
+        <ul class="mt-3 flex flex-wrap gap-1.5">
+          {lane.chips.map((chip) => (
+            <li>
+              <a
+                href={chip.href}
+                class:list={[
+                  "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-body-xs no-underline transition-colors",
+                  chip.glyph === "R"
+                    ? "border-encoding-source-raw-edge bg-encoding-source-raw-soft text-encoding-source-raw-strong hover:border-encoding-source-raw"
+                    : chip.glyph === "P"
+                      ? "border-encoding-source-processed-edge bg-encoding-source-processed-soft text-encoding-source-processed-strong hover:border-encoding-source-processed"
+                      : chip.glyph === "F"
+                        ? "border-encoding-source-figure-edge bg-encoding-source-figure-soft text-encoding-source-figure-strong hover:border-encoding-source-figure"
+                        : "border-rule bg-surface-raised text-fg hover:border-rule-emphasis",
+                ]}
+              >
+                {chip.glyph ? (
+                  <span
+                    class="inline-flex h-4 w-4 items-center justify-center rounded font-mono text-mono-id font-semibold"
+                    aria-hidden="true"
+                  >{chip.glyph}</span>
+                ) : null}
+                <span>{chip.label}</span>
+                {typeof chip.count === "number" ? (
+                  <span class="font-mono text-mono-id text-fg-muted">
+                    {chip.count.toLocaleString()}
+                  </span>
+                ) : null}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a
+          href={lane.footerHref}
+          class="mt-auto pt-3 text-body-xs text-accent"
+        >
+          {lane.footerLabel} →
+        </a>
+      </Card>
+    ))}
+  </div>
+</section>

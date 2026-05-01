@@ -89,11 +89,12 @@ const whatsChangedCommit = manifest.behavtaskatlas_commit ?? null;
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body class="min-h-screen overflow-x-hidden bg-surface text-fg">
-    <Nav />
+    <Nav width={width} />
     <WhatsChangedBanner
       client:idle
       commit={whatsChangedCommit}
       counts={whatsChangedCounts}
+      width={width}
     />
     <SearchPalette client:idle />
     <KeyboardNav client:idle />
@@ -101,7 +102,7 @@ const whatsChangedCommit = manifest.behavtaskatlas_commit ?? null;
       <slot />
     </main>
     <footer class="border-t border-rule bg-surface-raised">
-      <div class="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-6 text-body-xs text-fg-muted">
+      <div class:list={["mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-6 text-body-xs text-fg-muted", widthClass]}>
         <span>
           behavtaskatlas — a file-first atlas of behavioral neuroscience tasks.
         </span>

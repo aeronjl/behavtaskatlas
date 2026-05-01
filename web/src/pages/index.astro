@@ -4,9 +4,11 @@ import AtlasOverview from "../components/AtlasOverview.astro";
 import LiveFitHero from "../components/LiveFitHero.svelte";
 import MiniFindingsChart from "../components/MiniFindingsChart.svelte";
 import ThresholdDistribution from "../components/ThresholdDistribution.svelte";
+import AggregateBySpecies from "../components/AggregateBySpecies.svelte";
 import Card from "../components/ui/Card.astro";
 import ObjectModelStrip from "../components/ui/ObjectModelStrip.astro";
 import PageHeader from "../components/ui/PageHeader.astro";
+import QueryLanes from "../components/QueryLanes.astro";
 import Section from "../components/ui/Section.astro";
 import Stat from "../components/ui/Stat.astro";
 import StatGrid from "../components/ui/StatGrid.astro";
@@ -19,6 +21,7 @@ import {
   manifest,
   models,
   papers,
+  recent,
 } from "../lib/data";
 import StatusPill from "../components/ui/StatusPill.astro";
 import {
@@ -26,9 +29,12 @@ import {
   findings,
   type FindingsEntry,
 } from "../lib/findings";
-import { storyOfTheWeek } from "../lib/stories";
+import { featuredStory as pickFeaturedStory } from "../lib/stories";
 
-const featuredStory = storyOfTheWeek();
+const featured = pickFeaturedStory(
+  (recent.family_last_added ?? {}) as Record<string, string>,
+);
+const featuredStory = featured.story;
 
 // Pick a hero finding for the live-fit demo. We want a clean,
 // reasonably-many-x psychometric with high trial counts so the Wilson
@@ -54,8 +60,6 @@ function pickHeroFinding(): FindingsEntry | null {
 
 const heroFinding = pickHeroFinding();
 
-const sliceCount = manifest.slices.length;
-
 const objectModelCounts = {
   families: catalog.counts.task_families ?? catalog.task_families.length,
   protocols: catalog.counts.protocols ?? catalog.protocols.length,
@@ -63,32 +67,6 @@ const objectModelCounts = {
   slices: catalog.counts.vertical_slices ?? catalog.vertical_slices.length,
   findings: findings.counts.findings ?? findings.findings.length,
 };
-
-const entryPoints = [
-  {
-    href: "/findings",
-    title: "Findings",
-    description:
-      "Cross-paper psychometric, chronometric, and accuracy curves on shared signed-evidence axes with build-time fits and an in-browser refit.",
-  },
-  {
-    href: "/compare",
-    title: "Compare",
-    description:
-      "Hand-curated cross-paper questions — prior-block shifts, species differences, cueing effects — with quantitative parameter deltas.",
-  },
-  {
-    href: "/slices",
-    title: "Slices",
-    description: `${sliceCount} reproducible local pipelines bound to pinned datasets, each with an in-browser Pyodide cell for live exploration.`,
-  },
-  {
-    href: "/papers",
-    title: "Papers",
-    description:
-      "Generated bibliography with per-paper citation exports, linked protocols, source coverage, and finding tables where standardized curves exist.",
-  },
-];
 
 type FitFields = {
   mu: number;
@@ -127,10 +105,12 @@ const allBias = psychometricFits.map(
 
 type SpeciesRow = {
   species: string;
-  count: number;
+  n_findings: number;
   median_sigma: number | null;
   median_threshold: number | null;
   total_trials: number;
+  sigmas: number[];
+  href: string;
 };
 
 const speciesGroups = new Map<string, FindingsEntry[]>();
@@ -146,7 +126,7 @@ for (const f of findings.findings as FindingsEntry[]) {
 const speciesRows: SpeciesRow[] = Array.from(speciesGroups.entries())
   .map(([species, fs]) => ({
     species,
-    count: fs.length,
+    n_findings: fs.length,
     median_sigma: median(
       fs.map((f) => (f as FindingsEntry & { fit: FitFields }).fit.sigma),
     ),
@@ -157,8 +137,12 @@ const speciesRows: SpeciesRow[] = Array.from(speciesGroups.entries())
       (sum, f) => sum + (typeof f.n_trials === "number" ? f.n_trials : 0),
       0,
     ),
+    sigmas: fs
+      .map((f) => (f as FindingsEntry & { fit: FitFields }).fit.sigma)
+      .filter((s) => Number.isFinite(s)),
+    href: `/findings?q=${encodeURIComponent(species)}`,
   }))
-  .sort((a, b) => b.count - a.count);
+  .sort((a, b) => b.n_findings - a.n_findings);
 
 const aggregateStats = {
   n_psychometric_findings: psychometricFits.length,
@@ -170,6 +154,21 @@ const aggregateStats = {
     0,
   ),
 };
+
+// Implication line for the aggregate panel. Computes the σ ratio
+// between the steepest- and shallowest-slope species so we can replace
+// "median σ = 0.42" with something that actually means something to a
+// scientist. Uses the species rows already computed above.
+const sigmasWithMedian = speciesRows
+  .filter((r) => r.median_sigma !== null && Number.isFinite(r.median_sigma))
+  .map((r) => ({ species: r.species, sigma: r.median_sigma! }))
+  .sort((a, b) => a.sigma - b.sigma);
+const steepest = sigmasWithMedian[0] ?? null;
+const shallowest = sigmasWithMedian[sigmasWithMedian.length - 1] ?? null;
+const slopeFold =
+  steepest && shallowest && steepest.sigma > 0
+    ? shallowest.sigma / steepest.sigma
+    : null;
 
 // Threshold distribution chart — pool on the dominant stimulus axis so
 // the points are actually comparable. Different axes (signed coherence,
@@ -225,6 +224,90 @@ const featuredFindings = featuredComparison
     )
   : [];
 
+// Compute real Δμ / Δσ / Δthreshold across the comparison's findings
+// so the headline reads as a numeric claim instead of a question. We
+// take the spread (max − min) on each axis when the comparison has 2+
+// findings with fits; for two-finding comparisons this is just the
+// difference between them.
+type DeltaSummary = {
+  mu_min: number; mu_max: number; mu_delta: number;
+  sigma_min: number; sigma_max: number; sigma_delta: number; sigma_fold: number | null;
+  threshold_min: number; threshold_max: number; threshold_delta: number;
+  primary: "mu" | "sigma" | "threshold";
+};
+
+function axisFromHint(hint: string | null | undefined): "mu" | "sigma" | "threshold" | null {
+  if (!hint) return null;
+  const h = hint.toLowerCase();
+  // Order matters: a hint can mention multiple axes (e.g. "μ moves and σ
+  // stays put"). The first one wins, since that's the curator's framing.
+  for (const [needle, axis] of [
+    ["σ", "sigma"],
+    ["sigma", "sigma"],
+    ["slope", "sigma"],
+    ["μ", "mu"],
+    ["mu", "mu"],
+    ["bias", "mu"],
+    ["threshold", "threshold"],
+  ] as const) {
+    if (h.includes(needle)) return axis;
+  }
+  return null;
+}
+
+function comparisonDeltas(
+  rows: FindingsEntry[],
+  hint: string | null | undefined,
+): DeltaSummary | null {
+  const fits = rows
+    .map((r) => (r as FindingsEntry & { fit?: FitFields | null }).fit)
+    .filter((fit): fit is FitFields => Boolean(fit) && fit!.threshold !== undefined);
+  if (fits.length < 2) return null;
+  const mus = fits.map((f) => f.mu);
+  const sigmas = fits.map((f) => f.sigma);
+  const thresholds = fits.map((f) => f.threshold!);
+  const mu_min = Math.min(...mus);
+  const mu_max = Math.max(...mus);
+  const sigma_min = Math.min(...sigmas);
+  const sigma_max = Math.max(...sigmas);
+  const threshold_min = Math.min(...thresholds);
+  const threshold_max = Math.max(...thresholds);
+  const sigma_delta = sigma_max - sigma_min;
+  const mu_delta = mu_max - mu_min;
+  const threshold_delta = threshold_max - threshold_min;
+  // The comparison record's hint is the curator's framing — if it
+  // names an axis ("Compare Δσ", "μ moves and σ stays put"), feature
+  // that axis. Otherwise fall back to the largest normalized spread,
+  // which still does the right thing on uncurated comparisons.
+  const hinted = axisFromHint(hint);
+  const score = (delta: number, scale: number) =>
+    scale > 0 ? delta / scale : 0;
+  const muScore = score(mu_delta, Math.max(Math.abs(mu_max), Math.abs(mu_min)));
+  const sigmaScore = score(sigma_delta, Math.max(Math.abs(sigma_max), Math.abs(sigma_min)));
+  const thresholdScore = score(threshold_delta, Math.max(Math.abs(threshold_max), Math.abs(threshold_min)));
+  const primary: "mu" | "sigma" | "threshold" =
+    hinted ??
+    (sigmaScore >= muScore && sigmaScore >= thresholdScore
+      ? "sigma"
+      : muScore >= thresholdScore
+        ? "mu"
+        : "threshold");
+  return {
+    mu_min, mu_max, mu_delta,
+    sigma_min, sigma_max, sigma_delta,
+    sigma_fold: sigma_min > 0 ? sigma_max / sigma_min : null,
+    threshold_min, threshold_max, threshold_delta,
+    primary,
+  };
+}
+
+const featuredDeltas = featuredComparison
+  ? comparisonDeltas(
+      featuredFindings,
+      (featuredComparison as { hint?: string | null }).hint ?? null,
+    )
+  : null;
+
 function fmt(value: number | null, digits = 2): string {
   if (value === null || !Number.isFinite(value)) return "—";
   return value.toFixed(digits);
@@ -260,6 +343,90 @@ const blockerHighCount = (
     item.status === "blocked_external_data" &&
     (item.priority_label ?? "").toLowerCase().includes("high"),
 ).length;
+
+// ───────────────────────────────────────────────────────────────────────
+// Query lanes — three entry routes, shaped as queries.
+// ───────────────────────────────────────────────────────────────────────
+
+type Pair = { species: string; count: number };
+const speciesByCount = new Map<string, number>();
+for (const f of findings.findings as FindingsEntry[]) {
+  const sp = f.species;
+  if (!sp) continue;
+  speciesByCount.set(sp, (speciesByCount.get(sp) ?? 0) + 1);
+}
+const topSpecies: Pair[] = Array.from(speciesByCount.entries())
+  .map(([species, count]) => ({ species, count }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 5);
+
+const SOURCE_LEVELS: Array<{
+  level: "raw-trial" | "processed-trial" | "figure-source-data";
+  glyph: "R" | "P" | "F";
+  label: string;
+}> = [
+  { level: "raw-trial", glyph: "R", label: "Raw trials" },
+  { level: "processed-trial", glyph: "P", label: "Processed" },
+  { level: "figure-source-data", glyph: "F", label: "Figure-traced" },
+];
+
+const sourceCounts: Record<string, number> = {};
+for (const ds of catalog.datasets) {
+  const lvl = ds.source_data_level;
+  if (!lvl) continue;
+  sourceCounts[lvl] = (sourceCounts[lvl] ?? 0) + 1;
+}
+
+const totalComparisons = comparisons.comparisons.length;
+const totalSlices = manifest.slices.length;
+const totalFindings = findings.counts.findings ?? findings.findings.length;
+
+const lanes: [
+  Parameters<typeof QueryLanes>[0]["lanes"][0],
+  Parameters<typeof QueryLanes>[0]["lanes"][1],
+  Parameters<typeof QueryLanes>[0]["lanes"][2],
+] = [
+  {
+    eyebrow: "Ask a question",
+    headline: `${totalComparisons} cross-paper comparisons`,
+    subline: featuredComparison
+      ? "Hand-curated questions with quantitative parameter deltas across papers."
+      : "Cross-paper questions with quantitative parameter deltas.",
+    chips: comparisons.comparisons.slice(0, 4).map((c) => ({
+      label: c.title ?? c.question.split("?")[0],
+      href: `/compare#${c.id}`,
+    })),
+    footerHref: "/compare",
+    footerLabel: "All comparisons",
+  },
+  {
+    eyebrow: "Browse by species",
+    headline: `${totalFindings} findings across ${topSpecies.length}+ species`,
+    subline:
+      "Curves filtered by organism, on shared signed-evidence axes.",
+    chips: topSpecies.map((s) => ({
+      label: s.species,
+      count: s.count,
+      href: `/findings?q=${encodeURIComponent(s.species)}`,
+    })),
+    footerHref: "/findings",
+    footerLabel: "All findings",
+  },
+  {
+    eyebrow: "Browse by source depth",
+    headline: `${totalSlices} reproducible slices`,
+    subline:
+      "Filter datasets by source-data depth: raw trials, processed trials, figure-traced.",
+    chips: SOURCE_LEVELS.map((s) => ({
+      label: s.label,
+      count: sourceCounts[s.level] ?? 0,
+      glyph: s.glyph,
+      href: `/catalog?source=${s.level}`,
+    })),
+    footerHref: "/catalog",
+    footerLabel: "Open catalog",
+  },
+];
 ---
 
 <BaseLayout
@@ -306,13 +473,47 @@ const blockerHighCount = (
     </Section>
   ) : null}
 
+  <Section eyebrow="Where to start" spacing="lg">
+    <QueryLanes lanes={lanes} />
+  </Section>
+
+  <AtlasOverview />
+
   {featuredComparison && featuredFindings.length > 0 ? (
     <Section spacing="lg">
       <Card padding="lg">
         <header class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-          <div>
+          <div class="min-w-0">
             <p class="text-eyebrow uppercase text-accent">Featured comparison</p>
-            <h2 class="mt-1 text-h2 text-fg">{featuredComparison.question}</h2>
+            {featuredDeltas ? (
+              <h2 class="mt-1 text-h2 text-fg">
+                {featuredDeltas.primary === "sigma" ? (
+                  <>
+                    σ spans <span class="font-mono">{fmt(featuredDeltas.sigma_min, 2)}</span>
+                    {" "}to <span class="font-mono">{fmt(featuredDeltas.sigma_max, 2)}</span>
+                    {featuredDeltas.sigma_fold !== null
+                      ? <> ({fmt(featuredDeltas.sigma_fold, 1)}× steeper at the steep end)</>
+                      : null}
+                  </>
+                ) : featuredDeltas.primary === "mu" ? (
+                  <>
+                    μ spans <span class="font-mono">{fmt(featuredDeltas.mu_min, 2)}</span>
+                    {" "}to <span class="font-mono">{fmt(featuredDeltas.mu_max, 2)}</span>
+                    {" "}(Δμ = <span class="font-mono">{fmt(featuredDeltas.mu_delta, 2)}</span>)
+                  </>
+                ) : (
+                  <>
+                    75% threshold spans <span class="font-mono">{fmt(featuredDeltas.threshold_min, 2)}</span>
+                    {" "}to <span class="font-mono">{fmt(featuredDeltas.threshold_max, 2)}</span>
+                  </>
+                )}
+              </h2>
+            ) : (
+              <h2 class="mt-1 text-h2 text-fg">{featuredComparison.question}</h2>
+            )}
+            <p class="mt-1 text-body text-fg-secondary">
+              {featuredComparison.question}
+            </p>
           </div>
           <a
             class="text-body-xs no-underline text-accent hover:underline"
@@ -339,24 +540,45 @@ const blockerHighCount = (
     </Section>
   ) : null}
 
-  <AtlasOverview />
-
-  <Section eyebrow="Where to start" spacing="lg">
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {entryPoints.map((card) => (
-        <Card href={card.href} padding="md">
-          <div class="flex items-baseline justify-between gap-3">
-            <h3 class="text-h3 text-fg">{card.title}</h3>
-            <span
-              class="text-body text-fg-subtle transition-colors group-hover:text-accent"
-              aria-hidden="true"
-            >→</span>
-          </div>
-          <p class="mt-1 text-body text-fg-secondary">{card.description}</p>
-        </Card>
-      ))}
-    </div>
-  </Section>
+  {recent.items.length > 0 ? (
+    <section class="mb-10 -mx-4 border-y border-rule bg-surface-sunken px-4 py-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p class="text-eyebrow uppercase text-fg-muted">Recently added</p>
+        <p class="text-body-xs text-fg-muted">
+          As of {recent.as_of} ·
+          <span class="ml-1 font-mono text-fg">{recent.counts.findings}</span> findings,
+          <span class="ml-1 font-mono text-fg">{recent.counts.papers}</span> papers,
+          <span class="ml-1 font-mono text-fg">{recent.counts.slices}</span> slices in the atlas.
+        </p>
+      </div>
+      <ul class="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+        {recent.items.slice(0, 4).map((item) => (
+          <li class="min-w-[15rem] flex-shrink-0 sm:min-w-0">
+            <a
+              href={item.href}
+              class="block h-full rounded-md border border-rule bg-surface-raised p-3 no-underline transition-colors hover:border-rule-emphasis"
+            >
+              <p class="flex items-baseline justify-between gap-2 text-mono-id text-fg-muted">
+                <span class:list={[
+                  "rounded px-1.5 py-0.5 font-semibold uppercase",
+                  item.kind === "finding"
+                    ? "bg-encoding-coverage-findings/10 text-encoding-coverage-findings"
+                    : item.kind === "paper"
+                      ? "bg-surface-accent text-accent"
+                      : "bg-encoding-source-figure-soft text-encoding-source-figure-strong",
+                ]}>{item.kind}</span>
+                <span>{item.added_at}</span>
+              </p>
+              <p class="mt-1.5 line-clamp-2 text-body text-fg">{item.title}</p>
+              {item.secondary ? (
+                <p class="mt-0.5 text-body-xs text-fg-secondary">{item.secondary}</p>
+              ) : null}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null}
 
   <Section spacing="lg">
     <Card href={featuredStory.href} padding="none" class="overflow-hidden">
@@ -372,10 +594,23 @@ const blockerHighCount = (
         </div>
         <div class="flex flex-col gap-2 p-5">
           <p class="text-eyebrow uppercase text-accent">
-            Story of the week · {featuredStory.readMinutes} min read
+            {featured.triggeredByFamily
+              ? `Recently active · ${featuredStory.readMinutes} min read`
+              : `Story of the week · ${featuredStory.readMinutes} min read`}
           </p>
           <h2 class="text-h3 text-fg">{featuredStory.title}</h2>
           <p class="text-body text-fg-secondary">{featuredStory.lead}</p>
+          {featured.triggeredByFamily ? (
+            <p class="text-body-xs text-fg-muted">
+              Featured because{" "}
+              <span class="font-mono text-fg">
+                {featured.triggeredByFamily.id
+                  .replace("family.", "")
+                  .replace(/-/g, " ")}
+              </span>
+              {" "}was extended on {featured.triggeredByFamily.lastAdded}.
+            </p>
+          ) : null}
           <p class="mt-auto pt-2 text-body-xs text-fg-muted">
             {featuredStory.surface}
             {" "}
@@ -400,10 +635,20 @@ const blockerHighCount = (
         </div>
         <a class="text-body-xs text-accent" href="/findings">/findings →</a>
       </header>
-      <p class="mb-4 max-w-prose text-body text-fg-secondary">
-        Aggregate stats over every psychometric finding currently in the
-        index, computed from build-time 4-parameter logistic fits.
-      </p>
+      {steepest && shallowest && slopeFold !== null && steepest.species !== shallowest.species ? (
+        <p class="mb-4 max-w-prose text-body text-fg-secondary">
+          Slope σ varies <span class="font-mono text-fg">{fmt(slopeFold, 1)}×</span> across species —
+          {" "}<span class="font-mono text-fg">{steepest.species}</span> fit steepest
+          (<span class="font-mono text-fg">{fmt(steepest.sigma)}</span>),
+          {" "}<span class="font-mono text-fg">{shallowest.species}</span> shallowest
+          (<span class="font-mono text-fg">{fmt(shallowest.sigma)}</span>).
+        </p>
+      ) : (
+        <p class="mb-4 max-w-prose text-body text-fg-secondary">
+          Aggregate stats over every psychometric finding currently in the
+          index, computed from build-time 4-parameter logistic fits.
+        </p>
+      )}
       <StatGrid cols={4} class="mb-5">
         <Stat label="Median bias (μ)" value={fmt(aggregateStats.median_bias)} />
         <Stat label="Median slope (σ)" value={fmt(aggregateStats.median_sigma)} />
@@ -429,72 +674,37 @@ const blockerHighCount = (
           />
         </div>
       ) : null}
-      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">By species</h3>
-      <ul class="space-y-2">
-        {(() => {
-          const maxFindings = Math.max(1, ...speciesRows.map((r) => r.count));
-          const maxTrials = Math.max(
-            1,
-            ...speciesRows.map((r) => r.total_trials),
-          );
-          return speciesRows.map((row) => (
-            <li class="grid grid-cols-1 gap-2 rounded border border-rule bg-surface px-3 py-2 text-body-xs sm:grid-cols-[8rem_minmax(0,1.4fr)_minmax(0,0.6fr)_minmax(0,0.6fr)_minmax(0,1.2fr)] sm:items-center sm:gap-4">
-              <span class="font-semibold text-fg">{row.species}</span>
-              <span class="flex items-center gap-2">
-                <span class="block h-1.5 flex-1 rounded-full bg-surface-sunken">
-                  <span
-                    class="block h-1.5 rounded-full bg-encoding-coverage-findings"
-                    style={`width: ${Math.max(6, Math.round((row.count / maxFindings) * 100))}%`}
-                  />
-                </span>
-                <span class="w-8 shrink-0 text-right font-mono text-fg">{row.count}</span>
-              </span>
-              <span class="flex items-baseline justify-between">
-                <span class="text-fg-muted">σ</span>
-                <span class="font-mono text-fg">{fmt(row.median_sigma)}</span>
-              </span>
-              <span class="flex items-baseline justify-between">
-                <span class="text-fg-muted">75%</span>
-                <span class="font-mono text-fg">{fmt(row.median_threshold)}</span>
-              </span>
-              <span class="flex items-center gap-2">
-                <span class="block h-1.5 flex-1 rounded-full bg-surface-sunken">
-                  <span
-                    class="block h-1.5 rounded-full bg-fg-secondary"
-                    style={`width: ${Math.max(6, Math.round((row.total_trials / maxTrials) * 100))}%`}
-                  />
-                </span>
-                <span class="shrink-0 font-mono text-fg">
-                  {row.total_trials.toLocaleString()}
-                </span>
-              </span>
-            </li>
-          ));
-        })()}
-      </ul>
-      <p class="mt-2 text-mono-id text-fg-muted">
-        Findings · σ · x at 75% · Σ trials per species. Bars normalised to
-        the across-species maxima.
-      </p>
+      <h3 class="mb-2 text-eyebrow uppercase text-fg-muted">Median σ by species</h3>
+      <AggregateBySpecies client:visible rows={speciesRows} height={Math.max(160, 32 * speciesRows.length + 60)} />
     </Card>
   </Section>
 
-  <Card padding="md" class="mt-8 text-body-xs">
-    <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-      <p class="text-fg-secondary">
-        <span class="text-eyebrow uppercase text-fg-muted">Atlas health</span>
-        <span class="ml-2 inline-flex">
-          <StatusPill tone={auditTone}>audit {auditStatus}</StatusPill>
-        </span>
-        <span class="ml-3 font-mono text-fg">{curationOpen}</span>
-        <span class="ml-1 text-fg-muted">open curation</span>
-        <span class="ml-3 font-mono text-fg">{blockerHighCount}</span>
-        <span class="ml-1 text-fg-muted">high-priority blocker{blockerHighCount === 1 ? "" : "s"}</span>
-        <span class="ml-3 font-mono text-fg">{roadmapItems}</span>
-        <span class="ml-1 text-fg-muted">roadmap item{roadmapItems === 1 ? "" : "s"}</span>
-        <span class="ml-3 font-mono text-fg">{linkIssues}</span>
-        <span class="ml-1 text-fg-muted">link issue{linkIssues === 1 ? "" : "s"}</span>
-      </p>
+  <section class="mt-8 -mx-4 border-y border-rule bg-surface-raised px-4 py-4 text-body-xs">
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+      <span class="text-eyebrow uppercase text-fg-muted">Atlas health</span>
+      <StatusPill tone={auditTone}>audit {auditStatus}</StatusPill>
+      <span class="inline-flex items-baseline gap-1 rounded bg-surface-sunken px-1.5 py-0.5">
+        <span class="font-mono text-fg">{curationOpen}</span>
+        <span class="text-fg-muted">curation</span>
+      </span>
+      <span class:list={[
+        "inline-flex items-baseline gap-1 rounded px-1.5 py-0.5",
+        blockerHighCount > 0 ? "bg-bad-soft text-bad" : "bg-surface-sunken text-fg-muted",
+      ]}>
+        <span class="font-mono">{blockerHighCount}</span>
+        <span>blocker{blockerHighCount === 1 ? "" : "s"}</span>
+      </span>
+      <span class="inline-flex items-baseline gap-1 rounded bg-surface-sunken px-1.5 py-0.5">
+        <span class="font-mono text-fg">{roadmapItems}</span>
+        <span class="text-fg-muted">roadmap</span>
+      </span>
+      <span class:list={[
+        "inline-flex items-baseline gap-1 rounded px-1.5 py-0.5",
+        linkIssues > 0 ? "bg-warn-soft text-warn" : "bg-surface-sunken text-fg-muted",
+      ]}>
+        <span class="font-mono">{linkIssues}</span>
+        <span>link issue{linkIssues === 1 ? "" : "s"}</span>
+      </span>
       <a class="ml-auto text-accent" href="/project-health">/project-health →</a>
     </div>
     <p class="mt-2 text-mono-id text-fg-muted">
@@ -507,5 +717,5 @@ const blockerHighCount = (
         </>
       ) : null}{manifest.behavtaskatlas_git_dirty ? " (dirty tree)" : null}
     </p>
-  </Card>
+  </section>
 </BaseLayout>

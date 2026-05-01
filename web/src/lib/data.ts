@@ -7,6 +7,7 @@ import auditJson from "../../../derived/audit.json";
 import modelsJson from "../../../derived/models.json";
 import linkIntegrityJson from "../../../derived/link_integrity.json";
 import dataRequestsJson from "../../../derived/data_requests.json";
+import recentJson from "../../../derived/recent.json";
 
 export type Manifest = typeof manifestJson;
 export type Catalog = typeof catalogJson;
@@ -51,6 +52,10 @@ export const linkIntegrity = linkIntegrityJson;
 export type DataRequestsIndex = typeof dataRequestsJson;
 export type DataRequestEntry = DataRequestsIndex["requests"][number];
 export const dataRequests = dataRequestsJson;
+
+export type RecentAdditions = typeof recentJson;
+export type RecentAdditionEntry = RecentAdditions["items"][number];
+export const recent = recentJson;
 
 export function getPaper(id: string): PaperEntry | undefined {
   return papers.papers.find((p) => p.id === id || p.slug === id);
